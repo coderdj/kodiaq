@@ -2,8 +2,8 @@
 
 CC		= g++
 CFLAGS		= -Wall -g -DLINUX -fPIC
-LIBDIR          = /home/dan/kodiaq/src/common
-LDFLAGS         = -L${LIBDIR} -lXeDAQ -lmenu -lform -lncurses -ltinfo
+LIBDIR          = ../common
+LDFLAGS         = -L$(LIBDIR) -lXeDAQ -lmenu -lform -lncurses -ltinfo
 SOURCES         = $(shell echo ./*cc)
 OBJECTS         = $(SOURCES: .cc=.o)
 CPP             = koUser
