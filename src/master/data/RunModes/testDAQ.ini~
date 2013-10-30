@@ -1,0 +1,150 @@
+@
+########################################################
+########################################################
+#              ELECTRONICS DEFINITIONS                 #
+########################################################
+########################################################
+%1LINK V2718 0 1 # V2718 CONET-VME BRIDGE crate 1
+%1LINK V2718 0 0 # V2718 CONET-VME BRIDGE crate 0
+%1LINK V2718 1 0 # BRIDGE FOR TIMING SENDER
+%1BASE_ADDRESS  V1724 32100000 876 1 0 # module 0  -- Crate 2
+%1BASE_ADDRESS  V1724 22230000 770 0 0 # module 0  -- Crate 1
+%1BASE_ADDRESS  V2718 EE000000 1868 0 1 # timing sender -- Crate Controller
+%2LINK V2718 0 0 #
+%2BASE_ADDRESS V1724 22240000 749 0 0 #
+
+#########################################################
+#########################################################
+#                    RUN OPTIONS
+#########################################################
+#########################################################
+## BLT_SIZE {int}
+##     Usage: define block transfer size
+BLT_SIZE 524288
+## RUN_START {int} {int}
+##      Usage: define run start mode (0 - board internal 1-s-in)
+##             and run start module by ID (module must be defined)
+RUN_START 1 1868
+
+#########################################################
+#########################################################
+#                   OUPUT OPTIONS                       #
+#########################################################
+#########################################################
+
+## WRITE_MODE {int}
+##     Usage: define write mode. 0-no writing 1-to file 2-mongodb
+WRITE_MODE 2
+
+## FILE_DEFINITION - used for files and mongodb output
+FILE_DEFINITION 0 0 10 500 1
+
+## FILE_PATH {string}
+##     Usage: provide either path to file (slave PC) or hostname for mongodb
+##
+FILE_PATH lheppc42
+
+## MONGO_OPTIONS {int} {int}
+##     Usage: first argument 0-do not zip output 1-zip output 
+##            second argument {int} max insert size
+##            third argument {int} write concern (0-normal 1-off)
+##            fourth option {int} block splitting mode (0-none,
+##                          1-coarse)
+MONGO_OPTIONS 0 30000000 1 0
+
+## DB_NAME {string}
+##     Usage: give the name of the db for mongo. Default "data.test"
+DB_NAME data.midrate
+
+## PROCESSING_THREADS {int}
+##     Usage: define the number of processing threads. program will
+##            assign one by default if this number is not set or is garbage
+PROCESSING_THREADS 10
+
+## BASELINE_MODE {int}
+##     Usage: 0 - no baselines determined. read from file if available.
+##            1 - try to automatically determine baselines each time
+##                boards are armed
+BASELINE_MODE 0
+
+## READOUT_THRESHOLD {int}
+##
+READOUT_THRESHOLD 1
+
+#############################################################
+#############################################################
+#                      BOARD OPTIONS                        #
+#############################################################
+#############################################################
+#WRITE_REGISTER EF34 1 -1 -1 -1
+WRITE_REGISTER EF24 0 -1 -1 -1 
+WRITE_REGISTER EF1C 100 -1 -1 -1 # max num of events per BLT (mind the buffer size!)
+WRITE_REGISTER EF00 10 -1 -1 -1 # interrupt event number
+WRITE_REGISTER 8100 5 -1 -1 -1  # toggle to 5 for s-in control, 0 for board
+WRITE_REGISTER 8120 FF -1 -1 -1
+#WRITE_REGISTER 8114 2100 -1 -1 -1 #170us window after trigger
+WRITE_REGISTER 8114 4 -1 -1 -1 #short window after trigger
+
+WRITE_REGISTER 810C C0000000  -1 -1 -1 # Software + External
+WRITE_REGISTER 8110 C0000000 -1 -1 -1 # Software + External
+#WRITE_REGISTER 800C 4 -1 -1 -1
+WRITE_REGISTER 800C A -1 -1 -1 #short window
+
+WRITE_REGISTER 8098 2000 -1 -1 -1
+#WRITE_REGISTER 8020 0 -1 -1 -1
+WRITE_REGISTER 8020 A0 -1 -1 -1
+
+#WRITE_REGISTER 8028 190019 -1 -1 -1 # 25 words = 50 samples
+WRITE_REGISTER 8028 190002 -1 -1 -1 #just 2 words=4 samples
+
+WRITE_REGISTER 8024 80003E58 -1 -1 -1 # write the same threshold to all boards
+			     
+WRITE_REGISTER EF14 55AA -1 -1 -1 # Interrupt
+WRITE_REGISTER EF18 0 -1 -1 -1 # Interrupt when 1 event stored
+
+WRITE_REGISTER 8000 200D0 -1 -1 -1 # ZS ZIP+ Falling + Sequential + External signal + Non Overlap Triggers + AnalogSum
+WRITE_REGISTER 811C 0 -1 -1 -1
+WRITE_REGISTER 8144 2 -1 -1 -1 # ANALOG MONITOR MODE
+WRITE_REGISTER 8150 8009ECFF -1 -1 -1 # all channels enabled, magnify=x1, offset=-240mV=492cnts
+WRITE_REGISTER 8080 2E00 -1 -1 -1 # BROADCAST
+WRITE_REGISTER 8084 2 -1 -1 -1 #BROADCAST
+WRITE_REGISTER 811C 40 -1 -1 -1
+
+#STUFF THAT WAS IN XML
+#WRITE_REGISTER 800C 9 -1 -1 -1
+#WRITE_REGISTER 8114 DF -1 -1 -1
+#WRITE_REGISTER 8144 2 -1 -1 -1
+#WRITE_REGISTER 8000 200D0 -1 -1 -1
+#WRITE_REGISTER 8024 80003E76 -1 -1 -1
+#WRITE_REGISTER 8028 00320005 -1 -1 -1
+
+#Baselines
+WRITE_REGISTER 1098 12A5 876 -1 -1
+WRITE_REGISTER 1198 13FA 876 -1 -1
+WRITE_REGISTER 1298 12F7 876 -1 -1
+WRITE_REGISTER 1398 1484 876 -1 -1
+WRITE_REGISTER 1498 1446 876 -1 -1
+WRITE_REGISTER 1598 13BB 876 -1 -1
+WRITE_REGISTER 1698 13DD 876 -1 -1
+WRITE_REGISTER 1798 145D 876 -1 -1
+
+WRITE_REGISTER 1098 1352 770 -1 -1
+WRITE_REGISTER 1198 1568 770 -1 -1
+WRITE_REGISTER 1298 13C5 770 -1 -1
+WRITE_REGISTER 1398 13DD 770 -1 -1
+WRITE_REGISTER 1498 1447 770 -1 -1
+WRITE_REGISTER 1598 11E8 770 -1 -1
+WRITE_REGISTER 1698 126F 770 -1 -1
+WRITE_REGISTER 1798 1109 770 -1 -1
+
+WRITE_REGISTER 1098 1348 749 -1 -1
+WRITE_REGISTER 1198 140E 749 -1 -1
+WRITE_REGISTER 1298 0A87 749 -1 -1
+WRITE_REGISTER 1398 0E4B 749 -1 -1
+WRITE_REGISTER 1498 1303 749 -1 -1
+WRITE_REGISTER 1598 0F9B 749 -1 -1
+WRITE_REGISTER 1698 1157 749 -1 -1
+WRITE_REGISTER 1798 1191 749 -1 -1
+
+
+@
