@@ -1,0 +1,1 @@
+cmd_/home/dan/daqreader_beta_dev/caen/A3818Drv-1.4/src/a3818.ko := ld -r -m elf_x86_64 -T /usr/src/linux-headers-3.5.0-39-generic/scripts/module-common.lds --build-id  -o /home/dan/daqreader_beta_dev/caen/A3818Drv-1.4/src/a3818.ko /home/dan/daqreader_beta_dev/caen/A3818Drv-1.4/src/a3818.o /home/dan/daqreader_beta_dev/caen/A3818Drv-1.4/src/a3818.mod.o

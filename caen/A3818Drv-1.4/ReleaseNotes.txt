@@ -1,0 +1,84 @@
+  -----------------------------------------------------------------------------
+
+                   --- CAEN SpA - Computing Systems Division --- 
+
+  -----------------------------------------------------------------------------
+
+  A3818 Driver Release Notes
+
+  -----------------------------------------------------------------------------
+
+  Rel. 1.3  - Dec      2011
+  Rel. 1.4  - Feb      2013
+
+  -----------------------------------------------------------------------------
+
+
+  Description
+  -----------
+
+  This document is updated for every official release of the CAEN A3818 Driver
+  and it contains various information specific to this software which can not be
+  found in the User's Manual, available together with the software or on the CAEN
+  web site: http://www.caen.it.
+
+
+ System Requirements
+ -------------------
+
+  - CAEN A2818 PCI Board
+  - Linux kernel 2.6/3.6 and GNU C/C++ compiler
+
+  What's New in Rel. 1.4
+  --------------------------
+
+   New Features and Important Notes
+   --------------------------------
+
+   - fixbug on ASPM support 
+
+  What's New in Rel. 1.3
+  --------------------------
+
+   New Features and Important Notes
+   --------------------------------
+
+   - fixbug on Opening multiple A3818 card
+   - fixbug on VME IRQ 
+
+
+  What's New in Rel. 1.2
+  --------------------------
+  
+   New Features and Important Notes
+   --------------------------------
+	
+   - fixbug on Open driver 
+   - fixbug on VME IRQ handling
+  
+  What's New in Rel. 1.1
+  --------------------------
+  
+   New Features and Important Notes
+   --------------------------------
+	
+   - support for all optical link present on the A3818
+   - removed the WorkQueue in the IRQ handler
+   - removed the Big Kernel Lock in the ioctl
+
+  What's New in Rel. 1.0
+  --------------------------
+
+   New Features and Important Notes
+   --------------------------------
+
+   - First release.
+
+
+  How to get support
+  ------------------
+
+  Our Software Support Group is available for questions, support and any other 
+  software related issue concerning CAEN Power Supplies; for software support
+  visit the page www.caen.it/computing/support.php.
+
