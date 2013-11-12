@@ -24,7 +24,7 @@ int main()
    gLog->Message("Started koSlave module.");
    //
    XeNetClient    fNetworkInterface(gLog);
-   fNetworkInterface.Initialize("xedaq2",2002,2003,1,"xedaq2");
+   fNetworkInterface.Initialize("xedaq2",2002,2003,2,"xedaq2");
    DigiInterface  *fElectronics = new DigiInterface();
    XeDAQOptions   fDAQOptions;
    
@@ -92,14 +92,15 @@ connection_loop:
 	 int status=XEDAQ_IDLE;
 	 if(bArmed && !bRunning) status=XEDAQ_ARMED;
 	 if(bRunning) status=XEDAQ_RUNNING;
-	 double rate=0.,freq=0.,nBoards=0;
-	 unsigned int iFreq=0;
+	 double rate=0.,freq=0.,nBoards=fElectronics->GetDigis();
+	 unsigned int iFreq=0;	 
 	 unsigned int iRate=fElectronics->GetRate(iFreq);
 	 rate=(double)iRate;
 	 freq=(double)iFreq;
 	 rate=rate/tdiff;
 	 rate/=1048576;
 	 freq=freq/tdiff;
+	 cout<<"rate: "<<rate<<" freq: "<<freq<<" iRate: "<<iRate<<" tdiff: "<<tdiff<<endl;
 	 if(fNetworkInterface.SendStatusUpdate(status,rate,freq,nBoards)!=0){
 	    bConnected=false;
 	   gLog->Error("koSlave::main - Error sending status update.");
