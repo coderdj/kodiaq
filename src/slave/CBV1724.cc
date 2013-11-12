@@ -39,7 +39,7 @@ CBV1724::~CBV1724()
 int CBV1724::Initialize(XeDAQOptions *options)
 {
    int retVal=0;
-
+   cout<<"Initializing"<<endl;
    for(int x=0;x<options->GetVMEOptions();x++)  {
       if((options->GetVMEOption(x).BoardID==-1 || options->GetVMEOption(x).BoardID==fBID.BoardID)
 	 && (options->GetVMEOption(x).CrateID==-1 || options->GetVMEOption(x).CrateID==fBID.CrateID)
@@ -78,8 +78,11 @@ int CBV1724::Initialize(XeDAQOptions *options)
       while(DetermineBaselines()!=0 && tries<5)
 	tries++;
    }
+   else cout<<"Didn't determine baselines."<<endl;
    
-   LoadBaselines();
+   cout<<"Loading baselines"<<endl;
+   cout<<LoadBaselines()<<endl;
+   cout<<"Done with baselines."<<endl;
    return retVal;
 }
 
@@ -202,13 +205,17 @@ int CBV1724::LoadBaselines()
       gLog->SendMessage("Error loading baselines.");
       return -1;
    }   
-   if(baselines.size()!=0)
+   if(baselines.size()==0)
      return -1;
    for(unsigned int x=0;x<baselines.size();x++)  {
       if(WriteReg32((0x1098)+(0x100*x),baselines[x])!=0){	   
 	 gLog->SendMessage("Error loading baselines");
 	 return -1;
-      }      
+      } 
+      stringstream sstr;
+      sstr<<"Loaded baseline "<<hex<<baselines[x]<<dec<<" to channel "<<x;
+      gLog->SendMessage(sstr.str());
+      cout<<sstr.str()<<endl;
    }
    return 0;
 }
@@ -261,9 +268,21 @@ int CBV1724::DetermineBaselines()
 {
    vector <int> oldBaselines;
    vector <u_int32_t> newBaselines(8,0);
-   if(GetBaselines(oldBaselines,true)!=0) return -1;
+   if(GetBaselines(oldBaselines,true)!=0) {
+      //there are no baselines. start wit some defaults
+      for(unsigned int x=0;x<8;x++)
+	oldBaselines.push_back(0x1300); //seems like a good middle value
+   }   
    if(oldBaselines.size()!=8) return -1;
-   LoadBaselines();
+ 
+   //load the old baselines
+   for(unsigned int x=0;x<oldBaselines.size();x++)    {	
+      if(WriteReg32((0x1098)+(0x100*x),oldBaselines[x])!=0){	     
+	 gLog->SendMessage("Error loading baselines");
+	 return -1;
+      }
+   }            
+   
    u_int32_t blt_bytes;
    u_int32_t *buff;
    int maxIterations=35;
@@ -289,6 +308,7 @@ int CBV1724::DetermineBaselines()
       u_int32_t data; 
       //Enable board
 //      ReadReg32(AcquisitionControlReg,data);
+      usleep(50000);
       data=0x4;
       WriteReg32(AcquisitionControlReg,data);
       usleep(1000);
@@ -374,17 +394,18 @@ int CBV1724::DetermineBaselines()
 	       continue;
 	    }
 	    else  {       //Baseline must be adjusted
-	       cout<<"diff "<<diff<<" maxdev "<<MaxDev<<" mean "<<mean<<" oldDAC "<<hex<<data<<endl;
-	       if(diff>MaxDev)	 {
+	       if(channel==7) cout<<"diff "<<diff<<" maxdev "<<MaxDev<<" mean "<<mean<<" oldDAC "<<hex<<data<<endl;
+	       if(diff>MaxDev)	 { if(channel==7) cout<<"DIFFGTMD"<<endl;
 		  if(diff>8){
-		     if(diff>50) newDAC=(data+(u_int32_t)(diff/.264)); //coarse adjust
-		     else newDAC=data-30;                     //a bit finder
+		     if(diff>50) { if(channel==7) cout<<"GT50 "<<newDAC<<" "<<diff/-0.265<<endl;
+			newDAC=(data+(int)(diff/(-.264))); }//coarse adjust
+		     else newDAC=data-30;                     //a bit less coarse
 		  }
 		  else newDAC=data-15;                        //fine adjust		  
 	       }//end if diff>MaxDev
 	       else  if(diff<MaxDev*(-1.)){ 
 		  if(diff<-8)  {
-		     if(diff<-50) newDAC=(data+(u_int32_t)(diff/-.264)); //coarse adjust
+		     if(diff<-50) newDAC=(data+(int)(diff/(-.264))); //coarse adjust
 		     else newDAC=data+30;                      //a bit finer
 		  }		  
 		  else newDAC=data+15;                         //fine adjust
@@ -397,8 +418,8 @@ int CBV1724::DetermineBaselines()
 	       newBaselines[channel]=newDAC;//data;
 	       retval=1; //flag that at least one channel didn't finish
 	    }
-	    cout<<"New DAC "<<hex<<newDAC<<endl;
-	    WriteReg32(V1724_DACReg+(0x100*channel),newDAC); //write updated DAC
+	    cout<<"New DAC "<<hex<<newDAC<<endl;	    
+	    WriteReg32(V1724_DACReg+(0x100*channel),(newDAC&0xFFFF)); //write updated DAC
 	 }//end if baseline is flat	 
 	 //else
 	 //  gLog->SendMessage("Problem during baseline determination. Is it not flat?");
