@@ -51,17 +51,22 @@ connection_loop:
 	    if(fNetworkInterface.ReceiveOptions(fOptionsPath)==0)  {
 	       if(fDAQOptions.ReadParameterFile(fOptionsPath)!=0)	 {
 		  gLog->Error("koSlave - error loading options");
+		  fNetworkInterface.SlaveSendMessage("Error loading options!");
 		  continue;
 	       }	         		    	       
-	       if(fElectronics->Initialize(&fDAQOptions)==0)
-		 bArmed=true;
+	       if(fElectronics->Initialize(&fDAQOptions)==0){
+		  fNetworkInterface.SlaveSendMessage("Boards armed successfully.");
+		  bArmed=true;
+	       }	       
 	       else{		    
+		  fNetworkInterface.SlaveSendMessage("Error initializing electronics!");
 		  gLog->Error("koSlave - error initializing electronics.");		  
 		  continue;
 	       }	       
 	    }
 	    else   {
 	       gLog->Error("koSlave - error receiving options!");
+	       fNetworkInterface.SlaveSendMessage("Error receiving options!");
 	       continue;
 	    }	    
 	 }	 
