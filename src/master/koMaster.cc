@@ -142,12 +142,14 @@ int main()
 	    errstring<<"Received reconnect command from "<<sender<<"("<<id<<")";
 	    fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_BROADCAST);
 	    fDAQNetwork.Disconnect();
+	    XeDAQHelper::InitializeStatus(fDAQStatus);	    
 	    command="CONNECT";
 	 }	 
 	 else if(command=="DISCONNECT")  {
 	    errstring<<"Received disconnect command from "<<sender<<"("<<id<<")";
 	    fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_BROADCAST);
 	    fDAQNetwork.Disconnect();
+	    XeDAQHelper::InitializeStatus(fDAQStatus);	    
 	    command='0';
 	 }
 	 else if(command=="ARM")  {
@@ -218,6 +220,7 @@ int main()
 		  fLog.Error("Error transmitting status to user net.");
 		  //fUserNetwork.BroadcastMessage("I have a status update for you but you won't receive it.",XEMESS_BROADCAST);
 	       }	 
+	       fDAQStatus.Messages.clear();
 	    }	 
 	 }	
       }
