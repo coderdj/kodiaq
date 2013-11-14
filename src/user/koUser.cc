@@ -19,8 +19,8 @@ using namespace std;
 int main()
 {
    //temp file output
-   ofstream outfile;
-   outfile.open("data.dat");
+//   ofstream outfile;
+//   outfile.open("data.dat");
    
    //Declare objects
    //
@@ -196,10 +196,10 @@ login_screen:
 	 fUI.Update();
 	 
 	 //detlete later
-	 double ratetot=0;
-	 for(unsigned int x=0;x<fDAQStatus.Slaves.size();x++)
-	   ratetot+=fDAQStatus.Slaves[x].Rate;
-	 outfile<<ratetot<<endl;
+//	 double ratetot=0;
+//	 for(unsigned int x=0;x<fDAQStatus.Slaves.size();x++)
+//	   ratetot+=fDAQStatus.Slaves[x].Rate;
+//	 outfile<<ratetot<<endl;
 	 
       }
       //watch for timeouts
@@ -217,4 +217,6 @@ login_screen:
       
    }
    fMasterNetwork.Disconnect();   
+   fUI.Close();
+   return 0;
 }

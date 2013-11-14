@@ -55,7 +55,9 @@ class XeCursesInterface
    void Update()  {
       doupdate();
    };
-   
+   void Close(){
+      endwin();
+   };   
  private:
    bool bInitialized;
    WINDOW *main_win, *status_win, *notify_win, *title_win;
