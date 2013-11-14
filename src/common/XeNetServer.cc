@@ -78,7 +78,7 @@ int XeNetServer::PutUpNetwork()
       return -1;
    }
    //Set option to reuse address in case the OS hasn't cleared it
-   int a=0;
+   int a=1;
    #ifdef SO_REUSEPORT
    if(setsockopt(fConnectionSocket,SOL_SOCKET,SO_REUSEPORT,&a,sizeof(int))<0 ||
       setsockopt(fConnectionDataSocket,SOL_SOCKET,SO_REUSEPORT,&a,sizeof(int))<0)  {
@@ -414,6 +414,13 @@ int XeNetServer::TransmitStatus(XeStatusPacket_t status)
 	   success=-1;
       }      
    }
+   for(unsigned int x=0;x<status.Messages.size();x++)  {
+      for(unsigned int y=0;y<fDataSockets.size();y++)	{
+	 SendMessage(fDataSockets[x].socket,-1,"Master",status.Messages[x].message,
+		     status.Messages[x].priority);
+      }      
+   }
+   
    return success;
 }
 

@@ -45,6 +45,7 @@ class XeNetClient : public XeNet
    //slave specific function
    int  SendStatusUpdate(int status, double rate, double freq, int nBoards);
    int  ReceiveOptions(string optionsPath);
+   int  SlaveSendMessage(string message);
  private:   
    
    //connection info

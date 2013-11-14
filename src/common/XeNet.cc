@@ -390,7 +390,7 @@ int XeNet::ReceiveMessage(int socket, string &message, int &code)
       message=ret.str();
    }   
    else message=temp;
-   fLog->Message(temp);
+   fLog->Message(message);
    return 0;
 }
 

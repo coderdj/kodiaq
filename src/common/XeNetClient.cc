@@ -199,15 +199,15 @@ int XeNetClient::SendBroadcastMessage(string message)
 {
    string temp="BROADCAST";
    SendCommandToSocket(fSocket,temp,fID,fMyName);
-   if(SendString(fSocket,message)!=0)  {
+   if(SendString(fSocket,message)!=0)    {	      
       fLog->Error("XeNetClient::SendBroadcast - failed to send message.");
-      return -1;
-   }
+	    return -1;
+   }	 
    temp = "ENDBROADCAST";
-   if(SendString(fSocket,temp)!=0)  {
+   if(SendString(fSocket,temp)!=0)  {	      
       fLog->Error("XeNetClient::SendBroadcast - failed to send footer.");
       return -1;
-   }
+   }	             
    return 0;      
 }
 
@@ -245,3 +245,7 @@ int  XeNetClient::ReceiveOptions(string optionsPath)
    return ReceiveFile(fSocket,optionsPath);
 }
 
+int XeNetClient::SlaveSendMessage(string message)
+{
+   return SendMessage(fDataSocket,fID,fMyName,message,XEMESS_BROADCAST);
+}
