@@ -80,7 +80,7 @@ int XeCursesInterface::GetLoginInfo(string &name, int &port, int &dataport,strin
    refresh();
    wattron(loginwin,COLOR_PAIR(10));   
    mvwprintw(loginwin,0,0," kodiaq - DAQ for XENON                                          Software version 0.2 ");
-   mvwprintw(loginwin,rows+7,0," Use up/down arrows to change fields and enter to accept settings.           q - quit ");
+   mvwprintw(loginwin,rows+7,0," Use up/down arrows to change fields and enter to accept settings.      ctl-c to quit ");
    wattroff(loginwin,COLOR_PAIR(10));
    wattron(loginwin,COLOR_PAIR(5));
    mvwprintw(loginwin,2,14,"Please enter your network options:");
@@ -220,9 +220,9 @@ int XeCursesInterface::Initialize(XeStatusPacket_t *DAQStatus, XeRunInfo_t *RunI
    
    wbkgd(title_win,COLOR_PAIR(5));   
    wattron(title_win,A_BOLD);
-   mvwprintw(title_win,0,1,"XENON1T DAQ Controller");
+   mvwprintw(title_win,0,1,"kodiaq -- the XENON1T DAQ Controller");
    wattron(title_win,COLOR_PAIR(7));
-   mvwprintw(title_win,0,111,"Software Version 0.1");
+   mvwprintw(title_win,0,111,"Software Version 0.9");
    wattroff(title_win,COLOR_PAIR(7));
    wattroff(title_win,A_BOLD);
    
@@ -246,7 +246,7 @@ int XeCursesInterface::DrawStartMenu()
    wclear(main_win);
 //   box(main_win, 0 , 0);
    wbkgd(main_win,COLOR_PAIR(4));
-   mvwprintw(main_win,1,3,"Welcome to the XENON DAQ controller.");
+   mvwprintw(main_win,1,3,"Welcome to kodiaq - the XENON DAQ controller.");
    wattron(main_win,A_BOLD);
    mvwprintw(main_win,3,20,"(C) Connect");
    mvwprintw(main_win,4,20,"(B) Broadcast Message");
