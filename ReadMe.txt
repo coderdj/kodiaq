@@ -30,7 +30,25 @@ connect to koMaster from any PC with a network connection
 to the master, provided the appropriate ports are open.
 
 ==========================================================
-2. Installation
+2. Installation - Light version
+==========================================================
+
+Follow these instructions if you just want the user library 
+to login to the DAQ.
+
+Prerequisites:
+                - For most people none. But if you don't have
+		  libncurses installed you will have to 
+		  install it.
+
+1. ./install_user.sh (you might have to sudo, copies the DAQ
+   shared library to /usr/lib)
+2. Resize your terminal to 132x43 at least
+3. ./kodiaq_client
+4. Login and have fun!
+
+==========================================================
+3. Installation - Full version
 ==========================================================
 
 Prerequisites:
