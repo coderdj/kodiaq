@@ -575,9 +575,9 @@ int XeCursesInterface::SidebarRefresh()
 	    wattroff(status_win,COLOR_PAIR(10));
 	 }       
 	 else if(y>maxspace/2.)  {
-	    wattron(status_win,COLOR_PAIR(9));
+	    wattron(status_win,COLOR_PAIR(7));
 	    mvwprintw(status_win,13+(4*x),2+fDAQStatus->Slaves[x].name.size()+2+y," ");
-	    wattroff(status_win,COLOR_PAIR(9));
+	    wattroff(status_win,COLOR_PAIR(7));
 	 }
 	 else  {
 	    wattron(status_win,COLOR_PAIR(7));
