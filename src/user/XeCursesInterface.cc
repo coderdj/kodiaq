@@ -79,7 +79,7 @@ int XeCursesInterface::GetLoginInfo(string &name, int &port, int &dataport,strin
    wrefresh(loginwin);
    refresh();
    wattron(loginwin,COLOR_PAIR(10));   
-   mvwprintw(loginwin,0,0," kodiaq - DAQ for XENON                                          Software version 0.2 ");
+   mvwprintw(loginwin,0,0," kodiaq - DAQ for XENON                                          Software version 0.9 ");
    mvwprintw(loginwin,rows+7,0," Use up/down arrows to change fields and enter to accept settings.      ctl-c to quit ");
    wattroff(loginwin,COLOR_PAIR(10));
    wattron(loginwin,COLOR_PAIR(5));
@@ -499,28 +499,28 @@ int XeCursesInterface::SidebarRefresh()
    wattron(status_win,A_BOLD);
    if(fDAQStatus->NetworkUp) {	
       wattron(status_win,COLOR_PAIR(1));
-      mvwprintw(status_win,3,18,"CONNECTED   ");
+      mvwprintw(status_win,3,18,"Connected   ");
       wattroff(status_win,COLOR_PAIR(1));
    }      
    else   {      
       wattron(status_win,COLOR_PAIR(2));
-      mvwprintw(status_win,3,18,"DISCONNECTED");
+      mvwprintw(status_win,3,18,"Disconnected");
       wattroff(status_win,COLOR_PAIR(2));
    }   
    if(fDAQStatus->Running)     {  
       wattron(status_win,COLOR_PAIR(1));
-      mvwprintw(status_win,4,18,"RUNNING");
+      mvwprintw(status_win,4,18,"Running");
       wattroff(status_win,COLOR_PAIR(1));
       
    }   
    else if(fDAQStatus->Armed)  {
       wattron(status_win,COLOR_PAIR(3));
-      mvwprintw(status_win,4,18,"ARMED");
+      mvwprintw(status_win,4,18,"Armed  ");
       wattroff(status_win,COLOR_PAIR(3));
    }   
    else {	
       wattron(status_win,COLOR_PAIR(2));
-      mvwprintw(status_win,4,18,"IDLE");
+      mvwprintw(status_win,4,18,"Idle   ");
       wattroff(status_win,COLOR_PAIR(2));
    }                      
    wattroff(status_win,A_BOLD);
