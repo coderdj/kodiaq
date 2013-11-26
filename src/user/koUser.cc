@@ -40,7 +40,7 @@ int main()
    //
    //UI
    XeCursesInterface  fUI(&fLog);   
-   
+   time_t fKeepAlive=XeDAQLogger::GetCurrentTime();
    //Now connect UI and download info from server
 login_screen:
    string name,hostname; int port,dataport,uiret=-1;
@@ -212,6 +212,10 @@ login_screen:
 	 fUI.SidebarRefresh();
 	 fUI.Update();		 
 	 //GIVE A WARNING, PROBABLY KILL WHOLE DAQ UNLESS DISCONNECT COMMAND WAS GIVEN 
+      }
+      if(difftime(currentTime,fKeepAlive)>100.)	{
+	 fMasterNetwork.SendCommand("KEEPALIVE");
+	 fKeepAlive = XeDAQLogger::GetCurrentTime();
       }
       
       
