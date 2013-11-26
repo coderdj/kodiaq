@@ -221,6 +221,7 @@ int XeCursesInterface::Initialize(XeStatusPacket_t *DAQStatus, XeRunInfo_t *RunI
    init_pair(9,COLOR_WHITE,COLOR_YELLOW);
    init_pair(10,COLOR_WHITE,COLOR_RED);
    init_pair(11,COLOR_BLUE,COLOR_BLACK);
+   init_pair(12,COLOR_BLUE,COLOR_WHITE);
    
    wbkgd(title_win,COLOR_PAIR(5));   
    wattron(title_win,A_BOLD);
@@ -250,12 +251,23 @@ int XeCursesInterface::DrawStartMenu()
    wclear(main_win);
 //   box(main_win, 0 , 0);
    wbkgd(main_win,COLOR_PAIR(4));
-   mvwprintw(main_win,1,3,"Welcome to kodiaq - the XENON DAQ controller.");
+   wattron(main_win,COLOR_PAIR(7));
    wattron(main_win,A_BOLD);
-   mvwprintw(main_win,3,20,"(C) Connect");
-   mvwprintw(main_win,4,20,"(B) Broadcast Message");
-   mvwprintw(main_win,5,20,"(Q) Quit");
+   mvwprintw(main_win,1,0,"   Start menu:   ");
+   wattroff(main_win,COLOR_PAIR(7));
+   wattron(main_win,COLOR_PAIR(6));
+   mvwprintw(main_win,3,30," C ");
+   wattroff(main_win,COLOR_PAIR(6));
+   wattron(main_win,COLOR_PAIR(7));   
+   mvwprintw(main_win,4,30," B ");
+   wattroff(main_win,COLOR_PAIR(7));
+   wattron(main_win,COLOR_PAIR(6));   
+   mvwprintw(main_win,5,30," Q ");
+    wattroff(main_win,COLOR_PAIR(6));   
    wattroff(main_win,A_BOLD);
+   mvwprintw(main_win,3,35,"Connect                              ");
+   mvwprintw(main_win,4,35,"Broadcast Message                    ");
+   mvwprintw(main_win,5,35,"Quit                                 ");
    wnoutrefresh(main_win);
    return 0;
 }
@@ -288,12 +300,22 @@ int XeCursesInterface::PrintDAQRunScreen()
 //   box(main_win, 0 , 0);
    wbkgd(main_win,COLOR_PAIR(4));
    wattron(main_win,A_BOLD);
-   mvwprintw(main_win,1,3,"Runtime menu:                ");
-   mvwprintw(main_win,1,20,"(G) Graphical display             ");
-   mvwprintw(main_win,2,20,"(P) Stop acquisition                    ");
-   mvwprintw(main_win,3,20,"(B) Broadcast message                  ");
-   mvwprintw(main_win,4,20,"(Q) Quit UI  **Note: DAQ Remains On**       ");
+   wattron(main_win,COLOR_PAIR(7));
+   mvwprintw(main_win,1,0,"   Runtime menu: ");
+   wattroff(main_win,COLOR_PAIR(7));
+   wattron(main_win,COLOR_PAIR(6));
+   mvwprintw(main_win,2,30," P ");
+   wattroff(main_win,COLOR_PAIR(6));
+   wattron(main_win,COLOR_PAIR(7));
+   mvwprintw(main_win,3,30," B ");
+   wattroff(main_win,COLOR_PAIR(7));
+   wattron(main_win,COLOR_PAIR(6));
+   mvwprintw(main_win,4,30," Q "); 
+   wattroff(main_win,COLOR_PAIR(6));
    wattroff(main_win,A_BOLD);
+   mvwprintw(main_win,2,35,"Stop acquisition                     ");
+   mvwprintw(main_win,3,35,"Broadcast message                    ");
+   mvwprintw(main_win,4,35,"Sign out                             ");
    wnoutrefresh(main_win);
    return 0;
 }
@@ -308,14 +330,30 @@ int XeCursesInterface::DrawMainMenu()
    wclear(main_win);
    wattron(main_win,A_BOLD);
 //   box(main_win, 0 , 0);
-   mvwprintw(main_win,1,3,"Main menu:");
-   mvwprintw(main_win,1,20,"(S) Start DAQ       ");
-   mvwprintw(main_win,2,20,"(M) Choose operation mode          ");
-   mvwprintw(main_win,3,20,"(X) Put boards to standby             ");
-   mvwprintw(main_win,4,20,"(G) Monitor graphical waveforms     ");
-   mvwprintw(main_win,5,20,"(B) Broadcast message                  ");
-   mvwprintw(main_win,6,20,"(Q) Quit                         ");
+   wattron(main_win,COLOR_PAIR(7));
+   mvwprintw(main_win,1,0,"   Main menu:    ");
+   wattroff(main_win,COLOR_PAIR(7));
+   wattron(main_win,COLOR_PAIR(6));
+   mvwprintw(main_win,2,30," S ");
+   wattroff(main_win,COLOR_PAIR(6));
+   wattron(main_win,COLOR_PAIR(7));
+   mvwprintw(main_win,3,30," M ");
+   wattroff(main_win,COLOR_PAIR(7));
+   wattron(main_win,COLOR_PAIR(6));
+   mvwprintw(main_win,4,30," X ");
+   wattroff(main_win,COLOR_PAIR(6));
+   wattron(main_win,COLOR_PAIR(7));
+   mvwprintw(main_win,5,30," B ");
+   wattroff(main_win,COLOR_PAIR(7));
+   wattron(main_win,COLOR_PAIR(6));
+   mvwprintw(main_win,6,30," Q ");
+   wattroff(main_win,COLOR_PAIR(6));
    wattroff(main_win,A_BOLD);
+   mvwprintw(main_win,2,35,"Start DAQ                          ");
+   mvwprintw(main_win,3,35,"Choose operation mode              ");
+   mvwprintw(main_win,4,35,"Put DAQ to standby mode            ");
+   mvwprintw(main_win,5,35,"Broadcast message                  ");
+   mvwprintw(main_win,6,35,"Quit                               ");   
    wnoutrefresh(main_win);
    return 0;
 }
@@ -639,7 +677,9 @@ string XeCursesInterface::BroadcastMessage(string user, int UID)
    wclear(main_win);
    wbkgd(main_win,COLOR_PAIR(4));
    wattron(main_win,A_BOLD);
-   mvwprintw(main_win,4,3,"Message:");
+   wattron(main_win,COLOR_PAIR(7));
+   mvwprintw(main_win,1,0,"     Message:    ");
+   wattroff(main_win,COLOR_PAIR(7));
    wattroff(main_win,A_BOLD);
    noecho();
    string message;
@@ -656,16 +696,18 @@ string XeCursesInterface::BroadcastMessage(string user, int UID)
 	 wclear(main_win);
 //	 box(main_win, 0 , 0);
 	 wattron(main_win,A_BOLD);
-	 mvwprintw(main_win,4,3,"Message:");
+	 wattron(main_win,COLOR_PAIR(7));
+	 mvwprintw(main_win,1,0,"     Message:    ");
+	 wattroff(main_win,COLOR_PAIR(7));
 	 wattroff(main_win,A_BOLD);
 	 if(message.size()<50)
-	   mvwprintw(main_win,4,21,message.c_str());
+	   mvwprintw(main_win,2,21,message.c_str());
 	 else   {	      
-	    mvwprintw(main_win,4,21,(message.substr(0,50)).c_str());
-	    if(message.size()<100) mvwprintw(main_win,5,21,(message.substr(50)).c_str());
+	    mvwprintw(main_win,2,21,(message.substr(0,50)).c_str());
+	    if(message.size()<100) mvwprintw(main_win,3,21,(message.substr(50)).c_str());
 	    else  {	       
-	       mvwprintw(main_win,5,21,(message.substr(50,50)).c_str());
-	       mvwprintw(main_win,6,21,(message.substr(100)).c_str());
+	       mvwprintw(main_win,3,21,(message.substr(50,50)).c_str());
+	       mvwprintw(main_win,4,21,(message.substr(100)).c_str());
 	    }	    
 	 }	 
 	 break;
@@ -673,13 +715,13 @@ string XeCursesInterface::BroadcastMessage(string user, int UID)
 	 if(message.size()<=150)
 	   message.push_back((char)c);
 	 if(message.size()<50)
-	   mvwprintw(main_win,4,21,message.c_str());
+	   mvwprintw(main_win,2,21,message.c_str());
 	 else   {
-	    mvwprintw(main_win,4,21,(message.substr(0,50)).c_str());
-	    if(message.size()<100) mvwprintw(main_win,5,21,(message.substr(50)).c_str());
+	    mvwprintw(main_win,2,21,(message.substr(0,50)).c_str());
+	    if(message.size()<100) mvwprintw(main_win,3,21,(message.substr(50)).c_str());
 	    else  {
-	       mvwprintw(main_win,5,21,(message.substr(50,50)).c_str());
-	       mvwprintw(main_win,6,21,(message.substr(100)).c_str());	       
+	       mvwprintw(main_win,3,21,(message.substr(50,50)).c_str());
+	       mvwprintw(main_win,4,21,(message.substr(100)).c_str());	       
 	    }
 	    
 	 }	 
