@@ -527,7 +527,7 @@ int XeCursesInterface::SidebarRefresh()
    
    wattron(status_win,COLOR_PAIR(7));
    wattron(status_win,A_BOLD);
-   mvwprintw(status_win,1,1,"            DAQ STATUS             ");
+   mvwprintw(status_win,1,1,"            DAQ Status             ");
    wattroff(status_win,COLOR_PAIR(7));
    
    mvwprintw(status_win,3,2,"Network:");
