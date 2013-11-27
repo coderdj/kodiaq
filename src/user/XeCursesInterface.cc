@@ -177,7 +177,7 @@ int XeCursesInterface::GetLoginInfo(string &name, int &port, int &dataport,strin
    return 0;          
 }
 
-int XeCursesInterface::Initialize(XeStatusPacket_t *DAQStatus, XeRunInfo_t *RunInfo, vector <string> history)
+int XeCursesInterface::Initialize(XeStatusPacket_t *DAQStatus, XeRunInfo_t *RunInfo, vector <string> history, string name)
 {  
    fDAQStatus=DAQStatus;
    fRunInfo=RunInfo;
@@ -225,8 +225,10 @@ int XeCursesInterface::Initialize(XeStatusPacket_t *DAQStatus, XeRunInfo_t *RunI
    
    wbkgd(title_win,COLOR_PAIR(5));   
    wattron(title_win,A_BOLD);
-   mvwprintw(title_win,0,1,"kodiaq -- the XENON1T DAQ Controller");
+   mvwprintw(title_win,0,1,"kodiaq - DAQ for XENON");
    wattron(title_win,COLOR_PAIR(7));
+   mvwprintw(title_win,0,55,"Logged in as: ");
+   mvwprintw(title_win,0,70,name.c_str());
    mvwprintw(title_win,0,111,"Software Version 0.9");
    wattroff(title_win,COLOR_PAIR(7));
    wattroff(title_win,A_BOLD);

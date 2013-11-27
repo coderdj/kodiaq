@@ -67,7 +67,7 @@ login_screen:
       sleep(1);
    }   
    
-   fUI.Initialize(&fDAQStatus,&fRunInfo,fHistory);
+   fUI.Initialize(&fDAQStatus,&fRunInfo,fHistory,name);
 //   sleep(5);   
    
 
