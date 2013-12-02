@@ -52,6 +52,7 @@ int main()
    char               cCommand='0';
    unsigned int       fNSlaves=0;
    time_t             fPrevTime=XeDAQLogger::GetCurrentTime();
+   time_t             fKeepAlive=XeDAQLogger::GetCurrentTime();
    bool               update=false;
    //********************************************
    
@@ -180,14 +181,16 @@ int main()
 	       continue;
 	    }
 	    fDAQStatus.RunMode=command;
-	    
-	    fUserNetwork.BroadcastMessage(command,XEMESS_BROADCAST);
+	    errstring.flush();
+	    errstring<<"Armed DAQ in mode "<<command;
+	    fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_BROADCAST);
 	    command='0';
 	 }
 	 else if(command=="START")  {
 	    fDAQNetwork.SendCommand("START");
 	    errstring<<"Received start command from "<<sender<<"("<<id<<")";
 	    fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_BROADCAST);	    
+	    XeDAQHelper::UpdateRunInfo(fRunInfo,sender);
 	 }
 	 else if(command=="STOP")  {
 	    fDAQNetwork.SendCommand("STOP");
@@ -223,6 +226,12 @@ int main()
 	       fDAQStatus.Messages.clear();
 	    }	 
 	 }	
+	 time_t fCurrentTime = XeDAQLogger::GetCurrentTime();
+	 if(difftime(fCurrentTime,fKeepAlive)>100.0)  { //keep the main socket alive if inactive for 100 sec
+	    fDAQNetwork.SendCommand("KEEPALIVE");
+	    fKeepAlive = XeDAQLogger::GetCurrentTime();
+	 }
+	 
       }
 	
       

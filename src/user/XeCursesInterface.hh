@@ -34,7 +34,7 @@ class XeCursesInterface
    virtual ~XeCursesInterface();
    explicit XeCursesInterface(XeDAQLogger *logger);
    
-   int Initialize(XeStatusPacket_t *DAQStatus,XeRunInfo_t *RunInfo, vector <string> history);   
+   int Initialize(XeStatusPacket_t *DAQStatus,XeRunInfo_t *RunInfo, vector <string> history, string name);   
    int DrawStartMenu();
    int DrawMainMenu();
    int SidebarRefresh();

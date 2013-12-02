@@ -43,7 +43,7 @@ int XeCursesInterface::GetLoginInfo(string &name, int &port, int &dataport,strin
    init_pair(7,COLOR_WHITE,COLOR_BLUE);
    init_pair(8,COLOR_RED,COLOR_BLUE);
    init_pair(9,COLOR_GREEN,COLOR_BLUE);
-   init_pair(10,COLOR_BLACK,COLOR_WHITE);
+   init_pair(10,COLOR_BLACK,COLOR_WHITE); 
    refresh();
    keypad(stdscr,TRUE);
    noecho();
@@ -79,7 +79,7 @@ int XeCursesInterface::GetLoginInfo(string &name, int &port, int &dataport,strin
    wrefresh(loginwin);
    refresh();
    wattron(loginwin,COLOR_PAIR(10));   
-   mvwprintw(loginwin,0,0," kodiaq - DAQ for XENON                                          Software version 0.2 ");
+   mvwprintw(loginwin,0,0," kodiaq - DAQ for XENON                                          Software version 0.9 ");
    mvwprintw(loginwin,rows+7,0," Use up/down arrows to change fields and enter to accept settings.      ctl-c to quit ");
    wattroff(loginwin,COLOR_PAIR(10));
    wattron(loginwin,COLOR_PAIR(5));
@@ -177,7 +177,7 @@ int XeCursesInterface::GetLoginInfo(string &name, int &port, int &dataport,strin
    return 0;          
 }
 
-int XeCursesInterface::Initialize(XeStatusPacket_t *DAQStatus, XeRunInfo_t *RunInfo, vector <string> history)
+int XeCursesInterface::Initialize(XeStatusPacket_t *DAQStatus, XeRunInfo_t *RunInfo, vector <string> history, string name)
 {  
    fDAQStatus=DAQStatus;
    fRunInfo=RunInfo;
@@ -217,11 +217,18 @@ int XeCursesInterface::Initialize(XeStatusPacket_t *DAQStatus, XeRunInfo_t *RunI
    init_pair(5,COLOR_YELLOW,COLOR_BLUE);
    init_pair(6,COLOR_BLACK,COLOR_WHITE);
    init_pair(7,COLOR_WHITE,COLOR_BLUE); 
+   init_pair(8,COLOR_WHITE,COLOR_GREEN);
+   init_pair(9,COLOR_WHITE,COLOR_YELLOW);
+   init_pair(10,COLOR_WHITE,COLOR_RED);
+   init_pair(11,COLOR_BLUE,COLOR_BLACK);
+   init_pair(12,COLOR_BLUE,COLOR_WHITE);
    
    wbkgd(title_win,COLOR_PAIR(5));   
    wattron(title_win,A_BOLD);
-   mvwprintw(title_win,0,1,"kodiaq -- the XENON1T DAQ Controller");
+   mvwprintw(title_win,0,1,"kodiaq - DAQ for XENON");
    wattron(title_win,COLOR_PAIR(7));
+   mvwprintw(title_win,0,55,"Logged in as: ");
+   mvwprintw(title_win,0,70,name.c_str());
    mvwprintw(title_win,0,111,"Software Version 0.9");
    wattroff(title_win,COLOR_PAIR(7));
    wattroff(title_win,A_BOLD);
@@ -246,12 +253,23 @@ int XeCursesInterface::DrawStartMenu()
    wclear(main_win);
 //   box(main_win, 0 , 0);
    wbkgd(main_win,COLOR_PAIR(4));
-   mvwprintw(main_win,1,3,"Welcome to kodiaq - the XENON DAQ controller.");
+   wattron(main_win,COLOR_PAIR(7));
    wattron(main_win,A_BOLD);
-   mvwprintw(main_win,3,20,"(C) Connect");
-   mvwprintw(main_win,4,20,"(B) Broadcast Message");
-   mvwprintw(main_win,5,20,"(Q) Quit");
+   mvwprintw(main_win,1,0,"   Start menu:   ");
+   wattroff(main_win,COLOR_PAIR(7));
+   wattron(main_win,COLOR_PAIR(6));
+   mvwprintw(main_win,3,30," C ");
+   wattroff(main_win,COLOR_PAIR(6));
+   wattron(main_win,COLOR_PAIR(7));   
+   mvwprintw(main_win,4,30," B ");
+   wattroff(main_win,COLOR_PAIR(7));
+   wattron(main_win,COLOR_PAIR(6));   
+   mvwprintw(main_win,5,30," Q ");
+    wattroff(main_win,COLOR_PAIR(6));   
    wattroff(main_win,A_BOLD);
+   mvwprintw(main_win,3,35,"Connect                              ");
+   mvwprintw(main_win,4,35,"Broadcast Message                    ");
+   mvwprintw(main_win,5,35,"Quit                                 ");
    wnoutrefresh(main_win);
    return 0;
 }
@@ -284,12 +302,22 @@ int XeCursesInterface::PrintDAQRunScreen()
 //   box(main_win, 0 , 0);
    wbkgd(main_win,COLOR_PAIR(4));
    wattron(main_win,A_BOLD);
-   mvwprintw(main_win,1,3,"Runtime menu:                ");
-   mvwprintw(main_win,1,20,"(G) Graphical display             ");
-   mvwprintw(main_win,2,20,"(P) Stop acquisition                    ");
-   mvwprintw(main_win,3,20,"(B) Broadcast message                  ");
-   mvwprintw(main_win,4,20,"(Q) Quit UI  **Note: DAQ Remains On**       ");
+   wattron(main_win,COLOR_PAIR(7));
+   mvwprintw(main_win,1,0,"   Runtime menu: ");
+   wattroff(main_win,COLOR_PAIR(7));
+   wattron(main_win,COLOR_PAIR(6));
+   mvwprintw(main_win,2,30," P ");
+   wattroff(main_win,COLOR_PAIR(6));
+   wattron(main_win,COLOR_PAIR(7));
+   mvwprintw(main_win,3,30," B ");
+   wattroff(main_win,COLOR_PAIR(7));
+   wattron(main_win,COLOR_PAIR(6));
+   mvwprintw(main_win,4,30," Q "); 
+   wattroff(main_win,COLOR_PAIR(6));
    wattroff(main_win,A_BOLD);
+   mvwprintw(main_win,2,35,"Stop acquisition                     ");
+   mvwprintw(main_win,3,35,"Broadcast message                    ");
+   mvwprintw(main_win,4,35,"Sign out                             ");
    wnoutrefresh(main_win);
    return 0;
 }
@@ -304,14 +332,30 @@ int XeCursesInterface::DrawMainMenu()
    wclear(main_win);
    wattron(main_win,A_BOLD);
 //   box(main_win, 0 , 0);
-   mvwprintw(main_win,1,3,"Main menu:");
-   mvwprintw(main_win,1,20,"(S) Start DAQ       ");
-   mvwprintw(main_win,2,20,"(M) Choose operation mode          ");
-   mvwprintw(main_win,3,20,"(X) Put boards to standby             ");
-   mvwprintw(main_win,4,20,"(G) Monitor graphical waveforms     ");
-   mvwprintw(main_win,5,20,"(B) Broadcast message                  ");
-   mvwprintw(main_win,6,20,"(Q) Quit                         ");
+   wattron(main_win,COLOR_PAIR(7));
+   mvwprintw(main_win,1,0,"   Main menu:    ");
+   wattroff(main_win,COLOR_PAIR(7));
+   wattron(main_win,COLOR_PAIR(6));
+   mvwprintw(main_win,2,30," S ");
+   wattroff(main_win,COLOR_PAIR(6));
+   wattron(main_win,COLOR_PAIR(7));
+   mvwprintw(main_win,3,30," M ");
+   wattroff(main_win,COLOR_PAIR(7));
+   wattron(main_win,COLOR_PAIR(6));
+   mvwprintw(main_win,4,30," X ");
+   wattroff(main_win,COLOR_PAIR(6));
+   wattron(main_win,COLOR_PAIR(7));
+   mvwprintw(main_win,5,30," B ");
+   wattroff(main_win,COLOR_PAIR(7));
+   wattron(main_win,COLOR_PAIR(6));
+   mvwprintw(main_win,6,30," Q ");
+   wattroff(main_win,COLOR_PAIR(6));
    wattroff(main_win,A_BOLD);
+   mvwprintw(main_win,2,35,"Start DAQ                          ");
+   mvwprintw(main_win,3,35,"Choose operation mode              ");
+   mvwprintw(main_win,4,35,"Put DAQ to standby mode            ");
+   mvwprintw(main_win,5,35,"Broadcast message                  ");
+   mvwprintw(main_win,6,35,"Quit                               ");   
    wnoutrefresh(main_win);
    return 0;
 }
@@ -426,12 +470,32 @@ void XeCursesInterface::DrawNotifications(unsigned int lower,unsigned int upper)
    mvwprintw(notify_win,0,0," Messages: (%3i-%3i of %3i)                                                                    ",lower,upper,fNotifications.size());
    wattroff(notify_win,COLOR_PAIR(7));
    wattroff(notify_win,A_BOLD);
-   if(fNotifications.size()>upper) mvwprintw(notify_win,32,0,"v");
-   else mvwprintw(notify_win,32,0," ");
-   if(lower>0 && fNotifications.size()>0) mvwprintw(notify_win,1,0,"^                                                        ");
-   else mvwprintw(notify_win,1,0,"[end of buffer. older messages available in curses log.] ");
+//   if(fNotifications.size()>upper) mvwprintw(notify_win,32,0,"v");
+//   else mvwprintw(notify_win,32,0," ");
+   //if(lower>0 && fNotifications.size()>0) 
+   wattron(notify_win,COLOR_PAIR(7));
+   mvwprintw(notify_win,1,94,"^");
+   mvwprintw(notify_win,32,94,"v");
+   wattroff(notify_win,COLOR_PAIR(7));
+   if(lower<=0 || fNotifications.size()<=0)
+     mvwprintw(notify_win,1,0,"[end of buffer. older messages available in curses log.] ");
+   else mvwprintw(notify_win,1,0,"                                                          ");
    for(unsigned int x=lower;x<upper;x++){//fNotifications.size();x++){
       if(x>=fNotifications.size()||x<0) continue;
+      int binSize = fNotifications.size()/30;
+      int currentBin = lower/binSize;
+      if(x-lower == currentBin ||x-lower==currentBin+1 || x-lower==currentBin-1)	{
+	 wattron(notify_win,COLOR_PAIR(9));
+	 mvwprintw(notify_win,x-lower+2.0,94," ");
+	 wattroff(notify_win,COLOR_PAIR(9));
+      }
+      else	{
+	 wattron(notify_win,COLOR_PAIR(7));
+	 mvwprintw(notify_win,x-lower+2.0,94," ");
+	 wattroff(notify_win,COLOR_PAIR(7));
+      }
+      
+      
       if(fNotificationPriorities[x]==2){//yellow	   
 	 wattron(notify_win,COLOR_PAIR(3));
 	 mvwprintw(notify_win,x-lower+2,0,"%s",fNotifications[x].c_str());
@@ -465,64 +529,80 @@ int XeCursesInterface::SidebarRefresh()
    
    wattron(status_win,COLOR_PAIR(7));
    wattron(status_win,A_BOLD);
-   mvwprintw(status_win,1,1,"            DAQ STATUS             ");
+   mvwprintw(status_win,1,1,"            DAQ Status             ");
    wattroff(status_win,COLOR_PAIR(7));
    
-   mvwprintw(status_win,3,2,"NETWORK:");
-   mvwprintw(status_win,5,2,"ACQUISITION:"); 
+   mvwprintw(status_win,3,2,"Network:");
+   mvwprintw(status_win,4,2,"Acquisition:"); 
    wattroff(status_win,A_BOLD);
    
    wattron(status_win,A_BOLD);
    if(fDAQStatus->NetworkUp) {	
       wattron(status_win,COLOR_PAIR(1));
-      mvwprintw(status_win,3,20,"CONNECTED   ");
+      mvwprintw(status_win,3,18,"Connected   ");
       wattroff(status_win,COLOR_PAIR(1));
    }      
    else   {      
       wattron(status_win,COLOR_PAIR(2));
-      mvwprintw(status_win,3,20,"DISCONNECTED");
+      mvwprintw(status_win,3,18,"Disconnected");
       wattroff(status_win,COLOR_PAIR(2));
    }   
    if(fDAQStatus->Running)     {  
       wattron(status_win,COLOR_PAIR(1));
-      mvwprintw(status_win,5,20,"RUNNING");
+      mvwprintw(status_win,4,18,"Running");
       wattroff(status_win,COLOR_PAIR(1));
       
    }   
    else if(fDAQStatus->Armed)  {
       wattron(status_win,COLOR_PAIR(3));
-      mvwprintw(status_win,5,20,"ARMED");
+      mvwprintw(status_win,4,18,"Armed  ");
       wattroff(status_win,COLOR_PAIR(3));
    }   
    else {	
       wattron(status_win,COLOR_PAIR(2));
-      mvwprintw(status_win,5,20,"IDLE");
+      mvwprintw(status_win,4,18,"Idle   ");
       wattroff(status_win,COLOR_PAIR(2));
    }                      
    wattroff(status_win,A_BOLD);
    
    wattron(status_win,A_BOLD);   
-   mvwprintw(status_win,7,2,"DAQ Mode:");
-   mvwprintw(status_win,7,20,fDAQStatus->RunMode.c_str());
+   mvwprintw(status_win,5,2,"DAQ Mode:");
+   mvwprintw(status_win,5,18,fDAQStatus->RunMode.c_str());
    wattroff(status_win,A_BOLD);
    
    wattron(status_win,A_BOLD);
+//   wattron(status_win,COLOR_PAIR(7));
+   mvwprintw(status_win,7,1," Current Run:   ");
+   wattron(status_win,COLOR_PAIR(11));
+   mvwprintw(status_win,7,18,fRunInfo->RunNumber.c_str());
+   wattroff(status_win,COLOR_PAIR(11));
+//   wattroff(status_win,COLOR_PAIR(7));
+   mvwprintw(status_win,8,2,"Started by:");
+//   mvwprintw(status_win,9,2,"Start time: ");
+//   mvwprintw(status_win,11,2,"Identifier:");
+   wattroff(status_win,A_BOLD);
+   mvwprintw(status_win,8,18,fRunInfo->StartedBy.c_str());
+  // mvwprintw(status_win,9,14,fRunInfo->StartDate.c_str());
+//   mvwprintw(status_win,11,14,fRunInfo->RunNumber.c_str());
+   
+   
+   wattron(status_win,A_BOLD);
    wattron(status_win,COLOR_PAIR(7));
-   mvwprintw(status_win,9,1,"         SLAVE DATA RATES          ");
+   mvwprintw(status_win,11,1,"         Slave Data Rates          ");
    wattroff(status_win,COLOR_PAIR(7));
    wattroff(status_win,A_BOLD);
    double totalRate=0.0;
    for(unsigned int x=0;x<fDAQStatus->Slaves.size();x++){      
       wattron(status_win,A_BOLD);
-      mvwprintw(status_win,11+(4*x),2,(fDAQStatus->Slaves[x].name).c_str());
+      mvwprintw(status_win,13+(4*x),2,(fDAQStatus->Slaves[x].name).c_str());
       wattroff(status_win,A_BOLD);
-      mvwprintw(status_win,11+(4*x),2+fDAQStatus->Slaves[x].name.size()+1,"[");	
+      mvwprintw(status_win,13+(4*x),2+fDAQStatus->Slaves[x].name.size()+1," ");	
       string numnodes = "Num. boards: "; numnodes+=XeDAQHelper::IntToString(fDAQStatus->Slaves[x].nBoards);
-      mvwprintw(status_win,11+(4*x)+1,2+fDAQStatus->Slaves[x].name.size()+6,"Rate:     %2.2f MB/s",
+      mvwprintw(status_win,13+(4*x)+1,2+fDAQStatus->Slaves[x].name.size()+6,"Rate:     %2.2f MB/s",
 		fDAQStatus->Slaves[x].Rate);
-      mvwprintw(status_win,11+(4*x)+2,2+fDAQStatus->Slaves[x].name.size()+6,"Boards:   %1i",
+      mvwprintw(status_win,13+(4*x)+2,2+fDAQStatus->Slaves[x].name.size()+6,"Boards:   %1i",
 	       fDAQStatus->Slaves[x].nBoards);
-      mvwprintw(status_win,11+(4*x)+3,2+fDAQStatus->Slaves[x].name.size()+6,"Freq:     %2.2f Hz",
+      mvwprintw(status_win,13+(4*x)+3,2+fDAQStatus->Slaves[x].name.size()+6,"Freq:     %2.2f Hz",
 	       fDAQStatus->Slaves[x].Freq);
       double maxrate=90.0; double maxspace=43.-(fDAQStatus->Slaves[x].name.size()+12);
       double binsize=maxrate/maxspace; int nbins = fDAQStatus->Slaves[x].Rate/binsize;
@@ -530,47 +610,29 @@ int XeCursesInterface::SidebarRefresh()
       if(nbins==0 && fDAQStatus->Slaves[x].Rate!=0.) nbins=1;
       for(int y=0;y<nbins;y++)	{
 	 if(y>maxspace*.85)  	   {	      
-	    wattron(status_win,COLOR_PAIR(2));
-	    mvwprintw(status_win,11+(4*x),2+fDAQStatus->Slaves[x].name.size()+2+y,"|");
-	    wattroff(status_win,COLOR_PAIR(2));
+	    wattron(status_win,COLOR_PAIR(10));
+	    mvwprintw(status_win,13+(4*x),2+fDAQStatus->Slaves[x].name.size()+2+y," ");
+	    wattroff(status_win,COLOR_PAIR(10));
 	 }       
 	 else if(y>maxspace/2.)  {
-	    wattron(status_win,COLOR_PAIR(3));
-	    mvwprintw(status_win,11+(4*x),2+fDAQStatus->Slaves[x].name.size()+2+y,"|");
-	    wattroff(status_win,COLOR_PAIR(3));
+	    wattron(status_win,COLOR_PAIR(7));
+	    mvwprintw(status_win,13+(4*x),2+fDAQStatus->Slaves[x].name.size()+2+y," ");
+	    wattroff(status_win,COLOR_PAIR(7));
 	 }
 	 else  {
-	    wattron(status_win,COLOR_PAIR(1));
-	    mvwprintw(status_win,11+(4*x),2+fDAQStatus->Slaves[x].name.size()+2+y,"|");
-	    wattroff(status_win,COLOR_PAIR(1));	    
+	    wattron(status_win,COLOR_PAIR(7));
+	    mvwprintw(status_win,13+(4*x),2+fDAQStatus->Slaves[x].name.size()+2+y," ");
+	    wattroff(status_win,COLOR_PAIR(7));	    
 	 }	 	             
       }
-      mvwprintw(status_win,11+(4*x),34,"]");
+      mvwprintw(status_win,13+(4*x),34," ");
    }      
-   mvwprintw(status_win,30,1," _________________________________");
-   mvwprintw(status_win,31,2,"Total Rate:");
-   mvwprintw(status_win,31,23,"%3.2f MB/s",totalRate);
-   
-   wattron(status_win,A_BOLD);
+   mvwprintw(status_win,38,1," _________________________________");
+   mvwprintw(status_win,39,2,"Total Rate:");
+   mvwprintw(status_win,39,23,"%3.2f MB/s",totalRate);
    wattron(status_win,COLOR_PAIR(7));
-   mvwprintw(status_win,33,1,"             RUN INFO              ");
+   mvwprintw(status_win,41,1," Need help?   xe-daq@lngs.infn.it   ");
    wattroff(status_win,COLOR_PAIR(7));
-   wattroff(status_win,A_BOLD);
-   wattron(status_win,A_BOLD);
-   mvwprintw(status_win,34,2,"Started by:");
-   mvwprintw(status_win,34,14,fRunInfo->StartedBy.c_str());   
-   wattroff(status_win,A_BOLD);
-      
-   wattron(status_win,A_BOLD);   
-   string startString="Start time: ";
-   startString+=fRunInfo->StartDate;
-   mvwprintw(status_win,36,2,startString.c_str());   
-   wattroff(status_win,A_BOLD);
-   
-   wattron(status_win,A_BOLD);
-   mvwprintw(status_win,38,2,"Identifier:");
-   mvwprintw(status_win,38,14,fRunInfo->RunNumber.c_str());
-   wattroff(status_win,A_BOLD);   
    
    wnoutrefresh(status_win);   
    
@@ -617,7 +679,9 @@ string XeCursesInterface::BroadcastMessage(string user, int UID)
    wclear(main_win);
    wbkgd(main_win,COLOR_PAIR(4));
    wattron(main_win,A_BOLD);
-   mvwprintw(main_win,4,3,"Message:");
+   wattron(main_win,COLOR_PAIR(7));
+   mvwprintw(main_win,1,0,"     Message:    ");
+   wattroff(main_win,COLOR_PAIR(7));
    wattroff(main_win,A_BOLD);
    noecho();
    string message;
@@ -634,16 +698,18 @@ string XeCursesInterface::BroadcastMessage(string user, int UID)
 	 wclear(main_win);
 //	 box(main_win, 0 , 0);
 	 wattron(main_win,A_BOLD);
-	 mvwprintw(main_win,4,3,"Message:");
+	 wattron(main_win,COLOR_PAIR(7));
+	 mvwprintw(main_win,1,0,"     Message:    ");
+	 wattroff(main_win,COLOR_PAIR(7));
 	 wattroff(main_win,A_BOLD);
 	 if(message.size()<50)
-	   mvwprintw(main_win,4,21,message.c_str());
+	   mvwprintw(main_win,2,21,message.c_str());
 	 else   {	      
-	    mvwprintw(main_win,4,21,(message.substr(0,50)).c_str());
-	    if(message.size()<100) mvwprintw(main_win,5,21,(message.substr(50)).c_str());
+	    mvwprintw(main_win,2,21,(message.substr(0,50)).c_str());
+	    if(message.size()<100) mvwprintw(main_win,3,21,(message.substr(50)).c_str());
 	    else  {	       
-	       mvwprintw(main_win,5,21,(message.substr(50,50)).c_str());
-	       mvwprintw(main_win,6,21,(message.substr(100)).c_str());
+	       mvwprintw(main_win,3,21,(message.substr(50,50)).c_str());
+	       mvwprintw(main_win,4,21,(message.substr(100)).c_str());
 	    }	    
 	 }	 
 	 break;
@@ -651,13 +717,13 @@ string XeCursesInterface::BroadcastMessage(string user, int UID)
 	 if(message.size()<=150)
 	   message.push_back((char)c);
 	 if(message.size()<50)
-	   mvwprintw(main_win,4,21,message.c_str());
+	   mvwprintw(main_win,2,21,message.c_str());
 	 else   {
-	    mvwprintw(main_win,4,21,(message.substr(0,50)).c_str());
-	    if(message.size()<100) mvwprintw(main_win,5,21,(message.substr(50)).c_str());
+	    mvwprintw(main_win,2,21,(message.substr(0,50)).c_str());
+	    if(message.size()<100) mvwprintw(main_win,3,21,(message.substr(50)).c_str());
 	    else  {
-	       mvwprintw(main_win,5,21,(message.substr(50,50)).c_str());
-	       mvwprintw(main_win,6,21,(message.substr(100)).c_str());	       
+	       mvwprintw(main_win,3,21,(message.substr(50,50)).c_str());
+	       mvwprintw(main_win,4,21,(message.substr(100)).c_str());	       
 	    }
 	    
 	 }	 

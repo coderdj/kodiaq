@@ -230,7 +230,7 @@ int XeNet::CheckDataSocket(int socket, XeStatusPacket_t &status)
 	 fLog->Error("XeNet::CheckDataSocket - Saw message on pipe but no header.");	 
 	 return -2;
       }   
-      fLog->Message(type);
+//      fLog->Message(type);
       if(type=="UPDATE")        {      
 	 int id,stat,nboards;
 	 double rate,freq;
@@ -506,9 +506,10 @@ int XeNet::CommandOnSocket(int socket, string &command, int &senderid, string &s
 	 if(ReceiveInt(socket, senderid)==0)  {
 	    if(ReceiveString(socket,command)==0)  {
 	       if(ReceiveString(socket,temp)==0 && temp=="DONE"){		    
-		  stringstream mess;
+		  stringstream mess;		
 		  mess<<"XeNet::CommandOnSocket - Received command "<<command<<" from "<<sender<<"("<<senderid<<")";
-		  fLog->Message(mess.str());
+		  if(command!="KEEPALIVE") //specifically ignore this one
+		    fLog->Message(mess.str());
 		  return 0;
 	       }	       
 	    }	    

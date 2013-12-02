@@ -30,9 +30,10 @@
 #define XEDAQ_ERROR   3
 
 #define XEMESS_UPDATE    0
-#define XEMESS_BROADCAST 1
-#define XEMESS_WARNING  -2
-#define XEMESS_ERROR    -1
+#define XEMESS_BROADCAST 4
+#define XEMESS_WARNING   2
+#define XEMESS_ERROR     3
+#define XEMESS_NORMAL    1
 
 using namespace std;
 
