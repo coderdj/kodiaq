@@ -3,34 +3,34 @@
 // 
 // DAQ Control for Xenon-1t
 // 
-// File    : NIMBoard.cc
+// File    : VMEBoard.cc
 // Author  : Daniel Coderre, LHEP, Universitaet Bern
 // Date    : 11.07.2013
 // 
-// Brief   : Base class for Caen NIM boards
+// Brief   : Base class for Caen VME boards
 // 
 // *******************************************************
 
 #include <iostream>
-#include "NIMBoard.hh"
+#include "VMEBoard.hh"
 
-NIMBoard::NIMBoard()
+VMEBoard::VMEBoard()
 {
    fCrateHandle=-1;
    bActivated=false;
 }
 
-NIMBoard::~NIMBoard()
+VMEBoard::~VMEBoard()
 {   
 }
 
-NIMBoard::NIMBoard(BoardDefinition_t BID)
+VMEBoard::VMEBoard(BoardDefinition_t BID)
 {
    fBID=BID;   
    fCrateHandle=-1;
 }
 
-int NIMBoard::WriteReg32(u_int32_t address, u_int32_t data)
+int VMEBoard::WriteReg32(u_int32_t address, u_int32_t data)
 {
    if(CAENVME_WriteCycle(fCrateHandle,fBID.VMEAddress+address,
 			  &data,cvA32_U_DATA,cvD32)!=cvSuccess)        
@@ -38,7 +38,7 @@ int NIMBoard::WriteReg32(u_int32_t address, u_int32_t data)
    return 0;   
 }
 
-int NIMBoard::ReadReg32(u_int32_t address, u_int32_t &data)
+int VMEBoard::ReadReg32(u_int32_t address, u_int32_t &data)
 {
    u_int32_t temp;
    if(CAENVME_ReadCycle(fCrateHandle,fBID.VMEAddress+address,
@@ -48,7 +48,7 @@ int NIMBoard::ReadReg32(u_int32_t address, u_int32_t &data)
    return 0;
 }
 
-int NIMBoard::WriteReg16(u_int32_t address,u_int16_t data)
+int VMEBoard::WriteReg16(u_int32_t address,u_int16_t data)
 {
    if(CAENVME_WriteCycle(fCrateHandle,fBID.VMEAddress+address,
 			 &data,cvA32_U_DATA,cvD16)!=cvSuccess)         		    
@@ -56,7 +56,7 @@ int NIMBoard::WriteReg16(u_int32_t address,u_int16_t data)
    return 0;
 }
 
-int NIMBoard::ReadReg16(u_int32_t address,u_int16_t &data)
+int VMEBoard::ReadReg16(u_int32_t address,u_int16_t &data)
 {
    u_int16_t temp;
    if(CAENVME_ReadCycle(fCrateHandle,fBID.VMEAddress+address,
@@ -66,7 +66,7 @@ int NIMBoard::ReadReg16(u_int32_t address,u_int16_t &data)
    return 0;
 }
 
-int NIMBoard::Initialize(XeDAQOptions *options)
+int VMEBoard::Initialize(XeDAQOptions *options)
 {
    bActivated=false;
    return -1; //? or should this return 0

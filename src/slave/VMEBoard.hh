@@ -1,15 +1,15 @@
-#ifndef _NIMBOARD_HH_
-#define _NIMBOARD_HH_
+#ifndef _VMEBOARD_HH_
+#define _VMEBOARD_HH_
 
 // ******************************************************
 // 
 // DAQ Control for Xenon-1t
 // 
-// File     : NIMBoard.hh
+// File     : VMEBoard.hh
 // Author   : Daniel Coderre, LHEP, Universitaet Bern
 // Date     : 11.07.2013
 // 
-// Brief    : Base class for Caen NIM boards
+// Brief    : Base class for Caen VME boards
 // 
 // ******************************************************
 
@@ -21,12 +21,16 @@
 using namespace std;
 extern XeDAQLogger *gLog;
 
-class NIMBoard
+/*! \brief General class for CAEN VME boards.
+ 
+    All shared functionality (like access to the VME register) is defined here. Board-specific functionality should be defined in derived classes.
+ */ 
+class VMEBoard
 {
  public:
-   NIMBoard();
-   explicit NIMBoard(BoardDefinition_t BID);
-   virtual ~NIMBoard();
+   VMEBoard();
+   explicit VMEBoard(BoardDefinition_t BID);
+   virtual ~VMEBoard();
    
    void SetID(BoardDefinition_t BID){
       fBID=BID;
