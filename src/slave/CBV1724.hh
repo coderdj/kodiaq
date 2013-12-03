@@ -13,7 +13,7 @@
 // 
 // *****************************************************************
 
-#include "NIMBoard.hh"
+#include "VMEBoard.hh"
 #include <pthread.h>
 
 //Register definitions
@@ -23,7 +23,9 @@
 #define V1724_AcquisitionControlReg       0x8100
 #define V1724_DACReg                      0x1098
 
-class CBV1724 : public NIMBoard {
+/*! \brief Control class for CAEN V1724 digitizers.
+ */ 
+class CBV1724 : public VMEBoard {
  public: 
    CBV1724();
    virtual ~CBV1724();

@@ -21,6 +21,12 @@
 
 class VMECrate;
 
+/*! \brief Class defining a single VME crate. 
+ 
+    Note that when boards are read out via their own optical links, each board is defined as its own crate. This is CAEN's design choice, not ours. Therefore this class should not be interpreted as necessarily referring to one physical VME crate. When reading several boards out in daisy chain, each is defined as it's own crate with only a single board in it.
+ 
+    When reading out via the crate controller, only one VME crate is defined which holds all boards that will be read out over the VME bus. Therefore even though the XE1T DAQ will probably be cabled using the optical links on the front of the boards, maintaining the crate/board structure is important for keeping the code general and maintaining compatibility with all forseeable setups.
+ */ 
 class VMECrate
 {
  public:
@@ -47,7 +53,7 @@ class VMECrate
    unsigned int GetDigitizers(){
       return fDigitizers.size();
    };   
-   NIMBoard* GetDigitizer(int x)  {
+   VMEBoard* GetDigitizer(int x)  {
       return fDigitizers[x];
    };
    unsigned int ReadCycle(unsigned int &freq);   
@@ -55,15 +61,15 @@ class VMECrate
    int GetModules()  {
       return fBoards.size();
    };
-   NIMBoard *GetModule(int x){
+   VMEBoard *GetModule(int x){
       return fBoards[x];
    };   
    
  private:
    LinkDefinition_t   fLink;
    int                fCrateHandle;
-   vector <NIMBoard*> fBoards;        //All boards
-   vector <NIMBoard*> fDigitizers;    //Digitizers only
+   vector <VMEBoard*> fBoards;        //All boards
+   vector <VMEBoard*> fDigitizers;    //Digitizers only
    bool               bCrateActive;
 };
 

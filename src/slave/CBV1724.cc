@@ -269,7 +269,7 @@ int CBV1724::DetermineBaselines()
    vector <int> oldBaselines;
    vector <u_int32_t> newBaselines(8,0);
    if(GetBaselines(oldBaselines,true)!=0) {
-      //there are no baselines. start wit some defaults
+      //there are no baselines. start with some defaults
       for(unsigned int x=0;x<8;x++)
 	oldBaselines.push_back(0x1300); //seems like a good middle value
    }   
@@ -333,15 +333,14 @@ int CBV1724::DetermineBaselines()
 				      ((unsigned char*)buff)+blt_bytes,
 				      fBLTSize,cvA32_U_BLT,cvD32,&nb);
 	 if(ret!=cvSuccess && ret!=cvBusError)  {
-	    cout<<"CAENVME Read Error"<<endl;
+	    cout<<"CAENVME Read Error "<<ret<<endl;
 	    continue;
 	 }
 	 blt_bytes+=nb;
 	 if(blt_bytes>fBufferSize) {
 	    continue;
 	 }	 
-      }while(ret!=cvBusError);
-
+      }while(ret!=cvBusError);      
       if(blt_bytes==0)	{
 	 gLog->Message("Baseline calibration: read nothing from board.");
 	 continue;
@@ -421,8 +420,11 @@ int CBV1724::DetermineBaselines()
 	    cout<<"New DAC "<<hex<<newDAC<<endl;	    
 	    WriteReg32(V1724_DACReg+(0x100*channel),(newDAC&0xFFFF)); //write updated DAC
 	 }//end if baseline is flat	 
-	 //else
-	 //  gLog->SendMessage("Problem during baseline determination. Is it not flat?");
+	 else
+	   {
+	      cout<<"Signal in baseline?"<<endl;	      
+///	   gLog->SendMessage("Problem during baseline determination. Is it not flat?");
+	   }
 	 
       }//end for through channels            
    }//end while

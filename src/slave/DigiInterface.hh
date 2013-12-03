@@ -20,11 +20,16 @@
 
 using namespace std;
 
+/*! \brief Small thread holder.
+ */ 
 struct XeThreadType
 {
    pthread_t Thread;
    bool IsOpen;
 };
+
+/*! \brief Holder for processing threads.
+ */ 
 struct XeProcThread
 {
    pthread_t Thread;
@@ -32,6 +37,12 @@ struct XeProcThread
    XeProcessor *XeP;
 };
 
+/*! \brief Control interface for all DAQ electronics.
+  
+    Electronics are defined in a config file which is processed by XeDAQOptions and used to initialize this object. This object then allows simple starting and stopping of runs, reading data, and access to the individual crates and boards.
+ 
+    While the DAQ is running, the data is processed using processor threads. These threads are handled by this class and define the interface between the digitizers and the output.
+ */ 
 class DigiInterface
 {
  public:
@@ -56,7 +67,7 @@ class DigiInterface
    VMECrate*            GetCrate(int x)  {
       return fCrates[x];
    };   
-   NIMBoard*            GetModuleByID(int moduleID);
+   VMEBoard*            GetModuleByID(int moduleID);
    unsigned int         GetDigis();   
 
    //For write thread
@@ -73,7 +84,7 @@ class DigiInterface
    XeThreadType         fWriteThread;
    
    vector <VMECrate*>   fCrates;  
-   NIMBoard*            fRunStartModule; //-1 for independent starting
+   VMEBoard*            fRunStartModule; //-1 for independent starting
    XeMongoRecorder       *fDAQRecorder;
    int                  fWriteMode;   
    

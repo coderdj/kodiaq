@@ -86,7 +86,7 @@ int DigiInterface::Initialize(XeDAQOptions *options)
    return 0;
 }
 
-NIMBoard* DigiInterface::GetModuleByID(int ID)
+VMEBoard* DigiInterface::GetModuleByID(int ID)
 {
    for(unsigned int x=0;x<fCrates.size();x++)  {
       for(int y=0;y<fCrates[x]->GetModules();y++)	{

@@ -13,9 +13,11 @@
 // 
 // ************************************************************
 
-#include "NIMBoard.hh"
+#include "VMEBoard.hh"
 
-class CBV2718 : public NIMBoard {
+/*! \brief Control class for CAEN V2718 crate controllers. 
+ */ 
+class CBV2718 : public VMEBoard {
  public:
    CBV2718();
    virtual ~CBV2718();
