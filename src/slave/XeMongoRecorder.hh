@@ -17,6 +17,10 @@
 #include "../../mongo/mongo-cxx-driver-v2.4/src/mongo/client/dbclient.h"
 #include "CBV1724.hh"
 
+/*! \brief Class for reading out to a mongodb database.
+ 
+    This is a thread-safe implementation of the mongodb C++ api which is called from processing threads. The mongo connection is defined in the DAQ options file and read into this class with a XeDAQOptions object. 
+ */ 
 class XeMongoRecorder : public XeDAQRecorder  {
  public:
    XeMongoRecorder();
@@ -33,7 +37,5 @@ class XeMongoRecorder : public XeDAQRecorder  {
  private:
    vector <mongo::ScopedDbConnection*> fScopedConnections;
    MongodbOptions_t            fMongoOptions;
-   string                      fDBName;
-   string                      fMongoAddress;
 };
 #endif

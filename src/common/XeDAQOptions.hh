@@ -22,12 +22,16 @@
 
 using namespace std;
 
+/*! \brief Stores configuration information for an optical link.
+ */ 
 struct LinkDefinition_t{
    string LinkType;
    int LinkID;
    int CrateID;
 };
 
+/*! \brief Stores configuration information for one VME module.
+ */
 struct BoardDefinition_t{
    string BoardType;
    int VMEAddress;
@@ -36,6 +40,8 @@ struct BoardDefinition_t{
    int LinkID;
 };
 
+/*! \brief Generic storage container for a VME option.
+ */
 struct VMEOption_t{
    u_int32_t Address;
    u_int32_t Value;
@@ -44,14 +50,8 @@ struct VMEOption_t{
    int LinkID;
 };
 
-struct FileDefinition_t{
-   string WritePath;
-   int    WriteFormat;   //0-binary 1-ascii
-   int    SplitMode;   //0-write to one file 1-split files
-   unsigned int    ChunkLength; //in seconds
-   int    Overlap;     //in milliseconds
-};
-
+/*! \brief Various options related to the run.
+ */
 struct RunOptions_t {
    u_int32_t BLTBytes; //size of block transfer
    int WriteMode; //0-don't write 1-to file 2-to network
@@ -60,26 +60,44 @@ struct RunOptions_t {
    unsigned int BLTPerBulkInsert;
 };
 
+/*! \brief Configuration options for mongodb.
+ */
 struct MongodbOptions_t {
    bool ZipOutput;
    int  MinInsertSize;
    bool WriteConcern;
    int  BlockSplitting;
+   string DBAddress;
+   string Collection;
 };
 
+/*! \brief Configuration options for ddc-10 FPGA module.
+ */
+struct DDC10Options_t{
+   int Sign;
+   int IntegrationWindow;
+   int VetoDelay;
+   int SignalThreshold;
+   int IntegrationThreshold;
+   int WidthCut;
+   int RunMode;
+   string Address;
+};
+
+/*! \brief Reads and processes an options file.
+ 
+    This class automatically reads, parses, and stores the information in an options file. Various functions allow access to this information. This class can be used throughout the program but it most imprortant for the slave PCs.
+ */
 class XeDAQOptions
 {
  public:
    XeDAQOptions();
    virtual ~XeDAQOptions();
    
-   int ReadParameterFile(string filename);
+   int ReadParameterFile(string filename);                         /*!< Read options for slave modules. */
+   int ReadFileMaster(string filename);                            /*!< Read options for master module. */
    static int ProcessLine(string line,string option,int &ret);   
    static int ProcessLineHex(string line,string option, int &ret);
-   
-   FileDefinition_t GetFileDef()  {
-      return fFileDef;
-   };
    
    int GetLinks()  {
       return fLinks.size();
@@ -122,8 +140,8 @@ class XeDAQOptions
    int GetReadoutThreshold()  {
       return fReadoutThreshold;
    };
-   string GetDBName()  {
-      return fMongoDBName;
+   DDC10Options_t GetVetoOptions()  {
+      return fDDC10Options;
    };
    
    
@@ -131,14 +149,13 @@ class XeDAQOptions
    vector<LinkDefinition_t>  fLinks;   
    vector<BoardDefinition_t> fBoards;
    vector<VMEOption_t>       fVMEOptions;
-   FileDefinition_t          fFileDef;
    RunOptions_t              fRunOptions;
    MongodbOptions_t          fMongoOptions;   
+   DDC10Options_t            fDDC10Options;
    int                       fWriteMode;
    int                       fProcessingThreads;
    int                       fBaselineMode;
    unsigned int              fReadoutThreshold;
    void                      Reset();
-   string                    fMongoDBName;
 };
 #endif

@@ -14,6 +14,7 @@
 #include <fstream>
 #include <algorithm>
 
+#include "XeDAQOptions.hh"
 #include "XeNetServer.hh"
 
 int GetRunModeList(vector <string> &runModeList,vector <string> &runModePaths);
@@ -54,6 +55,9 @@ int main()
    time_t             fPrevTime=XeDAQLogger::GetCurrentTime();
    time_t             fKeepAlive=XeDAQLogger::GetCurrentTime();
    bool               update=false;
+
+   //Options object for reading veto options
+   XeDAQOptions       fDAQOptions;
    //********************************************
    
 //********************************************
@@ -180,6 +184,13 @@ int main()
 	       command='0';
 	       continue;
 	    }
+
+	    if(fDAQOptions.ReadFileMaster(runModePaths[tempint])!=0){		 
+	       fUserNetwork.BroadcastMessage("Error setting veto options. Bad file!",XEMESS_BROADCAST);
+	       continue;
+	    }
+	    cout<<"Got veto options and the address is "<<fDAQOptions.GetVetoOptions().Address<<endl;
+	    
 	    fDAQStatus.RunMode=command;
 	    errstring.flush();
 	    errstring<<"Armed DAQ in mode "<<command;

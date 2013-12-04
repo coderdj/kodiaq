@@ -29,8 +29,7 @@ void XeDAQOptions::Reset()
    fLinks.clear();
    fBoards.clear();
    fVMEOptions.clear();
-   fFileDef.WritePath=""; fFileDef.WriteFormat=fFileDef.SplitMode=-1;
-   fFileDef.ChunkLength=fFileDef.Overlap=fRunOptions.BLTPerBulkInsert=0;
+   fRunOptions.BLTPerBulkInsert=0;
    fRunOptions.BLTBytes=fRunOptions.WriteMode=fRunOptions.RunStart=
      fRunOptions.RunStartModule=-1;
    fMongoOptions.ZipOutput=false;
@@ -40,7 +39,12 @@ void XeDAQOptions::Reset()
    fProcessingThreads=1;
    fBaselineMode=1;
    fReadoutThreshold=10;
-   fMongoDBName="data.test";
+   fMongoOptions.Collection="data.test";   
+
+   fDDC10Options.Sign=0; fDDC10Options.IntegrationWindow=100;
+   fDDC10Options.VetoDelay=200; fDDC10Options.SignalThreshold=150;
+   fDDC10Options.IntegrationThreshold=20000; fDDC10Options.WidthCut=50;
+   fDDC10Options.RunMode=0; fDDC10Options.Address="";
 }
 
 int XeDAQOptions::ProcessLine(string line, string option,int &ret)
@@ -126,23 +130,6 @@ int XeDAQOptions::ReadParameterFile(string filename)
 	 fBoards.push_back(board);
 	 continue;
       }      
-      if(words[0]=="FILE_DEFINITION")	{
-	 cout<<"FOUND OPTIONS FILE_DEFINITION"<<endl;
-	 if(words.size()<6) continue;
-	 cout<<"WORDS OK"<<endl;
-	 fFileDef.WriteFormat=XeDAQHelper::StringToInt(words[1]);
-	 fFileDef.SplitMode=XeDAQHelper::StringToInt(words[2]);
-	 fFileDef.ChunkLength=XeDAQHelper::StringToInt(words[3]);
-	 fFileDef.Overlap = XeDAQHelper::StringToInt(words[4]);
-	 fRunOptions.BLTPerBulkInsert = XeDAQHelper::StringToInt(words[5]);
-	 cout<<"BLT Per Bulk: "<<XeDAQHelper::StringToInt(words[5])<<endl;
-	 continue;
-      }      
-      if(words[0]=="FILE_PATH")	{
-	 if(words.size()<2) continue;
-	 fFileDef.WritePath=words[1];
-	 continue;
-      }
       if(words[0]=="WRITE_MODE")	{
 	 cout<<"INWRITEMODE"<<endl;
 	 if(words.size()<2) continue;
@@ -160,11 +147,13 @@ int XeDAQOptions::ReadParameterFile(string filename)
 	 fRunOptions.RunStartModule=XeDAQHelper::StringToInt(words[2]);
       }      
       if(words[0]=="MONGO_OPTIONS")	{
-	 if(words.size()<5) continue;
-	 (words[1]=="1")?fMongoOptions.ZipOutput=true:fMongoOptions.ZipOutput=false;
-	 fMongoOptions.MinInsertSize = XeDAQHelper::StringToInt(words[2]);
-	 (words[3]=="1")?fMongoOptions.WriteConcern=true:fMongoOptions.WriteConcern=false;
-	 fMongoOptions.BlockSplitting=XeDAQHelper::StringToInt(words[4]);
+	 if(words.size()<7) continue;
+	 fMongoOptions.DBAddress=words[1];
+	 fMongoOptions.Collection=words[2];
+	 (words[3]=="1")?fMongoOptions.ZipOutput=true:fMongoOptions.ZipOutput=false;
+	 fMongoOptions.MinInsertSize = XeDAQHelper::StringToInt(words[4]);
+	 (words[5]=="1")?fMongoOptions.WriteConcern=true:fMongoOptions.WriteConcern=false;
+	 fMongoOptions.BlockSplitting=XeDAQHelper::StringToInt(words[6]);
       }
       if(words[0]=="PROCESSING_THREADS")	{
 	 if(words.size()<2) continue;
@@ -180,11 +169,45 @@ int XeDAQOptions::ReadParameterFile(string filename)
 	 if(words.size()<2) continue;
 	 fReadoutThreshold=XeDAQHelper::StringToInt(words[1]);
       }
-      if(words[0]=="DB_NAME")	{
-	 if(words.size()<2) continue;
-	 fMongoDBName=words[1];
-      }
       
    }   
+   initFile.close();
    return 0;   
 } 
+
+int XeDAQOptions::ReadFileMaster(string filename)
+{
+   ifstream initFile;
+   initFile.open(filename.c_str());
+   if(!initFile){	
+      cout<<"init file not found."<<endl;
+      return -1;
+   }   
+   cout<<"File opened"<<endl;
+   string line;
+   while(!initFile.eof())    {
+      getline(initFile,line);
+      if(line[0]=='#') continue; //ignore comments
+      //parse
+      istringstream iss(line);
+      vector<string> words;
+      copy(istream_iterator<string>(iss),
+	   istream_iterator<string>(),
+	   back_inserter<vector<string> >(words));
+      if(words.size()==0) continue;
+      
+      if(words[0] == "DDC10_OPTIONS")	{
+	 if(words.size()<9) continue;
+	 fDDC10Options.Address = words[1];
+	 fDDC10Options.RunMode = XeDAQHelper::StringToInt(words[2]);
+	 fDDC10Options.Sign    = XeDAQHelper::StringToInt(words[3]);
+	 fDDC10Options.IntegrationWindow = XeDAQHelper::StringToInt(words[4]);
+	 fDDC10Options.VetoDelay    = XeDAQHelper::StringToInt(words[5]);
+	 fDDC10Options.SignalThreshold = XeDAQHelper::StringToInt(words[6]);
+	 fDDC10Options.IntegrationThreshold    = XeDAQHelper::StringToInt(words[7]);
+	 fDDC10Options.WidthCut = XeDAQHelper::StringToInt(words[8]);		 
+      }
+   }//end while through file
+   initFile.close();
+   return 0;
+}

@@ -16,7 +16,7 @@
 XeMongoRecorder::XeMongoRecorder() : XeDAQRecorder()
 {
    fMongoOptions.ZipOutput=false;      
-   fDBName="data.test";             
+   fMongoOptions.Collection="data.test";             
 }
 
 XeMongoRecorder::~XeMongoRecorder()
@@ -31,9 +31,7 @@ int XeMongoRecorder::Initialize(XeDAQOptions *options)
 {
    fWriteMode = options->GetRunOptions().WriteMode;
    fMongoOptions = options->GetMongoOptions();
-   fDBName = options->GetDBName();
-   fMongoAddress = options->GetFileDef().WritePath;
-   mongo::DBClientConnection inter(fDBName.c_str());
+   mongo::DBClientConnection inter(fMongoOptions.DBAddress.c_str());
    if(fMongoOptions.WriteConcern)
      inter.setWriteConcern(mongo::W_NORMAL);
    else
@@ -50,7 +48,7 @@ int XeMongoRecorder::RegisterProcessor()
 //      mongo::ScopedDbConnection *conn = new mongo::ScopedDbConnection(fDBName);
       
       mongo::ScopedDbConnection *conn = 
-	mongo::ScopedDbConnection::getScopedDbConnection(fMongoAddress,2500.);
+	mongo::ScopedDbConnection::getScopedDbConnection(fMongoOptions.DBAddress,2500.);
       fScopedConnections.push_back(conn);
    }   
    catch(const mongo::DBException &e)    {	
@@ -86,7 +84,7 @@ int XeMongoRecorder::InsertThreaded(vector <mongo::BSONObj> *insvec,int ID)
       return -1;
    }
    try{	
-      (*fScopedConnections[ID])->insert(fDBName.c_str(),(*insvec));
+      (*fScopedConnections[ID])->insert(fMongoOptions.Collection.c_str(),(*insvec));
    }
    catch(const mongo::DBException &e){
       gLog->SendMessage("Caught Mongodb Exception");
