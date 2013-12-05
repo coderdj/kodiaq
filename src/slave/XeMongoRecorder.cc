@@ -62,7 +62,7 @@ int XeMongoRecorder::RegisterProcessor()
 
 void XeMongoRecorder::ShutdownRecorder()
 {
-   sleep(3);
+   usleep(100);
    for(unsigned int x=0;x<fScopedConnections.size();x++){     
       fScopedConnections[x]->done();
 //      delete fScopedConnections[x];

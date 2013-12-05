@@ -161,7 +161,7 @@ int DigiInterface::StartRun()
 	 CloseThreads();
 	 return -1;
       }
-      sleep(1);
+      usleep(100);
       if(fProcessingThreads[x].XeP!=NULL) delete fProcessingThreads[x].XeP;
       fProcessingThreads[x].XeP=new XeProcessor(this,fDAQRecorder);
   //    if(fWriteMode==2)
