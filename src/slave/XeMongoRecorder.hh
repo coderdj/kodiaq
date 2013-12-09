@@ -14,7 +14,11 @@
 // *********************************************************
 
 #include "XeDAQRecorder.hh"
-#include "../../mongo/mongo-cxx-driver-v2.4/src/mongo/client/dbclient.h"
+//#include "../../mongo/mongo-cxx-driver-v2.4/src/mongo/client/dbclient.h"
+#include "mongo/client/dbclient.h"
+//#include "mongo/client/connpool.h"
+//#include "mongo/bson/bson.h"
+//#include "mongo/bson/bsonelement.h"
 #include "CBV1724.hh"
 
 /*! \brief Class for reading out to a mongodb database.
