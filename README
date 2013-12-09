@@ -1,0 +1,111 @@
+#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#
+
+*   *   ***     ***      ***         *          ***
+*  *   *   *    *  *      *         * *        *   *
+* *   *     *   *   *     *        *   *      *     *
+**    *     *   *    *    *       *     *     *     *
+* *   *     *   *    *    *      *********    *  *  *
+*  *   *   *    *   *     *     *         *    *   *
+*   *   ***     ***      ***   *           *    ***  *
+
+#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#
+
+=========================================================
+0. Copyright 
+=========================================================
+
+All original kodiaq content copyright 2013 the University 
+of Bern.
+
+Dependencies such as CAENVME libraries and mongodb are 
+copyrighted and/or trademarked by their respective owners.
+
+Source and compiled code to be distributed only with 
+authorization according to the XENON1T MOU.
+
+Author(s): Daniel Coderre, LHEP, University of Bern           
+
+=========================================================
+1. Brief 
+=========================================================
+
+kodiaq is a networked DAQ software inferface for XENON1T.
+It is designed to read CAEN V1724 digitizers in parallel
+from multiple control PCs in order to achieve high speeds
+without sacrificing synchronization or control. 
+
+The program is split into 3 parts. The koSlave program 
+should run on each readout PC. Additionally one instance
+of the koMaster program should run on a PC that is 
+accessible by network (preferably locally) to all of the
+slaves. The connectivity between master and slave must be
+defined prior to starting the daemons. The koUser program
+can be installed on any linux system and can be used to 
+connect to koMaster from any PC with a network connection
+to the master, provided the appropriate ports are open.
+
+==========================================================
+2. Installation - Light version
+==========================================================
+
+Follow these instructions if you just want the user library 
+to login to the DAQ.
+
+Prerequisites:
+                - This code has only been tested and will 
+		only be supported on Linux. Compilation on
+		any other OS is accidental.
+		- You need the standard build libraries, 
+		such as a C++ compiler and make (on Ubuntu
+		these are provided in build-essential)
+		- The ncurses libraries (development version)
+		are also needed: libncurses, libmenu, libform
+		libtinfo
+
+1. ./configure
+2. make
+3. Resize your terminal to 132x43 at least
+4. ./kodiaq_client
+5. Login and have fun!
+
+==========================================================
+3. Installation - Full version
+==========================================================
+
+Prerequisites:
+
+                For user module: see above
+		For master module:
+		  - For DDC10 online high energy veto
+		    support, libtcl8.5, libexpect, and libddc
+		    are required.
+                For slave module:
+		  - CAENVMElib as well as an A2818/A3818 PCI 
+		    card with its driver installed.
+		  - libmongoclient, libsnappy, libpthread
+		  - Various other dependencies may be needed
+		    to install these libraries.
+		    
+1. Cofigure with ./configure. Possible options:
+    --enable-master  compile with master program
+    --enable-slave   compile with slave program
+    --disable-user   do not compile UI
+    --enable-ddc10   compile with support for DDC module. Only
+                     activated if koMaster is also compiled.
+    --enable-all     compile master (with ddc10 support), slave,
+                     and user programs
+		     
+2. make
+
+3. The executables for master/slave/user programs should be available
+   in src/*. A shortcut to starting the UI is in the top directory.
+   
+   
+==========================================================
+4. Configuration Notes
+==========================================================
+
+The doxygen documentation included with this release includes
+a guide to configuring a full DAQ system. Expert users are 
+advised to consult this guide.
+
