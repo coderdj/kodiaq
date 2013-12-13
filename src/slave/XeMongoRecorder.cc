@@ -23,7 +23,7 @@ XeMongoRecorder::~XeMongoRecorder()
 {
    for(unsigned int x=0;x<fScopedConnections.size();x++)  {	
       fScopedConnections[x]->done();
-//      delete fScopedConnections[x];
+      delete fScopedConnections[x];
    }   
 }
 
@@ -45,10 +45,10 @@ int XeMongoRecorder::RegisterProcessor()
 {
    if(fWriteMode==0) return 0;
    try{      
-//      mongo::ScopedDbConnection *conn = new mongo::ScopedDbConnection(fDBName);
+      mongo::ScopedDbConnection *conn = new mongo::ScopedDbConnection(fMongoOptions.DBAddress);
       
-      mongo::ScopedDbConnection *conn = 
-	mongo::ScopedDbConnection::getScopedDbConnection(fMongoOptions.DBAddress,2500.);
+//      mongo::ScopedDbConnection *conn = 
+//	mongo::ScopedDbConnection::getScopedDbConnection(fMongoOptions.DBAddress,2500.);
       fScopedConnections.push_back(conn);
    }   
    catch(const mongo::DBException &e)    {	
@@ -65,7 +65,7 @@ void XeMongoRecorder::ShutdownRecorder()
    usleep(100);
    for(unsigned int x=0;x<fScopedConnections.size();x++){     
       fScopedConnections[x]->done();
-//      delete fScopedConnections[x];
+      delete fScopedConnections[x];
    }   
    fScopedConnections.clear();
    return;
