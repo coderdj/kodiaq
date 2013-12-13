@@ -34,8 +34,17 @@ int CBV2718::Initialize(XeDAQOptions *options)
 int CBV2718::SendStartSignal()
 {
    unsigned int data = 0x7C0;
+
+   //configure line 1 to pulse (to start pulser) 
+   CAENVME_SetOutputConf(fCrateHandle,cvOutput3,cvDirect,cvActiveHigh,cvMiscSignals); 
+   CAENVME_SetPulserConf(fCrateHandle,cvPulserB,0x3E8,0x64,cvUnit25ns,1,cvManualSW,cvManualSW);
+   
    if(CAENVME_WriteRegister(fCrateHandle,cvOutRegSet,data)!=0)
      return -1;
+   
+   //now start the pulser 
+   CAENVME_StartPulser(fCrateHandle,cvPulserB);    
+   
    return 0;
 }
 
