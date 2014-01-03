@@ -45,10 +45,10 @@ int XeMongoRecorder::RegisterProcessor()
 {
    if(fWriteMode==0) return 0;
    try{      
-      mongo::ScopedDbConnection *conn = new mongo::ScopedDbConnection(fMongoOptions.DBAddress);
+//      mongo::ScopedDbConnection *conn = new mongo::ScopedDbConnection(fMongoOptions.DBAddress);
       
-//      mongo::ScopedDbConnection *conn = 
-//	mongo::ScopedDbConnection::getScopedDbConnection(fMongoOptions.DBAddress,2500.);
+      mongo::ScopedDbConnection *conn = 
+	mongo::ScopedDbConnection::getScopedDbConnection(fMongoOptions.DBAddress,2500.);
       fScopedConnections.push_back(conn);
    }   
    catch(const mongo::DBException &e)    {	
