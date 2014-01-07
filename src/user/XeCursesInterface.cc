@@ -56,7 +56,7 @@ int XeCursesInterface::GetLoginInfo(string &name, int &port, int &dataport,strin
    field[3] = new_field(1,40,12,34,0,0);
    field[4] = NULL;
    
-   set_field_buffer(field[0],0,"xedaq2");
+   set_field_buffer(field[0],0,"xedaq02");
    field_opts_off(field[0],O_AUTOSKIP);   
    set_field_buffer(field[1],0,"3000");   
    field_opts_off(field[1],O_AUTOSKIP);
