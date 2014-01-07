@@ -401,8 +401,10 @@ int XeNetServer::ReceiveBroadcast(int id, string &broadcast)
 int XeNetServer::TransmitStatus(XeStatusPacket_t status)
 {
    int success=0;   
+   vector <int> removeIDs;
    for(unsigned int x=0;x<fDataSockets.size();x++)  {
-      SendRunMode(fDataSockets[x].socket,status.RunMode);
+      if(SendRunMode(fDataSockets[x].socket,status.RunMode)!=0)
+	removeIDs.push_back(fDataSockets[x].id);
       for(unsigned int y=0;y<status.Slaves.size();y++)	{
 	 int id = status.Slaves[y].ID;
 	 string name = status.Slaves[y].name;
@@ -410,16 +412,24 @@ int XeNetServer::TransmitStatus(XeStatusPacket_t status)
 	 double rate = status.Slaves[y].Rate;
 	 double freq = status.Slaves[y].Freq;
 	 int nboards = status.Slaves[y].nBoards;
-	 if(SendUpdate(fDataSockets[x].socket,id,name,stat,rate,freq,nboards)!=0)
-	   success=-1;
+	 if(SendUpdate(fDataSockets[x].socket,id,name,stat,rate,freq,nboards)!=0){
+	    removeIDs.push_back(fDataSockets[x].id);
+	    success=-1;
+	 }	 
       }      
    }
    for(unsigned int x=0;x<status.Messages.size();x++)  {
       for(unsigned int y=0;y<fDataSockets.size();y++)	{
-	 SendMessage(fDataSockets[x].socket,-1,"Master",status.Messages[x].message,
+	 SendMessage(fDataSockets[y].socket,-1,"Master",status.Messages[x].message,
 		     status.Messages[x].priority);
       }      
    }
+   
+   //remove dead sockets
+   for(unsigned int x=0;x<removeIDs.size();x++)  {
+      CloseConnection(removeIDs[x]);
+   }
+   removeIDs.clear();
    
    return success;
 }
