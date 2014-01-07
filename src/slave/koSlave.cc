@@ -24,7 +24,7 @@ int main()
    gLog->Message("Started koSlave module.");
    //
    XeNetClient    fNetworkInterface(gLog);
-   fNetworkInterface.Initialize("xedaq2",2002,2003,2,"xedaq2");
+   fNetworkInterface.Initialize("xedaq02",2002,2003,2,"xedaq02");
    DigiInterface  *fElectronics = new DigiInterface();
    XeDAQOptions   fDAQOptions;
    
