@@ -166,37 +166,48 @@ int main()
 	    if(fUserNetwork.SendStringList(id,runModeList)!=0)  {
 	       fLog.Error("koMaster - Error sending run mode list.");
 	    }	    
-	    while(fUserNetwork.ListenForCommand(command,id,sender)!=0) usleep(100);
-	    tempint=-1;
-	    for(unsigned int x=0;x<runModeList.size();x++)  {
-	       if(runModeList[x]==command) tempint=(int)x;
+	    int timeout=0;
+	    while(fUserNetwork.ListenForCommand(command,id,sender)!=0) {
+	       usleep(1000);
+	       timeout++;
+	       if(timeout>=30000) break;
 	    }
-	    if(tempint==-1)  {
-	       fLog.Error("koMaster - Got bad mode index from UI");
-	       command='0';
-	       continue;
+	    if(timeout>=30000)  {
+	       fLog.Error("koMaster - Timed out waiting for user to choose mode.");
+	       fUserNetwork.BroadcastMessage("Timed out waiting for user to choose mode. You only get 30 seconds.");
 	    }
-	    //now send ARM command to slave
-	    fDAQNetwork.SendCommand("ARM");
-	    if(fDAQNetwork.SendOptions(runModePaths[tempint])!=0)  {
-	       fLog.Error("koMaster - Error sending options.");
-	       fUserNetwork.BroadcastMessage("DAQ arm attempt failed.",XEMESS_BROADCAST);
-	       command='0';
-	       continue;
-	    }
-
-	    if(fDAQOptions.ReadFileMaster(runModePaths[tempint])!=0){		 
-	       fUserNetwork.BroadcastMessage("Error setting veto options. Bad file!",XEMESS_BROADCAST);
-	       continue;
-	    }
-	    cout<<"Got veto options and the address is "<<fDAQOptions.GetVetoOptions().Address<<endl;
+	    else {    		 
+	       tempint=-1;
+	       for(unsigned int x=0;x<runModeList.size();x++)  {
+		  if(runModeList[x]==command) tempint=(int)x;
+	       }
+	       if(tempint==-1)  {
+		  fLog.Error("koMaster - Got bad mode index from UI");
+		  command='0';
+		  continue;
+	       }
+	       //now send ARM command to slave
+	       fDAQNetwork.SendCommand("ARM");
+	       if(fDAQNetwork.SendOptions(runModePaths[tempint])!=0)  {
+		  fLog.Error("koMaster - Error sending options.");
+		  fUserNetwork.BroadcastMessage("DAQ arm attempt failed.",XEMESS_BROADCAST);
+		  command='0';
+		  continue;
+	       }
+	       
+	       if(fDAQOptions.ReadFileMaster(runModePaths[tempint])!=0){		 
+		  fUserNetwork.BroadcastMessage("Error setting veto options. Bad file!",XEMESS_BROADCAST);
+		  continue;
+	       }
+	       cout<<"Got veto options and the address is "<<fDAQOptions.GetVetoOptions().Address<<endl;
 	    
-	    fDAQStatus.RunMode=command;
-	    errstring.flush();
-	    errstring<<"Armed DAQ in mode "<<command;
-	    fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_BROADCAST);
-	    command='0';
-	 }
+	       fDAQStatus.RunMode=command;
+	       errstring.flush();
+	       errstring<<"Armed DAQ in mode "<<command;
+	       fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_BROADCAST);
+	       command='0';
+	    }
+	 }	 
 	 else if(command=="START")  {
 	    fDAQNetwork.SendCommand("START");
 	    errstring<<"Received start command from "<<sender<<"("<<id<<")";
