@@ -170,11 +170,11 @@ int main()
 	    while(fUserNetwork.ListenForCommand(command,id,sender)!=0) {
 	       usleep(1000);
 	       timeout++;
-	       if(timeout>=30000) break;
+	       if(timeout>=25000) break;
 	    }
-	    if(timeout>=30000)  {
+	    if(timeout>=25000 || command=="TIMEOUT")  {
 	       fLog.Error("koMaster - Timed out waiting for user to choose mode.");
-	       fUserNetwork.BroadcastMessage("Timed out waiting for user to choose mode. You only get 30 seconds.");
+	       fUserNetwork.BroadcastMessage("Timed out waiting for user to choose mode. You only get 20 seconds.",XEMESS_BROADCAST);
 	    }
 	    else {    		 
 	       tempint=-1;

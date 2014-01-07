@@ -769,7 +769,13 @@ string XeCursesInterface::EnterRunModeMenu(vector <string> RMLabels)
    int c;
    bool bExit=false;
    string rVal;
+   time_t start = XeDAQLogger::GetCurrentTime();
    while(!bExit)  {
+      time_t now = XeDAQLogger::GetCurrentTime();
+      if(difftime(now,start)>20.)	{
+	 rVal = "TIMEOUT";
+	 break;
+      }
       c=wgetch(main_win);
       switch(c)	{
        case KEY_DOWN:
