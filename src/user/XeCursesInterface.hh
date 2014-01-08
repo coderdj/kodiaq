@@ -43,7 +43,7 @@ class XeCursesInterface
    int NotificationsScroll(bool up);
    void DrawNotifications(unsigned int lower,unsigned int upper);
    void SetHistory(vector<string> history);
-   int GetLoginInfo(string &name, int &port, int &dataport,string &hostname);
+   int GetLoginInfo(string &name, int &port, int &dataport,string &hostname,string UIMessage);
    
    int PrintDAQRunScreen();
    void DrawBlockMenu(int n=1);

@@ -30,7 +30,7 @@ XeCursesInterface::XeCursesInterface(XeDAQLogger *logger)
    fNotificationUpper=30;
 }
 
-int XeCursesInterface::GetLoginInfo(string &name, int &port, int &dataport,string &hostname)
+int XeCursesInterface::GetLoginInfo(string &name, int &port, int &dataport,string &hostname,string UIMessage)
 {
    initscr();
    start_color();
@@ -83,8 +83,11 @@ int XeCursesInterface::GetLoginInfo(string &name, int &port, int &dataport,strin
    mvwprintw(loginwin,rows+7,0," Use up/down arrows to change fields and enter to accept settings.      ctl-c to quit ");
    wattroff(loginwin,COLOR_PAIR(10));
    wattron(loginwin,COLOR_PAIR(5));
-   mvwprintw(loginwin,2,14,"Please enter your network options:");
+   mvwprintw(loginwin,2,14,"Please enter your network options:");   
    wattroff(loginwin,COLOR_PAIR(5));
+   wattron(loginwin,COLOR_PAIR(8));
+   mvwprintw(loginwin,3,14,UIMessage.c_str());
+   wattroff(loginwin,COLOR_PAIR(8));
    
    wattron(loginwin,COLOR_PAIR(7));      
    mvwprintw(loginwin,6,14,"Server Address:");

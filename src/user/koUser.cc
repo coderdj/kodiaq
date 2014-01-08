@@ -42,22 +42,33 @@ int main()
    XeCursesInterface  fUI(&fLog);   
    time_t fKeepAlive=XeDAQLogger::GetCurrentTime();
    //Now connect UI and download info from server
+   bool repeat=false;
 login_screen:
    string name,hostname; int port,dataport,uiret=-1;
-   while((uiret=fUI.GetLoginInfo(name,port,dataport,hostname))!=0){
+   string UIMessage;
+   if(!repeat) UIMessage="                                ";
+   else {
+      UIMessage="Failed to connect. Check settings.";
+      repeat=false;
+   }          
+   while((uiret=fUI.GetLoginInfo(name,port,dataport,hostname,UIMessage))!=0){
       if(uiret==-2)
 	return 0;
    }   
    stringstream logmess;
    logmess<<"Starting DAQ with "<<name<<" "<<hostname<<" "<<port<<" "<<dataport;
    fLog.Message(logmess.str());
-   fMasterNetwork.Initialize(hostname,port,dataport,32000,name);   
+   fMasterNetwork.Initialize(hostname,port,dataport,32000,name);
+   
    //a progress bar or something is forseen here
    int timeout=0;
    while(fMasterNetwork.Connect()!=0)  {
       sleep(1);
       timeout++;
-      if(timeout==10) goto login_screen;
+      if(timeout==10){ 
+	 repeat=true;
+	 goto login_screen;
+      }      
    }
    vector <string> fHistory;
    while(fMasterNetwork.GetHistory(fHistory,1000)!=0)  {        
