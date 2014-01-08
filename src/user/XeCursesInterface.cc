@@ -369,14 +369,19 @@ int XeCursesInterface::NotificationsScroll(bool up)
    if(!bInitialized) return -1;
    if(up){	
       if(fNotifications.size()>fNotificationUpper && 
-	 fNotifications.size()-fNotificationUpper>stepsize) {
+	 fNotifications.size()-fNotificationUpper>stepsize &&
+	 fNotifications.size()-fNotificationUpper>0){
 	 fNotificationUpper+=stepsize;
 	 fNotificationLower+=stepsize;
       }      
-      else {
+      else if(fNotifications.size()>=30){
 	 fNotificationUpper=fNotifications.size();
 	 fNotificationLower=fNotifications.size()-30;
       }
+      else {
+	 fNotificationLower=0;
+	 fNotificationUpper=30;
+      }      
    }
    else  {
       if(fNotificationLower>=stepsize)	{
@@ -413,7 +418,7 @@ void XeCursesInterface::SetHistory(vector<string> history)
 int XeCursesInterface::PrintNotify(string message, int priority, bool print, bool hasdate)
 {
    if(!bInitialized) return -1;
-   
+   fLog->Message("Enter printnotify");
    wclear(notify_win);
 //   box(notify_win, 0 , 0);
    wbkgd(notify_win,COLOR_PAIR(4));
@@ -458,6 +463,7 @@ int XeCursesInterface::PrintNotify(string message, int priority, bool print, boo
    }
    
    fNotificationUpper=fNotifications.size();
+   if(fNotifications.size()<30) fNotificationUpper=30;
    if(fNotifications.size()<30) fNotificationLower=0;
    else fNotificationLower=fNotificationUpper-30;
    if(print)
@@ -484,9 +490,11 @@ void XeCursesInterface::DrawNotifications(unsigned int lower,unsigned int upper)
      mvwprintw(notify_win,1,0,"[end of buffer. older messages available in curses log.] ");
    else mvwprintw(notify_win,1,0,"                                                          ");
    for(unsigned int x=lower;x<upper;x++){//fNotifications.size();x++){
-      if(x>=fNotifications.size()||x<0) continue;
-      int binSize = fNotifications.size()/30;
-      int currentBin = lower/binSize;
+      if(x<0 || fNotifications.size()==0) continue;
+      int binSize=1;
+      if(fNotifications.size()>30) binSize = fNotifications.size()/30;
+      int currentBin = 0;
+      if(fNotifications.size()>=30) currentBin = lower/binSize;      
       if(x-lower == currentBin ||x-lower==currentBin+1 || x-lower==currentBin-1)	{
 	 wattron(notify_win,COLOR_PAIR(9));
 	 mvwprintw(notify_win,x-lower+2.0,94," ");
@@ -498,6 +506,7 @@ void XeCursesInterface::DrawNotifications(unsigned int lower,unsigned int upper)
 	 wattroff(notify_win,COLOR_PAIR(7));
       }
       
+      if(x>=fNotifications.size()) continue;
       
       if(fNotificationPriorities[x]==2){//yellow	   
 	 wattron(notify_win,COLOR_PAIR(3));
@@ -514,8 +523,9 @@ void XeCursesInterface::DrawNotifications(unsigned int lower,unsigned int upper)
 	 mvwprintw(notify_win,x-lower+2,0,"%s",fNotifications[x].c_str());
 	 wattroff(notify_win,COLOR_PAIR(1));
       }      
-      else
-	 mvwprintw(notify_win,x-lower+2,0,"%s",fNotifications[x].c_str());      
+      else{
+	 mvwprintw(notify_win,x-lower+2,0,"%s",fNotifications[x].c_str());
+      }      
    }   
    wnoutrefresh(notify_win);
    doupdate();
