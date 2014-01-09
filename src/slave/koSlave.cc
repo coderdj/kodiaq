@@ -22,7 +22,8 @@ XeDAQLogger *gLog = new XeDAQLogger("log/koSlave.log");
 int main()
 {
    gLog->Message("Started koSlave module.");
-   //
+
+   //Set up objects
    XeNetClient    fNetworkInterface(gLog);
    fNetworkInterface.Initialize("xedaq02",2002,2003,2,"xedaq02");
    DigiInterface  *fElectronics = new DigiInterface();
@@ -31,14 +32,17 @@ int main()
    string         fOptionsPath = "DAQConfig.ini";
    time_t         fPrevTime = XeDAQLogger::GetCurrentTime();
    bool           bArmed=false,bRunning=false,bConnected=false;
-
+   //
+   
+   //try to connect. this is the idle state where the module will revert to if reset.
 connection_loop:
    while(!bConnected)  {
       if(fNetworkInterface.Connect()==0) bConnected=true;      
       sleep(1);
    }
    cout<<"CONNECTED"<<endl;
-
+   
+   //While connected listen for commands and broadcast status
    while(bConnected){
       usleep(100);
       //watch for remote commands
@@ -108,13 +112,19 @@ connection_loop:
 	 cout<<"rate: "<<rate<<" freq: "<<freq<<" iRate: "<<iRate<<" tdiff: "<<tdiff<<endl;
 	 if(fNetworkInterface.SendStatusUpdate(status,rate,freq,nBoards)!=0){
 	    bConnected=false;
-	   gLog->Error("koSlave::main - Error sending status update.");
+	   gLog->Error("koSlave::main - [ FATAL ERROR ] Could not send status update. Going to idle state!");
 	 }	 
       }
       
       
    }   
+   //Close everything
+   fElectronics->StopRun();
+   fElectronics->Close();
+   bArmed=false;
+   bRunning=false;
    fNetworkInterface.Disconnect();
+   bConnected=false;
    goto connection_loop;
    return 0;
    
