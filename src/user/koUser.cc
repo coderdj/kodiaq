@@ -93,16 +93,16 @@ login_screen:
    fUI.DrawStartMenu();
    while(command!='q' && command!='Q')   {
       usleep(100);
-//      fUI.DrawStartMenu();
       
       //Draw the proper menu
       if((fDAQStatus.NetworkUp && UI_SCREEN_SHOWING<=1) || 
-	 (fDAQStatus.NetworkUp && !fDAQStatus.Running && UI_SCREEN_SHOWING==3))  	{	   
+	 (fDAQStatus.NetworkUp && fDAQStatus.DAQState!=XEDAQ_RUNNING 
+	  && UI_SCREEN_SHOWING==3))  	{	   
 	 fUI.DrawMainMenu();
 	 fUI.Update();
 	 UI_SCREEN_SHOWING=2;
       }      
-      if(fDAQStatus.Running && UI_SCREEN_SHOWING!=3)	{	   
+      if(fDAQStatus.DAQState==XEDAQ_RUNNING && UI_SCREEN_SHOWING!=3)	{	   
 	 fUI.PrintDAQRunScreen();
 	 fUI.Update();
 	 UI_SCREEN_SHOWING=3;
@@ -141,7 +141,8 @@ login_screen:
 	 break;
        case 'r': //RECONNECT
 	 //tell daq to disconnect everything then put network back up (if settings changed)
-	 if(!fDAQStatus.NetworkUp || fDAQStatus.Running || fDAQStatus.Armed) break;
+	 if(!fDAQStatus.NetworkUp || fDAQStatus.DAQState==XEDAQ_RUNNING || 
+	    fDAQStatus.DAQState==XEDAQ_ARMED) break;
 	 fUI.PrintNotify("Really reconnect DAQ network? (y/n)");
 	 command=getch();
 	 if(command=='y')  
@@ -151,7 +152,8 @@ login_screen:
 	 command='0';
 	 break;	 
        case 'd': //DISCONNECT
-	 if(!fDAQStatus.NetworkUp || fDAQStatus.Running || fDAQStatus.Armed) break;
+	 if(!fDAQStatus.NetworkUp || fDAQStatus.DAQState==XEDAQ_RUNNING || 
+	    fDAQStatus.DAQState==XEDAQ_ARMED) break;
 	 fUI.PrintNotify("Really disconnect DAQ network? (y/n)");
 	 command=getch();
 	 if(command=='y') fMasterNetwork.SendCommand("DISCONNECT");
@@ -160,7 +162,7 @@ login_screen:
 	 command='0';
 	 break;
        case 'm': //Change run mode
-	 if(!fDAQStatus.NetworkUp || fDAQStatus.Running) break;
+	 if(!fDAQStatus.NetworkUp || fDAQStatus.DAQState==XEDAQ_RUNNING) break;
 	 fMasterNetwork.SendCommand("ARM");
 	 runModes.clear();
 	 if(fMasterNetwork.GetStringList(runModes)!=0) {
@@ -174,18 +176,27 @@ login_screen:
 	 command='0';
 	 break;
        case 'x'://sleep mode
-	 if(!fDAQStatus.Armed || fDAQStatus.Running) break;
+	 if(!fDAQStatus.DAQState==XEDAQ_ARMED || fDAQStatus.DAQState==XEDAQ_RUNNING) break;
 	 fMasterNetwork.SendCommand("SLEEP");
 	 command='0';
 	 break;
        case 's':
-	 if(!fDAQStatus.Armed || fDAQStatus.Running) break;
+	 if(!fDAQStatus.DAQState==XEDAQ_ARMED || fDAQStatus.DAQState==XEDAQ_RUNNING) break;
 	 fMasterNetwork.SendCommand("START");
 	 command='0';
 	 break;
        case 'p':
-	 if(!fDAQStatus.Running) break;
+	 if(!fDAQStatus.DAQState==XEDAQ_RUNNING) break;
 	 fMasterNetwork.SendCommand("STOP");
+	 command='0';
+	 break;
+       case 'z':
+	 fUI.PrintNotify("Really shut down the DAQ? This will stop acquisition and tell slaves to go to idle state.");
+	 command=getch();
+	 if(command=='y') {
+	    fMasterNetwork.SendCommand("STOP");
+	    fMasterNetwork.SendCommand("SLEEP");
+	 }	 
 	 command='0';
 	 break;
        case 'q':
@@ -205,13 +216,6 @@ login_screen:
 	 }
 	 fUI.SidebarRefresh();
 	 fUI.Update();
-	 
-	 //detlete later
-//	 double ratetot=0;
-//	 for(unsigned int x=0;x<fDAQStatus.Slaves.size();x++)
-//	   ratetot+=fDAQStatus.Slaves[x].Rate;
-//	 outfile<<ratetot<<endl;
-	 
       }
       //watch for timeouts
       time_t currentTime=XeDAQLogger::GetCurrentTime();

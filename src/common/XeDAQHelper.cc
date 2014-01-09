@@ -116,7 +116,8 @@ string XeDAQHelper::DoubleToString(const double num)
 
 void XeDAQHelper::InitializeStatus(XeStatusPacket_t &Status)
 {
-   Status.NetworkUp=Status.Armed=Status.Running=false;
+   Status.NetworkUp=false;
+   Status.DAQState=XEDAQ_IDLE;
    Status.Slaves.clear();
    Status.RunMode="None";
    Status.RunModeLabel="None";
@@ -157,14 +158,17 @@ void XeDAQHelper::InitializeNode(XeNode_t &node)
 
 void XeDAQHelper::ProcessStatus(XeStatusPacket_t &Status)
 {
-   Status.Armed=Status.Running=false;
-   unsigned int nArmed=0,nRunning=0;
+   Status.DAQState=XEDAQ_IDLE;
+   unsigned int nArmed=0,nRunning=0, nIdle=0;
    for(unsigned int x=0;x<Status.Slaves.size();x++)  {
       if(Status.Slaves[x].status==XEDAQ_ARMED) nArmed++;
       if(Status.Slaves[x].status==XEDAQ_RUNNING) nRunning++;
+      if(Status.Slaves[x].status==XEDAQ_IDLE) nIdle++;
    }
-   if(nRunning==Status.Slaves.size() && Status.Slaves.size()!=0) Status.Running=true;
-   if(nArmed==Status.Slaves.size() && Status.Slaves.size()!=0) Status.Armed=true;
+   if(nRunning==Status.Slaves.size() && Status.Slaves.size()!=0) Status.DAQState=XEDAQ_RUNNING;
+   if(nArmed==Status.Slaves.size() && Status.Slaves.size()!=0) Status.DAQState=XEDAQ_ARMED;
+   if(nIdle == Status.Slaves.size() && Status.Slaves.size()!=0) Status.DAQState=XEDAQ_IDLE;
+   else if(Status.Slaves.size()!=0 && Status.DAQState==XEDAQ_IDLE) Status.DAQState=XEDAQ_MIXED;
    return;
 }
 

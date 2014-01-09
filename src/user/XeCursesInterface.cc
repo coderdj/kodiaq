@@ -339,25 +339,29 @@ int XeCursesInterface::DrawMainMenu()
    mvwprintw(main_win,1,0,"   Main menu:    ");
    wattroff(main_win,COLOR_PAIR(7));
    wattron(main_win,COLOR_PAIR(6));
-   mvwprintw(main_win,2,30," S ");
+   mvwprintw(main_win,1,30," S ");
    wattroff(main_win,COLOR_PAIR(6));
    wattron(main_win,COLOR_PAIR(7));
-   mvwprintw(main_win,3,30," M ");
+   mvwprintw(main_win,2,30," M ");
    wattroff(main_win,COLOR_PAIR(7));
    wattron(main_win,COLOR_PAIR(6));
-   mvwprintw(main_win,4,30," X ");
+   mvwprintw(main_win,3,30," X ");
    wattroff(main_win,COLOR_PAIR(6));
    wattron(main_win,COLOR_PAIR(7));
-   mvwprintw(main_win,5,30," B ");
+   mvwprintw(main_win,4,30," B ");
    wattroff(main_win,COLOR_PAIR(7));
    wattron(main_win,COLOR_PAIR(6));
+   mvwprintw(main_win,5,30," R ");
+   wattroff(main_win,COLOR_PAIR(6));
+   wattron(main_win,COLOR_PAIR(7));
    mvwprintw(main_win,6,30," Q ");
-   wattroff(main_win,COLOR_PAIR(6));
+   wattroff(main_win,COLOR_PAIR(7));
    wattroff(main_win,A_BOLD);
-   mvwprintw(main_win,2,35,"Start DAQ                          ");
-   mvwprintw(main_win,3,35,"Choose operation mode              ");
-   mvwprintw(main_win,4,35,"Put DAQ to standby mode            ");
-   mvwprintw(main_win,5,35,"Broadcast message                  ");
+   mvwprintw(main_win,1,35,"Start DAQ                          ");
+   mvwprintw(main_win,2,35,"Choose operation mode              ");
+   mvwprintw(main_win,3,35,"Put DAQ to standby mode            ");
+   mvwprintw(main_win,4,35,"Broadcast message                  ");
+   mvwprintw(main_win,5,35,"Reset DAQ                          ");
    mvwprintw(main_win,6,35,"Quit                               ");   
    wnoutrefresh(main_win);
    return 0;
@@ -560,22 +564,28 @@ int XeCursesInterface::SidebarRefresh()
       mvwprintw(status_win,3,18,"Disconnected");
       wattroff(status_win,COLOR_PAIR(2));
    }   
-   if(fDAQStatus->Running)     {  
+   if(fDAQStatus->DAQState==XEDAQ_RUNNING)     {  
       wattron(status_win,COLOR_PAIR(1));
       mvwprintw(status_win,4,18,"Running");
       wattroff(status_win,COLOR_PAIR(1));
       
    }   
-   else if(fDAQStatus->Armed)  {
+   else if(fDAQStatus->DAQState==XEDAQ_ARMED)  {
       wattron(status_win,COLOR_PAIR(3));
       mvwprintw(status_win,4,18,"Armed  ");
       wattroff(status_win,COLOR_PAIR(3));
    }   
-   else {	
+   else if(fDAQStatus->DAQState==XEDAQ_MIXED) {	
+      wattron(status_win,COLOR_PAIR(11));
+      mvwprintw(status_win,4,18,"Mixed  ");
+      wattroff(status_win,COLOR_PAIR(11));
+   }                      
+   else if(fDAQStatus->DAQState==XEDAQ_IDLE)  {
       wattron(status_win,COLOR_PAIR(2));
       mvwprintw(status_win,4,18,"Idle   ");
       wattroff(status_win,COLOR_PAIR(2));
-   }                      
+   }
+   
    wattroff(status_win,A_BOLD);
    
    wattron(status_win,A_BOLD);   
@@ -584,20 +594,13 @@ int XeCursesInterface::SidebarRefresh()
    wattroff(status_win,A_BOLD);
    
    wattron(status_win,A_BOLD);
-//   wattron(status_win,COLOR_PAIR(7));
    mvwprintw(status_win,7,1," Current Run:   ");
    wattron(status_win,COLOR_PAIR(11));
    mvwprintw(status_win,7,18,fRunInfo->RunNumber.c_str());
    wattroff(status_win,COLOR_PAIR(11));
-//   wattroff(status_win,COLOR_PAIR(7));
    mvwprintw(status_win,8,2,"Started by:");
-//   mvwprintw(status_win,9,2,"Start time: ");
-//   mvwprintw(status_win,11,2,"Identifier:");
    wattroff(status_win,A_BOLD);
-   mvwprintw(status_win,8,18,fRunInfo->StartedBy.c_str());
-  // mvwprintw(status_win,9,14,fRunInfo->StartDate.c_str());
-//   mvwprintw(status_win,11,14,fRunInfo->RunNumber.c_str());
-   
+   mvwprintw(status_win,8,18,fRunInfo->StartedBy.c_str());   
    
    wattron(status_win,A_BOLD);
    wattron(status_win,COLOR_PAIR(7));
@@ -607,7 +610,17 @@ int XeCursesInterface::SidebarRefresh()
    double totalRate=0.0;
    for(unsigned int x=0;x<fDAQStatus->Slaves.size();x++){      
       wattron(status_win,A_BOLD);
+      //draw slave name in color to indicate status
+      if(fDAQStatus->Slaves[x].status==XEDAQ_IDLE) wattron(status_win,COLOR_PAIR(2));
+      if(fDAQStatus->Slaves[x].status==XEDAQ_MIXED) wattron(status_win,COLOR_PAIR(11));
+      if(fDAQStatus->Slaves[x].status==XEDAQ_ARMED) wattron(status_win,COLOR_PAIR(3));
+      if(fDAQStatus->Slaves[x].status==XEDAQ_RUNNING) wattron(status_win,COLOR_PAIR(1));
       mvwprintw(status_win,13+(4*x),2,(fDAQStatus->Slaves[x].name).c_str());
+      if(fDAQStatus->Slaves[x].status==XEDAQ_IDLE) wattroff(status_win,COLOR_PAIR(2));
+      if(fDAQStatus->Slaves[x].status==XEDAQ_MIXED) wattroff(status_win,COLOR_PAIR(11));
+      if(fDAQStatus->Slaves[x].status==XEDAQ_ARMED) wattroff(status_win,COLOR_PAIR(3));
+      if(fDAQStatus->Slaves[x].status==XEDAQ_RUNNING) wattroff(status_win,COLOR_PAIR(1));	
+      
       wattroff(status_win,A_BOLD);
       mvwprintw(status_win,13+(4*x),2+fDAQStatus->Slaves[x].name.size()+1," ");	
       string numnodes = "Num. boards: "; numnodes+=XeDAQHelper::IntToString(fDAQStatus->Slaves[x].nBoards);

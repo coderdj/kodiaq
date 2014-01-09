@@ -24,11 +24,16 @@
 #include <unistd.h>
 #include "XeDAQLogger.hh"
 
+
+//DAQ STATUS IDENTIFIERS
 #define XEDAQ_IDLE    0
 #define XEDAQ_ARMED   1
 #define XEDAQ_RUNNING 2
-#define XEDAQ_ERROR   3
+#define XEDAQ_MIXED   3
+#define XEDAQ_ERROR   4
 
+
+//MESSAGE PRIORITY IDENTIFIERS
 #define XEMESS_UPDATE    0
 #define XEMESS_BROADCAST 4
 #define XEMESS_WARNING   2
@@ -38,10 +43,10 @@
 using namespace std;
 
 struct XeNode_t{
-   int        status;
-   double     Rate;
-   double     Freq;
-   int        nBoards;
+   int        status;        //DAQ status identifier
+   double     Rate;          //in MB/s
+   double     Freq;          //in Hz
+   int        nBoards;      
    int        ID;
    string     name;
    time_t     lastUpdate;
@@ -56,9 +61,8 @@ struct XeStatusPacket_t{
    string     RunMode;          //Run mode path to file
    string     RunModeLabel;     //Run mode identifier
    int        NumSlaves;        //Number of slaves from net setup file
-   bool       Armed;            //Slave boards armed
-   bool       Running;          //DAQ Running
-   bool       NetworkUp;        //Master has put up network
+   int        DAQState;         //state of the total DAQ
+   bool       NetworkUp;        //if the network is connected
       
    vector <XeMessage_t> Messages; //Pending messages from slaves
    vector <XeNode_t> Slaves; //Rates of slaves      
