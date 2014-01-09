@@ -407,7 +407,7 @@ void XeCursesInterface::SetHistory(vector<string> history)
    for(unsigned int x=0;x<history.size();x++){	
       string message;
       int id;
-      id=history[x][0];
+      id=XeDAQHelper::StringToInt(history[x].substr(0,1));
       message=history[x];
       message.erase(0,2);
       PrintNotify(message,id,false,true);      
@@ -512,25 +512,32 @@ void XeCursesInterface::DrawNotifications(unsigned int lower,unsigned int upper)
       
       if(x>=fNotifications.size()) continue;
       
-      if(fNotificationPriorities[x]==2){//yellow	   
+      if(fNotificationPriorities[x]==XEMESS_WARNING){//yellow	   
 	 wattron(notify_win,COLOR_PAIR(3));
 	 mvwprintw(notify_win,x-lower+2,0,"%s",fNotifications[x].c_str());
 	 wattroff(notify_win,COLOR_PAIR(3));
       }    
-      else if(fNotificationPriorities[x]==3){//red	   
+      else if(fNotificationPriorities[x]==XEMESS_ERROR){//red	   
 	 wattron(notify_win,COLOR_PAIR(2));
 	 mvwprintw(notify_win,x-lower+2,0,"%s",fNotifications[x].c_str());
 	 wattroff(notify_win,COLOR_PAIR(2));
       }
-      else if(fNotificationPriorities[x]==4|| fNotificationPriorities[x]==0)	{
-	 wattron(notify_win,COLOR_PAIR(1)); //green
+      else if(fNotificationPriorities[x]==XEMESS_NORMAL|| fNotificationPriorities[x]==XEMESS_UPDATE)	{
+	 wattron(notify_win,COLOR_PAIR(4)); //white
 	 mvwprintw(notify_win,x-lower+2,0,"%s",fNotifications[x].c_str());
-	 wattroff(notify_win,COLOR_PAIR(1));
+	 wattroff(notify_win,COLOR_PAIR(4));
       }      
-      else{
+      else if(fNotificationPriorities[x]==4){
+	 wattron(notify_win,COLOR_PAIR(11));
 	 mvwprintw(notify_win,x-lower+2,0,"%s",fNotifications[x].c_str());
+	 wattroff(notify_win,COLOR_PAIR(11));
       }      
-   }   
+      else { 
+	 mvwprintw(notify_win,x-lower+2,0,"%s",fNotifications[x].c_str());
+//	 mvwprintw(notify_win,x-lower+2,0,"%i",fNotificationPriorities[x]);
+      }
+      
+    }//1g4w11b   
    wnoutrefresh(notify_win);
    doupdate();
    refresh();
