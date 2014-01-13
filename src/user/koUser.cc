@@ -1,6 +1,6 @@
 // ****************************************************
 // 
-// kodiak DAQ Software
+// kodiaq DAQ Software
 // 
 // Author  : Daniel Coderre, LHEP, Universitaet Bern
 // Date    : 24.10.2013
@@ -211,8 +211,8 @@ login_screen:
 	 else fDAQStatus.NetworkUp=false;
 	 
 	 while(fDAQStatus.Messages.size()>0){
-	    fUI.PrintNotify(fDAQStatus.Messages[0].message);
-	    fDAQStatus.Messages.erase(fDAQStatus.Messages.begin(),fDAQStatus.Messages.begin()+1);	
+	    fUI.PrintNotify(fDAQStatus.Messages[0].message,fDAQStatus.Messages[0].priority);
+	    fDAQStatus.Messages.erase(fDAQStatus.Messages.begin(),fDAQStatus.Messages.begin()+1);
 	 }
 	 fUI.SidebarRefresh();
 	 fUI.Update();
