@@ -39,6 +39,7 @@
 #define XEMESS_WARNING   2
 #define XEMESS_ERROR     3
 #define XEMESS_NORMAL    1
+#define XEMESS_STATE     5
 
 using namespace std;
 
@@ -58,14 +59,14 @@ struct XeMessage_t{
 };
 
 struct XeStatusPacket_t{
-   string     RunMode;          //Run mode path to file
-   string     RunModeLabel;     //Run mode identifier
-   int        NumSlaves;        //Number of slaves from net setup file
-   int        DAQState;         //state of the total DAQ
-   bool       NetworkUp;        //if the network is connected
+   string     RunMode;            //Run mode path to file
+   string     RunModeLabel;       //Run mode identifier
+   int        NumSlaves;          //Number of slaves from net setup file
+   int        DAQState;           //state of the total DAQ
+   bool       NetworkUp;          //if the network is connected
       
    vector <XeMessage_t> Messages; //Pending messages from slaves
-   vector <XeNode_t> Slaves; //Rates of slaves      
+   vector <XeNode_t> Slaves;      //Rates of slaves      
 };
 
 struct XeRunInfo_t{

@@ -532,6 +532,11 @@ void XeCursesInterface::DrawNotifications(unsigned int lower,unsigned int upper)
 	 mvwprintw(notify_win,x-lower+2,0,"%s",fNotifications[x].c_str());
 	 wattroff(notify_win,COLOR_PAIR(11));
       }      
+      else if(fNotificationPriorities[x]==XEMESS_STATE)	{
+	 wattron(notify_win,COLOR_PAIR(1));//green
+	 mvwprintw(notify_win,x-lower+2,0,"%s",fNotifications[x].c_str());
+	 wattroff(notify_win,COLOR_PAIR(1));
+      }     
       else { 
 	 mvwprintw(notify_win,x-lower+2,0,"%s",fNotifications[x].c_str());
 //	 mvwprintw(notify_win,x-lower+2,0,"%i",fNotificationPriorities[x]);

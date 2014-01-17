@@ -80,13 +80,13 @@ int main()
       // procedure is carried out and a message is sent informing
       // who just logged into the DAQ.
       if(fUserNetwork.AddConnection(cID,cName)==0)	{
-	 cout<<"Start login process for user "<<cName<<"("<<cID<<")."<<endl;
+	 cout<<"Start login process for user "<<cName<<"("<<cID<<")."<<endl;	 	 	 
 	 if(fUserNetwork.SendFilePartial(cID,fBroadcastPath)!=0)
 	   cout<<"Could not send log."<<endl;
 	 fUserNetwork.SendRunInfoUI(cID,fRunInfo);
 	 stringstream messagestream;
 	 messagestream<<"User "<<cName<<"("<<cID<<") has logged into the DAQ.";
-	 fUserNetwork.BroadcastMessage(messagestream.str(),XEMESS_BROADCAST);
+	 fUserNetwork.BroadcastMessage(messagestream.str(),XEMESS_NORMAL);
 	 fLog.Message(messagestream.str());
 	 cout<<"Login successful for user "<<cName<<"("<<cID<<")."<<endl;
       }            
@@ -119,9 +119,9 @@ int main()
 	 }
 	 else if(command=="CONNECT")  {	 
 	    errstring<<"Received connect command from "<<sender<<"("<<id<<")";
-	    fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_BROADCAST);	    
+	    fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_NORMAL);
 	    if(fDAQNetwork.PutUpNetwork()!=0)  
-	      fUserNetwork.BroadcastMessage("An attempt to put up the DAQ network has failed.",XEMESS_BROADCAST);
+	      fUserNetwork.BroadcastMessage("An attempt to put up the DAQ network has failed.",XEMESS_WARNING);
 	    else  {
 	       int timer=0;
 	       fNSlaves=0;
@@ -130,7 +130,7 @@ int main()
 		     errstring.clear();
 		     errstring.str(std::string());
 		     errstring<<"Connected to slave "<<cName<<"("<<cID<<")";
-		     fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_BROADCAST);
+		     fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_NORMAL);
 		     fNSlaves++;
 		  }		  
 		  sleep(1);
@@ -140,26 +140,26 @@ int main()
 	       errstring.str(std::string());
 	       errstring<<"DAQ network online. Connected with "<<fNSlaves<<" slaves.";
 	       fDAQNetwork.TakeDownNetwork();//takes down connection socket only
-	       fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_BROADCAST);
+	       fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_STATE);
 	    }	    	    
 	 }
 	 else if(command=="RECONNECT")  {
 	    errstring<<"Received reconnect command from "<<sender<<"("<<id<<")";
-	    fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_BROADCAST);
+	    fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_NORMAL);
 	    fDAQNetwork.Disconnect();
 	    XeDAQHelper::InitializeStatus(fDAQStatus);	    
 	    command="CONNECT";
 	 }	 
 	 else if(command=="DISCONNECT")  {
 	    errstring<<"Received disconnect command from "<<sender<<"("<<id<<")";
-	    fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_BROADCAST);
+	    fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_NORMAL);
 	    fDAQNetwork.Disconnect();
 	    XeDAQHelper::InitializeStatus(fDAQStatus);	    
 	    command='0';
 	 }
 	 else if(command=="ARM")  {
 	    errstring<<"Received arm command from "<<sender<<"("<<id<<")";
-	    fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_BROADCAST);
+	    fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_NORMAL);
 	    fDAQNetwork.SendCommand("SLEEP");//tell DAQ to reset
 	    runModeList.clear(); runModePaths.clear();
 	    GetRunModeList(runModeList,runModePaths);
@@ -174,7 +174,7 @@ int main()
 	    }
 	    if(timeout>=25000 || command=="TIMEOUT")  {
 	       fLog.Error("koMaster - Timed out waiting for user to choose mode.");
-	       fUserNetwork.BroadcastMessage("Timed out waiting for user to choose mode. You only get 20 seconds.",XEMESS_BROADCAST);
+	       fUserNetwork.BroadcastMessage("Timed out waiting for user to choose mode. You only get 20 seconds.",XEMESS_WARNING);
 	    }
 	    else {    		 
 	       tempint=-1;
@@ -190,38 +190,38 @@ int main()
 	       fDAQNetwork.SendCommand("ARM");
 	       if(fDAQNetwork.SendOptions(runModePaths[tempint])!=0)  {
 		  fLog.Error("koMaster - Error sending options.");
-		  fUserNetwork.BroadcastMessage("DAQ arm attempt failed.",XEMESS_BROADCAST);
+		  fUserNetwork.BroadcastMessage("DAQ arm attempt failed.",XEMESS_WARNING);
 		  command='0';
 		  continue;
 	       }
 	       
 	       if(fDAQOptions.ReadFileMaster(runModePaths[tempint])!=0){		 
-		  fUserNetwork.BroadcastMessage("Error setting veto options. Bad file!",XEMESS_BROADCAST);
+		  fUserNetwork.BroadcastMessage("Error setting veto options. Bad file!",XEMESS_WARNING);
 		  continue;
 	       }
 	       cout<<"Got veto options and the address is "<<fDAQOptions.GetVetoOptions().Address<<endl;
 	    
 	       fDAQStatus.RunMode=command;
-	       errstring.flush();
+	       errstring.str(std::string());//flush();
 	       errstring<<"Armed DAQ in mode "<<command;
-	       fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_BROADCAST);
+	       fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_STATE);
 	       command='0';
 	    }
 	 }	 
 	 else if(command=="START")  {
 	    fDAQNetwork.SendCommand("START");
-	    errstring<<"Received start command from "<<sender<<"("<<id<<")";
-	    fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_BROADCAST);	    
+	    errstring<<"DAQ started by "<<sender<<"("<<id<<")";
+	    fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_STATE);
 	    XeDAQHelper::UpdateRunInfo(fRunInfo,sender);
 	 }
 	 else if(command=="STOP")  {
 	    fDAQNetwork.SendCommand("STOP");
-	    errstring<<"Received stop command from "<<sender<<"("<<id<<")";
-	    fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_BROADCAST);
+	    errstring<<"DAQ stopped by "<<sender<<"("<<id<<")";
+	    fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_STATE);
 	 }
 	 else if(command=="SLEEP")  {
-	    errstring<<"Received standby command from "<<sender<<"("<<id<<")";
-	    fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_BROADCAST);
+	    errstring<<"DAQ put to sleep mode by "<<sender<<"("<<id<<")";
+	    fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_STATE);
 	    fDAQNetwork.SendCommand("SLEEP");
 	    command='0';
 	 }	 	 	 	 	 	 
