@@ -96,7 +96,7 @@ connection_loop:
       //Send status
       double tdiff;
       time_t fCurrentTime=XeDAQLogger::GetCurrentTime();
-      if((tdiff=difftime(fCurrentTime,fPrevTime))>1.0){
+      if((tdiff=difftime(fCurrentTime,fPrevTime))>=1.0){
 	 fPrevTime=fCurrentTime;
 	 int status=XEDAQ_IDLE;
 	 if(bArmed && !bRunning) status=XEDAQ_ARMED;
@@ -119,8 +119,10 @@ connection_loop:
       
    }   
    //Close everything
-   fElectronics->StopRun();
-   fElectronics->Close();
+   if(bRunning)
+     fElectronics->StopRun();
+   if(bArmed)
+     fElectronics->Close();
    bArmed=false;
    bRunning=false;
    fNetworkInterface.Disconnect();

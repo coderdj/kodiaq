@@ -238,7 +238,7 @@ int main()
 	 while(fDAQNetwork.WatchDataPipe(fDAQStatus)==0) update=true;
 	 if(update)	{
 	    time_t fCurrentTime= XeDAQLogger::GetCurrentTime();
-	    if(difftime(fCurrentTime,fPrevTime)>1.0){
+	    if(difftime(fCurrentTime,fPrevTime)>=1.0){
 	       update=false;
 	       fPrevTime=fCurrentTime;
 	       if(fUserNetwork.TransmitStatus(fDAQStatus)!=0)   {
