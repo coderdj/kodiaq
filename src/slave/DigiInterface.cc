@@ -72,13 +72,22 @@ int DigiInterface::Initialize(XeDAQOptions *options)
      fRunStartModule=GetModuleByID(options->GetRunOptions().RunStartModule);
    else 
      fRunStartModule=0;
-     
+   
+
+   
    //Load options to individual modules
    for(unsigned int x=0;x<fCrates.size();x++){	
       if(fCrates[x]->InitializeModules(options)!=0)
 	return -1;
    }
 
+   //Designate sum modules if any
+   for(int x=0;x<options->SumModules();x++)    {	
+      VMEBoard *module;
+      if((module=GetModuleByID(options->GetSumModule(x)))!=NULL)
+	module->DesignateSumModule();
+   }
+   
    //Set up daq recorder
    fDAQRecorder = new XeMongoRecorder();      	
    fDAQRecorder->Initialize(options);
