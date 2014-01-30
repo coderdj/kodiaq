@@ -40,7 +40,8 @@ void XeDAQOptions::Reset()
    fBaselineMode=1;
    fReadoutThreshold=10;
    fMongoOptions.Collection="data.test";   
-
+   vSumModules.clear();
+   
    fDDC10Options.Sign=0; fDDC10Options.IntegrationWindow=100;
    fDDC10Options.VetoDelay=200; fDDC10Options.SignalThreshold=150;
    fDDC10Options.IntegrationThreshold=20000; fDDC10Options.WidthCut=50;
@@ -168,6 +169,10 @@ int XeDAQOptions::ReadParameterFile(string filename)
       if(words[0]=="READOUT_THRESHOLD")	{
 	 if(words.size()<2) continue;
 	 fReadoutThreshold=XeDAQHelper::StringToInt(words[1]);
+      }
+      if(words[0]=="SUM_MODULE")	{
+	 if(words.size()<2) continue;
+	 vSumModules.push_back(XeDAQHelper::StringToInt(words[1]));
       }
       
    }   

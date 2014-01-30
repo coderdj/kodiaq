@@ -125,7 +125,11 @@ void XeProcessor::ProcessMongoDB()
 	       long long mongoTime = ((unsigned long)ID << 31) | TimeStamp;
 	       int insize = fInsertVec->size();
 	       bson.append("insertsize",insize);	       
-//	       bson.append("dbgsizebefore",dbgsizebefore);
+	       if(digi->IsSumModule())
+		 bson.append("override",true);
+	       else
+		 bson.append("override",false);
+	       //	       bson.append("dbgsizebefore",dbgsizebefore);
 //	       bson.append("dbgsizeafter",dbgsizeafter);
 	       bson.append("module",ModuleNumber);
 	       bson.append("triggertime",mongoTime);

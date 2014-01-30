@@ -68,11 +68,19 @@ class VMEBoard
       bActivated=active;
    };
    
+   void DesignateSumModule()  {
+      bIsSumModule=true;
+   };
+   bool IsSumModule()  {
+      return bIsSumModule;
+   };
+   
    
  protected:
    BoardDefinition_t fBID;   
    int fCrateHandle;
    bool bActivated;
+   bool bIsSumModule;                           //Designating a digitizer a sum module means it always gets saved and the event builder does not use it for peak finding
 };
 
 #endif

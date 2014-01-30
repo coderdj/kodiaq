@@ -144,11 +144,20 @@ class XeDAQOptions
       return fDDC10Options;
    };
    
+   int SumModules()  {
+      return vSumModules.size();
+   };
+   int GetSumModule(int x)  {
+      return vSumModules[x];
+   };
+   
+   
    
  private:
    vector<LinkDefinition_t>  fLinks;   
    vector<BoardDefinition_t> fBoards;
    vector<VMEOption_t>       fVMEOptions;
+   vector<int>               vSumModules;
    RunOptions_t              fRunOptions;
    MongodbOptions_t          fMongoOptions;   
    DDC10Options_t            fDDC10Options;
