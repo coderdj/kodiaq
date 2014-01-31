@@ -228,7 +228,7 @@ int CBV1724::GetBaselines(vector <int> &baselines, bool bQuiet)
    infile.open(filename.str().c_str());
    if(!infile)  {
       stringstream error;
-      error<<"No options found for board "<<fBID.BoardID;
+      error<<"No baselines found for board "<<fBID.BoardID;
       gLog->Error(error.str());
       gLog->SendMessage(error.str());
       return -1;
@@ -302,10 +302,11 @@ int CBV1724::DetermineBaselines()
    ReadReg32(ZLEReg,ZLE);
    
    int iteration=0;
+   u_int32_t data=0xD0; //turn ZLE off, simple data format
+   WriteReg32(ZLEReg,data);
    while(iteration<=maxIterations)  {
       iteration++;
       
-      u_int32_t data; 
       //Enable board
 //      ReadReg32(AcquisitionControlReg,data);
       usleep(50000);
@@ -322,8 +323,8 @@ int CBV1724::DetermineBaselines()
       data=0x0;
       WriteReg32(AcquisitionControlReg,data);
 
-      data=0xD0; //turn ZLE off, simple data format
-      WriteReg32(ZLEReg,data);
+//      data=0xD0; //turn ZLE off, simple data format
+//      WriteReg32(ZLEReg,data);
       
       //Read MBLT
       int ret,nb,pnt=0;
