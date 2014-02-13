@@ -56,7 +56,7 @@ int XeCursesInterface::GetLoginInfo(string &name, int &port, int &dataport,strin
    field[3] = new_field(1,40,12,34,0,0);
    field[4] = NULL;
    
-   set_field_buffer(field[0],0,"xedaq02");
+   set_field_buffer(field[0],0,"xedaq00");
    field_opts_off(field[0],O_AUTOSKIP);   
    set_field_buffer(field[1],0,"3000");   
    field_opts_off(field[1],O_AUTOSKIP);
@@ -483,9 +483,6 @@ void XeCursesInterface::DrawNotifications(unsigned int lower,unsigned int upper)
    mvwprintw(notify_win,0,0," Messages: (%3i-%3i of %3i)                                                                    ",lower,upper,fNotifications.size());
    wattroff(notify_win,COLOR_PAIR(7));
    wattroff(notify_win,A_BOLD);
-//   if(fNotifications.size()>upper) mvwprintw(notify_win,32,0,"v");
-//   else mvwprintw(notify_win,32,0," ");
-   //if(lower>0 && fNotifications.size()>0) 
    wattron(notify_win,COLOR_PAIR(7));
    mvwprintw(notify_win,1,94,"^");
    mvwprintw(notify_win,32,94,"v");
@@ -495,10 +492,14 @@ void XeCursesInterface::DrawNotifications(unsigned int lower,unsigned int upper)
    else mvwprintw(notify_win,1,0,"                                                          ");
    for(unsigned int x=lower;x<upper;x++){//fNotifications.size();x++){
       if(x<0 || fNotifications.size()==0) continue;
-      int binSize=1;
-      if(fNotifications.size()>30) binSize = fNotifications.size()/30;
+
+      double binSize=1.;
+      if(fNotifications.size()>30) binSize = (double)(fNotifications.size()-30)/30.;
       int currentBin = 0;
-      if(fNotifications.size()>=30) currentBin = lower/binSize;      
+      if(fNotifications.size()>=30) currentBin = (int)(((double)lower)/binSize);
+      
+      if(currentBin==30) currentBin--;
+      //scroll bar
       if(x-lower == currentBin ||x-lower==currentBin+1 || x-lower==currentBin-1)	{
 	 wattron(notify_win,COLOR_PAIR(9));
 	 mvwprintw(notify_win,x-lower+2.0,94," ");
@@ -509,6 +510,7 @@ void XeCursesInterface::DrawNotifications(unsigned int lower,unsigned int upper)
 	 mvwprintw(notify_win,x-lower+2.0,94," ");
 	 wattroff(notify_win,COLOR_PAIR(7));
       }
+      //end scroll bar
       
       if(x>=fNotifications.size()) continue;
       
@@ -854,7 +856,6 @@ WINDOW* XeCursesInterface::create_newwin(int height, int width,
 {   
    WINDOW *local_win;
    local_win = newwin(height, width, starty, startx);
-//   box(local_win, 0 , 0);
    wrefresh(local_win);
    return local_win;
 }
