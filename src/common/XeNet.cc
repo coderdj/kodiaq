@@ -482,10 +482,12 @@ int XeNet::SendCommandToSocket(int socket,string command,int id, string sender)
       if(SendString(socket,sender)==0)	{
 	 if(SendInt(socket,id)==0)  {
 	    if(SendString(socket,command)==0){
-	       if(SendString(socket,footer)==0 && command !="KEEPALIVE")	 {
-		  stringstream mess;
-		  mess<<"XeNet::SendCommandToSocket - Sent command "<<command<<" to "<<socket<<" from "<<sender<<"("<<id<<")";
-		  fLog->Message(mess.str());
+	       if(SendString(socket,footer)==0)	 {
+		  if(command!="KEEPALIVE") {		       
+		     stringstream mess;
+		     mess<<"XeNet::SendCommandToSocket - Sent command "<<command<<" to "<<socket<<" from "<<sender<<"("<<id<<")";
+		     fLog->Message(mess.str());
+		  }		  
 		  return 0;
 	       }	       
 	    }	    
