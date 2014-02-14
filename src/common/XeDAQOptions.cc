@@ -40,6 +40,7 @@ void XeDAQOptions::Reset()
    fBaselineMode=1;
    fReadoutThreshold=10;
    fMongoOptions.Collection="data.test";   
+   fRunModeID="";
    vSumModules.clear();
    
    fDDC10Options.Sign=0; fDDC10Options.IntegrationWindow=100;
@@ -173,6 +174,10 @@ int XeDAQOptions::ReadParameterFile(string filename)
       if(words[0]=="SUM_MODULE")	{
 	 if(words.size()<2) continue;
 	 vSumModules.push_back(XeDAQHelper::StringToInt(words[1]));
+      }
+      if(words[0]=="RUN_MODE")	{
+	 if(words.size()<2) continue;
+	 fRunModeID=words[1];
       }
       
    }   

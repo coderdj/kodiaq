@@ -225,12 +225,10 @@ int XeNet::CheckDataSocket(int socket, XeStatusPacket_t &status)
    int retval=-1;
    while(MessageOnPipe(socket)==0) {
       string type;
-//      fLog->Message("found message on pipe");
       if((ReceiveString(socket,type))!=0)   {
 	 fLog->Error("XeNet::CheckDataSocket - Saw message on pipe but no header.");	 
 	 return -2;
       }   
-//      fLog->Message(type);
       if(type=="UPDATE")        {      
 	 int id,stat,nboards;
 	 double rate,freq;
