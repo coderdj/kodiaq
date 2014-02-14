@@ -224,6 +224,7 @@ int main()
 	    errstring<<"DAQ put to sleep mode by "<<sender<<"("<<id<<")";
 	    fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_STATE);
 	    fDAQNetwork.SendCommand("SLEEP");
+	    fDAQStatus.RunMode="None";
 	    command='0';
 	 }	 	 	 	 	 	 
       }
