@@ -210,7 +210,8 @@ login_screen:
       
       
       //monitor data socket
-      if(fMasterNetwork.WatchForUpdates(fDAQStatus)==0)	{
+      int uSuccess = fMasterNetwork.WatchForUpdates(fDAQStatus);
+      if(uSuccess==0)	{
 	 if(fDAQStatus.Slaves.size()>0) fDAQStatus.NetworkUp=true;
 	 else fDAQStatus.NetworkUp=false;
 	 
@@ -221,7 +222,11 @@ login_screen:
 	 fUI.SidebarRefresh();
 	 fUI.Update();
       }
-      //watch for timeouts
+      else if(uSuccess==-2)	{
+	 break;
+      }
+      
+      //watch for timeouts -- TIMEOUT HANDLING SHOULD BE IN MASTER NOT HERE
       time_t currentTime=XeDAQLogger::GetCurrentTime();
       for(unsigned int x=0;x<fDAQStatus.Slaves.size();x++)      	{	       
 	 if(difftime(currentTime,fDAQStatus.Slaves[x].lastUpdate)<60.)
