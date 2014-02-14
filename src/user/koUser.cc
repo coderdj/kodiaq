@@ -19,8 +19,8 @@ using namespace std;
 int main()
 {
    //temp file output
-//   ofstream outfile;
-//   outfile.open("data.dat");
+   // ofstream outfile;
+   // outfile.open("data.dat");
    
    //Declare objects
    //
@@ -93,6 +93,7 @@ login_screen:
    fUI.DrawStartMenu();
    while(command!='q' && command!='Q')   {
       usleep(100);
+      command='0';
       
       //Draw the proper menu
       if((fDAQStatus.NetworkUp && UI_SCREEN_SHOWING<=1) || 
@@ -142,7 +143,7 @@ login_screen:
        case 'r': //RECONNECT
 	 //tell daq to disconnect everything then put network back up (if settings changed)
 	 if(!fDAQStatus.NetworkUp || fDAQStatus.DAQState==XEDAQ_RUNNING || 
-	    fDAQStatus.DAQState==XEDAQ_ARMED) break;
+	    fDAQStatus.DAQState==XEDAQ_ARMED || fDAQStatus.DAQState==XEDAQ_MIXED) break;
 	 fUI.PrintNotify("Really reconnect DAQ network? (y/n)");
 	 command=getch();
 	 if(command=='y')  
@@ -153,7 +154,7 @@ login_screen:
 	 break;	 
        case 'd': //DISCONNECT
 	 if(!fDAQStatus.NetworkUp || fDAQStatus.DAQState==XEDAQ_RUNNING || 
-	    fDAQStatus.DAQState==XEDAQ_ARMED) break;
+	     fDAQStatus.DAQState==XEDAQ_ARMED || fDAQStatus.DAQState==XEDAQ_MIXED) break;
 	 fUI.PrintNotify("Really disconnect DAQ network? (y/n)");
 	 command=getch();
 	 if(command=='y') fMasterNetwork.SendCommand("DISCONNECT");
@@ -162,7 +163,8 @@ login_screen:
 	 command='0';
 	 break;
        case 'm': //Change run mode
-	 if(!fDAQStatus.NetworkUp || fDAQStatus.DAQState==XEDAQ_RUNNING) break;
+	 if(!fDAQStatus.NetworkUp || fDAQStatus.DAQState==XEDAQ_RUNNING || 
+	    fDAQStatus.DAQState==XEDAQ_MIXED) break;
 	 fMasterNetwork.SendCommand("ARM");
 	 runModes.clear();
 	 if(fMasterNetwork.GetStringList(runModes)!=0) {
@@ -176,12 +178,14 @@ login_screen:
 	 command='0';
 	 break;
        case 'x'://sleep mode
-	 if(!fDAQStatus.DAQState==XEDAQ_ARMED || fDAQStatus.DAQState==XEDAQ_RUNNING) break;
+	 if(!fDAQStatus.DAQState==XEDAQ_ARMED || fDAQStatus.DAQState==XEDAQ_RUNNING
+	   || fDAQStatus.DAQState==XEDAQ_MIXED) break;
 	 fMasterNetwork.SendCommand("SLEEP");
 	 command='0';
 	 break;
        case 's':
-	 if(!fDAQStatus.DAQState==XEDAQ_ARMED || fDAQStatus.DAQState==XEDAQ_RUNNING) break;
+	 if(!fDAQStatus.DAQState==XEDAQ_ARMED || fDAQStatus.DAQState==XEDAQ_RUNNING
+	   || fDAQStatus.DAQState==XEDAQ_MIXED) break;
 	 fMasterNetwork.SendCommand("START");
 	 command='0';
 	 break;
