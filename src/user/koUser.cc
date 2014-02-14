@@ -223,7 +223,7 @@ login_screen:
 	 fUI.Update();
       }
       else if(uSuccess==-2)	{
-	 break;
+	 goto login_screen;
       }
       
       //watch for timeouts -- TIMEOUT HANDLING SHOULD BE IN MASTER NOT HERE
