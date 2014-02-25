@@ -35,10 +35,10 @@
 
 //MESSAGE PRIORITY IDENTIFIERS
 #define XEMESS_UPDATE    0
-#define XEMESS_BROADCAST 4
+#define XEMESS_NORMAL    1
 #define XEMESS_WARNING   2
 #define XEMESS_ERROR     3
-#define XEMESS_NORMAL    1
+#define XEMESS_BROADCAST 4
 #define XEMESS_STATE     5
 
 using namespace std;

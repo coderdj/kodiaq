@@ -153,11 +153,12 @@ int XeNetClient::Disconnect()
 
 int XeNetClient::WatchForUpdates(XeStatusPacket_t &status)
 {
-   if(CheckDataSocket(fDataSocket,status)==0)  {
+   int a = CheckDataSocket(fDataSocket,status);
+   if(a==0)   {
       XeDAQHelper::ProcessStatus(status);
       return 0;
    }
-   return -1;
+   return a;
 }
 
 int XeNetClient::SendCommand(string command)

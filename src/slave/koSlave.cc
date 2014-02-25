@@ -19,6 +19,73 @@ using namespace std;
 
 XeDAQLogger *gLog = new XeDAQLogger("log/koSlave.log");
 
+#ifdef KODIAQ_LITE
+// *******************************************************************************
+// 
+//           STANDALONE CODE FOR KODIAQ_LITE, SINGLE-INSTANCE DAQ
+//           
+// *******************************************************************************
+int main()
+{   
+   gLog->Message("Started program.");   
+   DigiInterface *fElectronics = new DigiInterface();
+   XeDAQOptions fDAQOptions;
+   string fOptionsPath = "data/DAQConfig.ini";
+   
+program_start:
+   char input;
+   cout<<"Welcome to kodiaq lite! Press 's' to start the run, 'q' to quit."<<endl;
+   input = getch();
+   
+   if(input=='q') return 0;
+   else if(input!='s') goto program_start;
+   
+   //load options
+   if(fDAQOptions.ReadParameterFile(fOptionsPath)!=0)   {	
+      cout<<"Error reading options file!"<<endl;
+      return 1;
+   }   
+   //start digi interface
+   if(fElectronics->Initialize(&fDAQOptions)!=0)  {	
+      cout<<"Error initializing electronics"<<endl;
+      return 1;
+   }   
+   //start run
+   if(fElectronics->StartRun()!=0)    {	
+      cout<<"Error starting run."<<endl;
+      return 1;
+   }
+   
+   input='a';
+   time_t prevTime = XeDAQLogger::GetCurrentTime();
+   while(1)  {	
+      if(kbhit()) input=getch();
+      if(input=='q') break;
+      time_t currentTime = XeDAQLogger::GetCurrentTime();
+      
+      //updates every second
+      time_t tdiff;
+      if((tdiff = difftime(currentTime,prevTime))>1.0)  {	 
+	 prevTime=currentTime;
+	 unsigned int iFreq=0;
+	 unsigned int iRate = fElectronics->GetRate(iFreq);
+	 double rate = (double)iRate;
+	 double freq = (double)iFreq;
+	 rate = rate/tdiff;
+	 rate/=1048576;
+	 freq=freq/tdiff;
+	 cout<<"Rate: "<<rate<<"MB/s   Freq: "<<freq<<"Hz   Averaged over "<<tdiff<<"s"<<endl;
+      }      
+   }      
+   return 0;
+}
+     
+#else
+// *******************************************************************************
+// 
+//           NETWORKED DAQ SLAVE CODE
+//           
+// *******************************************************************************
 int main()
 {
    gLog->Message("Started koSlave module.");
@@ -132,3 +199,4 @@ connection_loop:
    
    
 }
+#endif

@@ -161,6 +161,7 @@ class XeDAQOptions
    RunOptions_t              fRunOptions;
    MongodbOptions_t          fMongoOptions;   
    DDC10Options_t            fDDC10Options;
+   string                    fRunModeID;
    int                       fWriteMode;
    int                       fProcessingThreads;
    int                       fBaselineMode;

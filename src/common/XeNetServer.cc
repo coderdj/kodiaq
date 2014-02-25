@@ -297,7 +297,9 @@ int XeNetServer::SendCommand(string command)
    int retval=0;
    for(unsigned int x=0;x<fSockets.size();x++)  {
       if(SendCommandToSocket(fSockets[x].socket,command,-1,"master")!=0){
-	 fLog->Error("XeNetServer::SendCommand - error sending command to socket.");
+	 stringstream err;
+	 err<<"XeNetServer::SendCommand - error sending command "<<command<<" from master to socket "<<fSockets[x].id;
+	 fLog->Error(err.str());
 	 retval=-1;
       }      
    }

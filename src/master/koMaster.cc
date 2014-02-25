@@ -96,7 +96,7 @@ int main()
       //************* Check for command on user network ***********
       //***********************************************************
       //***********************************************************
-      // This secdion listens for commands coming from the UIs
+      // This section listens for commands coming from the UIs
       // if a command comes, the appropriate action is taken and
       // and other UIs are informed who made the command and 
       // what it was.
@@ -155,6 +155,7 @@ int main()
 	    fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_NORMAL);
 	    fDAQNetwork.Disconnect();
 	    XeDAQHelper::InitializeStatus(fDAQStatus);	    
+	    sleep(1);
 	    command='0';
 	 }
 	 else if(command=="ARM")  {
@@ -223,6 +224,7 @@ int main()
 	    errstring<<"DAQ put to sleep mode by "<<sender<<"("<<id<<")";
 	    fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_STATE);
 	    fDAQNetwork.SendCommand("SLEEP");
+	    fDAQStatus.RunMode="None";
 	    command='0';
 	 }	 	 	 	 	 	 
       }

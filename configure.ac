@@ -60,6 +60,20 @@ AS_IF([test "x$enable_slave" = "xyes"], [
     AM_CONDITIONAL(WITH_SLAVE,false)
     ])
 
+AC_ARG_ENABLE( [lite],
+    AS_HELP_STRING([--enable-lite], [Compile standalone slave]))
+AS_IF([test "x$enable_lite" = "xyes"], [
+    AM_CONDITIONAL(KODIAQ_LITE,true)
+    AM_CONDITIONAL(WITH_SLAVE,true)
+    AC_DEFINE(KODIAQ_LITE,[],[Compile standalone slave])    
+    AC_CHECK_LIB(pthread,pthread_mutex_init,[],AC_MSG_ERROR([libpthread missing.]))
+    AC_CHECK_LIB(CAENVME,CAENVME_Init,[],AC_MSG_ERROR([libCAENVME missing.]))
+    AC_CHECK_LIB(snappy,_ZN6snappy11RawCompressEPKcmPcPm,[],AC_MSG_ERROR([libsnappymissing.]))
+    AC_CHECK_LIB(mongoclient,main,[],AC_MSG_ERROR([libmongoclient missing.]))
+    ], [
+    AM_CONDITIONAL(KODIAQ_LITE,false)
+    ])
+
 #Now some more specific options. For example, should we compile with DDC10 support?
 AC_ARG_ENABLE( [DDC10],
     AS_HELP_STRING([--enable-ddc10], [Disable support for DDC10 HE veto module]))
