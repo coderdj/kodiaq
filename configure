@@ -618,6 +618,8 @@ LTLIBOBJS
 LIBOBJS
 WITH_DDC10_FALSE
 WITH_DDC10_TRUE
+KODIAQ_LITE_FALSE
+KODIAQ_LITE_TRUE
 WITH_SLAVE_FALSE
 WITH_SLAVE_TRUE
 WITH_MASTER_FALSE
@@ -753,6 +755,7 @@ enable_libtool_lock
 enable_user
 enable_master
 enable_slave
+enable_lite
 enable_DDC10
 enable_all
 '
@@ -1399,6 +1402,7 @@ Optional Features:
   --disable-user          Disable compilation of UI
   --enable-master         Enable compilation of master executable
   --enable-slave          Enable slave module
+  --enable-lite           Compile standalone slave
   --enable-ddc10          Disable support for DDC10 HE veto module
   --enable-all            Enable compilation of all modules
 
@@ -15491,6 +15495,228 @@ fi
 
 fi
 
+# Check whether --enable-lite was given.
+if test "${enable_lite+set}" = set; then :
+  enableval=$enable_lite;
+fi
+
+if test "x$enable_lite" = "xyes"; then :
+
+     if true; then
+  KODIAQ_LITE_TRUE=
+  KODIAQ_LITE_FALSE='#'
+else
+  KODIAQ_LITE_TRUE='#'
+  KODIAQ_LITE_FALSE=
+fi
+
+     if true; then
+  WITH_SLAVE_TRUE=
+  WITH_SLAVE_FALSE='#'
+else
+  WITH_SLAVE_TRUE='#'
+  WITH_SLAVE_FALSE=
+fi
+
+
+$as_echo "#define KODIAQ_LITE /**/" >>confdefs.h
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pthread_mutex_init in -lpthread" >&5
+$as_echo_n "checking for pthread_mutex_init in -lpthread... " >&6; }
+if ${ac_cv_lib_pthread_pthread_mutex_init+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lpthread  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char pthread_mutex_init ();
+int
+main ()
+{
+return pthread_mutex_init ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  ac_cv_lib_pthread_pthread_mutex_init=yes
+else
+  ac_cv_lib_pthread_pthread_mutex_init=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_pthread_pthread_mutex_init" >&5
+$as_echo "$ac_cv_lib_pthread_pthread_mutex_init" >&6; }
+if test "x$ac_cv_lib_pthread_pthread_mutex_init" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBPTHREAD 1
+_ACEOF
+
+  LIBS="-lpthread $LIBS"
+
+else
+  as_fn_error $? "libpthread missing." "$LINENO" 5
+fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CAENVME_Init in -lCAENVME" >&5
+$as_echo_n "checking for CAENVME_Init in -lCAENVME... " >&6; }
+if ${ac_cv_lib_CAENVME_CAENVME_Init+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lCAENVME  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char CAENVME_Init ();
+int
+main ()
+{
+return CAENVME_Init ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  ac_cv_lib_CAENVME_CAENVME_Init=yes
+else
+  ac_cv_lib_CAENVME_CAENVME_Init=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_CAENVME_CAENVME_Init" >&5
+$as_echo "$ac_cv_lib_CAENVME_CAENVME_Init" >&6; }
+if test "x$ac_cv_lib_CAENVME_CAENVME_Init" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBCAENVME 1
+_ACEOF
+
+  LIBS="-lCAENVME $LIBS"
+
+else
+  as_fn_error $? "libCAENVME missing." "$LINENO" 5
+fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for _ZN6snappy11RawCompressEPKcmPcPm in -lsnappy" >&5
+$as_echo_n "checking for _ZN6snappy11RawCompressEPKcmPcPm in -lsnappy... " >&6; }
+if ${ac_cv_lib_snappy__ZN6snappy11RawCompressEPKcmPcPm+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lsnappy  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char _ZN6snappy11RawCompressEPKcmPcPm ();
+int
+main ()
+{
+return _ZN6snappy11RawCompressEPKcmPcPm ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  ac_cv_lib_snappy__ZN6snappy11RawCompressEPKcmPcPm=yes
+else
+  ac_cv_lib_snappy__ZN6snappy11RawCompressEPKcmPcPm=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_snappy__ZN6snappy11RawCompressEPKcmPcPm" >&5
+$as_echo "$ac_cv_lib_snappy__ZN6snappy11RawCompressEPKcmPcPm" >&6; }
+if test "x$ac_cv_lib_snappy__ZN6snappy11RawCompressEPKcmPcPm" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBSNAPPY 1
+_ACEOF
+
+  LIBS="-lsnappy $LIBS"
+
+else
+  as_fn_error $? "libsnappymissing." "$LINENO" 5
+fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lmongoclient" >&5
+$as_echo_n "checking for main in -lmongoclient... " >&6; }
+if ${ac_cv_lib_mongoclient_main+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lmongoclient  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+return main ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  ac_cv_lib_mongoclient_main=yes
+else
+  ac_cv_lib_mongoclient_main=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mongoclient_main" >&5
+$as_echo "$ac_cv_lib_mongoclient_main" >&6; }
+if test "x$ac_cv_lib_mongoclient_main" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBMONGOCLIENT 1
+_ACEOF
+
+  LIBS="-lmongoclient $LIBS"
+
+else
+  as_fn_error $? "libmongoclient missing." "$LINENO" 5
+fi
+
+
+else
+
+     if false; then
+  KODIAQ_LITE_TRUE=
+  KODIAQ_LITE_FALSE='#'
+else
+  KODIAQ_LITE_TRUE='#'
+  KODIAQ_LITE_FALSE=
+fi
+
+
+fi
+
 #Now some more specific options. For example, should we compile with DDC10 support?
 # Check whether --enable-DDC10 was given.
 if test "${enable_DDC10+set}" = set; then :
@@ -16137,6 +16363,18 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${WITH_SLAVE_TRUE}" && test -z "${WITH_SLAVE_FALSE}"; then
   as_fn_error $? "conditional \"WITH_SLAVE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${KODIAQ_LITE_TRUE}" && test -z "${KODIAQ_LITE_FALSE}"; then
+  as_fn_error $? "conditional \"KODIAQ_LITE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${WITH_SLAVE_TRUE}" && test -z "${WITH_SLAVE_FALSE}"; then
+  as_fn_error $? "conditional \"WITH_SLAVE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${KODIAQ_LITE_TRUE}" && test -z "${KODIAQ_LITE_FALSE}"; then
+  as_fn_error $? "conditional \"KODIAQ_LITE\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${WITH_DDC10_TRUE}" && test -z "${WITH_DDC10_FALSE}"; then
