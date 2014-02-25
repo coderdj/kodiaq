@@ -212,6 +212,7 @@ login_screen:
       //monitor data socket
       int uSuccess = fMasterNetwork.WatchForUpdates(fDAQStatus);
       if(uSuccess==0)	{
+//	 fUI.PrintNotify("uSuccess = 0");
 	 if(fDAQStatus.Slaves.size()>0) fDAQStatus.NetworkUp=true;
 	 else fDAQStatus.NetworkUp=false;
 	 
@@ -223,6 +224,7 @@ login_screen:
 	 fUI.Update();
       }
       else if(uSuccess==-2)	{
+//	 fUI.PrintNotify("uSuccess = -2");
 	 goto login_screen;
       }
       
@@ -246,5 +248,6 @@ login_screen:
    }
    fMasterNetwork.Disconnect();   
    fUI.Close();
+   endwin();
    return 0;
 }
