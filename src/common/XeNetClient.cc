@@ -55,7 +55,8 @@ int XeNetClient::Connect()
    server = gethostbyname(fHOSTNAME.c_str());
    if(server==NULL)  {
       fLog->Error("XeNetClient::Connect - failed to get server hostname.");
-   }
+      return -1;      
+   }   
    
    //Define socket
    int sock = socket(AF_INET,SOCK_STREAM,0);  //IPv4 only for now

@@ -55,11 +55,17 @@ int XeNet::ReceiveString(int socket,string &buff)
    while(!end)  {
       char cbuff='a';      
       int a;
-      if((a=ReceiveChar(socket,cbuff))<0) return -1;
+      if((a=ReceiveChar(socket,cbuff))<0) {
+	 buff=retstring;
+	 return -1;
+      }      
       if(a==0) return -2;
       if(cbuff=='~') break;
       retstring.push_back(cbuff);
-      if(retstring.size()>1000) return -1; //crazy loop
+      if(retstring.size()>1000) {
+	 buff=retstring;
+	 return -1; //crazy loop
+      }      
    }
 //   if(retstring.size()==0) return -1;
    buff=retstring;
@@ -227,7 +233,8 @@ int XeNet::CheckDataSocket(int socket, XeStatusPacket_t &status)
       string type;
 //      fLog->Message("found message on pipe");
       if((ReceiveString(socket,type))!=0)   {
-	 fLog->Error("XeNet::CheckDataSocket - Saw message on pipe but no header.");	 
+	 fLog->Error("XeNet::CheckDataSocket - Saw message on pipe but no header. Partial message follows:");
+	 fLog->Error(type);
 	 return -2;
       }   
 //      fLog->Message(type);
