@@ -95,13 +95,13 @@ void XeProcessor::ProcessMongoDB()
 //          *****************************
 
 	    //default splitting
-	    if(fBlockSplitting==1)
-	      ProcessData(buffvec,sizevec);
+//	    if(fBlockSplitting==1)
+//	      ProcessData(buffvec,sizevec);
 	    
 	    //channel splitting
-//	    vector <u_int32_t> *channels = new vector<u_int32_t>();
-//	    vector <u_int32_t> *times    = new vector<u_int32_t>();
-//	    ProcessDataChannels(buffvec,sizevec,times,channels);
+	    vector <u_int32_t> *channels = new vector<u_int32_t>();
+	    vector <u_int32_t> *times    = new vector<u_int32_t>();
+	    ProcessDataChannels(buffvec,sizevec,times,channels);
 //	    *****************************
 //	    END PROCESSING
 //	    *****************************
@@ -116,10 +116,10 @@ void XeProcessor::ProcessMongoDB()
 	       mongo::BSONObjBuilder bson;
 	       u_int32_t *buff = (*buffvec)[b];
 	       u_int32_t eventSize = (*sizevec)[b];
-	       u_int32_t TimeStamp = GetTimeStamp(buff);//@
+//	       u_int32_t TimeStamp = GetTimeStamp(buff);//@
 	       
-//	       u_int32_t TimeStamp = (*times)[b];//!
-//	       bson.append("channel",(*channels)[b]);//!
+	       u_int32_t TimeStamp = (*times)[b];//!
+	       bson.append("channel",(*channels)[b]);//!
 	       
 	       int ID = mongo->GetID(TimeStamp);	       
 	       long long mongoTime = ((unsigned long)ID << 31) | TimeStamp;
@@ -174,8 +174,8 @@ void XeProcessor::ProcessMongoDB()
 	       }
 	       
 	    }//end for through buffers	    
-//	    delete channels;//!
-//	    delete times;//!
+	    delete channels;//!
+	    delete times;//!
 	    	    	    
 	    if(fInsertVec==NULL) break; 
 	    if(buffvec!=NULL) {
@@ -254,60 +254,74 @@ void XeProcessor::ProcessDataChannels(vector<u_int32_t*> *&buffvec, vector<u_int
    //ONLY WORKS WITH ZLE ON
    
    for(unsigned int x=0; x<buffvec->size();x++)  {
-      //loop through main vector
+      //loop through main vector containing the raw data
       if((*sizevec)[x]==0)	{
 	 delete[] (*buffvec)[x];
 	 continue;
       }
+      
       unsigned int idx=0;
       u_int32_t headerTime=0;
       u_int32_t channel=0;
       
-      while((*buffvec)[x][idx]==0xFFFFFFFF) idx++;
-      
-      while(idx<(((*sizevec)[x])/(sizeof(u_int32_t)))){	   
-	 if((*buffvec)[x][idx]==0xFFFFFFFF) break;    
-	 if(((*buffvec)[x][idx]>>20)==0xA00) { //found a header
+      while(idx<(((*sizevec)[x])/(sizeof(u_int32_t))) && (*buffvec)[x][idx]!=0xFFFFFFFF){	   
+	 if(((*buffvec)[x][idx]>>20)!=0xA00) continue; //found a header
+//	 cout<<hex<<(*buffvec)[x][idx]<<endl;
+//	 cout<<hex<<(*buffvec)[x][idx+1]<<endl;
+//	 cout<<hex<<(*buffvec)[x][idx+2]<<endl;
+//	 cout<<hex<<(*buffvec)[x][idx+3]<<endl;
+	 
+	    //Read information from header. Need channel mask and header time
 	    u_int32_t mask = ((*buffvec)[x][idx+1])&0xFF;
 	    headerTime = ((*buffvec)[x][idx+3])&0x7FFFFFFF;
-	    channel=0;
 	    idx+=4;
 	    
-	    while(channel<8)  {
-	       if(!((mask>>channel)&1))	 {
-		  channel++;
-		  continue;
-	       }
+	    for(int channel=0; channel<8;channel++){
+	       if(!((mask>>channel)&1))	     //Do we have this channel in the event?
+		 continue;	      
 	       	    
 	       u_int32_t size = ((*buffvec)[x][idx]);
-	    //   if(size<2)	 {	       
-	//	  idx+=size;
-	//	  channel++;
-	//	  continue;
-	  //     }	     
-	       if(size<2)	 {
+
+	       if(size<2)	 { //when is size < 2? some bug?
 		  gLog->SendMessage("Bad buffer format! Possible lost data!");
 		  break;
 	       }
-	       
-	       size-=1;	       
+//	       cout<<hex<<(*buffvec)[x][idx]<<endl;
+	       //size-=1; // I don't think I need this
 	       idx++;
+	       int sampleCnt=0;
+	       int wordCnt=0;
 	       
-	       u_int32_t *rb = new u_int32_t[size];
-	       copy((*buffvec)[x]+(idx),(*buffvec)[x]+(idx+size),rb);
-	       retbuff->push_back(rb);
-	       retsize->push_back(size*sizeof(u_int32_t));
-	       channels->push_back(channel);
-	       timeStamps->push_back(headerTime);
-	       channel++;
-	       idx+=size;
-	    }
-	 }
-	 else
-	   idx++;
+	       while((unsigned int)wordCnt<size) { //until we get to the end of this channel data		    
+		  //next word is "good data" word
+//		  cout<<hex<<(*buffvec)[x][idx]<<endl;
+		  if(((*buffvec)[x][idx]>>28)!=0x8) {  //data is no good
+		     sampleCnt+=(2*(*buffvec)[x][idx]);
+		     idx++;
+		     wordCnt++;
+		     continue;
+		  }
+		  int GoodWords = (*buffvec)[x][idx]&0xFFFFFFF;
+		  idx++;
+		  wordCnt++;
+		  u_int32_t *keep = new u_int32_t[GoodWords];
+		  memcpy(keep,(const void*)((*buffvec)[x]+idx),4*GoodWords);
+//		  copy((*buffvec)[x]+idx,(*buffvec)[x]+(idx+(GoodWords)),keep);
+		  idx+=GoodWords;
+		  wordCnt+=GoodWords;
+		  sampleCnt+=2*GoodWords;
+		  retbuff->push_back(keep);
+		  retsize->push_back(GoodWords*4);
+		  channels->push_back(channel);
+		  timeStamps->push_back(headerTime+sampleCnt);
+	       }
+	    }//end for through channels	    	    	       	    
       }//end while
       delete[] (*buffvec)[x];      
    }
+   
+      
+      
    delete buffvec;
    delete sizevec;
    buffvec=retbuff;
