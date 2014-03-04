@@ -252,6 +252,13 @@ void XeProcessor::ProcessDataChannels(vector<u_int32_t*> *&buffvec, vector<u_int
    
    //timestamps,channels should be provided as pointers to empty vectors
    //ONLY WORKS WITH ZLE ON
+
+   //buffvec is the buffers to be parsed (one blt per element)
+   //sizevec is the size of each buffer in buffvec (in bytes)
+   //retbuff will be the returned buffers with headers stripped
+   //retsize will be the returned sizes in words
+   //timeStamps will be the timestamps of the returned buffers
+   //channels will be the channels of the returned buffers
    
    for(unsigned int x=0; x<buffvec->size();x++)  {
       //loop through main vector containing the raw data
@@ -260,61 +267,48 @@ void XeProcessor::ProcessDataChannels(vector<u_int32_t*> *&buffvec, vector<u_int
 	 continue;
       }
       
-      unsigned int idx=0;
+      unsigned int idx=0;                    //the index we will use to iterate through the buffer
       u_int32_t headerTime=0;
-      u_int32_t channel=0;
       
-      while(idx<(((*sizevec)[x])/(sizeof(u_int32_t))) && (*buffvec)[x][idx]!=0xFFFFFFFF){	   
-	 if(((*buffvec)[x][idx]>>20)!=0xA00) continue; //found a header
-//	 cout<<hex<<(*buffvec)[x][idx]<<endl;
-//	 cout<<hex<<(*buffvec)[x][idx+1]<<endl;
-//	 cout<<hex<<(*buffvec)[x][idx+2]<<endl;
-//	 cout<<hex<<(*buffvec)[x][idx+3]<<endl;
+      while(idx<(((*sizevec)[x])/(sizeof(u_int32_t)))){	   
+	 if(((*buffvec)[x][idx])==0xFFFFFFFF) { idx++; continue; }//empty data, iterate
+	 if(((*buffvec)[x][idx]>>20)!=0xA00) { idx++; continue; }//found a header
 	 
 	    //Read information from header. Need channel mask and header time
 	    u_int32_t mask = ((*buffvec)[x][idx+1])&0xFF;
 	    headerTime = ((*buffvec)[x][idx+3])&0x7FFFFFFF;
-	    idx+=4;
+	    idx+=4;    //skip over header
 	    
-	    for(int channel=0; channel<8;channel++){
+	    
+	    for(int channel=0; channel<8;channel++){ //loop through channels
 	       if(!((mask>>channel)&1))	     //Do we have this channel in the event?
 		 continue;	      
-	       	    
-	       u_int32_t size = ((*buffvec)[x][idx]);
-
-	       if(size<2)	 { //when is size < 2? some bug?
-		  gLog->SendMessage("Bad buffer format! Possible lost data!");
-		  break;
-	       }
-//	       cout<<hex<<(*buffvec)[x][idx]<<endl;
-	       //size-=1; // I don't think I need this
-	       idx++;
-	       int sampleCnt=0;
-	       int wordCnt=0;
+	       u_int32_t channelSize = ((*buffvec)[x][idx]);
+	       idx++; //iterate past the size word
 	       
-	       while((unsigned int)wordCnt<size) { //until we get to the end of this channel data		    
-		  //next word is "good data" word
-//		  cout<<hex<<(*buffvec)[x][idx]<<endl;
+	       int sampleCnt=0;          //this counts the samples for timing purposes
+	       unsigned int wordCnt=1;   //this counts the words so we know when we get to the end of size
+	       while(wordCnt<channelSize) { //until we get to the end of this channel data		    
 		  if(((*buffvec)[x][idx]>>28)!=0x8) {  //data is no good
-		     sampleCnt+=(2*(*buffvec)[x][idx]);
+		     sampleCnt+=((2*(*buffvec)[x][idx]));
 		     idx++;
 		     wordCnt++;
 		     continue;
 		  }
 		  int GoodWords = (*buffvec)[x][idx]&0xFFFFFFF;
-		  idx++;
+		  idx++;                   //iterate past the control word
 		  wordCnt++;
-		  u_int32_t *keep = new u_int32_t[GoodWords];
-		  memcpy(keep,(const void*)((*buffvec)[x]+idx),4*GoodWords);
-//		  copy((*buffvec)[x]+idx,(*buffvec)[x]+(idx+(GoodWords)),keep);
+		  char *keep = new char[GoodWords*4];
+		  memcpy(keep,((*buffvec)[x]+idx),4*GoodWords);
+		  //copy((*buffvec)[x]+idx,(*buffvec)[x]+(idx+GoodWords),keep);
 		  idx+=GoodWords;
 		  wordCnt+=GoodWords;
-		  sampleCnt+=2*GoodWords;
-		  retbuff->push_back(keep);
+		  retbuff->push_back((u_int32_t*)keep);
 		  retsize->push_back(GoodWords*4);
 		  channels->push_back(channel);
 		  timeStamps->push_back(headerTime+sampleCnt);
-	       }
+		  sampleCnt+=2*GoodWords;
+	       }//end while through this channel data	       
 	    }//end for through channels	    	    	       	    
       }//end while
       delete[] (*buffvec)[x];      
