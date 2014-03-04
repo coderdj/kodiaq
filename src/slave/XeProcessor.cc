@@ -73,8 +73,11 @@ void XeProcessor::ProcessMongoDB()
       LogError("Failed to register mongo connection.");
       return;
    }   
-   vector<u_int32_t*> *buffvec=NULL;
-   vector<u_int32_t > *sizevec=NULL;
+   vector<u_int32_t*> *buffvec  =NULL;
+   vector<u_int32_t > *sizevec  =NULL;
+   vector<u_int32_t > *channels =NULL;
+   vector<u_int32_t > *times    =NULL;
+   
    vector <mongo::BSONObj> *fInsertVec = new vector<mongo::BSONObj>();
 
    while(!ExitCondition){// || !fDAQRecorder->IsOff())    {
@@ -86,27 +89,23 @@ void XeProcessor::ProcessMongoDB()
 	    if(digi->RequestDataLock()!=0) continue;
 	    buffvec = digi->ReadoutBuffer(sizevec);	    
 	    digi->UnlockDataBuffer();	    
-	    //any data manipulation would go here
-	    //
-//          int dbgsizebefore=buffvec->size();
-//          
+
 //          *****************************
 //          PROCESSING
 //          *****************************
 
-	    //default splitting
-//	    if(fBlockSplitting==1)
-//	      ProcessData(buffvec,sizevec);
-	    
-	    //channel splitting
-	    vector <u_int32_t> *channels = new vector<u_int32_t>();
-	    vector <u_int32_t> *times    = new vector<u_int32_t>();
-	    ProcessDataChannels(buffvec,sizevec,times,channels);
+	    if(fBlockSplitting==1)                        //default splitting
+	      ProcessData(buffvec,sizevec);
+	    else if(fBlockSplitting==2) {	          //channel splitting
+	       channels = new vector<u_int32_t>();
+	       times    = new vector<u_int32_t>();
+	       ProcessDataChannels(buffvec,sizevec,times,channels);
+	    }	    
+
 //	    *****************************
 //	    END PROCESSING
 //	    *****************************
 
-//	    int dbgsizeafter = buffvec->size();
 	    
 //	    vector <mongo::BSONObj> *DataInsert = new vector<mongo::BSONObj>();
 	    int ModuleNumber = digi->GetID().BoardID;
@@ -116,10 +115,14 @@ void XeProcessor::ProcessMongoDB()
 	       mongo::BSONObjBuilder bson;
 	       u_int32_t *buff = (*buffvec)[b];
 	       u_int32_t eventSize = (*sizevec)[b];
-//	       u_int32_t TimeStamp = GetTimeStamp(buff);//@
-	       
-	       u_int32_t TimeStamp = (*times)[b];//!
-	       bson.append("channel",(*channels)[b]);//!
+	       u_int32_t TimeStamp = 0;
+
+	       if(fBlockSplitting!=2)
+		 TimeStamp = GetTimeStamp(buff);//@
+	       else{		    
+		  TimeStamp = (*times)[b];//!
+		  bson.append("channel",(*channels)[b]);//!
+	       }
 	       
 	       int ID = mongo->GetID(TimeStamp);	       
 	       long long mongoTime = ((unsigned long)ID << 31) | TimeStamp;
@@ -129,11 +132,8 @@ void XeProcessor::ProcessMongoDB()
 		 bson.append("override",true);
 	       else
 		 bson.append("override",false);
-	       //	       bson.append("dbgsizebefore",dbgsizebefore);
-//	       bson.append("dbgsizeafter",dbgsizeafter);
 	       bson.append("module",ModuleNumber);
-	       bson.append("triggertime",mongoTime);
-//	       bson.append("block_splitting","todo");
+	       bson.append("time",mongoTime);
 	       if(mongo->GetOptions().ZipOutput) { //zip before sending
 		  bson.append("zipped",true);
 		  if(eventSize==0) { 
@@ -174,18 +174,21 @@ void XeProcessor::ProcessMongoDB()
 	       }
 	       
 	    }//end for through buffers	    
-	    delete channels;//!
-	    delete times;//!
-	    	    	    
+	    if(channels!=NULL)		 
+	      delete channels;//!
+	    if(times!=NULL)
+	      delete times;//!
+	    channels = NULL;
+	    times    = NULL;
+	    
 	    if(fInsertVec==NULL) break; 
-	    if(buffvec!=NULL) {
-	       delete buffvec;
-	       buffvec=NULL;
-	    }
-	    if(sizevec!=NULL)  {
-	       delete sizevec;
-	       sizevec=NULL;
-	    }	    
+	    if(buffvec!=NULL) 
+	      delete buffvec;
+	    if(sizevec!=NULL) 
+	      delete sizevec;
+	    	    
+	    buffvec  = NULL;
+	    sizevec  = NULL;
 	 }//end for through digis
 	 if(fInsertVec==NULL) break;
       }//end for through crates
