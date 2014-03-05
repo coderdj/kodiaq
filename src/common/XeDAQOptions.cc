@@ -217,6 +217,16 @@ int XeDAQOptions::ReadFileMaster(string filename)
 	 fDDC10Options.IntegrationThreshold    = XeDAQHelper::StringToInt(words[7]);
 	 fDDC10Options.WidthCut = XeDAQHelper::StringToInt(words[8]);		 
       }
+      if(words[0]=="MONGO_OPTIONS")     	{	   
+	 if(words.size()<7) continue;
+	 fMongoOptions.DBAddress=words[1];
+	 fMongoOptions.Collection=words[2];
+	 (words[3]=="1")?fMongoOptions.ZipOutput=true:fMongoOptions.ZipOutput=false;
+	 fMongoOptions.MinInsertSize = XeDAQHelper::StringToInt(words[4]);
+	 (words[5]=="1")?fMongoOptions.WriteConcern=true:fMongoOptions.WriteConcern=false;
+	   fMongoOptions.BlockSplitting=XeDAQHelper::StringToInt(words[6]);
+      }
+      
    }//end while through file
    initFile.close();
    return 0;
