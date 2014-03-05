@@ -48,7 +48,7 @@ int XeMongoRecorder::RegisterProcessor()
 //      mongo::ScopedDbConnection *conn = new mongo::ScopedDbConnection(fMongoOptions.DBAddress);
       
       mongo::ScopedDbConnection *conn = 
-	mongo::ScopedDbConnection::getScopedDbConnection(fMongoOptions.DBAddress,2500.);
+	mongo::ScopedDbConnection::getScopedDbConnection(fMongoOptions.DBAddress,10000.);
       fScopedConnections.push_back(conn);
    }   
    catch(const mongo::DBException &e)    {	
