@@ -1,12 +1,12 @@
 // ****************************************************
 // 
-// kodiak DAQ Software
+// kodiaq DAQ Software for XENON1T
 // 
 // Author  : Daniel Coderre, LHEP, Universitaet Bern
 // Date    : 24.10.2013
-// File    : kMaster.cc
+// File    : koMaster.cc
 // 
-// Brief   : Main program for kMaster controller
+// Brief   : Main program for koMaster controller
 // 
 // ****************************************************
 
@@ -14,7 +14,7 @@
 #include <fstream>
 #include <algorithm>
 
-#include "XeDAQOptions.hh"
+#include "MasterMongodbConnection.hh"
 #include "XeNetServer.hh"
 
 int GetRunModeList(vector <string> &runModeList,vector <string> &runModePaths);
@@ -49,6 +49,9 @@ int main()
    fRunInfo.RunInfoPath=fRunInfoPath;
    XeDAQHelper::InitializeRunInfo(fRunInfo);
    //
+   //Mongodb Connection
+   MasterMongodbConnection fMongodb(&fLog);   
+   //
    //Assorted other variables
    char               cCommand='0';
    unsigned int       fNSlaves=0;
@@ -56,7 +59,7 @@ int main()
    time_t             fKeepAlive=XeDAQLogger::GetCurrentTime();
    bool               update=false;
 
-   //Options object for reading veto options
+   //Options object for reading veto and mongo options
    XeDAQOptions       fDAQOptions;
    //********************************************
    
@@ -211,12 +214,18 @@ int main()
 	 }	 
 	 else if(command=="START")  {
 	    fDAQNetwork.SendCommand("START");
+	    //send run info to event builder
+	    if(fMongodb.Initialize(sender,fDAQStatus.RunMode,&fDAQOptions)!=0)
+	      fUserNetwork.BroadcastMessage("Failed to send run info to event builder",XEMESS_WARNING);
+	    
 	    errstring<<"DAQ started by "<<sender<<"("<<id<<")";
 	    fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_STATE);
 	    XeDAQHelper::UpdateRunInfo(fRunInfo,sender);
 	 }
 	 else if(command=="STOP")  {
 	    fDAQNetwork.SendCommand("STOP");
+	    if(fMongodb.UpdateEndTime()!=0)
+	      fUserNetwork.BroadcastMessage("Failed to send stop time to event builder.",XEMESS_WARNING);
 	    errstring<<"DAQ stopped by "<<sender<<"("<<id<<")";
 	    fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_STATE);
 	 }
