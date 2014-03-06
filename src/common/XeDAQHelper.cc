@@ -190,6 +190,15 @@ int XeDAQHelper::InitializeRunInfo(XeRunInfo_t &fRunInfo)
    return 0;
 }
 
+string XeDAQHelper::MakeDBName(XeRunInfo_t RunInfo, string CollectionName)
+{
+   std::size_t pos;
+   pos=CollectionName.find_first_of(".",0);
+   string retstring = CollectionName.substr(0,pos);
+   retstring+=RunInfo.RunNumber;
+   return retstring;
+}
+
 int XeDAQHelper::UpdateRunInfo(XeRunInfo_t &fRunInfo, string startedby)
 {
    ofstream outfile;

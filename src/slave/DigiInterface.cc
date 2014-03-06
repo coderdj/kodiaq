@@ -95,6 +95,12 @@ int DigiInterface::Initialize(XeDAQOptions *options)
    return 0;
 }
 
+int DigiInterface::UpdateRecorderOptions(XeDAQOptions *options)
+{
+   return fDAQRecorder->Initialize(options);
+}
+
+
 VMEBoard* DigiInterface::GetModuleByID(int ID)
 {
    for(unsigned int x=0;x<fCrates.size();x++)  {

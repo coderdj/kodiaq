@@ -64,6 +64,7 @@ struct RunOptions_t {
  */
 struct MongodbOptions_t {
    bool ZipOutput;
+   bool DynamicRunNames;
    int  MinInsertSize;
    bool WriteConcern;
    int  BlockSplitting;

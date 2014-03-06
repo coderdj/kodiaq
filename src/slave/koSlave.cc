@@ -95,6 +95,7 @@ int main()
    fNetworkInterface.Initialize("xedaq02",2002,2003,2,"xedaq02");
    DigiInterface  *fElectronics = new DigiInterface();
    XeDAQOptions   fDAQOptions;
+   XeRunInfo_t    fRunInfo;
    
    string         fOptionsPath = "DAQConfig.ini";
    time_t         fPrevTime = XeDAQLogger::GetCurrentTime();
@@ -140,6 +141,17 @@ connection_loop:
 	       fNetworkInterface.SlaveSendMessage("Error receiving options!");
 	       continue;
 	    }	    
+	 }	 
+	 if(command=="DBUPDATE") { //Change the write database. Done in case of dynamic write modes
+	    string dbname="none";
+	    if(fNetworkInterface.ListenForCommand(dbname,id,sender)!=0)  {
+	       gLog->Error("koSlave - Error updating mongodb");
+	       fNetworkInterface.SlaveSendMessage("Error receiving write collection name.");
+	       continue;
+	    }
+	    //change the write collection
+	    fDAQOptions.GetMongoOptions().Collection = dbname;
+	    fElectronics->UpdateRecorderOptions(&fDAQOptions);
 	 }	 
 	 if(command=="SLEEP")  {
 	    if(bRunning) continue;

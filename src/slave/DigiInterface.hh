@@ -51,6 +51,7 @@ class DigiInterface
    
    //General Control
    int                  Initialize(XeDAQOptions *options);
+   int                  UpdateRecorderOptions(XeDAQOptions *options);
    int                  StartRun();
    int                  StopRun();   
    u_int32_t            GetRate(u_int32_t &freq);

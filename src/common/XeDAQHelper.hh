@@ -88,6 +88,7 @@ class XeDAQHelper
    static bool      ComposeMessage(string &message,vector<string> data,char type);
    static bool      MessageOnPipe(int pipe);
    static string    GetRunNumber();
+   static string    MakeDBName(XeRunInfo_t RunInfo,string CollectionName);
    static u_int32_t StringToInt(const string &str);
    static string    IntToString(const int num);
    static u_int32_t StringToHex(const string &str);

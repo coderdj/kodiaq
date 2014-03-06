@@ -213,14 +213,28 @@ int main()
 	    }
 	 }	 
 	 else if(command=="START")  {
-	    fDAQNetwork.SendCommand("START");
-	    //send run info to event builder
-	    if(fMongodb.Initialize(sender,fDAQStatus.RunMode,&fDAQOptions)!=0)
-	      fUserNetwork.BroadcastMessage("Failed to send run info to event builder",XEMESS_WARNING);
 	    
+	    
+	    if(fDAQOptions.GetRunOptions().WriteMode==2) {
+	       //if we have dynamic run names, tell mongo the new collection name
+	       XeDAQHelper::UpdateRunInfo(fRunInfo,sender);	    
+	       if(fDAQOptions.GetMongoOptions().DynamicRunNames){		    
+		  fDAQOptions.GetMongoOptions().Collection = XeDAQHelper::MakeDBName(fRunInfo,fDAQOptions.GetMongoOptions().Collection);
+		  stringstream ss;
+		  ss<<"Writing to collection "<<fDAQOptions.GetMongoOptions().Collection;
+		  fUserNetwork.BroadcastMessage(ss.str(),XEMESS_STATE);
+		  fDAQNetwork.SendCommand("DBUPDATE");
+		  fDAQNetwork.SendCommand(fDAQOptions.GetMongoOptions().Collection);
+	       }	       
+	       //send run info to event builder
+	       if(fMongodb.Initialize(sender,fDAQStatus.RunMode,&fDAQOptions)!=0)
+		 fUserNetwork.BroadcastMessage("Failed to send run info to event builder",XEMESS_WARNING);
+	    }
+	    
+	    //send the actual start command
+	    fDAQNetwork.SendCommand("START");   
 	    errstring<<"DAQ started by "<<sender<<"("<<id<<")";
 	    fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_STATE);
-	    XeDAQHelper::UpdateRunInfo(fRunInfo,sender);
 	 }
 	 else if(command=="STOP")  {
 	    fDAQNetwork.SendCommand("STOP");
