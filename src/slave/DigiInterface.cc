@@ -95,9 +95,9 @@ int DigiInterface::Initialize(XeDAQOptions *options)
    return 0;
 }
 
-int DigiInterface::UpdateRecorderOptions(XeDAQOptions *options)
+void DigiInterface::UpdateRecorderCollection(XeDAQOptions *options)
 {
-   return fDAQRecorder->Initialize(options);
+   fDAQRecorder->UpdateCollection(options);
 }
 
 

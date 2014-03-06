@@ -41,6 +41,12 @@ int XeMongoRecorder::Initialize(XeDAQOptions *options)
    return 0;   
 }
 
+void XeMongoRecorder::UpdateCollection(XeDAQOptions *options)
+{
+   fMongoOptions = options->GetMongoOptions();   
+}
+
+
 int XeMongoRecorder::RegisterProcessor()
 {
    if(fWriteMode==0) return 0;

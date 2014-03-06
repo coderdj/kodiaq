@@ -14,11 +14,7 @@
 // *********************************************************
 
 #include "XeDAQRecorder.hh"
-//#include "../../mongo/mongo-cxx-driver-v2.4/src/mongo/client/dbclient.h"
 #include "mongo/client/dbclient.h"
-//#include "mongo/client/connpool.h"
-//#include "mongo/bson/bson.h"
-//#include "mongo/bson/bsonelement.h"
 #include "CBV1724.hh"
 
 /*! \brief Class for reading out to a mongodb database.
@@ -32,6 +28,7 @@ class XeMongoRecorder : public XeDAQRecorder  {
    
    int               Initialize(XeDAQOptions *options);
    int               RegisterProcessor();
+   void              UpdateCollection(XeDAQOptions *options);
    int               InsertThreaded(vector <mongo::BSONObj> *insvec,int ID);
    MongodbOptions_t  GetOptions()  {
       return fMongoOptions;
@@ -40,6 +37,6 @@ class XeMongoRecorder : public XeDAQRecorder  {
    
  private:
    vector <mongo::ScopedDbConnection*> fScopedConnections;
-   MongodbOptions_t            fMongoOptions;
+   MongodbOptions_t                    fMongoOptions;
 };
 #endif

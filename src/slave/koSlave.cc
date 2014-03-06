@@ -143,15 +143,22 @@ connection_loop:
 	    }	    
 	 }	 
 	 if(command=="DBUPDATE") { //Change the write database. Done in case of dynamic write modes
-	    string dbname="none";
-	    if(fNetworkInterface.ListenForCommand(dbname,id,sender)!=0)  {
-	       gLog->Error("koSlave - Error updating mongodb");
-	       fNetworkInterface.SlaveSendMessage("Error receiving write collection name.");
-	       continue;
+	    string dbname="none";	    
+	    int count=0;
+	    while(fNetworkInterface.ListenForCommand(dbname,id,sender)!=0)  {
+	       usleep(500);
+	       count++;
+	       if(count==20)
+		 break;
 	    }
+	    if(count==20)  {
+	       gLog->Error("koSlave - error receiving new mongodb collection.");
+	       continue;
+	    }	    
 	    //change the write collection
-	    fDAQOptions.GetMongoOptions().Collection = dbname;
-	    fElectronics->UpdateRecorderOptions(&fDAQOptions);
+	    cout<<"Updating db to "<<dbname<<endl;
+	    fDAQOptions.UpdateMongodbCollection(dbname);
+	    fElectronics->UpdateRecorderCollection(&fDAQOptions);	    	 
 	 }	 
 	 if(command=="SLEEP")  {
 	    if(bRunning) continue;
