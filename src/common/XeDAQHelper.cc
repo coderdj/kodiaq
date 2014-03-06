@@ -132,7 +132,7 @@ string XeDAQHelper::GetRunNumber()
    char idstring[25];
    
    timeinfo = localtime(&now);
-   strftime(idstring,25,"XE1T_%y%m%d_%H%M",timeinfo);
+   strftime(idstring,25,"data_%y%m%d_%H%M",timeinfo);
    string retstring(idstring);
    return retstring;
 }

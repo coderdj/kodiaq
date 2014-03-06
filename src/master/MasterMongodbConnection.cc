@@ -48,7 +48,9 @@ int MasterMongodbConnection::Initialize(string user, string runMode, XeDAQOption
    //Create a bson object with the basic run information
    mongo::BSONObjBuilder b;
    b.genOID();
-   b.append("runtype",runMode);
+   b.append("runmode",runMode);
+   b.append("runtype","bern_test_daq");
+   b.append("starttime",0);
    b.append("user",user);
    b.append("compressed",fMongoOptions.ZipOutput);
    
@@ -57,7 +59,7 @@ int MasterMongodbConnection::Initialize(string user, string runMode, XeDAQOption
    struct tm *starttime;
    time(&currentTime);
    starttime = localtime(&currentTime);
-   b.appendTimeT("starttime",mktime(starttime));
+   b.appendTimeT("starttimestamp",mktime(starttime));
    
    
    //eventually putting the .ini file will go here
@@ -103,7 +105,8 @@ int MasterMongodbConnection::UpdateEndTime()
       mongo::BSONObj res;
       b << "findandmodify" << secondString.c_str() <<
 	"query" << BSON("_id" << fLastDocOID) << 
-	"update" << BSON("$set" << BSON("endtime" << mongo::Date_t(1000*mktime(currenttime))));
+	"update" << BSON("$set" << BSON("endtimestamp" << mongo::Date_t(1000*mktime(currenttime)) << "data_taking_ended" << true));
+      
       assert(fMongoDB.runCommand(firstString.c_str(),b.obj(),res));
    }
    catch (const mongo::DBException &e) {
