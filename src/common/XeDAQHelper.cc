@@ -195,6 +195,7 @@ string XeDAQHelper::MakeDBName(XeRunInfo_t RunInfo, string CollectionName)
    std::size_t pos;
    pos=CollectionName.find_first_of(".",0);
    string retstring = CollectionName.substr(0,pos);
+   retstring+=".";
    retstring+=RunInfo.RunNumber;
    return retstring;
 }

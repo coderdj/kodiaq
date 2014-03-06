@@ -33,6 +33,7 @@ void XeDAQLogger::SetLogfile(string logpath)
    //close file if open, then open new file at logpath
    if(fLogfile.is_open()) fLogfile.close();
    fLogfile.open(logpath.c_str(),ios::app);
+   //   Message("Program (re)opened log file.");
 }
 
 void XeDAQLogger::Message(string message)
