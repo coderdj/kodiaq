@@ -223,10 +223,18 @@ int XeDAQOptions::ReadFileMaster(string filename)
 	 if(words.size()<7) continue;
 	 fMongoOptions.DBAddress=words[1];
 	 fMongoOptions.Collection=words[2];
+	 (words[2][words[2].size()-1]=='*')?fMongoOptions.DynamicRunNames=true:fMongoOptions.DynamicRunNames=false;
 	 (words[3]=="1")?fMongoOptions.ZipOutput=true:fMongoOptions.ZipOutput=false;
 	 fMongoOptions.MinInsertSize = XeDAQHelper::StringToInt(words[4]);
 	 (words[5]=="1")?fMongoOptions.WriteConcern=true:fMongoOptions.WriteConcern=false;
 	   fMongoOptions.BlockSplitting=XeDAQHelper::StringToInt(words[6]);
+      }
+      if(words[0]=="WRITE_MODE")        	{	 
+	 cout<<"INWRITEMODE"<<endl;
+	 if(words.size()<2) continue;
+	 fRunOptions.WriteMode=XeDAQHelper::StringToInt(words[1]);
+	 cout<<endl<<"WRITEMODE:"<<fRunOptions.WriteMode<<endl;
+	 continue;
       }
       
    }//end while through file
