@@ -152,6 +152,10 @@ class XeDAQOptions
       return vSumModules[x];
    };
    
+   void UpdateMongodbCollection(string collection)  {
+      fMongoOptions.Collection=collection;
+   };
+   
    
    
  private:
