@@ -92,8 +92,19 @@ int MasterMongodbConnection::UpdateEndTime()
       struct tm *currenttime;
       time(&nowTime);
       currenttime = localtime(&nowTime);
-      fMongoDB.update(fMongoOptions.Collection.c_str(),BSON("_id"<<fLastDocOID),
-		      BSON("endtime"<<mongo::Date_t(mktime(currenttime))));
+      
+      std::size_t pos;
+      pos=fMongoOptions.Collection.find_first_of(".",0);
+      
+      string firstString = fMongoOptions.Collection.substr(0,pos);
+      string secondString = fMongoOptions.Collection.substr(pos+1,fMongoOptions.Collection.size()-pos);
+      cout<<firstString<<" "<<secondString<<endl;
+      mongo::BSONObjBuilder b; 
+      mongo::BSONObj res;
+      b << "findandmodify" << secondString.c_str() <<
+	"query" << BSON("_id" << fLastDocOID) << 
+	"update" << BSON("$set" << BSON("endtime" << mongo::Date_t(1000*mktime(currenttime))));
+      assert(fMongoDB.runCommand(firstString.c_str(),b.obj(),res));
    }
    catch (const mongo::DBException &e) {
       if(fLog!=NULL) fLog->Error("MasterMongodbConnection::UpdateEndTime - Error fetching and updating run info doc with end time stamp.");
