@@ -214,12 +214,11 @@ int main()
 	 }	 
 	 else if(command=="START")  {
 	    
-	    
 	    if(fDAQOptions.GetRunOptions().WriteMode==2) {
 	       //if we have dynamic run names, tell mongo the new collection name
 	       XeDAQHelper::UpdateRunInfo(fRunInfo,sender);	    
 	       if(fDAQOptions.GetMongoOptions().DynamicRunNames){		    
-		  fDAQOptions.GetMongoOptions().Collection = XeDAQHelper::MakeDBName(fRunInfo,fDAQOptions.GetMongoOptions().Collection);
+		  fDAQOptions.UpdateMongodbCollection(XeDAQHelper::MakeDBName(fRunInfo,fDAQOptions.GetMongoOptions().Collection));
 		  stringstream ss;
 		  ss<<"Writing to collection "<<fDAQOptions.GetMongoOptions().Collection;
 		  fUserNetwork.BroadcastMessage(ss.str(),XEMESS_STATE);
