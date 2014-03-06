@@ -18,6 +18,7 @@ VMEBoard::VMEBoard()
 {
    fCrateHandle=-1;
    bActivated=false;
+   bIsSumModule=false;
 }
 
 VMEBoard::~VMEBoard()
