@@ -1,0 +1,174 @@
+
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Welcome &mdash; kodiaq 0.9 documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  
+  
+
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:'',
+        VERSION:'0.9',
+        COLLAPSE_INDEX:false,
+        FILE_SUFFIX:'.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+    <link rel="top" title="kodiaq 0.9 documentation" href="index.html"/>
+        <link rel="next" title="Installation" href="installation.html"/>
+        <link rel="prev" title="kodiaq - for users" href="index.html"/> 
+
+  <script src="//cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        <a href="index.html" class="icon icon-home"> kodiaq</a>
+        <form class="wy-form" action="search.html" method="get">
+  <input type="text" name="q" placeholder="Search docs" />
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix">
+        
+        
+            <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="">Welcome</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#scope-of-the-program">Scope of the program</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#use-guidelines">Use Guidelines</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#fetching-the-source-code">Fetching the source code</a></li>
+</ul>
+</li>
+</ul>
+<ul class="simple">
+</ul>
+
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top">
+        <i data-toggle="wy-nav-top" class="icon icon-reorder"></i>
+        <a href="/">kodiaq</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <ul class="wy-breadcrumbs">
+  <li><a href="index.html">Docs</a> &raquo;</li>
+  <li><a href="">Welcome</a></li>
+  
+</ul>
+<hr/>
+
+          
+  <div class="section" id="welcome">
+<h1>Welcome<a class="headerlink" href="#welcome" title="Permalink to this headline">¶</a></h1>
+<p>Welcome to the documentation for the kodiaq data acquisition software.
+If you are a general user of the DAQ and just want an overview of how
+to control it then you&#8217;re in the right place. This quick start guide
+is provided to get you up and running asap.</p>
+<div class="section" id="scope-of-the-program">
+<h2>Scope of the program<a class="headerlink" href="#scope-of-the-program" title="Permalink to this headline">¶</a></h2>
+<p>kodiaq is the hardware half of a data acquisition system suitable for
+high-rate particle physics use. It uses CAEN V1724 digitizers and
+reads out complete waveforms to a temporary buffer (mongodb).
+The software half of the DAQ is the cito event builder, which reads
+the data from the buffer and builds events.</p>
+<p>kodiaq is parallelized and scalable in order to achieve almost
+arbitrarily fast throughput speeds. A central dispatcher (the master)
+controls several client modules for readout (the slaves). The master
+and slave daemons are always running and require no intervention from
+the user. Users control the DAQ by logging into the master using a
+control interface.</p>
+<p>This guide covers how to install and log into the DAQ.</p>
+</div>
+<div class="section" id="use-guidelines">
+<h2>Use Guidelines<a class="headerlink" href="#use-guidelines" title="Permalink to this headline">¶</a></h2>
+<p>kodiaq is currently closed-source and its distribution is limited.
+However, many parts of the code are general enough to be reused for
+other data acquisition purposes. If you are interested in the system
+feel free to drop us a line.</p>
+<p>kodiaq is developed at the University of Bern. If you have questions,
+comments, want to help, or want to buy us a beer we would love to hear from you.</p>
+</div>
+</div>
+
+
+          <footer>
+  
+    <div class="rst-footer-buttons">
+      
+        <a href="installation.html" class="btn btn-neutral float-right" title="Installation"/>Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="kodiaq - for users"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <p>
+      &copy; Copyright 2014, Daniel Coderre.
+  </p>
+
+  <a href="https://www.github.com/snide/sphinx_rtd_theme">Sphinx theme</a> provided by <a href="http://readthedocs.org">Read the Docs</a>
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+</body>
+</html>
