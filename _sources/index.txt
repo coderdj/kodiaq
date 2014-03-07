@@ -13,7 +13,7 @@ Contents:
    
    intro
    installation
-   user guide
+   usage
    
 
 kodiaq - for devs
