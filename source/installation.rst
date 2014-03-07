@@ -6,4 +6,9 @@ Fetching the source code
 -------------------------
 
 Our source code is hosted on `github
-<https://github.com/XENON1T/kodiaq>_. Here 
+<https://github.com/XENON1T/kodiaq>`_. In addition to checking out the
+code, you can also use github
+to report bugs and issues and keep track of the current development.
+The repository is password-protected and an authorized github account
+is required for access.
+
