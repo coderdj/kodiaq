@@ -11,10 +11,11 @@ is provided to get you up and running asap.
 Scope of the program
 --------------------
 
-kodiaq is the hardware half of the XENON1T data acquisition system. It
-is responsible for reading data from CAEN V1724 digitizers and dumping
-it into a buffer. The software half of the DAQ is the cito event
-builder, which reads the data from the buffer and builds events.
+kodiaq is the hardware half of a data acquisition system suitable for
+high-rate particle physics use. It uses CAEN V1724 digitizers and
+reads out complete waveforms to a temporary buffer (mongodb). 
+The software half of the DAQ is the cito event builder, which reads 
+the data from the buffer and builds events.
 
 kodiaq is parallelized and scalable in order to achieve almost
 arbitrarily fast throughput speeds. A central dispatcher (the master)
@@ -28,12 +29,10 @@ This guide covers how to install and log into the DAQ.
 Use Guidelines
 --------------
 
-kodiaq is developed for the XENON1T experiment. However many parts of
-the code are general enough to be reused for other data acquisition
-purposes. At the moment all access to source or compiled code,
-documentation, or anything else related to kodiaq is restricted to
-members of the XENON1T collaboration.
+kodiaq is currently closed-source and its distribution is limited.
+However, many parts of the code are general enough to be reused for 
+other data acquisition purposes. If you are interested in the system
+feel free to drop us a line.
 
-kodiaq is developed by the University of Bern XENON1T group. If you
-have questions, comments, want to help, or want to buy us a beer we
-would love to hear from you.
+kodiaq is developed at the University of Bern. If you have questions, 
+comments, want to help, or want to buy us a beer we would love to hear from you.
