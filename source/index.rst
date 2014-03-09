@@ -21,8 +21,6 @@ interested in checking out the `cito project
 For Users
 ==================================
 
-Contents:
-
 .. toctree::
    :maxdepth: 2
    
