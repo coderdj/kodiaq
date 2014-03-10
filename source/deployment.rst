@@ -11,6 +11,12 @@ kodiaq consists of three parts:
 All of these modules are required for running. Installation and
 configuration of the modules will be described in this section.
 
+All three modules require the libXeDAQ, which is compiled
+automatically no matter which modules are added. The libXeDAQ contains
+shared code for the network protocols, options file handling, logging,
+and other assorted helper functions. The source for this library is
+found in src/common.
+
 koSlave
 ---------
 
@@ -86,4 +92,6 @@ The operational modes for the DAQ are defined in
 src/master/data/RunModes.ini. This file is simply a list where the
 first entry is a string with a run mode identifier and the second
 entry is the path to the .ini file for that mode. This file can be
-edited while the master is running.
+edited while the master is running. For an exampe .ini file take a
+look in src/master/data/RunModes/DAQOptionsMaster.ini. 
+

@@ -14,9 +14,9 @@ meat of the program or deploy the entire system should check out the
 "For Devs" section.
 
 Our code is hosted on github so be sure to check out the repository
-`here <https://github.com/XENON1T/kodiaq.git>`. You might also be
+`here <https://github.com/XENON1T/kodiaq.git>`_. You might also be
 interested in checking out the `cito project
-<http://tunnell.github.io/cito/index.html>`. 
+<http://tunnell.github.io/cito/index.html>`_. 
 
 For Users
 ==================================
