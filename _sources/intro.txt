@@ -4,8 +4,8 @@ Welcome
 
 Welcome to the documentation for the kodiaq data acquisition software.
 If you are a general user of the DAQ and just want an overview of how
-to control it then you're in the right place. This quick start guide
-is provided to get you up and running asap.
+to control it then you're in the right place. The first few pages of
+these docs are meant as a quick start guide and should get you up and running asap.
 
 
 Scope of the program

@@ -19,6 +19,7 @@ Assuming you have repository access::
 You will have to provide your login credentials. This will then create
 the file 'kodiaq' in whatever directory you ran the command in. 
 
+
 Compiling the UI module
 ------------------------
 
@@ -35,6 +36,7 @@ libmenu-dev, and libform-dev. On Ubuntu you can install this as
 follows: ::
 
     sudo apt-get install build-essential libncurses5-dev
+
 
 Running the code
 -----------------

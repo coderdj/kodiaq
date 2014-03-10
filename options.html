@@ -45,7 +45,7 @@
 
   
     <link rel="top" title="kodiaq 0.9 documentation" href="index.html"/>
-        <link rel="prev" title="Deployment" href="deployment.html"/> 
+        <link rel="prev" title="Deployment of the Full System" href="deployment.html"/> 
 
   <script src="//cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
 
@@ -69,27 +69,26 @@
       <div class="wy-menu wy-menu-vertical" data-spy="affix">
         
         
-            <ul>
+            <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="intro.html">Welcome</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#scope-of-the-program">Scope of the program</a></li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#use-guidelines">Use Guidelines</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation of the client UI</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#fetching-the-source-code">Fetching the source code</a></li>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#compiling-the-ui-module">Compiling the UI module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#running-the-code">Running the code</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="usage.html">Using kodiaq</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Using the Client Program</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="usage.html#daq-status-window">DAQ Status window</a></li>
 <li class="toctree-l2"><a class="reference internal" href="usage.html#control-window">Control Window</a></li>
 <li class="toctree-l2"><a class="reference internal" href="usage.html#messages-window">Messages Window</a></li>
 </ul>
 </li>
-</ul>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment of the Full System</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#deployment-step-by-step">Deployment, Step by Step</a></li>
 <li class="toctree-l2"><a class="reference internal" href="deployment.html#koslave">koSlave</a></li>
 <li class="toctree-l2"><a class="reference internal" href="deployment.html#komaster">koMaster</a></li>
 </ul>
@@ -97,6 +96,8 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="">DAQ Options</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#general-syntax">General Syntax</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#electronics-definitions">Electronics Definitions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#run-options">Run Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#output-options">Output Options</a></li>
 </ul>
 </li>
 </ul>
@@ -267,6 +268,146 @@ identifier must be removed. This is because for a standalone
 deployment the options file is not run through the parser that removes
 and strips this identifier.</p>
 </div>
+<div class="section" id="run-options">
+<h2>Run Options<a class="headerlink" href="#run-options" title="Permalink to this headline">¶</a></h2>
+<p>The user can define several options related to the run. These are
+options for kodiaq itself. To control the board internal options, see
+the section on board options.</p>
+<blockquote>
+<div><ul class="simple">
+<li><strong>BLT_SIZE {int}</strong>
+Size of a block transfer. The default is the maximum size of
+524288 bytes. There is probably no reason to change this.</li>
+<li><strong>RUN_START {int} {int}</strong>
+Define how a run is started. 0 means via VME register and 1 means
+via s-in. Option 1 should always be used if you have multiple
+digitizers as it synchronizes the clocks of the digitizers. The
+second option is ignored if the first argument is set to zero (but must
+still be provided). If the first argument is set to one the board
+ID of the crate controller that will be used to start the run
+must be provided as the second argument.</li>
+<li><strong>BASELINE_MODE {int}</strong>
+kodiaq contains an automated routine to adjust the
+baselines so that the full dynamic range of each input channel is
+used. This option lets the user set when that should happen.
+Giving the argument &#8216;0&#8217; means the baselines are not determined.
+They are set via the values given in the files in
+src/slave/baselines. The argument &#8216;1&#8217; tells the program to
+automatically determine baselines whenever the DAQ is armed. It
+is forseen to add an option to have the baselines recalibrated every
+hour or so without stopping the run, however this option does not
+exist yet.</li>
+<li><strong>SUM_MODULE {int}</strong>
+It is anticipated to run with one digitizer recording the
+attenuated sum of all channels, a clock, and some NIM signals.
+These channels should be flagged for special processing by the
+event builder. This is done with this option. Note if you want to
+flag more than one digitizer, just put a second SUM_MODULE option
+in (do not make one with two arguments as the second will be
+ignored).</li>
+<li><strong>DDC10_OPTIONS</strong>
+If a DDC10 high energy veto module is used, this line lets you
+define the options. An explanation of the options will follow
+once a more finalized version of the DDC10 class exists.</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="output-options">
+<h2>Output Options<a class="headerlink" href="#output-options" title="Permalink to this headline">¶</a></h2>
+<p>The output options all relate to where the data is pushed to. Not all
+of these options are required, but be sure to include the options
+related to your chosen write mode.</p>
+<blockquote>
+<div><blockquote>
+<div><ul>
+<li><p class="first"><strong>WRITE_MODE {int}</strong>
+Define what is done with the data. 0 - no writing (test mode). 1
+- write to file (not yet supported). 2 - write to mongodb. If you
+choose mode &#8216;2&#8217;, make sure the MONGO_OPTIONS are defined.</p>
+</li>
+<li><p class="first"><strong>MONGO_OPTIONS {string1} {string2} {int1} {int2} {int3} {int4}</strong>
+Define the mongo linkage. This one is a bit more complicated and
+will be explained in detail.
+* {string1} gives the address of the PC running the mongodb database.</p>
+<blockquote>
+<div><p>This can be either a hostname or an ip address.</p>
+</div></blockquote>
+<ul>
+<li><p class="first">{string2} defines a collection name for the data. The format of this
+is {dbname}.{collectionname}. The database name must be provided.
+If you provide a static collection name all data will be
+written to the same collection. Replacing the collection name with
+a &#8216;*&#8217; character will put each run in its own collection,
+dynamically named based and the date and time the run is started.
+<em>Example:</em> &#8216;data.pmtdata&#8217; puts the data in database &#8216;data&#8217; and
+collection &#8216;pmtdata&#8217; while &#8216;data.*&#8217; puts the data in database
+&#8216;data&#8217; but creates a new collection every run with form
+data_YYMMDD_HHMM.</p>
+</li>
+<li><p class="first">{int1} defines the compression mode. All data will be
+transferred to mongodb over the network so it is usually
+advantageous to compress it first. kodiaq uses snappy, which
+compresses the data by about 50% at a few hundres MB/s. Setting
+this value to 0 means no compression while 1 turns on
+compression. Whether or not the data is compressed is communicated to
+the event builder via the run attributes document (see the protocols
+section).</p>
+</li>
+<li><p class="first">{int2} gives the max insert size. kodiaq uses bulk inserts to
+put data into mongodb. This means each insert is actually a vector of
+BSON documents. If the vector hits this maximum size, an insert is
+forced before more documents are generated.</p>
+</li>
+<li><p class="first">{int3} defines the write concern for mongo. Putting this to
+normal mode (set 0) turns write concern on. This means the client will
+wait for a reply from the mongo database after writing. On the
+one hand, this is very good since it confirms an insert made it to
+mongo. On the other hand it is very slow. Turning the option of (value
+1) is required for high-rate data-taking.</p>
+</li>
+<li><p class="first">{int4} defines a block splitting mode. This is a reformatting
+of the data before it is put into the database. The options are:
+* 0 - No block splitting. Each mongodb document will contain an</p>
+<blockquote>
+<div><p>entire block transfer which could contain one or many event headers.</p>
+</div></blockquote>
+<ul class="simple">
+<li>1 - coarse block splitting. Splits the block into separate
+events. This is for the default board firmware where each
+event is a trigger. One mongodb document contains data from
+all the channels for this trigger.</li>
+<li>2 - fine block splitting. Splits the block into separate
+events. Then further splits the events into occurrences (only works if
+zero length encoding is set on via VME option). This means each
+zero-length-encoded chunk of data is its own doc. This mode
+only works with the default firmware and is meant to emulate the
+custom firmware.</li>
+<li>3 - header extraction for custom firmware. Not yet implemented.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div></blockquote>
+<ul class="simple">
+<li><strong>PROCESSING_THREADS {int}</strong>
+Defines how many parallel threads should be used for data
+processing. It isn&#8217;t suggested to make this a ridiculous number. The
+boards can only be read one at a time (there is a mutex-protected call
+to the CAEN block transfer function). The goal at high rates is to
+have the boards always being read. Therefore enough processing threads
+(and processing power) must exist to do all of the data parsing, BSON
+creation, and data input. As a rule this number is usually set based
+on the number of threads in the processor on the computer.</li>
+<li><strong>READOUT_THRESHOLD {int}</strong>
+Defines a minimum number of documents that must be ready before
+being inserted into mongodb. Can be tuned to achieve maximum write
+speeds in cases where rates fluctuate. At the end of a run the entire
+buffer will be written out regardless of whether this threshold was
+reached or not.</li>
+</ul>
+</div></blockquote>
+</div>
 </div>
 
 
@@ -275,7 +416,7 @@ and strips this identifier.</p>
     <div class="rst-footer-buttons">
       
       
-        <a href="deployment.html" class="btn btn-neutral" title="Deployment"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="deployment.html" class="btn btn-neutral" title="Deployment of the Full System"><span class="icon icon-circle-arrow-left"></span> Previous</a>
       
     </div>
   

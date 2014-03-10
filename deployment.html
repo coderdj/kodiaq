@@ -8,7 +8,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Deployment &mdash; kodiaq 0.9 documentation</title>
+  <title>Deployment of the Full System &mdash; kodiaq 0.9 documentation</title>
   
 
   
@@ -46,7 +46,7 @@
   
     <link rel="top" title="kodiaq 0.9 documentation" href="index.html"/>
         <link rel="next" title="DAQ Options" href="options.html"/>
-        <link rel="prev" title="Using kodiaq" href="usage.html"/> 
+        <link rel="prev" title="Using the Client Program" href="usage.html"/> 
 
   <script src="//cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
 
@@ -70,27 +70,26 @@
       <div class="wy-menu wy-menu-vertical" data-spy="affix">
         
         
-            <ul>
+            <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="intro.html">Welcome</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#scope-of-the-program">Scope of the program</a></li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#use-guidelines">Use Guidelines</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation of the client UI</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#fetching-the-source-code">Fetching the source code</a></li>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#compiling-the-ui-module">Compiling the UI module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#running-the-code">Running the code</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="usage.html">Using kodiaq</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Using the Client Program</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="usage.html#daq-status-window">DAQ Status window</a></li>
 <li class="toctree-l2"><a class="reference internal" href="usage.html#control-window">Control Window</a></li>
 <li class="toctree-l2"><a class="reference internal" href="usage.html#messages-window">Messages Window</a></li>
 </ul>
 </li>
-</ul>
-<ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="">Deployment</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Deployment of the Full System</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#deployment-step-by-step">Deployment, Step by Step</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#koslave">koSlave</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#komaster">koMaster</a></li>
 </ul>
@@ -98,6 +97,8 @@
 <li class="toctree-l1"><a class="reference internal" href="options.html">DAQ Options</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="options.html#general-syntax">General Syntax</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options.html#electronics-definitions">Electronics Definitions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options.html#run-options">Run Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options.html#output-options">Output Options</a></li>
 </ul>
 </li>
 </ul>
@@ -121,14 +122,14 @@
         <div class="rst-content">
           <ul class="wy-breadcrumbs">
   <li><a href="index.html">Docs</a> &raquo;</li>
-  <li><a href="">Deployment</a></li>
+  <li><a href="">Deployment of the Full System</a></li>
   
 </ul>
 <hr/>
 
           
-  <div class="section" id="deployment">
-<h1>Deployment<a class="headerlink" href="#deployment" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="deployment-of-the-full-system">
+<h1>Deployment of the Full System<a class="headerlink" href="#deployment-of-the-full-system" title="Permalink to this headline">¶</a></h1>
 <p>kodiaq consists of three parts:</p>
 <blockquote>
 <div><ul class="simple">
@@ -144,6 +145,31 @@ automatically no matter which modules are added. The libXeDAQ contains
 shared code for the network protocols, options file handling, logging,
 and other assorted helper functions. The source for this library is
 found in src/common.</p>
+<div class="section" id="deployment-step-by-step">
+<h2>Deployment, Step by Step<a class="headerlink" href="#deployment-step-by-step" title="Permalink to this headline">¶</a></h2>
+<p>Here is a general outline of the steps needed to deploy a system. More
+specific information on each step will be found in later sections.</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li>Hook up the hardware. A readout PC (from now on called a slave)
+needs a CAEN A2818 or A3818 PCI(e) card. Up to 8 digitizers can
+be hooked up via optical link. You also need one V2718 crate
+controller with output &#8216;0&#8217; fanned to the s-in of all digitizers.</li>
+<li>Install the koSlave module on each slave PC. Start the daemon in
+a detached screen.</li>
+<li>Find a spot for the master module to live. It is suggested to
+use an independent PC as dispatcher but also possible to install
+it alongside a slave. Install the master here. Make sure the
+linkage between master and slave is defined correctly. Start the
+master daemon in a detached screen.</li>
+<li>Write your options file. Use the default as a base. You will
+need to define the physical electronics setup exactly.</li>
+<li>Log into the UI and start the DAQ!</li>
+</ol>
+</div></blockquote>
+<p>The specifics on installing the slave and master, as well as how to
+write an options file are given in the next sections.</p>
+</div>
 <div class="section" id="koslave">
 <h2>koSlave<a class="headerlink" href="#koslave" title="Permalink to this headline">¶</a></h2>
 <p>The kodiaq slave module is the meat of the acquisition system. It
@@ -230,7 +256,7 @@ look in src/master/data/RunModes/DAQOptionsMaster.ini.</p>
         <a href="options.html" class="btn btn-neutral float-right" title="DAQ Options"/>Next <span class="icon icon-circle-arrow-right"></span></a>
       
       
-        <a href="usage.html" class="btn btn-neutral" title="Using kodiaq"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="usage.html" class="btn btn-neutral" title="Using the Client Program"><span class="icon icon-circle-arrow-left"></span> Previous</a>
       
     </div>
   

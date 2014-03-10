@@ -12,36 +12,30 @@ Welcome to kodiaq - The networked parallel data reader
     
 Welcome to the documentation for kodiaq and thank you for your
 interest in the project. If you are a user looking to install the
-program and steer a running data acquisition system, look under the 
-"For Users" section below. Developers looking to get into the 
-meat of the program or deploy the entire system should check out the 
-"For Devs" section.
+program and steer a running data acquisition system, look at the
+beginning sections on installation and usage of the UI. Devs will want
+to delve further into the docs in order to learn how to install a full
+deployment.
 
 Our code is hosted on github so be sure to check out the repository
 `here <https://github.com/XENON1T/kodiaq.git>`_. You might also be
 interested in checking out the `cito project
 <http://tunnell.github.io/cito/index.html>`_. 
 
-For Users
-==================================
+Contents 
+================================
 
 .. toctree::
    :maxdepth: 2
    
    intro
    installation
-   usage
-   
-
-For Devs
-==================================
-
-.. toctree::
-   :maxdepth: 2
-      
+   usage         
    deployment 
    options 
    protocols
+   jargon
+   help
 
 Indices and tables
 ==================

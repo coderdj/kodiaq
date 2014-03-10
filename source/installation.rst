@@ -1,6 +1,6 @@
-============
-Installation
-============
+==============================
+Installation of the client UI
+==============================
 
 Fetching the source code
 -------------------------

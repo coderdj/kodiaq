@@ -1,6 +1,6 @@
-==================
-Deployment
-==================
+=============================
+Deployment of the Full System
+=============================
 
 kodiaq consists of three parts:
 
@@ -16,6 +16,30 @@ automatically no matter which modules are added. The libXeDAQ contains
 shared code for the network protocols, options file handling, logging,
 and other assorted helper functions. The source for this library is
 found in src/common.
+
+Deployment, Step by Step
+------------------------
+
+Here is a general outline of the steps needed to deploy a system. More
+specific information on each step will be found in later sections.
+
+   1. Hook up the hardware. A readout PC (from now on called a slave)
+      needs a CAEN A2818 or A3818 PCI(e) card. Up to 8 digitizers can
+      be hooked up via optical link. You also need one V2718 crate
+      controller with output '0' fanned to the s-in of all digitizers.
+   2. Install the koSlave module on each slave PC. Start the daemon in
+      a detached screen.
+   3. Find a spot for the master module to live. It is suggested to
+      use an independent PC as dispatcher but also possible to install
+      it alongside a slave. Install the master here. Make sure the
+      linkage between master and slave is defined correctly. Start the
+      master daemon in a detached screen.
+   4. Write your options file. Use the default as a base. You will
+      need to define the physical electronics setup exactly.
+   5. Log into the UI and start the DAQ!
+
+The specifics on installing the slave and master, as well as how to
+write an options file are given in the next sections.
 
 koSlave
 ---------

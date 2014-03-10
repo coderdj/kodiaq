@@ -1,6 +1,6 @@
-==============
-Using kodiaq
-==============
+========================
+Using the Client Program
+========================
 
 There are 3 sub-windows in the DAQ UI: control, monitoring, and
 history. The following is a basic explanation of the information
