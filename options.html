@@ -211,12 +211,12 @@ optical link directly and this will make a bit more sense.</p>
 <blockquote>
 <div><ul class="simple">
 <li>LINK is the control word that tells kodiaq what the option is</li>
-<li>type string is the type of optical link. We will always use
+<li>{type string} is the type of optical link. We will always use
 &#8216;V2718&#8217; type links, even when reading out via the V1724.</li>
-<li>optical port int is the ID of the optical port the cable is
+<li>{optical port int} is the ID of the optical port the cable is
 hooked up to. This is always 0 for the A2818 since it just has one
 port but can be 0-3 for the A3818.</li>
-<li>crate int is the crate ID. In daisy chain mode each digitizer
+<li>{crate int} is the crate ID. In daisy chain mode each digitizer
 gets its own crate ID. Of course when reading out through a
 crate controller this made more sense, since there was one crate
 controller per crate. When reading out via the digitizer itself
@@ -231,6 +231,41 @@ DAQ, though more can be supported if needed.</p>
 <div class="highlight-python"><pre>BASE_ADDRESS {type string} {VME Address} {Board ID} {Crate int} {board int}</pre>
 </div>
 <p>The definitions of these are as follows.</p>
+<blockquote>
+<div><ul class="simple">
+<li>BASE_ADDRESS tells the parser that it found a board definition.</li>
+<li>{type string} gives the type of the board. At the moment only
+the types &#8216;V1724&#8217; or &#8216;V2718&#8217; are supported.</li>
+<li>{Board ID} is a unique identification number for the board.
+Each board has a serial number printed on the front and it is
+recommended to use that.</li>
+<li>{Crate int} is the crate number assigned in the corresponding LINK command.</li>
+<li>{board int} is zero for boards hooked up via daisy chain (since
+each is defined as its own crate). For readout through the
+crate controller each board on a crate is given a unique int
+starting at zero.</li>
+</ul>
+</div></blockquote>
+<p>The following is an example initialization using two slave PCs. One
+slave (number two) has two digitizers and a crate controller hooked up
+via separate links on an A3818. The other slave (number one) has a
+single digitizer only.</p>
+<div class="highlight-python"><pre>#Slave ID 2
+%2LINK V2718 0 1 # -- Digitizer Link
+%2LINK V2718 0 0 # -- Digitizer Link
+%2LINK V2718 1 0 # -- Crate Controller Link
+%2BASE_ADDRESS  V1724 32100000 876 1 0 # -- Digitizer
+%2BASE_ADDRESS  V1724 22230000 770 0 0 # -- Digitizer
+%2BASE_ADDRESS  V2718 EE000000 1868 0 1 # -- Crate Controller
+
+#Slave ID 1
+%1LINK V2718 0 0 # -- Digitizer Link
+%1BASE_ADDRESS V1724 22240000 749 0 0 # -- Digitizer</pre>
+</div>
+<p>For standalone deployments containing only one slave, the &#8216;%n&#8217;
+identifier must be removed. This is because for a standalone
+deployment the options file is not run through the parser that removes
+and strips this identifier.</p>
 </div>
 </div>
 
