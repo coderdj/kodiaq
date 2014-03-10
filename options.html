@@ -319,21 +319,17 @@ of these options are required, but be sure to include the options
 related to your chosen write mode.</p>
 <blockquote>
 <div><blockquote>
-<div><ul>
-<li><p class="first"><strong>WRITE_MODE {int}</strong>
+<div><ul class="simple">
+<li><strong>WRITE_MODE {int}</strong>
 Define what is done with the data. 0 - no writing (test mode). 1
 - write to file (not yet supported). 2 - write to mongodb. If you
-choose mode &#8216;2&#8217;, make sure the MONGO_OPTIONS are defined.</p>
-</li>
-<li><p class="first"><strong>MONGO_OPTIONS {string1} {string2} {int1} {int2} {int3} {int4}</strong>
+choose mode &#8216;2&#8217;, make sure the MONGO_OPTIONS are defined.</li>
+<li><strong>MONGO_OPTIONS {string1} {string2} {int1} {int2} {int3} {int4}</strong>
 Define the mongo linkage. This one is a bit more complicated and
-will be explained in detail.
-* {string1} gives the address of the PC running the mongodb database.</p>
-<blockquote>
-<div><p>This can be either a hostname or an ip address.</p>
-</div></blockquote>
-<ul>
-<li><p class="first">{string2} defines a collection name for the data. The format of this
+will be explained in detail.<ul>
+<li>{string1} gives the address of the PC running the mongodb database.
+This can be either a hostname or an ip address.</li>
+<li>{string2} defines a collection name for the data. The format of this
 is {dbname}.{collectionname}. The database name must be provided.
 If you provide a static collection name all data will be
 written to the same collection. Replacing the collection name with
@@ -342,36 +338,29 @@ dynamically named based and the date and time the run is started.
 <em>Example:</em> &#8216;data.pmtdata&#8217; puts the data in database &#8216;data&#8217; and
 collection &#8216;pmtdata&#8217; while &#8216;data.*&#8217; puts the data in database
 &#8216;data&#8217; but creates a new collection every run with form
-data_YYMMDD_HHMM.</p>
-</li>
-<li><p class="first">{int1} defines the compression mode. All data will be
+data_YYMMDD_HHMM.</li>
+<li>{int1} defines the compression mode. All data will be
 transferred to mongodb over the network so it is usually
 advantageous to compress it first. kodiaq uses snappy, which
 compresses the data by about 50% at a few hundres MB/s. Setting
 this value to 0 means no compression while 1 turns on
 compression. Whether or not the data is compressed is communicated to
 the event builder via the run attributes document (see the protocols
-section).</p>
-</li>
-<li><p class="first">{int2} gives the max insert size. kodiaq uses bulk inserts to
+section).</li>
+<li>{int2} gives the max insert size. kodiaq uses bulk inserts to
 put data into mongodb. This means each insert is actually a vector of
 BSON documents. If the vector hits this maximum size, an insert is
-forced before more documents are generated.</p>
-</li>
-<li><p class="first">{int3} defines the write concern for mongo. Putting this to
+forced before more documents are generated.</li>
+<li>{int3} defines the write concern for mongo. Putting this to
 normal mode (set 0) turns write concern on. This means the client will
 wait for a reply from the mongo database after writing. On the
 one hand, this is very good since it confirms an insert made it to
 mongo. On the other hand it is very slow. Turning the option of (value
-1) is required for high-rate data-taking.</p>
-</li>
-<li><p class="first">{int4} defines a block splitting mode. This is a reformatting
-of the data before it is put into the database. The options are:
-* 0 - No block splitting. Each mongodb document will contain an</p>
-<blockquote>
-<div><p>entire block transfer which could contain one or many event headers.</p>
-</div></blockquote>
-<ul class="simple">
+1) is required for high-rate data-taking.</li>
+<li>{int4} defines a block splitting mode. This is a reformatting
+of the data before it is put into the database. The options are:<ul>
+<li>0 - No block splitting. Each mongodb document will contain an
+entire block transfer which could contain one or many event headers.</li>
 <li>1 - coarse block splitting. Splits the block into separate
 events. This is for the default board firmware where each
 event is a trigger. One mongodb document contains data from

@@ -209,6 +209,7 @@ related to your chosen write mode.
    * **MONGO_OPTIONS {string1} {string2} {int1} {int2} {int3} {int4}**
      Define the mongo linkage. This one is a bit more complicated and
      will be explained in detail.
+     
      * {string1} gives the address of the PC running the mongodb database. 
        This can be either a hostname or an ip address.
      * {string2} defines a collection name for the data. The format of this 
@@ -241,6 +242,7 @@ related to your chosen write mode.
        1) is required for high-rate data-taking.
      * {int4} defines a block splitting mode. This is a reformatting
        of the data before it is put into the database. The options are: 
+
        * 0 - No block splitting. Each mongodb document will contain an
          entire block transfer which could contain one or many event headers.
        * 1 - coarse block splitting. Splits the block into separate
@@ -254,6 +256,7 @@ related to your chosen write mode.
          only works with the default firmware and is meant to emulate the
          custom firmware.
        * 3 - header extraction for custom firmware. Not yet implemented.
+
   * **PROCESSING_THREADS {int}**
     Defines how many parallel threads should be used for data
     processing. It isn't suggested to make this a ridiculous number. The
