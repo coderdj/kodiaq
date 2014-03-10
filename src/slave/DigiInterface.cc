@@ -159,6 +159,9 @@ void DigiInterface::ReadThread()
  
 int DigiInterface::StartRun()
 {   
+   //Reset timer on DAQ recorder
+   fDAQRecorder->ResetTimer();
+   
    //Tell Boards to start acquisition
    if(fRunStartModule!=0){
       for(unsigned int x=0;x<fCrates.size();x++)

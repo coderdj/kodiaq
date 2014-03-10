@@ -25,6 +25,12 @@ XeDAQRecorder::~XeDAQRecorder()
 {   
 }
 
+void XeDAQRecorder::ResetTimer()
+{
+   fID=0;
+   bTimeOverTen=false;
+}
+
 int XeDAQRecorder::GetID(u_int32_t currentTime)
 {
    int a=GetCurPrevNext(currentTime);

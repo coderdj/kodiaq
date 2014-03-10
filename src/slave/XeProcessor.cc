@@ -107,7 +107,10 @@ void XeProcessor::ProcessMongoDB()
 //	    *****************************
 
 	    
-//	    vector <mongo::BSONObj> *DataInsert = new vector<mongo::BSONObj>();
+	    //****************************
+	    //   INSERTION
+	    //****************************
+	    
 	    int ModuleNumber = digi->GetID().BoardID;
 	    int nBuff        = buffvec->size();
 	    
@@ -116,16 +119,18 @@ void XeProcessor::ProcessMongoDB()
 	       u_int32_t *buff = (*buffvec)[b];
 	       u_int32_t eventSize = (*sizevec)[b];
 	       u_int32_t TimeStamp = 0;
-
-	       if(fBlockSplitting!=2)
+	       
+	       if(fBlockSplitting!=2)                  //Pulls time stamp out of event header
 		 TimeStamp = GetTimeStamp(buff);//@
 	       else{		    
-		  TimeStamp = (*times)[b];//!
+		  TimeStamp = (*times)[b];//!          //Time stamps already in times vector
 		  bson.append("channel",(*channels)[b]);//!
 	       }
 	       
 	       int ID = mongo->GetID(TimeStamp);	       
+	       bson.append("mID",ID);
 	       long long mongoTime = ((unsigned long)ID << 31) | TimeStamp;
+	       
 	       int insize = fInsertVec->size();
 	       bson.append("insertsize",insize);	       
 	       if(digi->IsSumModule())

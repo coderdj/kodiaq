@@ -30,6 +30,7 @@ class XeDAQRecorder
    
    virtual int  Initialize(XeDAQOptions *options) = 0;
    virtual void ShutdownRecorder() = 0;
+   void         ResetTimer();
    int          GetID(u_int32_t currentTime);   
    bool         QueryError(string &err);
       
