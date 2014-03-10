@@ -1,0 +1,255 @@
+
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Deployment &mdash; kodiaq 0.9 documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  
+  
+
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:'',
+        VERSION:'0.9',
+        COLLAPSE_INDEX:false,
+        FILE_SUFFIX:'.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+    <link rel="top" title="kodiaq 0.9 documentation" href="index.html"/>
+        <link rel="next" title="DAQ Options" href="options.html"/>
+        <link rel="prev" title="Using kodiaq" href="usage.html"/> 
+
+  <script src="//cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        <a href="index.html" class="icon icon-home"> kodiaq</a>
+        <form class="wy-form" action="search.html" method="get">
+  <input type="text" name="q" placeholder="Search docs" />
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix">
+        
+        
+            <ul>
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Welcome</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#scope-of-the-program">Scope of the program</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#use-guidelines">Use Guidelines</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#fetching-the-source-code">Fetching the source code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#compiling-the-ui-module">Compiling the UI module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#running-the-code">Running the code</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Using kodiaq</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#daq-status-window">DAQ Status window</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#control-window">Control Window</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#messages-window">Messages Window</a></li>
+</ul>
+</li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="">Deployment</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#koslave">koSlave</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#komaster">koMaster</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="options.html">DAQ Options</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="options.html#general-syntax">General Syntax</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options.html#electronics-definitions">Electronics Definitions</a></li>
+</ul>
+</li>
+</ul>
+
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top">
+        <i data-toggle="wy-nav-top" class="icon icon-reorder"></i>
+        <a href="/">kodiaq</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <ul class="wy-breadcrumbs">
+  <li><a href="index.html">Docs</a> &raquo;</li>
+  <li><a href="">Deployment</a></li>
+  
+</ul>
+<hr/>
+
+          
+  <div class="section" id="deployment">
+<h1>Deployment<a class="headerlink" href="#deployment" title="Permalink to this headline">¶</a></h1>
+<p>kodiaq consists of three parts:</p>
+<blockquote>
+<div><ul class="simple">
+<li>The master module runs on one computer and manages the entire system</li>
+<li>Slave modules run on each readout PC and drive the boards</li>
+<li>User modules are used to log into the master and steer the DAQ</li>
+</ul>
+</div></blockquote>
+<p>All of these modules are required for running. Installation and
+configuration of the modules will be described in this section.</p>
+<p>All three modules require the libXeDAQ, which is compiled
+automatically no matter which modules are added. The libXeDAQ contains
+shared code for the network protocols, options file handling, logging,
+and other assorted helper functions. The source for this library is
+found in src/common.</p>
+<div class="section" id="koslave">
+<h2>koSlave<a class="headerlink" href="#koslave" title="Permalink to this headline">¶</a></h2>
+<p>The kodiaq slave module is the meat of the acquisition system. It
+contains all the classes for controlling the V1724 digitizers as well
+as pushing the data stream to mongodb. The koSlave module is a daemon
+that runs all the time and listens for connections to the master.</p>
+<p>There are several dependencies that must be met for the slave module
+to work.</p>
+<blockquote>
+<div><ul>
+<li><p class="first">You need a PC with a CAEN A2818 or A3818 PCI(-e) card installed
+and also the proper drivers.</p>
+</li>
+<li><dl class="first docutils">
+<dt>There are several library dependencies</dt>
+<dd><ul class="first last simple">
+<li>CAENVMElib (available from CAEN, this is a closed-source
+library)</li>
+<li>mongodb greater than version 2.55 (earlier versions can work with
+a slight modification to the source code). Specifically
+libmongoclient is needed.</li>
+<li>libsnappy for on-the-fly compression</li>
+<li>libpthread for parallel processing</li>
+<li>Normal build libraries (build-essential package on ubuntu)</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+<p>Checkout the code from github. To compile use the following steps:</p>
+<div class="highlight-python"><pre>cd kodiaq (top-level directory)
+./configure --enable-slave (optionally --disable-user if the UI is not needed)
+make</pre>
+</div>
+<p>The connection to the master must also be defined. Right now this is
+hard-coded in the koSlave.cc file. The line
+fNetworkInterface.Initialize(...) must be edited to give the proper
+address of the master. It is forseen to put this in a config file.</p>
+<p>To start the slave just run koSlave, preferably in a detached screen.
+The program will automatically scan the master and check to see if
+it puts the network up. If so the slave will connect automatically.</p>
+<p>In case that the slave loses connection it will stop the DAQ and
+return to this idle state, waiting for another connection to the
+master. It should be fine just to leave it on indefinitely if there
+are no crashes.</p>
+</div>
+<div class="section" id="komaster">
+<h2>koMaster<a class="headerlink" href="#komaster" title="Permalink to this headline">¶</a></h2>
+<p>The master should be installed somewhere with a reliable network
+connection to the slaves. It can also run on a slave PC if necessary
+since it uses very few resources. Two open ports are required for
+communication with slaves and two more for communication with clients.
+These can be any ports but they must be defined in koSlave and in the
+UI.</p>
+<p>To install the master, mongodb must be installed (libmongoclient).
+Additionally, if support for configuring the DDC-10 high energy veto
+module is required then libddc is also needed.</p>
+<p>To build use the following:</p>
+<div class="highlight-python"><pre>cd kodiaq
+./configure --enable-master (--enable-ddc10 for ddc10 support)
+make</pre>
+</div>
+<p>The executable is in src/master/koMaster. This should also be run in a
+detached screen and can be left on more or less indefinitely unless
+there are issues.</p>
+<div class="section" id="run-modes">
+<h3>Run Modes<a class="headerlink" href="#run-modes" title="Permalink to this headline">¶</a></h3>
+<p>The operational modes for the DAQ are defined in
+src/master/data/RunModes.ini. This file is simply a list where the
+first entry is a string with a run mode identifier and the second
+entry is the path to the .ini file for that mode. This file can be
+edited while the master is running. For an exampe .ini file take a
+look in src/master/data/RunModes/DAQOptionsMaster.ini.</p>
+</div>
+</div>
+</div>
+
+
+          <footer>
+  
+    <div class="rst-footer-buttons">
+      
+        <a href="options.html" class="btn btn-neutral float-right" title="DAQ Options"/>Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+        <a href="usage.html" class="btn btn-neutral" title="Using kodiaq"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <p>
+      &copy; Copyright 2014, Daniel Coderre.
+  </p>
+
+  <a href="https://www.github.com/snide/sphinx_rtd_theme">Sphinx theme</a> provided by <a href="http://readthedocs.org">Read the Docs</a>
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+</body>
+</html>

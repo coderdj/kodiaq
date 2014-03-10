@@ -1,0 +1,316 @@
+
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Using kodiaq &mdash; kodiaq 0.9 documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  
+  
+
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:'',
+        VERSION:'0.9',
+        COLLAPSE_INDEX:false,
+        FILE_SUFFIX:'.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+    <link rel="top" title="kodiaq 0.9 documentation" href="index.html"/>
+        <link rel="prev" title="Installation" href="installation.html"/> 
+
+  <script src="//cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        <a href="index.html" class="icon icon-home"> kodiaq</a>
+        <form class="wy-form" action="search.html" method="get">
+  <input type="text" name="q" placeholder="Search docs" />
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix">
+        
+        
+            <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Welcome</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#scope-of-the-program">Scope of the program</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#use-guidelines">Use Guidelines</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#fetching-the-source-code">Fetching the source code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#compiling-the-ui-module">Compiling the UI module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#running-the-code">Running the code</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Using kodiaq</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#daq-status-window">DAQ Status window</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#control-window">Control Window</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#messages-window">Messages Window</a></li>
+</ul>
+</li>
+</ul>
+<ul class="simple">
+</ul>
+
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top">
+        <i data-toggle="wy-nav-top" class="icon icon-reorder"></i>
+        <a href="/">kodiaq</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <ul class="wy-breadcrumbs">
+  <li><a href="index.html">Docs</a> &raquo;</li>
+  <li><a href="">Using kodiaq</a></li>
+  
+</ul>
+<hr/>
+
+          
+  <div class="section" id="using-kodiaq">
+<h1>Using kodiaq<a class="headerlink" href="#using-kodiaq" title="Permalink to this headline">¶</a></h1>
+<p>There are 3 sub-windows in the DAQ UI: control, monitoring, and
+history. The following is a basic explanation of the information
+provided and interactions possible with each.</p>
+<div class="section" id="daq-status-window">
+<h2>DAQ Status window<a class="headerlink" href="#daq-status-window" title="Permalink to this headline">¶</a></h2>
+<p>The DAQ status window is on the right side of the screen and is split
+into two parts. The top part gives general information on the state of
+the overall DAQ while the bottom part gives information on the status
+of each connected slave. We will start from the top down.</p>
+<ul>
+<li><dl class="first docutils">
+<dt>Network <em>(Disconnected/Connected)</em>:</dt>
+<dd><p class="first last">The DAQ network is the connection of the master program to the slave PCs. If the network
+interface is up and at least one slave is connected this field will
+read &#8220;Connected&#8221;.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Acquisition <em>(Idle/Armed/Running/Mixed)</em>:</dt>
+<dd><p class="first last">This tells if the DAQ is taking data or not. If the boards are not doing anything they are
+in idle state. The DAQ cannot be started in idle state. In order to
+start the DAQ the user has to choose a run mode. Once a mode is chosen
+the run mode is sent to the slave modules where mode-specific options
+are loaded into the digitizers. If all slaves successfully load the
+options the DAQ is in armed mode and can be started. If the DAQ is
+taking data it is in running mode, stopping the DAQ puts it back to
+armed mode. If all slave modes are not reporting the same mode the DAQ
+is in mixed mode. This is normal for a brief amount of time upon a state
+change but should not persist for more than a couple seconds.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>DAQ Mode <em>(a string)</em>:</dt>
+<dd><p class="first last">Gives the name of the run mode used to collect the most recent run.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Current Run <em>(run name)</em>:</dt>
+<dd><p class="first last">Gives the name of the current or most recently stopped run.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Started by <em>(user name)</em>:</dt>
+<dd><p class="first last">Gives the name of the user who started the current or most recently stopped run.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>The lower part of the window provides information on each slave
+connected. The color of the slave name indicates its state (red-idle,
+yellow-armed, green-running). The rate given is the rate data is read
+out of the readout buffers of the digitizers. Due to formatting and
+zipping this is different than the rate actually transferred to the
+event builder buffer. The number of boards given is simply the number
+of digitizers connected to that slave. The frequency is the frequency
+of reads from the readout buffers of the digitizer. It is possible for
+multiple occurrences to be read in a single buffer. Note that this has
+nothing to do with the frequency of events since the concept of an
+event does not exist at this point in the data stream.</p>
+</div>
+<div class="section" id="control-window">
+<h2>Control Window<a class="headerlink" href="#control-window" title="Permalink to this headline">¶</a></h2>
+<p>The control window is on the top left and allows the user to control
+the DAQ. The options provided are dependent on the current state of
+the DAQ. The following table describes what each option does and under
+what states the option is available.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="23%" />
+<col width="25%" />
+<col width="52%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Command</th>
+<th class="head">States</th>
+<th class="head">Action</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>Connect</td>
+<td>DAQ Disconnected</td>
+<td><div class="first last line-block">
+<div class="line">Puts up the DAQ network. The</div>
+<div class="line">master will put up its interface</div>
+<div class="line">and wait for 10 seconds for slaves to</div>
+<div class="line">connect</div>
+</div>
+</td>
+</tr>
+<tr class="row-odd"><td>Broadcast Message</td>
+<td>All</td>
+<td><div class="first last line-block">
+<div class="line">Puts a message into the DAQ log and</div>
+<div class="line">broadcasts it to all connected UIs</div>
+</div>
+</td>
+</tr>
+<tr class="row-even"><td>Choose Operation
+Mode</td>
+<td>DAQ Connected</td>
+<td><div class="first last line-block">
+<div class="line">Asks the master for a list of</div>
+<div class="line">available run modes. The user can</div>
+<div class="line">then choose a mode from the list.</div>
+<div class="line">the chosen mode is shipped to the</div>
+<div class="line">slaves and the boards are armed.</div>
+</div>
+</td>
+</tr>
+<tr class="row-odd"><td>Put DAQ into
+Standby Mode</td>
+<td>DAQ Armed</td>
+<td><div class="first last line-block">
+<div class="line">Clears the last run mode and puts the</div>
+<div class="line">boards into the idle state. Use this</div>
+<div class="line">if you won&#8217;t use the DAQ for a bit</div>
+</div>
+</td>
+</tr>
+<tr class="row-even"><td>Reset DAQ</td>
+<td>Idle</td>
+<td><div class="first last line-block">
+<div class="line">Disconnects and reconnects the DAQ</div>
+<div class="line">network. Used to debug connection</div>
+<div class="line">issues.</div>
+</div>
+</td>
+</tr>
+<tr class="row-odd"><td>Start DAQ</td>
+<td>Armed</td>
+<td><div class="first last line-block">
+<div class="line">Starts acquisition into a new run.</div>
+</div>
+</td>
+</tr>
+<tr class="row-even"><td>Stop  DAQ</td>
+<td>Running</td>
+<td><div class="first last line-block">
+<div class="line">Stops acquisition.</div>
+</div>
+</td>
+</tr>
+<tr class="row-odd"><td>Quit</td>
+<td>Running</td>
+<td><div class="first last line-block">
+<div class="line">Quit out of the UI. This does not</div>
+<div class="line">have any effect on the DAQ itself.</div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="messages-window">
+<h2>Messages Window<a class="headerlink" href="#messages-window" title="Permalink to this headline">¶</a></h2>
+<p>The messages window displays the last 1000 lines of the DAQ log file
+as well as any messages for the user. Scrolling is done with the arrow
+keys or the mouse wheel. In order to place a message in the log file
+use the &#8220;Broadcast Message&#8221; command. If you want to see something
+older than 1000 lines you have to look up the actual DAQ log files.</p>
+</div>
+</div>
+
+
+          <footer>
+  
+    <div class="rst-footer-buttons">
+      
+      
+        <a href="installation.html" class="btn btn-neutral" title="Installation"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <p>
+      &copy; Copyright 2014, Daniel Coderre.
+  </p>
+
+  <a href="https://www.github.com/snide/sphinx_rtd_theme">Sphinx theme</a> provided by <a href="http://readthedocs.org">Read the Docs</a>
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+</body>
+</html>
