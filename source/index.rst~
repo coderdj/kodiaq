@@ -6,16 +6,16 @@
 Welcome to kodiaq - The networked parallel data reader
 ======================================================
 
-.. image:: ../source/bear.png
-    :align: left
-    :alt: alternate text
-    
 Welcome to the documentation for kodiaq and thank you for your
 interest in the project. If you are a user looking to install the
 program and steer a running data acquisition system, look under the 
 "For Users" section below. Developers looking to get into the 
 meat of the program or deploy the entire system should check out the 
 "For Devs" section.
+
+.. image:: ../source/bear.png
+    :align: right
+    :alt: alternate text
 
 Our code is hosted on github so be sure to check out the repository
 `here <https://github.com/XENON1T/kodiaq.git>`_. You might also be

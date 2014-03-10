@@ -1,0 +1,90 @@
+==================
+Deployment
+==================
+
+kodiaq consists of three parts:
+
+  * The master module runs on one computer and manages the entire system
+  * Slave modules run on each readout PC and drive the boards
+  * User modules are used to log into the master and steer the DAQ
+
+All of these modules are required for running. Installation and
+configuration of the modules will be described in this section.
+
+koSlave
+---------
+
+The kodiaq slave module is the meat of the acquisition system. It
+contains all the classes for controlling the V1724 digitizers as well
+as pushing the data stream to mongodb. The koSlave module is a daemon
+that runs all the time and listens for connections to the master.
+
+
+There are several dependencies that must be met for the slave module
+to work.
+  
+   * You need a PC with a CAEN A2818 or A3818 PCI(-e) card installed
+     and also the proper drivers.
+   * There are several library dependencies
+      * CAENVMElib (available from CAEN, this is a closed-source
+        library)
+      * mongodb greater than version 2.55 (earlier versions can work with
+        a slight modification to the source code). Specifically
+	libmongoclient is needed.
+      * libsnappy for on-the-fly compression
+      * libpthread for parallel processing
+      * Normal build libraries (build-essential package on ubuntu)
+
+Checkout the code from github. To compile use the following steps: ::
+    
+      cd kodiaq (top-level directory)
+      ./configure --enable-slave (optionally --disable-user if the UI is not needed)
+      make
+
+The connection to the master must also be defined. Right now this is
+hard-coded in the koSlave.cc file. The line
+fNetworkInterface.Initialize(...) must be edited to give the proper
+address of the master. It is forseen to put this in a config file.
+
+To start the slave just run koSlave, preferably in a detached screen.
+The program will automatically scan the master and check to see if
+it puts the network up. If so the slave will connect automatically.
+
+In case that the slave loses connection it will stop the DAQ and
+return to this idle state, waiting for another connection to the
+master. It should be fine just to leave it on indefinitely if there
+are no crashes.
+
+
+koMaster
+---------
+
+The master should be installed somewhere with a reliable network
+connection to the slaves. It can also run on a slave PC if necessary
+since it uses very few resources. Two open ports are required for
+communication with slaves and two more for communication with clients.
+These can be any ports but they must be defined in koSlave and in the
+UI. 
+
+To install the master, mongodb must be installed (libmongoclient).
+Additionally, if support for configuring the DDC-10 high energy veto
+module is required then libddc is also needed. 
+
+To build use the following: ::
+
+    cd kodiaq
+    ./configure --enable-master (--enable-ddc10 for ddc10 support)
+    make
+    
+The executable is in src/master/koMaster. This should also be run in a
+detached screen and can be left on more or less indefinitely unless
+there are issues.
+
+Run Modes
+^^^^^^^^^^^^^
+The operational modes for the DAQ are defined in
+src/master/data/RunModes.ini. This file is simply a list where the
+first entry is a string with a run mode identifier and the second
+entry is the path to the .ini file for that mode. This file can be
+edited while the master is running. For an exampe .ini file take a
+look in src/master/data/RunModes/DAQOptionsMaster.ini. 

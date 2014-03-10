@@ -6,6 +6,10 @@
 Welcome to kodiaq - The networked parallel data reader
 ======================================================
 
+.. image:: ../source/bear.png
+    :align: left
+    :alt: alternate text
+    
 Welcome to the documentation for kodiaq and thank you for your
 interest in the project. If you are a user looking to install the
 program and steer a running data acquisition system, look under the 
