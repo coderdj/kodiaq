@@ -1,6 +1,12 @@
-==============
-Using kodiaq
-==============
+========================
+Using the Client Program
+========================
+
+The DAQ client program is written in ncurses and is designed to be run
+in a terminal over a remote connection. Though the ncurses library is
+not exactly cutting edge, it was chosen for its broad compatibility
+with most terminal emulators and the ability to run it over an ssh
+connection without X forwarding. 
 
 There are 3 sub-windows in the DAQ UI: control, monitoring, and
 history. The following is a basic explanation of the information

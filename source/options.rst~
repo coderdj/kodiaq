@@ -194,7 +194,35 @@ the section on board options.
      If a DDC10 high energy veto module is used, this line lets you
      define the options. An explanation of the options will follow
      once a more finalized version of the DDC10 class exists.
+
+An example of how these options appears in the .ini file is shown below. ::
+
+     ## BLT_SIZE {int}
+     ##     Usage: define block transfer size
+     BLT_SIZE 524288
      
+     ## RUN_START {int} {int}
+     ##      Usage: define run start mode (0 - board internal 1-s-in)
+     ##             and run start module by ID (module must be defined)
+     RUN_START 1 1868
+     
+     ## SUM_MODULE {int}
+     ##      Usage: define a sum module by ID. This module will always be
+     ##             digitized and will not be included in the event builder
+     SUM_MODULE 991
+
+     ## DDC10_Options {string1} {int1} {int2} {int3} {int4} {int5} {int6} {int7}
+     ##      Usage: Define options for the ddc10 veto module
+     ##              ADDRESS       MODE    SIGN     INT WINDOW    VETO DELAY     SIG THRESHOLD      INT THRESHOLD      WIDTH CUT
+     DDC10_OPTIONS 130.92.139.240    0      10        100             200            150                  20000        50
+     
+     ## BASELINE_MODE {int}
+     ##     Usage: 0 - no baselines determined. read from file if available.
+     ##            1 - try to automatically determine baselines each time
+     ##                boards are armed
+     BASELINE_MODE 1
+
+
 Output Options
 ---------------
 
@@ -209,6 +237,7 @@ related to your chosen write mode.
    * **MONGO_OPTIONS {string1} {string2} {int1} {int2} {int3} {int4}**
      Define the mongo linkage. This one is a bit more complicated and
      will be explained in detail.
+     
      * {string1} gives the address of the PC running the mongodb database. 
        This can be either a hostname or an ip address.
      * {string2} defines a collection name for the data. The format of this 
@@ -271,3 +300,32 @@ related to your chosen write mode.
     speeds in cases where rates fluctuate. At the end of a run the entire
     buffer will be written out regardless of whether this threshold was
     reached or not.
+
+An example of how these options appear in the .ini file is shown
+below. ::
+
+     ## WRITE_MODE {int}
+     ##     Usage: define write mode. 0-no writing 1-to file 2-mongodb
+     WRITE_MODE 2
+     
+     ## MONGO_OPTIONS {string} {string} {int} {int} {int} {int}
+     ##     Usage: first string mongodb address
+     ##            second string collection name
+     ##            first int 0-do not zip output 1-zip output
+     ##            second int {int} max insert size
+     ##            third int {int} write concern (0-normal 1-off)
+     ##            fourth int {int} block splitting mode (0-none,
+     ##                          1-coarse, 2-occurrences old fw)
+     MONGO_OPTIONS lheppc42 data.test 1 5000 1 1
+     
+     ## PROCESSING_THREADS {int}
+     ##     Usage: define the number of processing threads. program will
+     ##            assign one by default if this number is not set or is garbage
+     PROCESSING_THREADS 6
+     
+     ## READOUT_THRESHOLD {int}
+     ##     Usage:  Define a minimum number of events that must be in the
+     ##             buffer before a write is performed. (Number of events
+     ##             in buffer must be greater than this number.)
+     READOUT_THRESHOLD 1
+

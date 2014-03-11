@@ -99,6 +99,7 @@
 <li class="toctree-l2"><a class="reference internal" href="options.html#electronics-definitions">Electronics Definitions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options.html#run-options">Run Options</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options.html#output-options">Output Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options.html#vme-options">VME Options</a></li>
 </ul>
 </li>
 </ul>
@@ -130,6 +131,11 @@
           
   <div class="section" id="using-the-client-program">
 <h1>Using the Client Program<a class="headerlink" href="#using-the-client-program" title="Permalink to this headline">¶</a></h1>
+<p>The DAQ client program is written in ncurses and is designed to be run
+in a terminal over a remote connection. Though the ncurses library is
+not exactly cutting edge, it was chosen for its broad compatibility
+with most terminal emulators and the ability to run it over an ssh
+connection without X forwarding.</p>
 <p>There are 3 sub-windows in the DAQ UI: control, monitoring, and
 history. The following is a basic explanation of the information
 provided and interactions possible with each.</p>

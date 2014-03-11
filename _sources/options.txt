@@ -194,7 +194,35 @@ the section on board options.
      If a DDC10 high energy veto module is used, this line lets you
      define the options. An explanation of the options will follow
      once a more finalized version of the DDC10 class exists.
+
+An example of how these options appears in the .ini file is shown below. ::
+
+     ## BLT_SIZE {int}
+     ##     Usage: define block transfer size
+     BLT_SIZE 524288
      
+     ## RUN_START {int} {int}
+     ##      Usage: define run start mode (0 - board internal 1-s-in)
+     ##             and run start module by ID (module must be defined)
+     RUN_START 1 1868
+     
+     ## SUM_MODULE {int}
+     ##      Usage: define a sum module by ID. This module will always be
+     ##             digitized and will not be included in the event builder
+     SUM_MODULE 991
+
+     ## DDC10_Options {string1} {int1} {int2} {int3} {int4} {int5} {int6} {int7}
+     ##      Usage: Define options for the ddc10 veto module
+     ##              ADDRESS       MODE    SIGN     INT WINDOW    VETO DELAY     SIG THRESHOLD      INT THRESHOLD      WIDTH CUT
+     DDC10_OPTIONS 130.92.139.240    0      10        100             200            150                  20000        50
+     
+     ## BASELINE_MODE {int}
+     ##     Usage: 0 - no baselines determined. read from file if available.
+     ##            1 - try to automatically determine baselines each time
+     ##                boards are armed
+     BASELINE_MODE 1
+
+
 Output Options
 ---------------
 
@@ -272,3 +300,90 @@ related to your chosen write mode.
     speeds in cases where rates fluctuate. At the end of a run the entire
     buffer will be written out regardless of whether this threshold was
     reached or not.
+
+An example of how these options appear in the .ini file is shown
+below. ::
+
+     ## WRITE_MODE {int}
+     ##     Usage: define write mode. 0-no writing 1-to file 2-mongodb
+     WRITE_MODE 2
+     
+     ## MONGO_OPTIONS {string} {string} {int} {int} {int} {int}
+     ##     Usage: first string mongodb address
+     ##            second string collection name
+     ##            first int 0-do not zip output 1-zip output
+     ##            second int {int} max insert size
+     ##            third int {int} write concern (0-normal 1-off)
+     ##            fourth int {int} block splitting mode (0-none,
+     ##                          1-coarse, 2-occurrences old fw)
+     MONGO_OPTIONS lheppc42 data.test 1 5000 1 1
+     
+     ## PROCESSING_THREADS {int}
+     ##     Usage: define the number of processing threads. program will
+     ##            assign one by default if this number is not set or is garbage
+     PROCESSING_THREADS 6
+     
+     ## READOUT_THRESHOLD {int}
+     ##     Usage:  Define a minimum number of events that must be in the
+     ##             buffer before a write is performed. (Number of events
+     ##             in buffer must be greater than this number.)
+     READOUT_THRESHOLD 1
+
+VME Options
+------------------
+
+The VME options allow setting of the VME registers in the V1724
+modules. This allows direct control of the acquisition system. Some of
+these settings are absolutely required to remain at their default
+values, others can be tuned based on the desired performance of the
+DAQ. Please only change these values if you know what you are doing.
+Problems with incorrect settings in these registers are very hard to
+debug.
+
+Two things should be kept in mind:
+
+   1. The VME options are loaded to the boards in the order they are
+      listed in the .ini file.
+   2. Absolutely no sanity checking is done on these options. The
+      value passed as an argument will be directly set to the
+      digitizers.
+      
+The general format of a VME option setting is as follows: ::
+
+    WRITE_REGISTER {reg} {val} {boardID} {crateID} {linkID}
+
+Where the values of the parameters are:
+
+    * **WRITE_REGISTER** is the lag that tells the file parser that
+      this is a VME setting.
+    * **{reg}** is a hexidecimal value of the register to set. These
+      are sixteen-bit (four word) values and are added to the board
+      VME address to write to a specific memory register of a specific board.
+    * **{boardID}** is an ID number of a board in case it is desired
+      to write the option just to a single board. -1 means all boards.
+    * **{crateID}** is an ID number of a crate, should be combined
+      with linkID to write to all boards with a specific link and crate. -1
+      means all.
+    * **{linkID}** is an ID number of a link. Should be combined with
+      crateID to write to all boards with a specific link and crate. -1 for
+      all.
+
+Here are a few examples of how to use the command. 
+
+To write the value of 10 to register EF00 for all boards: ::
+
+     WRITE_REGISTER EF00 10 -1 -1 -1
+     
+To write the same value to the same register only for board 800: ::
+
+     WRITE_REGISTER EF00 10 800 -1 -1
+
+To write the same value to the same register for crate 2 on link 0 of
+slave number one: ::
+
+     %1WRITE_REGISTER EF00 10 -1 2 0
+
+Generally, the same options should be written to all digitizers so
+setting the board, crate, and link IDs to -1 is advisable. The
+exception to this is the acquisition monitor board, which may require
+some special settings.
