@@ -28,6 +28,12 @@ Jargon Glossary
 |                   | | usually from one occurrence, and some|
 |                   | | metadata.                            |
 +-------------------+----------------------------------------+
+| Master PC         | | A central dispatcher responsible for |
+|                   | | routing commands from users to slave |
+|                   | | PCs as well as keeping track of the  |
+|                   | | user/slave connections and the       |
+|                   | | overall state of the DAQ.            |
++-------------------+----------------------------------------+
 | Occurrence        | | Using a custom firmware, our V1724   |
 |                   | | digitizers are entirely              |
 |                   | | self-triggered. This means that when |
@@ -43,4 +49,13 @@ Jargon Glossary
 |                   | | required by the event builder to     |
 |                   | | effectively trigger and record the   |
 |                   | | run.                                 |
++-------------------+----------------------------------------+
+| Slave PC          | | An acquisition PC controlled over the|
+|                   | | nework by the master dispatcher. The |
+|                   | | slave reads from one or more         |
+|                   | | digitizers and inserts the data into |
+|                   | | a mongodb. Currently up to six slaves|
+|                   | | are supported, though this limit is  |
+|                   | | only a limit of the UI and can be    |
+|                   | | easily raised.                       |
 +-------------------+----------------------------------------+

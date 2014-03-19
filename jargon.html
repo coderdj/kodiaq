@@ -184,7 +184,17 @@ monitor</td>
 </div>
 </td>
 </tr>
-<tr class="row-odd"><td>Occurrence</td>
+<tr class="row-odd"><td>Master PC</td>
+<td><div class="first last line-block">
+<div class="line">A central dispatcher responsible for</div>
+<div class="line">routing commands from users to slave</div>
+<div class="line">PCs as well as keeping track of the</div>
+<div class="line">user/slave connections and the</div>
+<div class="line">overall state of the DAQ.</div>
+</div>
+</td>
+</tr>
+<tr class="row-even"><td>Occurrence</td>
 <td><div class="first last line-block">
 <div class="line">Using a custom firmware, our V1724</div>
 <div class="line">digitizers are entirely</div>
@@ -197,7 +207,7 @@ monitor</td>
 </div>
 </td>
 </tr>
-<tr class="row-even"><td>Run control
+<tr class="row-odd"><td>Run control
 document</td>
 <td><div class="first last line-block">
 <div class="line">At the start of a run a single</div>
@@ -206,6 +216,19 @@ document</td>
 <div class="line">required by the event builder to</div>
 <div class="line">effectively trigger and record the</div>
 <div class="line">run.</div>
+</div>
+</td>
+</tr>
+<tr class="row-even"><td>Slave PC</td>
+<td><div class="first last line-block">
+<div class="line">An acquisition PC controlled over the</div>
+<div class="line">nework by the master dispatcher. The</div>
+<div class="line">slave reads from one or more</div>
+<div class="line">digitizers and inserts the data into</div>
+<div class="line">a mongodb. Currently up to six slaves</div>
+<div class="line">are supported, though this limit is</div>
+<div class="line">only a limit of the UI and can be</div>
+<div class="line">easily raised.</div>
 </div>
 </td>
 </tr>
