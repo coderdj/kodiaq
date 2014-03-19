@@ -1,8 +1,6 @@
 
 
 
-
-
 <!DOCTYPE html>
 <!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
@@ -10,7 +8,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Index &mdash; kodiaq 0.9 documentation</title>
+  <title>Jargon Glossary &mdash; kodiaq 0.9 documentation</title>
   
 
   
@@ -46,7 +44,9 @@
   
 
   
-    <link rel="top" title="kodiaq 0.9 documentation" href="index.html"/> 
+    <link rel="top" title="kodiaq 0.9 documentation" href="index.html"/>
+        <link rel="next" title="Help" href="help.html"/>
+        <link rel="prev" title="Data Formats" href="protocols.html"/> 
 
   <script src="//cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
 
@@ -70,7 +70,7 @@
       <div class="wy-menu wy-menu-vertical" data-spy="affix">
         
         
-            <ul>
+            <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="intro.html">Welcome</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#scope-of-the-program">Scope of the program</a></li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#use-guidelines">Use Guidelines</a></li>
@@ -106,7 +106,7 @@
 <li class="toctree-l2"><a class="reference internal" href="protocols.html#output-to-mongodb">Output to Mongodb</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="jargon.html">Jargon Glossary</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Jargon Glossary</a></li>
 <li class="toctree-l1"><a class="reference internal" href="help.html">Help</a></li>
 </ul>
 
@@ -129,21 +129,101 @@
         <div class="rst-content">
           <ul class="wy-breadcrumbs">
   <li><a href="index.html">Docs</a> &raquo;</li>
-  <li><a href=""></a></li>
+  <li><a href="">Jargon Glossary</a></li>
   
 </ul>
 <hr/>
 
           
-
-<h1 id="index">Index</h1>
-
-<div class="genindex-jumpbox">
- 
+  <div class="section" id="jargon-glossary">
+<h1>Jargon Glossary<a class="headerlink" href="#jargon-glossary" title="Permalink to this headline">¶</a></h1>
+<table border="1" class="docutils">
+<colgroup>
+<col width="32%" />
+<col width="68%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Term</th>
+<th class="head">Definition</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>Acquisition
+monitor</td>
+<td><div class="first last line-block">
+<div class="line">A digitizer can be designated as an</div>
+<div class="line">acquisition monitor board. This tells</div>
+<div class="line">the event builder not to include the</div>
+<div class="line">digitizer in event building and to</div>
+<div class="line">push the data directly to the file</div>
+<div class="line">builder. You may want to do this for</div>
+<div class="line">signals that should always be</div>
+<div class="line">digitized, like a clock, sum waveform</div>
+<div class="line">or monitors of other DAQ systems.</div>
+</div>
+</td>
+</tr>
+<tr class="row-odd"><td>Collection</td>
+<td><div class="first last line-block">
+<div class="line">In mongodb a collection is something</div>
+<div class="line">like a sub-folder of a database.</div>
+<div class="line">Kodiaq creates a new collection for</div>
+<div class="line">each data-taking run in default mode.</div>
+<div class="line">It is also possible to manually</div>
+<div class="line">define a collection via the</div>
+<div class="line">initialization file.</div>
+</div>
+</td>
+</tr>
+<tr class="row-even"><td>Document</td>
+<td><div class="first last line-block">
+<div class="line">A mongodb data object. In kodiaq a</div>
+<div class="line">document includes the data payload,</div>
+<div class="line">usually from one occurrence, and some</div>
+<div class="line">metadata.</div>
+</div>
+</td>
+</tr>
+<tr class="row-odd"><td>Occurrence</td>
+<td><div class="first last line-block">
+<div class="line">Using a custom firmware, our V1724</div>
+<div class="line">digitizers are entirely</div>
+<div class="line">self-triggered. This means that when</div>
+<div class="line">there is only baseline on a channel</div>
+<div class="line">it is not digitized, only a short</div>
+<div class="line">window around above-threshold signals</div>
+<div class="line">is digitized. This short window is</div>
+<div class="line">called an occurrence.</div>
+</div>
+</td>
+</tr>
+<tr class="row-even"><td>Run control
+document</td>
+<td><div class="first last line-block">
+<div class="line">At the start of a run a single</div>
+<div class="line">document is updated to the mongo</div>
+<div class="line">collection. This contains information</div>
+<div class="line">required by the event builder to</div>
+<div class="line">effectively trigger and record the</div>
+<div class="line">run.</div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
 </div>
 
 
           <footer>
+  
+    <div class="rst-footer-buttons">
+      
+        <a href="help.html" class="btn btn-neutral float-right" title="Help"/>Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+        <a href="protocols.html" class="btn btn-neutral" title="Data Formats"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
   
 
   <hr/>

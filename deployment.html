@@ -106,7 +106,8 @@
 <li class="toctree-l2"><a class="reference internal" href="protocols.html#output-to-mongodb">Output to Mongodb</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="protocols.html#networking-protocols">Networking Protocols</a></li>
+<li class="toctree-l1"><a class="reference internal" href="jargon.html">Jargon Glossary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="help.html">Help</a></li>
 </ul>
 
         
@@ -151,6 +152,49 @@ automatically no matter which modules are added. The libXeDAQ contains
 shared code for the network protocols, options file handling, logging,
 and other assorted helper functions. The source for this library is
 found in src/common.</p>
+<p>Building the software is done using autotools. Line-by-line
+instructions are given below for each module, however in general the
+software is simply compiled by calling:</p>
+<div class="highlight-python"><pre>./configure
+make</pre>
+</div>
+<p>Some of the modules have unique dependencies not shared by the others.
+For example the master and slave modules require the mongodb driver
+while the user does not. End users may not want to install mongodb
+just to use the DAQ UI. Therefore the configure script has several
+flags that tell kodiaq which modules to include.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="33%" />
+<col width="67%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Argument</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>{no arguments}</td>
+<td>Compile the user module only</td>
+</tr>
+<tr class="row-odd"><td>&#8211;disable-user</td>
+<td>Do not compile the user module</td>
+</tr>
+<tr class="row-even"><td>&#8211;enable-slave</td>
+<td>Compile the slave module</td>
+</tr>
+<tr class="row-odd"><td>&#8211;enable-master</td>
+<td>Compile the master module</td>
+</tr>
+<tr class="row-even"><td>&#8211;enable-ddc10</td>
+<td>Enable ddc-10 support for master</td>
+</tr>
+</tbody>
+</table>
+<p>In all cases the shared common directory is compiled. For each option
+enabled the configure script automatically checks that the unique
+dependencies for each module are installed. The make script then
+compiles only the activated modules.</p>
 <div class="section" id="deployment-step-by-step">
 <h2>Deployment, Step by Step<a class="headerlink" href="#deployment-step-by-step" title="Permalink to this headline">¶</a></h2>
 <p>Here is a general outline of the steps needed to deploy a system. More

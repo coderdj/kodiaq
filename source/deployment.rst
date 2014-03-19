@@ -17,6 +17,38 @@ shared code for the network protocols, options file handling, logging,
 and other assorted helper functions. The source for this library is
 found in src/common.
 
+Building the software is done using autotools. Line-by-line
+instructions are given below for each module, however in general the
+software is simply compiled by calling: ::
+
+  ./configure
+  make
+
+Some of the modules have unique dependencies not shared by the others.
+For example the master and slave modules require the mongodb driver
+while the user does not. End users may not want to install mongodb
+just to use the DAQ UI. Therefore the configure script has several
+flags that tell kodiaq which modules to include.
+
++--------------------+----------------------------------------+
+| Argument           |  Description                           |
++====================+========================================+
+| {no arguments}     | Compile the user module only           |
++--------------------+----------------------------------------+
+| --disable-user     | Do not compile the user module         |
++--------------------+----------------------------------------+
+| --enable-slave     | Compile the slave module               |
++--------------------+----------------------------------------+
+| --enable-master    | Compile the master module              |
++--------------------+----------------------------------------+
+| --enable-ddc10     | Enable ddc-10 support for master       |
++--------------------+----------------------------------------+
+
+In all cases the shared common directory is compiled. For each option
+enabled the configure script automatically checks that the unique
+dependencies for each module are installed. The make script then
+compiles only the activated modules.
+
 Deployment, Step by Step
 ------------------------
 
@@ -60,7 +92,7 @@ to work.
         library)
       * mongodb greater than version 2.55 (earlier versions can work with
         a slight modification to the source code). Specifically
-	libmongoclient is needed.
+	libmongoclient is needed. 
       * libsnappy for on-the-fly compression
       * libpthread for parallel processing
       * Normal build libraries (build-essential package on ubuntu)
