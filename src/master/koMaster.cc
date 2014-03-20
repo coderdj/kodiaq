@@ -241,6 +241,17 @@ int main()
 	    errstring<<"DAQ started by "<<sender<<"("<<id<<")";
 	    fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_STATE);
 	 }
+	 else if(command=="USERS")  { //send a list of users
+	    runModeList.clear();
+	    if(fUserNetwork.GetUserList(runModeList)!=0)
+	      runModeList.push_back("ERROR");
+	    cout<<"Got USERS command and list entry zero is "<<runModeList[0]<<endl;
+	    fUserNetwork.SendStringList(id,runModeList);	    
+	    command='0';
+	 }	 
+//	 else if(command=="BOOT")  {
+//	    fUserNetwork.ReceiveCommand
+//	 }	 
 	 else if(command=="STOP")  {
 	    fDAQNetwork.SendCommand("STOP");
 	    if(fMongodb.UpdateEndTime()!=0)

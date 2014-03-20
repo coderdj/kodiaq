@@ -23,7 +23,9 @@ CBV2718::~CBV2718()
 
 int CBV2718::Initialize(XeDAQOptions *options)
 {
-   unsigned int data = 0x3FF;
+   //Set output multiplex register to channels 0-4 to configure them to 
+   //output whatever is written to the output buffer
+   unsigned int data = 0x3FF; 
    if(CAENVME_WriteRegister(fCrateHandle,cvOutMuxRegSet,data)!=cvSuccess)
      cout<<"Can't write to CC!"<<endl;
    if(SendStopSignal()!=0)
