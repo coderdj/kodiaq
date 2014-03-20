@@ -436,6 +436,17 @@ int XeNetServer::TransmitStatus(XeStatusPacket_t status)
    return success;
 }
 
+int XeNetServer::GetUserList(vector <string> stringList)
+{  
+   stringList.clear();
+   for(unsigned int x=0;x<fSockets.size();x++)  {
+      stringstream uss;
+      uss<<fSockets[x].id<<" "<<fSockets[x].name;
+      stringList.push_back(uss.str());
+   }
+   return 0;
+}
+
 int XeNetServer::SendStringList(int id, vector<string> stringList)
 {
    int success=-1;

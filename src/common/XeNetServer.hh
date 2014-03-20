@@ -56,7 +56,8 @@ class XeNetServer : public XeNet
    int SendRunInfoUI(int id,XeRunInfo_t runInfo);
    int ReceiveBroadcast(int id,string &broadcast);
    int SendStringList(int id, vector<string> stringlist);
-
+   int GetUserList(vector <string> stringList);
+   
    //DAQ-management functions
    int SendOptions(string filepath);
  private:
