@@ -53,6 +53,7 @@ int MasterMongodbConnection::Initialize(string user, string runMode, XeDAQOption
    b.append("starttime",0);
    b.append("user",user);
    b.append("compressed",fMongoOptions.ZipOutput);
+   b.append("data_taking_ended",false);
    
    //put in start time
    time_t currentTime;

@@ -169,22 +169,30 @@ int main()
 	       errstring<<"koMaster - Failed fulfilling request for run mode list from "<<sender<<"("<<id<<")";
 	       fLog.Error(errstring.str());
 	    }
+	    command='0';
 	 }	 
 	 else if(command=="ARM")  {
+	    runModeList.clear();
+	    runModePaths.clear();
+	    GetRunModeList(runModeList,runModePaths);
 	    errstring<<"Received arm command from "<<sender<<"("<<id<<")";
-	    fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_NORMAL);
+	    //fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_NORMAL);
 	    fDAQNetwork.SendCommand("SLEEP");//tell DAQ to reset
 	    if(fUserNetwork.ListenForCommand(command,id,sender)!=0) {
 	       fLog.Error("koMaster main - Timed out waiting for run mode after ARM command");
-	       koMaster.BroadcastMessage("Did not receive run mode after arm command");
+	       errstring<<" but didn't receive mode.";
+	       fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_WARNING);
 	    }
 	    else {    		 
+	       errstring<<" for mode "<<command;
+	       fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_NORMAL);
 	       tempint=-1;
 	       for(unsigned int x=0;x<runModeList.size();x++)  {
 		  if(runModeList[x]==command) tempint=(int)x;
 	       }
 	       if(tempint==-1)  {
 		  fLog.Error("koMaster - Got bad mode index from UI");
+		  fUserNetwork.BroadcastMessage("Warning - that run mode doesn't seem to exist.",XEMESS_WARNING);
 		  command='0';
 		  continue;
 	       }
