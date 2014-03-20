@@ -161,24 +161,22 @@ int main()
 	    sleep(1);
 	    command='0';
 	 }
+	 else if(command=="MODES"){
+	    runModeList.clear();
+	    runModePaths.clear();
+	    GetRunModeList(runModeList,runModePaths);
+	    if(fUserNetwork.SendStringList(id,runModeList)!=0)  {
+	       errstring<<"koMaster - Failed fulfilling request for run mode list from "<<sender<<"("<<id<<")";
+	       fLog.Error(errstring.str());
+	    }
+	 }	 
 	 else if(command=="ARM")  {
 	    errstring<<"Received arm command from "<<sender<<"("<<id<<")";
 	    fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_NORMAL);
 	    fDAQNetwork.SendCommand("SLEEP");//tell DAQ to reset
-	    runModeList.clear(); runModePaths.clear();
-	    GetRunModeList(runModeList,runModePaths);
-	    if(fUserNetwork.SendStringList(id,runModeList)!=0)  {
-	       fLog.Error("koMaster - Error sending run mode list.");
-	    }	    
-	    int timeout=0;
-	    while(fUserNetwork.ListenForCommand(command,id,sender)!=0) {
-	       usleep(1000);
-	       timeout++;
-	       if(timeout>=25000) break;
-	    }
-	    if(timeout>=25000 || command=="TIMEOUT")  {
-	       fLog.Error("koMaster - Timed out waiting for user to choose mode.");
-	       fUserNetwork.BroadcastMessage("Timed out waiting for user to choose mode. You only get 20 seconds.",XEMESS_WARNING);
+	    if(fUserNetwork.ListenForCommand(command,id,sender)!=0) {
+	       fLog.Error("koMaster main - Timed out waiting for run mode after ARM command");
+	       koMaster.BroadcastMessage("Did not receive run mode after arm command");
 	    }
 	    else {    		 
 	       tempint=-1;

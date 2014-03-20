@@ -18,32 +18,39 @@ using namespace std;
 
 int main()
 {
-   //temp file output
-   // ofstream outfile;
-   // outfile.open("data.dat");
-   
    //Declare objects
-   //
+   
    //logger
    XeDAQLogger        fLog("log/koUser.log");
-   //
+   
    //network
    XeNetClient        fMasterNetwork(&fLog);
-   //
+   
    //DAQStatus
    XeStatusPacket_t  fDAQStatus;
    XeDAQHelper::InitializeStatus(fDAQStatus);
-   //
+   
    //Run info (must fetch from network)
    XeRunInfo_t fRunInfo;
    fRunInfo.RunNumber=fRunInfo.StartedBy=fRunInfo.StartDate="";
-   //
+   
    //UI
    XeCursesInterface  fUI(&fLog);   
-   time_t fKeepAlive=XeDAQLogger::GetCurrentTime();
-   //Now connect UI and download info from server
-   bool repeat=false;
-login_screen:
+   
+   //Timer used to periodically send a test message over open ports. If you don't 
+   //do this the ports automatically close after some period of inactivity
+   time_t fKeepAlive=XeDAQLogger::GetCurrentTime();               
+                                                                
+   
+   //***********************************************************
+   //***********************************************************
+   // LOGIN
+   //***********************************************************
+   //***********************************************************
+
+   //Get login info from the UI
+   bool repeat=false; 
+login_screen: 
    string name,hostname; int port,dataport,uiret=-1;
    string UIMessage;
    if(!repeat) UIMessage="                                ";
@@ -55,11 +62,14 @@ login_screen:
       if(uiret==-2)
 	return 0;
    }   
+   
+   //put connection information into the local log 
    stringstream logmess;
    logmess<<"Starting DAQ with "<<name<<" "<<hostname<<" "<<port<<" "<<dataport;
    fLog.Message(logmess.str());
    fMasterNetwork.Initialize(hostname,port,dataport,32000,name);
-   
+      
+   //Connect to the master process. If it fails go back to the login screen
    //a progress bar or something is forseen here
    int timeout=0;
    while(fMasterNetwork.Connect()!=0)  {
@@ -78,24 +88,32 @@ login_screen:
       sleep(1);
    }   
    
-   fUI.Initialize(&fDAQStatus,&fRunInfo,fHistory,name);
-//   sleep(5);   
-   
+   fUI.Initialize(&fDAQStatus,&fRunInfo,fHistory,name);   
 
+   
+   //**********************************************************************
+   //**********************************************************************
+   // MAIN LOOP
+   //**********************************************************************
+   //**********************************************************************
    
    int UI_SCREEN_SHOWING=1; //1-startmenu, 2-mainmenu, 3-runmenu
    
-   unsigned char command='0';
-   bool bBlockInput=false;
+   //Have to declare all variables before switch statement. C++ doesn't seem
+   //to live variable initialization within the case: statements.
+   unsigned char command='0'; 
+   bool bBlockInput=false;    
    string message,tempString;
    vector<string> runModes;
-   //main loop
+  
    fUI.DrawStartMenu();
    while(command!='q' && command!='Q')   {
-      usleep(100);
+      usleep(100); //keep processor use down
       command='0';
       
       //Draw the proper menu
+      //
+      //MAIN MENU: Connected to master but DAQ not running
       if((fDAQStatus.NetworkUp && UI_SCREEN_SHOWING<=1) || 
 	 (fDAQStatus.NetworkUp && fDAQStatus.DAQState!=XEDAQ_RUNNING 
 	  && UI_SCREEN_SHOWING==3))  	{	   
@@ -103,31 +121,41 @@ login_screen:
 	 fUI.Update();
 	 UI_SCREEN_SHOWING=2;
       }      
+      //RUN MENU: DAQ is running
       if(fDAQStatus.DAQState==XEDAQ_RUNNING && UI_SCREEN_SHOWING!=3)	{	   
 	 fUI.PrintDAQRunScreen();
 	 fUI.Update();
 	 UI_SCREEN_SHOWING=3;
       }
+      //START MENU: Not connected to master
       if(!fDAQStatus.NetworkUp && UI_SCREEN_SHOWING!=1)	{
 	 fUI.DrawStartMenu();
 	 fUI.Update();
 	 UI_SCREEN_SHOWING=1;
       }                              
+      //
       
+      //Get command from user (if he puts one)
       if(kbhit())	{
 	 command=getch();
-	 if((int)command==3)  {//scroll up
+	 
+	 //Local UI commands
+	 if((int)command==3)  {//scroll up intercept
 	    fUI.NotificationsScroll(false);
 	    command='0';
 	 }
-	 else if((int)command==2)  {
+	 else if((int)command==2)  {//scroll down intercept
 	    fUI.NotificationsScroll(true);
 	    command='0';
 	 }	 	 
-      }      
+	 
+      }  
+      
+      //Network commands
       switch(command)	{	 
        case 'b': //BROADCAST
-	 //broadcasts are possible at every stage
+	 //broadcasts are possible at every stage as long as the network is connected
+	 //we will send a message to all UIs and to the DAQ log file
 	 message = fUI.BroadcastMessage(name,uiret);
 	 UI_SCREEN_SHOWING=-1;
 	 if(fMasterNetwork.SendBroadcastMessage(message)!=0)
@@ -142,30 +170,45 @@ login_screen:
 	 break;
        case 'r': //RECONNECT
 	 //tell daq to disconnect everything then put network back up (if settings changed)
+	 //do this if you reconfigure slaves or something else that requires a complete network
+	 //reboot
 	 if(!fDAQStatus.NetworkUp || fDAQStatus.DAQState==XEDAQ_RUNNING || 
-	    fDAQStatus.DAQState==XEDAQ_ARMED || fDAQStatus.DAQState==XEDAQ_MIXED) break;
+	    fDAQStatus.DAQState==XEDAQ_ARMED || fDAQStatus.DAQState==XEDAQ_MIXED) {
+	    fUI.PrintNotify("You can only mess with the network when the DAQ is in 'IDLE' mode.");
+	    break;
+	 }	 
 	 fUI.PrintNotify("Really reconnect DAQ network? (y/n)");
 	 command=getch();
-	 if(command=='y')  
-	   fMasterNetwork.SendCommand("RECONNECT");
+	 if(command!='y')
+	   break;
+	 fMasterNetwork.SendCommand("RECONNECT");
 	 fDAQStatus.Slaves.clear();
 	 fDAQStatus.NetworkUp=false;
 	 command='0';
 	 break;	 
        case 'd': //DISCONNECT
+	 //tell the DAQ network to disconnect from all slaves and close the master/slave interface
+	 //do this before bringing slaves offline for maintenance
 	 if(!fDAQStatus.NetworkUp || fDAQStatus.DAQState==XEDAQ_RUNNING || 
-	     fDAQStatus.DAQState==XEDAQ_ARMED || fDAQStatus.DAQState==XEDAQ_MIXED) break;
+	     fDAQStatus.DAQState==XEDAQ_ARMED || fDAQStatus.DAQState==XEDAQ_MIXED) {
+	    fUI.PrintNotify("You can only mess with the DAQ network if the DAQ is in 'IDLE' mode.");
+	    break;
+	 }	 
 	 fUI.PrintNotify("Really disconnect DAQ network? (y/n)");
 	 command=getch();
-	 if(command=='y') fMasterNetwork.SendCommand("DISCONNECT");
+	 if(command!='y')
+	   break;
+	 fMasterNetwork.SendCommand("DISCONNECT");
 	 fDAQStatus.Slaves.clear();
 	 fDAQStatus.NetworkUp=false;
-	 command='0';
+	 command='0';	 
 	 break;
-       case 'm': //Change run mode
+       case 'm': //CHANGE RUN MODE
+	 //requests a list of run modes from the master. Then lets the user pick which mode he 
+	 //wants from a menu. The chosen mode is then sent to the DAQ to arm it
 	 if(!fDAQStatus.NetworkUp || fDAQStatus.DAQState==XEDAQ_RUNNING || 
 	    fDAQStatus.DAQState==XEDAQ_MIXED) break;
-	 fMasterNetwork.SendCommand("ARM");
+	 fMasterNetwork.SendCommand("MODES");
 	 runModes.clear();
 	 if(fMasterNetwork.GetStringList(runModes)!=0) {
 	    fLog.Error("Error getting run mode list from master");
@@ -174,6 +217,8 @@ login_screen:
 	 }
 	 tempString = fUI.EnterRunModeMenu(runModes);
 	 UI_SCREEN_SHOWING=-1;	 
+	 
+	 fMasterNetwork.SendCommand("ARM");
 	 fMasterNetwork.SendCommand(tempString);
 	 command='0';
 	 break;
