@@ -269,9 +269,12 @@ login_screen:
 	 break;
        case 'k':
 	 if(bAdminMode)  {
-	    fUI.PrintNotify("Later I'll let you boot users.");
 	    fMasterNetwork.SendCommand("USERS");
-	    fMasterNetwork.GetStringList(runModes); //OK, it's users be we can re-use this vector
+	    runModes.clear();
+	    if(fMasterNetwork.GetStringList(runModes)!=0) { //OK, it's users be we can re-use this vector
+	       fUI.PrintNotify("Didn't get user list from master.");
+	       break;
+	    }	    
 	    tempString = fUI.EnterRunModeMenu(runModes,true);
 	    if(tempString!="ERR") {
 	       fMasterNetwork.SendCommand("BOOT");
@@ -279,6 +282,7 @@ login_screen:
 	       fUI.PrintNotify("Banhammer sent.");
 	    }	    
 	 }
+	 UI_SCREEN_SHOWING=-1;
 	 command='0';
 	 break;
        case 'w':
