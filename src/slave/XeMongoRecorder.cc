@@ -50,12 +50,11 @@ void XeMongoRecorder::UpdateCollection(XeDAQOptions *options)
 int XeMongoRecorder::RegisterProcessor()
 {
    if(fWriteMode==0) return 0;
+   mongo::ScopedDbConnection *conn;
    try{      
 //      mongo::ScopedDbConnection *conn = new mongo::ScopedDbConnection(fMongoOptions.DBAddress);
       
-      mongo::ScopedDbConnection *conn = 
-	mongo::ScopedDbConnection::getScopedDbConnection(fMongoOptions.DBAddress,10000.);
-      fScopedConnections.push_back(conn);
+      conn = mongo::ScopedDbConnection::getScopedDbConnection(fMongoOptions.DBAddress,10000.);
    }   
    catch(const mongo::DBException &e)    {	
       stringstream err;
@@ -63,6 +62,7 @@ int XeMongoRecorder::RegisterProcessor()
       gLog->SendMessage(err.str());
       return -1;
    }
+   fScopedConnections.push_back(conn);
    return fScopedConnections.size()-1;
 }
 
