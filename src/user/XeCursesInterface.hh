@@ -46,11 +46,13 @@ class XeCursesInterface
    int GetLoginInfo(string &name, int &port, int &dataport,string &hostname,string UIMessage);
    
    int PrintDAQRunScreen();
+   int DrawAdminWindow(); 
    void DrawBlockMenu(int n=1);
    
-   string EnterRunModeMenu(vector <string> RMLabels);
+   string EnterRunModeMenu(vector <string> RMLabels, bool banner=false);
    string EnterName();
-   string BroadcastMessage(string name,int UID);
+   string BroadcastMessage(string name,int UID, bool pw=false);
+   int PasswordPrompt();
    
    void Update()  {
       doupdate();

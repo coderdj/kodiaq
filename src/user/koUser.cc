@@ -36,6 +36,7 @@ int main()
    
    //UI
    XeCursesInterface  fUI(&fLog);   
+   bool               bAdminMode=false;
    
    //Timer used to periodically send a test message over open ports. If you don't 
    //do this the ports automatically close after some period of inactivity
@@ -114,25 +115,32 @@ login_screen:
       //Draw the proper menu
       //
       //MAIN MENU: Connected to master but DAQ not running
-      if((fDAQStatus.NetworkUp && UI_SCREEN_SHOWING<=1) || 
-	 (fDAQStatus.NetworkUp && fDAQStatus.DAQState!=XEDAQ_RUNNING 
-	  && UI_SCREEN_SHOWING==3))  	{	   
+      if(((fDAQStatus.NetworkUp && UI_SCREEN_SHOWING<=1) || 
+	 (fDAQStatus.NetworkUp && fDAQStatus.DAQState!=XEDAQ_RUNNING
+	  && UI_SCREEN_SHOWING==3)) && !bAdminMode)  	{
 	 fUI.DrawMainMenu();
 	 fUI.Update();
 	 UI_SCREEN_SHOWING=2;
       }      
       //RUN MENU: DAQ is running
-      if(fDAQStatus.DAQState==XEDAQ_RUNNING && UI_SCREEN_SHOWING!=3)	{	   
+      if((fDAQStatus.DAQState==XEDAQ_RUNNING && UI_SCREEN_SHOWING!=3)
+	&& !bAdminMode)	{
 	 fUI.PrintDAQRunScreen();
 	 fUI.Update();
 	 UI_SCREEN_SHOWING=3;
       }
       //START MENU: Not connected to master
-      if(!fDAQStatus.NetworkUp && UI_SCREEN_SHOWING!=1)	{
+      if((!fDAQStatus.NetworkUp && UI_SCREEN_SHOWING!=1) && !bAdminMode) {
 	 fUI.DrawStartMenu();
 	 fUI.Update();
 	 UI_SCREEN_SHOWING=1;
       }                              
+      if(bAdminMode && UI_SCREEN_SHOWING!=4)	{
+	 fUI.DrawAdminWindow();
+	 fUI.Update();
+	 UI_SCREEN_SHOWING=4;
+      }
+      
       //
       
       //Get command from user (if he puts one)
@@ -216,6 +224,7 @@ login_screen:
 	    break;
 	 }
 	 tempString = fUI.EnterRunModeMenu(runModes);
+	 if(tempString=="ERR") break;
 	 UI_SCREEN_SHOWING=-1;	 
 	 
 	 fMasterNetwork.SendCommand("ARM");
@@ -248,6 +257,36 @@ login_screen:
 	 }	 
 	 command='0';
 	 break;
+	 
+	 //ADMIN MODE COMMANDS
+       case 'a':
+	 if(bAdminMode)  
+	    bAdminMode=false;	          
+	 else if(fUI.PasswordPrompt()==0) 
+	   bAdminMode=true;
+	 UI_SCREEN_SHOWING=-1;
+	 command='0';
+	 break;
+       case 'k':
+	 if(bAdminMode)  {
+	    fUI.PrintNotify("Later I'll let you boot users.");
+	    fMasterNetwork.SendCommand("USERS");
+	    fMasterNetwork.GetStringList(runModes); //OK, it's users be we can re-use this vector
+	    tempString = fUI.EnterRunModeMenu(runModes,true);
+	    if(tempString!="ERR") {
+	       fMasterNetwork.SendCommand("BOOT");
+	       fMasterNetwork.SendCommand(tempString.substr(0,1));
+	       fUI.PrintNotify("Banhammer sent.");
+	    }	    
+	 }
+	 command='0';
+	 break;
+       case 'w':
+	 if(bAdminMode)  {
+	    fUI.PrintNotify("Actually, the WIMP Monte Carlo generator is hard-coded, so it's always on.");
+	 }
+	 command='0';
+	 break;	 
        case 'q':
 	 fUI.PrintNotify("Signing out of kodiaq. This does not impact the DAQ itself!");
 	 break;

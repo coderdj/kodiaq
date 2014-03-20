@@ -164,9 +164,7 @@ int XeCursesInterface::GetLoginInfo(string &name, int &port, int &dataport,strin
 	 break;
        default:
 	 form_driver(my_form,c);
-	 //name.push_back((char)c);
-//	              mvwprintw(main_win,4,21,name.c_str());
-	              break;
+	 break;
       }
    }
    unpost_form(my_form);
@@ -254,7 +252,6 @@ int XeCursesInterface::Initialize(XeStatusPacket_t *DAQStatus, XeRunInfo_t *RunI
 int XeCursesInterface::DrawStartMenu()
 {
    wclear(main_win);
-//   box(main_win, 0 , 0);
    wbkgd(main_win,COLOR_PAIR(4));
    wattron(main_win,COLOR_PAIR(7));
    wattron(main_win,A_BOLD);
@@ -325,7 +322,36 @@ int XeCursesInterface::PrintDAQRunScreen()
    return 0;
 }
 
-
+int XeCursesInterface::DrawAdminWindow()
+{      
+   wclear(main_win);
+   box(main_win, 0 , 0);
+   wbkgd(main_win,COLOR_PAIR(4));
+   wattron(main_win,A_BOLD);
+   wattron(main_win,COLOR_PAIR(7));
+   mvwprintw(main_win,1,0,"   Admin menu:   ");
+   wattroff(main_win,COLOR_PAIR(7));
+   wattron(main_win,COLOR_PAIR(6));
+   mvwprintw(main_win,2,30," K ");
+   wattroff(main_win,COLOR_PAIR(6));
+   wattron(main_win,COLOR_PAIR(7));
+   mvwprintw(main_win,3,30," B ");
+   wattroff(main_win,COLOR_PAIR(7));
+   wattron(main_win,COLOR_PAIR(6));
+   mvwprintw(main_win,4,30," W ");
+   wattroff(main_win,COLOR_PAIR(6));
+   wattron(main_win,COLOR_PAIR(7));
+   mvwprintw(main_win,5,30," A ");
+   wattroff(main_win,COLOR_PAIR(7));
+   wattroff(main_win,A_BOLD);
+   mvwprintw(main_win,2,35,"Kick a user                          ");
+   mvwprintw(main_win,3,35,"Broadcast message                    ");
+   mvwprintw(main_win,4,35,"Toggle WIMPs On/Off                  ");
+   mvwprintw(main_win,5,35,"Back to normal mode                  ");
+   wnoutrefresh(main_win);
+   return 0;
+}
+    
 
 int XeCursesInterface::DrawMainMenu()
 {
@@ -714,17 +740,29 @@ string XeCursesInterface::EnterName()
    
 }
 
-string XeCursesInterface::BroadcastMessage(string user, int UID)
+int XeCursesInterface::PasswordPrompt()
+{
+   string password = BroadcastMessage("root",42,true);
+   if(password!="forty-two") return -1;
+   return 0;
+}
+
+string XeCursesInterface::BroadcastMessage(string user, int UID, bool pw)
 {
    wclear(main_win);
    wbkgd(main_win,COLOR_PAIR(4));
    wattron(main_win,A_BOLD);
    wattron(main_win,COLOR_PAIR(7));
-   mvwprintw(main_win,1,0,"     Message:    ");
+   if(!pw)
+     mvwprintw(main_win,1,0,"     Message:    ");
+   else
+     mvwprintw(main_win,1,0,"     Password:   ");
    wattroff(main_win,COLOR_PAIR(7));
    wattroff(main_win,A_BOLD);
+   if(pw) mvwprintw(main_win,2,21," How many WIMPs will XENON1T find? ");
    noecho();
    string message;
+   
    bool getout=false;
    while(!getout)      {	
       int c=wgetch(main_win);
@@ -736,15 +774,20 @@ string XeCursesInterface::BroadcastMessage(string user, int UID)
 	 if(message.size()>0)
 	   message.erase(message.end()-1);
 	 wclear(main_win);
-//	 box(main_win, 0 , 0);
+
+	 //	 box(main_win, 0 , 0);
 	 wattron(main_win,A_BOLD);
 	 wattron(main_win,COLOR_PAIR(7));
-	 mvwprintw(main_win,1,0,"     Message:    ");
+	 if(!pw)
+	   mvwprintw(main_win,1,0,"     Message:    ");
+	 else
+	   mvwprintw(main_win,1,0,"     Password:   ");
 	 wattroff(main_win,COLOR_PAIR(7));
 	 wattroff(main_win,A_BOLD);
-	 if(message.size()<50)
+	
+	 if(message.size()<50 && !pw)
 	   mvwprintw(main_win,2,21,message.c_str());
-	 else   {	      
+	 else if(!pw)   {	      
 	    mvwprintw(main_win,2,21,(message.substr(0,50)).c_str());
 	    if(message.size()<100) mvwprintw(main_win,3,21,(message.substr(50)).c_str());
 	    else  {	       
@@ -756,9 +799,9 @@ string XeCursesInterface::BroadcastMessage(string user, int UID)
        default:	 
 	 if(message.size()<=150)
 	   message.push_back((char)c);
-	 if(message.size()<50)
+	 if(message.size()<50 && !pw)
 	   mvwprintw(main_win,2,21,message.c_str());
-	 else   {
+	 else if(!pw)  {
 	    mvwprintw(main_win,2,21,(message.substr(0,50)).c_str());
 	    if(message.size()<100) mvwprintw(main_win,3,21,(message.substr(50)).c_str());
 	    else  {
@@ -771,18 +814,24 @@ string XeCursesInterface::BroadcastMessage(string user, int UID)
       }      
    }   
    stringstream messagess;
-   messagess<<"Message from "<<user<<"("<<UID<<")"<<": "<<message;
+   if(!pw)
+     messagess<<"Message from "<<user<<"("<<UID<<")"<<": "<<message;
+   else 
+     messagess<<message;
    return messagess.str();
    
 }
 
-string XeCursesInterface::EnterRunModeMenu(vector <string> RMLabels)
+string XeCursesInterface::EnterRunModeMenu(vector <string> RMLabels, bool banner)
 {   
    wclear(main_win);
 //   box(main_win, 0 , 0);
    wbkgd(main_win,COLOR_PAIR(4));  
    wattron(main_win,A_BOLD);
-   mvwprintw(main_win,2,2,"Choose run mode:");
+   if(!banner)
+     mvwprintw(main_win,2,2,"Choose run mode:");
+   else
+     mvwprintw(main_win,2,2,"Choose victim:  ");
    wattroff(main_win,A_BOLD);
    
    MENU *RunModeMenu;
@@ -813,7 +862,7 @@ string XeCursesInterface::EnterRunModeMenu(vector <string> RMLabels)
    while(!bExit)  {
       time_t now = XeDAQLogger::GetCurrentTime();
       if(difftime(now,start)>20.)	{
-	 rVal = "TIMEOUT";
+	 rVal = "ERR";
 	 break;
       }
       c=wgetch(main_win);
@@ -826,8 +875,12 @@ string XeCursesInterface::EnterRunModeMenu(vector <string> RMLabels)
 	 if(highlight!=1) highlight--;
 	 menu_driver(RunModeMenu,REQ_UP_ITEM);
 	 break;	 
+       case KEY_BACKSPACE:
+       case 127:
+	 rVal = "ERR";
+	 break;
        case 10:       
-	 string print="Picked mode ";
+	 string print="You chose: ";
 	 print+=RMLabels[highlight-1];
 	 string end=". Please press y to confirm.";
 	 print+=end;
@@ -835,7 +888,7 @@ string XeCursesInterface::EnterRunModeMenu(vector <string> RMLabels)
 	 wrefresh(main_win); 	 char ch=getch();
 	 if(ch!='y') { 
 	    bExit=true; 	    
-	    rVal="None";	      
+	    rVal="ERR";	      
 	    break;	    
 	 }	 
 	 rVal = RMLabels[highlight-1];
