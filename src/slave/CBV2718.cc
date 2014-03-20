@@ -35,7 +35,7 @@ int CBV2718::SendStartSignal()
 {
    unsigned int data = 0x7C0;
 
-   //configure line 1 to pulse (to start pulser) 
+   //configure line 3 to pulse (to start pulser) 
    CAENVME_SetOutputConf(fCrateHandle,cvOutput3,cvDirect,cvActiveHigh,cvMiscSignals); 
    CAENVME_SetPulserConf(fCrateHandle,cvPulserB,0x3E8,0x64,cvUnit25ns,1,cvManualSW,cvManualSW);
    
