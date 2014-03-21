@@ -14,12 +14,15 @@
 // ****************************************************
 
 #include "XeNet.hh"
+#include <arpa/inet.h>
 
 struct XeSocket_t
 {
    int socket;
    int id;
    string name;
+   string ip;
+   time_t loginTime;
 };
 
 class XeNetServer : public XeNet

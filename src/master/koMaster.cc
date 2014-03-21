@@ -55,8 +55,8 @@ int main()
    //Assorted other variables
    char               cCommand='0';
    unsigned int       fNSlaves=0;
-   time_t             fPrevTime=XeDAQLogger::GetCurrentTime();
-   time_t             fKeepAlive=XeDAQLogger::GetCurrentTime();
+   time_t             fPrevTimeMain=XeDAQLogger::GetCurrentTime();
+   time_t             fPrevTimeData=XeDAQLogger::GetCurrentTime();
    bool               update=false;
 
    //Options object for reading veto and mongo options
@@ -275,33 +275,29 @@ int main()
       //************* Check for updates on DAQ network **************
       //*************************************************************
       //*************************************************************
+      update=false;      
       if(fNSlaves>0){	   
 	 while(fDAQNetwork.WatchDataPipe(fDAQStatus)==0) update=true;
-	 if(update)	{
-	    time_t fCurrentTime= XeDAQLogger::GetCurrentTime();
-	    if(difftime(fCurrentTime,fPrevTime)>=1.0){
-	       update=false;
-	       fPrevTime=fCurrentTime;
-	       if(fUserNetwork.TransmitStatus(fDAQStatus)!=0)   {
-		  fLog.Error("Error transmitting status to user net.");
-		  //fUserNetwork.BroadcastMessage("I have a status update for you but you won't receive it.",XEMESS_BROADCAST);
-	       }	 
-	       fDAQStatus.Messages.clear();
-	    }	 
-	 }	
-	 time_t fCurrentTime = XeDAQLogger::GetCurrentTime();
-	 if(difftime(fCurrentTime,fKeepAlive)>100.0)  { //keep the main socket alive if inactive for 100 sec
-	    fDAQNetwork.SendCommand("KEEPALIVE");
-	    fKeepAlive = XeDAQLogger::GetCurrentTime();
-	 }
-	 
       }
-	
+      time_t fCurrentTime = XeDAQLogger::GetCurrentTime();
+      //keep data socket alive
+      double dtime = difftime(fCurrentTime,fPrevTimeMain);
+      if((dtime>=1.0 && update) || dtime>=10.) {	   
+	 update=false;
+	 fPrevTimeMain=fCurrentTime;	 
+	 if(fUserNetwork.TransmitStatus(fDAQStatus)!=0)   {
+	    fLog.Error("Error transmitting status to user net.");
+	 }	 
+	 fDAQStatus.Messages.clear();
+      }	 
+      //keep main socket alive
+      dtime = difftime(fCurrentTime,fPrevTimeData);
+      if(dtime>=100.){	   
+	 fDAQNetwork.SendCommand("KEEPALIVE");
+	 fPrevTimeData = fCurrentTime;
+      }
+         	
       
-      //this section should listen to the DAQ data pipe (if connected) 
-      //to update the current DAQ status, then send that info on to 
-      //and UIs that are connected
-
    }//end while(command!='q')   
    //********************************************
 }//end program

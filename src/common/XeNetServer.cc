@@ -200,7 +200,8 @@ int XeNetServer::AddConnection(int &rid, string &rname)
       close(opendatasocket);
       return -1;
    }
-   
+
+   //Set socket object information
    XeSocket_t XeS,XeDS;
    XeS.socket=opensocket;
    XeDS.socket=opendatasocket;
@@ -208,6 +209,14 @@ int XeNetServer::AddConnection(int &rid, string &rname)
    XeDS.name = dname;
    XeS.id=ID;
    XeDS.id=DID;
+   XeS.loginTime  = XeDAQLogger::GetCurrentTime();
+   XeDS.loginTime = XeDAQLogger::GetCurrentTime();
+   
+   //Get IP address of client
+   char ipstr[INET_ADDRSTRLEN];
+   inet_ntop(AF_INET,&(client_addr.sin_addr), ipstr, INET_ADDRSTRLEN);
+   XeS.ip.assign(ipstr);
+   XeDS.ip.assign(ipstr);
    fSockets.push_back(XeS);
    fDataSockets.push_back(XeDS);
 
@@ -439,9 +448,14 @@ int XeNetServer::TransmitStatus(XeStatusPacket_t status)
 int XeNetServer::GetUserList(vector <string> &stringList)
 {  
    stringList.clear();
+   time_t currentTime = XeDAQLogger::GetCurrentTime();
    for(unsigned int x=0;x<fSockets.size();x++)  {
-      stringstream uss;
-      uss<<fSockets[x].id<<" "<<fSockets[x].name;
+      stringstream uss;     
+      double tdiff = difftime(currentTime,fSockets[x].loginTime);
+      int minutes = ((int)tdiff/60)%60;
+      int hours   = ((int)tdiff/60)/60;
+      uss<<fSockets[x].id<<" "<<fSockets[x].name<<"  ("<<fSockets[x].ip<<")  - "
+	<<hours<<"h"<<minutes<<"min";
       stringList.push_back(uss.str());
    }
    return 0;
