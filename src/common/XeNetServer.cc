@@ -46,8 +46,8 @@ int XeNetServer::Connect()
 {   
    for(int x=0;x<fNUMCLIENTS;x++)  {	
       int id; 
-      string name;
-      if(AddConnection(id,name)!=0)      {	     
+      string name,ip;      
+      if(AddConnection(id,name,ip)!=0)      {	     
 	 fLog->Error("XeNetServer::Connect - Could not add connection.");
 	 Disconnect();
 	 return -1;
@@ -133,7 +133,7 @@ int XeNetServer::TakeDownNetwork()
    return 0;
 }
 
-int XeNetServer::AddConnection(int &rid, string &rname)
+int XeNetServer::AddConnection(int &rid, string &rname,string &rIP)
 {   
    //Listen for connections
    struct sockaddr_in client_addr, dataclient_addr;
@@ -219,7 +219,8 @@ int XeNetServer::AddConnection(int &rid, string &rname)
    XeDS.ip.assign(ipstr);
    fSockets.push_back(XeS);
    fDataSockets.push_back(XeDS);
-
+   
+   rIP=XeDS.ip;
    rid=ID;
    rname=name;
    return 0;      

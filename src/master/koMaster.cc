@@ -71,7 +71,7 @@ int main()
       //Check for new UI connections
       usleep(100);
       int cID;
-      string cName;
+      string cName, cIP;
       
       //*********************************************************
       //*********************************************************
@@ -82,16 +82,16 @@ int main()
       // UIs trying to login. If a login is detected the login
       // procedure is carried out and a message is sent informing
       // who just logged into the DAQ.
-      if(fUserNetwork.AddConnection(cID,cName)==0)	{
-	 cout<<"Start login process for user "<<cName<<"("<<cID<<")."<<endl;	 	 	 
+      if(fUserNetwork.AddConnection(cID,cName,cIP)==0)	{
+	 cout<<"Start login process for user "<<cName<<"("<<cID<<") at "<<cIP<<"."<<endl;
 	 if(fUserNetwork.SendFilePartial(cID,fBroadcastPath)!=0)
 	   cout<<"Could not send log."<<endl;
 	 fUserNetwork.SendRunInfoUI(cID,fRunInfo);
 	 stringstream messagestream;
-	 messagestream<<"User "<<cName<<"("<<cID<<") has logged into the DAQ.";
+	 messagestream<<"User "<<cName<<"("<<cID<<") has logged into the DAQ from "<<cIP<<".";
 	 fUserNetwork.BroadcastMessage(messagestream.str(),XEMESS_NORMAL);
 	 fLog.Message(messagestream.str());
-	 cout<<"Login successful for user "<<cName<<"("<<cID<<")."<<endl;
+	 cout<<"Login successful for user "<<cName<<"("<<cID<<") at "<<cIP<<"."<<endl;
       }            
       
       //***********************************************************
@@ -139,9 +139,9 @@ int main()
 	       double timer=0.;
 	       fNSlaves=0;
 	       while(timer<5.)	 { //wait 5 seconds for slaves to connect
-		  if(fDAQNetwork.AddConnection(cID,cName)==0)  {
+		  if(fDAQNetwork.AddConnection(cID,cName,cIP)==0)  {
 		     errstring.str(std::string());
-		     errstring<<"Connected to slave "<<cName<<"("<<cID<<")";
+		     errstring<<"Connected to slave "<<cName<<"("<<cID<<") at IP "<<cIP<<".";
 		     fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_NORMAL);
 		     fNSlaves++;
 		  }		  

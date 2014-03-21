@@ -40,7 +40,7 @@ class XeNetServer : public XeNet
    int TakeDownNetwork();
    int Connect();
    int Disconnect();
-   int AddConnection(int &rid,string &rname);
+   int AddConnection(int &rid,string &rname, string &rIP);
    int CloseConnection(int id=-1, string name="");
    
    //For data synchronization
