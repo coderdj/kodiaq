@@ -878,6 +878,7 @@ string XeCursesInterface::EnterRunModeMenu(vector <string> RMLabels, bool banner
        case KEY_BACKSPACE:
        case 127:
 	 rVal = "ERR";
+	 return rVal;
 	 break;
        case 10:       
 	 string print="You chose: ";
