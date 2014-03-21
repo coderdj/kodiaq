@@ -244,8 +244,8 @@ login_screen:
 	 command='0';
 	 break;
        case 'p':
-	 if(!fDAQStatus.DAQState==XEDAQ_RUNNING) break;
-	 fMasterNetwork.SendCommand("STOP");
+	 if(fDAQStatus.DAQState==XEDAQ_RUNNING) 	    
+	   fMasterNetwork.SendCommand("STOP");
 	 command='0';
 	 break;
        case 'z':
@@ -318,15 +318,15 @@ login_screen:
       
       //watch for timeouts -- TIMEOUT HANDLING SHOULD BE IN MASTER NOT HERE
       time_t currentTime=XeDAQLogger::GetCurrentTime();
-      for(unsigned int x=0;x<fDAQStatus.Slaves.size();x++)      	{	       
-	 if(difftime(currentTime,fDAQStatus.Slaves[x].lastUpdate)<60.)
-	   continue;
-	 fDAQStatus.Slaves.erase(fDAQStatus.Slaves.begin()+x,fDAQStatus.Slaves.begin()+x+1);
-	 if(fDAQStatus.Slaves.size()==0) fDAQStatus.NetworkUp=false;
-	 fUI.SidebarRefresh();
-	 fUI.Update();		 
+//      for(unsigned int x=0;x<fDAQStatus.Slaves.size();x++)      	{	       
+//	 if(difftime(currentTime,fDAQStatus.Slaves[x].lastUpdate)<60.)
+//	   continue;
+//	 fDAQStatus.Slaves.erase(fDAQStatus.Slaves.begin()+x,fDAQStatus.Slaves.begin()+x+1);
+//	 if(fDAQStatus.Slaves.size()==0) fDAQStatus.NetworkUp=false;
+//	 fUI.SidebarRefresh();
+//	 fUI.Update();		 
 	 //GIVE A WARNING, PROBABLY KILL WHOLE DAQ UNLESS DISCONNECT COMMAND WAS GIVEN 
-      }
+//      }
       if(difftime(currentTime,fKeepAlive)>100.)	{
 	 fMasterNetwork.SendCommand("KEEPALIVE");
 	 fKeepAlive = XeDAQLogger::GetCurrentTime();

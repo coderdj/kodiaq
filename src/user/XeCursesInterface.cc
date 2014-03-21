@@ -448,7 +448,6 @@ void XeCursesInterface::SetHistory(vector<string> history)
 int XeCursesInterface::PrintNotify(string message, int priority, bool print, bool hasdate)
 {
    if(!bInitialized) return -1;
-   fLog->Message("Enter printnotify");
    wclear(notify_win);
 //   box(notify_win, 0 , 0);
    wbkgd(notify_win,COLOR_PAIR(4));
