@@ -344,7 +344,7 @@ int XeCursesInterface::DrawAdminWindow()
    mvwprintw(main_win,5,30," A ");
    wattroff(main_win,COLOR_PAIR(7));
    wattroff(main_win,A_BOLD);
-   mvwprintw(main_win,2,35,"Kick a user                          ");
+   mvwprintw(main_win,2,35,"View/boot connected users            ");
    mvwprintw(main_win,3,35,"Broadcast message                    ");
    mvwprintw(main_win,4,35,"Toggle WIMPs On/Off                  ");
    mvwprintw(main_win,5,35,"Back to normal mode                  ");
@@ -848,7 +848,7 @@ string XeCursesInterface::EnterRunModeMenu(vector <string> RMLabels, bool banner
    MenuItems[n_choices] = (ITEM*)NULL;
    RunModeMenu = new_menu((ITEM**)MenuItems);
    set_menu_win(RunModeMenu,main_win);
-   set_menu_sub(RunModeMenu,derwin(main_win,n_choices+2,40,2,20));
+   set_menu_sub(RunModeMenu,derwin(main_win,n_choices+2,70,2,20));
  
    set_menu_mark(RunModeMenu,"*");
    refresh();
