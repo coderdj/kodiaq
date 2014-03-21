@@ -206,7 +206,6 @@ int main()
 	    tempStringList2.clear();
 	    GetRunModeList(tempStringList,tempStringList2);
 	    errstring<<"Received arm command from "<<sender<<"("<<id<<")";
-	    //fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_NORMAL);
 	    fDAQNetwork.SendCommand("SLEEP");//tell DAQ to reset
 	    if(fUserNetwork.ListenForCommand(command,id,sender)!=0) {
 	       fLog.Error("koMaster main - Timed out waiting for run mode after ARM command");
@@ -255,7 +254,7 @@ int main()
 	 //               Then just tell the DAQ network to send out the start command.
 	 // 
 	 else if(command=="START")  {
-	    
+	    	    
 	    if(fDAQOptions.GetRunOptions().WriteMode==2) {
 	       //if we have dynamic run names, tell mongo the new collection name
 	       XeDAQHelper::UpdateRunInfo(fRunInfo,sender);	    
@@ -317,8 +316,10 @@ int main()
 	 // 
 	 else if(command=="STOP")  {
 	    fDAQNetwork.SendCommand("STOP");
-	    if(fMongodb.UpdateEndTime()!=0)
-	      fUserNetwork.BroadcastMessage("Failed to send stop time to event builder.",XEMESS_WARNING);
+	    if(fDAQOptions.GetRunOptions().WriteMode==2) {		 
+	       if(fMongodb.UpdateEndTime()!=0)
+		 fUserNetwork.BroadcastMessage("Failed to send stop time to event builder.",XEMESS_WARNING);
+	    }	    
 	    errstring<<"DAQ stopped by "<<sender<<"("<<id<<")";
 	    fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_STATE);
 	 }
