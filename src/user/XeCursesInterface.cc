@@ -822,16 +822,14 @@ string XeCursesInterface::BroadcastMessage(string user, int UID, bool pw)
    
 }
 
-string XeCursesInterface::EnterRunModeMenu(vector <string> RMLabels, bool banner)
+string XeCursesInterface::DropDownMenu(vector <string> RMLabels, string title)
 {   
    wclear(main_win);
 //   box(main_win, 0 , 0);
    wbkgd(main_win,COLOR_PAIR(4));  
    wattron(main_win,A_BOLD);
-   if(!banner)
-     mvwprintw(main_win,2,2,"Choose run mode:");
-   else
-     mvwprintw(main_win,2,2,"Choose victim:  ");
+   mvwprintw(main_win,1,1,title.c_str());
+   mvwprintw(main_win,2,1,"(backspace to exit)");
    wattroff(main_win,A_BOLD);
    
    MENU *RunModeMenu;
@@ -848,7 +846,7 @@ string XeCursesInterface::EnterRunModeMenu(vector <string> RMLabels, bool banner
    MenuItems[n_choices] = (ITEM*)NULL;
    RunModeMenu = new_menu((ITEM**)MenuItems);
    set_menu_win(RunModeMenu,main_win);
-   set_menu_sub(RunModeMenu,derwin(main_win,n_choices+2,70,2,20));
+   set_menu_sub(RunModeMenu,derwin(main_win,n_choices+2,70,1,22));
  
    set_menu_mark(RunModeMenu,"*");
    refresh();
@@ -858,13 +856,7 @@ string XeCursesInterface::EnterRunModeMenu(vector <string> RMLabels, bool banner
    int c;
    bool bExit=false;
    string rVal;
-   time_t start = XeDAQLogger::GetCurrentTime();
    while(!bExit)  {
-      time_t now = XeDAQLogger::GetCurrentTime();
-      if(difftime(now,start)>20.)	{
-	 rVal = "ERR";
-	 break;
-      }
       c=wgetch(main_win);
       switch(c)	{
        case KEY_DOWN:

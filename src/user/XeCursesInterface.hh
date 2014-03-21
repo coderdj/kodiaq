@@ -49,7 +49,7 @@ class XeCursesInterface
    int DrawAdminWindow(); 
    void DrawBlockMenu(int n=1);
    
-   string EnterRunModeMenu(vector <string> RMLabels, bool banner=false);
+   string DropDownMenu(vector <string> RMLabels, string title);
    string EnterName();
    string BroadcastMessage(string name,int UID, bool pw=false);
    int PasswordPrompt();
