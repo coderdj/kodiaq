@@ -213,3 +213,13 @@ int XeDAQHelper::UpdateRunInfo(XeRunInfo_t &fRunInfo, string startedby)
    outfile.close();
    return 0;
 }
+
+int XeDAQHelper::EasyPassHash(string pass)
+{
+   int retVal=0;
+   for(unsigned int x=0;x<pass.size();x++){
+      retVal+=(int)pass[x];
+   }
+   return retVal;
+}
+

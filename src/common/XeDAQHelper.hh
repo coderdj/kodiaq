@@ -97,6 +97,7 @@ class XeDAQHelper
    static int       CurrentTimeInt();
    static int       InitializeRunInfo(XeRunInfo_t &fRunInfo);
    static int       UpdateRunInfo(XeRunInfo_t &fRunInfo,string startedby);
+   static int       EasyPassHash(string pass); 
    
    static void InitializeStatus(XeStatusPacket_t &Status);
    static void ProcessStatus(XeStatusPacket_t &Status);

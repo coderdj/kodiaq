@@ -742,7 +742,7 @@ string XeCursesInterface::EnterName()
 int XeCursesInterface::PasswordPrompt()
 {
    string password = BroadcastMessage("root",42,true);
-   if(password!="forty-two") return -1;
+   if(password[0]!='f' || XeDAQHelper::EasyPassHash(password)!=955) return -1;
    return 0;
 }
 
@@ -758,7 +758,7 @@ string XeCursesInterface::BroadcastMessage(string user, int UID, bool pw)
      mvwprintw(main_win,1,0,"     Password:   ");
    wattroff(main_win,COLOR_PAIR(7));
    wattroff(main_win,A_BOLD);
-   if(pw) mvwprintw(main_win,2,21," How many WIMPs will XENON1T find? ");
+   if(pw) mvwprintw(main_win,2,21," Please authenticate yourself ");
    noecho();
    string message;
    
@@ -772,21 +772,19 @@ string XeCursesInterface::BroadcastMessage(string user, int UID, bool pw)
        case 127:	   
 	 if(message.size()>0)
 	   message.erase(message.end()-1);
+	 if(pw) break;
 	 wclear(main_win);
 
 	 //	 box(main_win, 0 , 0);
 	 wattron(main_win,A_BOLD);
 	 wattron(main_win,COLOR_PAIR(7));
-	 if(!pw)
-	   mvwprintw(main_win,1,0,"     Message:    ");
-	 else
-	   mvwprintw(main_win,1,0,"     Password:   ");
+	 mvwprintw(main_win,1,0,"     Message:    ");
 	 wattroff(main_win,COLOR_PAIR(7));
 	 wattroff(main_win,A_BOLD);
 	
-	 if(message.size()<50 && !pw)
+	 if(message.size()<50)
 	   mvwprintw(main_win,2,21,message.c_str());
-	 else if(!pw)   {	      
+	 else {	      
 	    mvwprintw(main_win,2,21,(message.substr(0,50)).c_str());
 	    if(message.size()<100) mvwprintw(main_win,3,21,(message.substr(50)).c_str());
 	    else  {	       
@@ -798,9 +796,10 @@ string XeCursesInterface::BroadcastMessage(string user, int UID, bool pw)
        default:	 
 	 if(message.size()<=150)
 	   message.push_back((char)c);
-	 if(message.size()<50 && !pw)
+	 if(pw) break;
+	 if(message.size()<50)
 	   mvwprintw(main_win,2,21,message.c_str());
-	 else if(!pw)  {
+	 else {
 	    mvwprintw(main_win,2,21,(message.substr(0,50)).c_str());
 	    if(message.size()<100) mvwprintw(main_win,3,21,(message.substr(50)).c_str());
 	    else  {
