@@ -103,15 +103,20 @@ int main()
       // if a command comes, the appropriate action is taken and
       // and other UIs are informed who made the command and 
       // what it was.
-      // 
+      //      
       string command="none";
       string message;
       int id=-1, tempint=0; string sender="nobody";
-      vector <string> runModeList;
-      vector <string> runModePaths;
+      vector <string> tempStringList;  //string vectors
+      vector <string> tempStringList2; //used for menu choices
       stringstream errstring;
       if(fUserNetwork.ListenForCommand(command,id,sender)==0){
 
+	 //
+	 // Command     : BROADCAST
+	 // Description : A user has sent a message to be broadcast
+	 // Action      : Broadcast the message to all UIs and put it in the log
+	 // 
 	 if(command=="BROADCAST"){	      
 	    if(fUserNetwork.ReceiveBroadcast(id,message)!=0){	    
 	       errstring<<"Received broadcast header from "<<sender<<"("<<id<<")"<<"but no message."<<endl;
@@ -120,39 +125,53 @@ int main()
 	    else
 	      fUserNetwork.BroadcastMessage(message,XEMESS_BROADCAST);	       
 	 }
+	 //
+	 // Command     : CONNECT
+	 // Description : A user wants to put up the DAQ network
+	 // Action      : Put up the DAQ network interface and wait for connections
+	 // 
 	 else if(command=="CONNECT")  {	 
 	    errstring<<"Received connect command from "<<sender<<"("<<id<<")";
 	    fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_NORMAL);
 	    if(fDAQNetwork.PutUpNetwork()!=0)  
 	      fUserNetwork.BroadcastMessage("An attempt to put up the DAQ network has failed.",XEMESS_WARNING);
 	    else  {
-	       int timer=0;
+	       double timer=0.;
 	       fNSlaves=0;
-	       while(timer<10)	 {
+	       while(timer<5.)	 { //wait 5 seconds for slaves to connect
 		  if(fDAQNetwork.AddConnection(cID,cName)==0)  {
-		     errstring.clear();
 		     errstring.str(std::string());
 		     errstring<<"Connected to slave "<<cName<<"("<<cID<<")";
 		     fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_NORMAL);
 		     fNSlaves++;
 		  }		  
-		  sleep(1);
-		  timer++;
+		  usleep(1000);
+		  timer+=0.001;
 	       }
-	       errstring.clear();
 	       errstring.str(std::string());
 	       errstring<<"DAQ network online. Connected with "<<fNSlaves<<" slaves.";
-	       fDAQNetwork.TakeDownNetwork();//takes down connection socket only
+	       fDAQNetwork.TakeDownNetwork();//takes down connection socket only 
+	                                     //keeps DAQ from listening for new connections
 	       fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_STATE);
 	    }	    	    
 	 }
+	 //
+	 // Command     : RECONNECT
+	 // Description : Disconnect and reconnect the DAQ network
+	 // Action      : Disconnects the DAQ network then sets the CONNECT flag
+	 // 
 	 else if(command=="RECONNECT")  {
 	    errstring<<"Received reconnect command from "<<sender<<"("<<id<<")";
 	    fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_NORMAL);
 	    fDAQNetwork.Disconnect();
 	    XeDAQHelper::InitializeStatus(fDAQStatus);	    
 	    command="CONNECT";
-	 }	 
+	 }
+	 //
+	 // Command     : DISCONNECT
+	 // Description : Take down the DAQ network
+	 // Action      : Takes down the DAQ network UI and resets the status
+	 // 
 	 else if(command=="DISCONNECT")  {
 	    errstring<<"Received disconnect command from "<<sender<<"("<<id<<")";
 	    fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_NORMAL);
@@ -161,20 +180,31 @@ int main()
 	    sleep(1);
 	    command='0';
 	 }
+	 //
+	 // Command     : MODES
+	 // Description : A user wants to list of available run modes
+	 // Action      : Retrieve the run modes list from file and send it to the user
+	 // 
 	 else if(command=="MODES"){
-	    runModeList.clear();
-	    runModePaths.clear();
-	    GetRunModeList(runModeList,runModePaths);
-	    if(fUserNetwork.SendStringList(id,runModeList)!=0)  {
+	    tempStringList.clear();
+	    tempStringList2.clear();
+	    GetRunModeList(tempStringList,tempStringList2);
+	    if(fUserNetwork.SendStringList(id,tempStringList)!=0)  {
 	       errstring<<"koMaster - Failed fulfilling request for run mode list from "<<sender<<"("<<id<<")";
 	       fLog.Error(errstring.str());
 	    }
 	    command='0';
-	 }	 
+	 }
+	 //
+	 // Command     : ARM
+	 // Description : A user has chosen a mode and wants to arm the DAQ
+	 // Action      : Check the chosen mode for validity, if it exists transfer the 
+	 //               appropriate options file to the slaves and tell them to arm
+	 // 
 	 else if(command=="ARM")  {
-	    runModeList.clear();
-	    runModePaths.clear();
-	    GetRunModeList(runModeList,runModePaths);
+	    tempStringList.clear();
+	    tempStringList2.clear();
+	    GetRunModeList(tempStringList,tempStringList2);
 	    errstring<<"Received arm command from "<<sender<<"("<<id<<")";
 	    //fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_NORMAL);
 	    fDAQNetwork.SendCommand("SLEEP");//tell DAQ to reset
@@ -187,8 +217,8 @@ int main()
 	       errstring<<" for mode "<<command;
 	       fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_NORMAL);
 	       tempint=-1;
-	       for(unsigned int x=0;x<runModeList.size();x++)  {
-		  if(runModeList[x]==command) tempint=(int)x;
+	       for(unsigned int x=0;x<tempStringList.size();x++)  {
+		  if(tempStringList[x]==command) tempint=(int)x;
 	       }
 	       if(tempint==-1)  {
 		  fLog.Error("koMaster - Got bad mode index from UI");
@@ -198,14 +228,14 @@ int main()
 	       }
 	       //now send ARM command to slave
 	       fDAQNetwork.SendCommand("ARM");
-	       if(fDAQNetwork.SendOptions(runModePaths[tempint])!=0)  {
+	       if(fDAQNetwork.SendOptions(tempStringList2[tempint])!=0)  {
 		  fLog.Error("koMaster - Error sending options.");
 		  fUserNetwork.BroadcastMessage("DAQ arm attempt failed.",XEMESS_WARNING);
 		  command='0';
 		  continue;
 	       }
 	       
-	       if(fDAQOptions.ReadFileMaster(runModePaths[tempint])!=0){		 
+	       if(fDAQOptions.ReadFileMaster(tempStringList2[tempint])!=0){		 
 		  fUserNetwork.BroadcastMessage("Error setting veto options. Bad file!",XEMESS_WARNING);
 		  continue;
 	       }
@@ -217,7 +247,13 @@ int main()
 	       fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_STATE);
 	       command='0';
 	    }
-	 }	 
+	 }
+	 //
+	 // Command     : START
+	 // Description : A user wants to start the DAQ
+	 // Action      : If using mongodb output, define a new collection to write to. 
+	 //               Then just tell the DAQ network to send out the start command.
+	 // 
 	 else if(command=="START")  {
 	    
 	    if(fDAQOptions.GetRunOptions().WriteMode==2) {
@@ -241,17 +277,44 @@ int main()
 	    errstring<<"DAQ started by "<<sender<<"("<<id<<")";
 	    fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_STATE);
 	 }
+	 //
+	 // Command     : USERS
+	 // Description : A user wants a list of who is connected to the master
+	 // Action      : Ask the user network interface for a list of users and send it to 
+	 //               the requesting UI
+	 // 
 	 else if(command=="USERS")  { //send a list of users
-	    runModeList.clear();
-	    if(fUserNetwork.GetUserList(runModeList)!=0)
-	      runModeList.push_back("ERROR");
-	    cout<<"Got USERS command and list entry zero is "<<runModeList[0]<<endl;
-	    fUserNetwork.SendStringList(id,runModeList);	    
+	    tempStringList.clear();
+	    if(fUserNetwork.GetUserList(tempStringList)!=0)
+	      tempStringList.push_back("ERROR");
+	    fUserNetwork.SendStringList(id,tempStringList);	    
 	    command='0';
-	 }	 
-//	 else if(command=="BOOT")  {
-//	    fUserNetwork.ReceiveCommand
-//	 }	 
+	 }
+	 //
+	 // Command     : BOOT
+	 // Description : A user wants to boot someone from the DAQ
+	 // Action      : Send the booted user's UI a command to tell it that it was booted
+	 //               Tell the user net to close the booted user's sockets
+	 // 
+	 else if(command=="BOOT")  {
+	    double timer=0.;
+	    while(fUserNetwork.ListenForCommand(command,id,sender)!=0)  {
+	       usleep(1000);
+	       timer+=0.001;
+	       if(timer>=1.) break;
+	    }
+	    if(timer<1.)  {
+	       int bootID = XeDAQHelper::StringToInt(command);
+	       fUserNetwork.BroadcastMessage("You are being booted from the DAQ UI. Sorry.",XEMESS_ERROR,bootID);
+	       fUserNetwork.CloseConnection(bootID);
+	    }	    	    
+	    command='0';
+	 }
+	 //
+	 // Command     : STOP
+	 // Description : A user wants to stop acquisition
+	 // Action      : Send the DAQ the stop command
+	 // 
 	 else if(command=="STOP")  {
 	    fDAQNetwork.SendCommand("STOP");
 	    if(fMongodb.UpdateEndTime()!=0)
@@ -259,6 +322,12 @@ int main()
 	    errstring<<"DAQ stopped by "<<sender<<"("<<id<<")";
 	    fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_STATE);
 	 }
+	 //
+	 // Command     : SLEEP
+	 // Description : A user want to put the DAQ into it's idle state
+	 // Action      : Send the DAQ the SLEEP command to reset options and put boards
+	 //               out of 'ready' state
+	 // 
 	 else if(command=="SLEEP")  {
 	    errstring<<"DAQ put to sleep mode by "<<sender<<"("<<id<<")";
 	    fUserNetwork.BroadcastMessage(errstring.str(),XEMESS_STATE);
@@ -266,7 +335,7 @@ int main()
 	    fDAQStatus.RunMode="None";
 	    command='0';
 	 }	 	 	 	 	 	 
-      }
+      }//end command if statement
       
       
       //Updates   

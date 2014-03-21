@@ -52,7 +52,7 @@ class XeNetServer : public XeNet
    int ListenForCommand(string &command,int &id, string &sender);
    
    //User communication
-   int BroadcastMessage(string message, int priority);
+   int BroadcastMessage(string message, int priority, int UI=-1);
 
    //UI-specific functions
    int SendFilePartial(int id,string filepath);

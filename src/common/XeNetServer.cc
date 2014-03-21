@@ -288,17 +288,17 @@ int XeNetServer::WatchDataPipe(XeStatusPacket_t &status)
    return retval;
 }
 
-int XeNetServer::BroadcastMessage(string message, int priority)
+int XeNetServer::BroadcastMessage(string message, int priority, int UI)
 {
-   int retval=0;
    for(unsigned int x=0;x<fDataSockets.size();x++)  {
+      if(UI!=-1 && UI!=fDataSockets[x].id) continue;
       if(SendMessage(fDataSockets[x].socket,-1,"master",message,priority)!=0)	{
 	 CloseConnection(fDataSockets[x].id);
       }
    }      
-   fBroadcastLog->SaveBroadcast(message,priority);
-   return retval;
-   
+   if(UI==-1)
+     fBroadcastLog->SaveBroadcast(message,priority);
+   return 0; //no chance of failure. If a socket doesn't respond it gets closed   
 }
 
 int XeNetServer::SendCommand(string command)
