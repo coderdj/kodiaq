@@ -223,9 +223,9 @@ login_screen:
 	    fUI.PrintNotify("Error getting run mode list from master.");
 	    break;
 	 }
-	 tempString = fUI.EnterRunModeMenu(runModes);
+	 tempString = fUI.DropDownMenu(runModes,"Choose run mode:    ");
+	 UI_SCREEN_SHOWING=-1;
 	 if(tempString=="ERR") break;
-	 UI_SCREEN_SHOWING=-1;	 
 	 
 	 fMasterNetwork.SendCommand("ARM");
 	 fMasterNetwork.SendCommand(tempString);
@@ -275,7 +275,7 @@ login_screen:
 	       fUI.PrintNotify("Didn't get user list from master.");
 	       break;
 	    }	    
-	    tempString = fUI.EnterRunModeMenu(runModes,true);
+	    tempString = fUI.DropDownMenu(runModes,"Connected Users:     ");
 	    if(tempString!="ERR") {
 	       fMasterNetwork.SendCommand("BOOT");
 	       fMasterNetwork.SendCommand(tempString.substr(0,1));
