@@ -64,7 +64,7 @@
 #undef HAVE_UNISTD_H
 
 /* Compile standalone slave */
-#undef KODIAQ_LITE
+#undef KLITE
 
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */

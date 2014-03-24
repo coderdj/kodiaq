@@ -14,31 +14,38 @@
 #include <iostream>
 #include <XeNetClient.hh>
 #include "DigiInterface.hh"
+#include <config.h>
+
+//If using the light version we need user input functions
+#ifdef KLITE
+#include <kbhit.hh>
+#endif
 
 using namespace std;
 
 XeDAQLogger *gLog = new XeDAQLogger("log/koSlave.log");
 
-#ifdef KODIAQ_LITE
+#ifdef KLITE
 // *******************************************************************************
 // 
 //           STANDALONE CODE FOR KODIAQ_LITE, SINGLE-INSTANCE DAQ
 //           
 // *******************************************************************************
-int main()
+int StandaloneMain()
 {   
    gLog->Message("Started program.");   
    DigiInterface *fElectronics = new DigiInterface();
    XeDAQOptions fDAQOptions;
-   string fOptionsPath = "data/DAQConfig.ini";
+   string fOptionsPath = "DAQConfig.ini";
    
 program_start:
-   char input;
+   char input='a';
    cout<<"Welcome to kodiaq lite! Press 's' to start the run, 'q' to quit."<<endl;
-   input = getch();
-   
+   while(!kbhit())
+     usleep(100);
+   cin.get(input);
    if(input=='q') return 0;
-   else if(input!='s') goto program_start;
+   else if(input!='s')  goto program_start;
    
    //load options
    if(fDAQOptions.ReadParameterFile(fOptionsPath)!=0)   {	
@@ -59,7 +66,7 @@ program_start:
    input='a';
    time_t prevTime = XeDAQLogger::GetCurrentTime();
    while(1)  {	
-      if(kbhit()) input=getch();
+      if(kbhit()) cin.get(input);
       if(input=='q') break;
       time_t currentTime = XeDAQLogger::GetCurrentTime();
       
@@ -79,8 +86,8 @@ program_start:
    }      
    return 0;
 }
-     
-#else
+#endif     
+
 // *******************************************************************************
 // 
 //           NETWORKED DAQ SLAVE CODE
@@ -88,6 +95,14 @@ program_start:
 // *******************************************************************************
 int main()
 {
+#ifdef KLITE
+   cout<<"KLITE"<<endl;
+   return StandaloneMain();
+#else
+   cout<<"NO KLITE"<<endl;
+#endif
+      
+   
    gLog->Message("Started koSlave module.");
 
    //Set up objects
@@ -218,4 +233,3 @@ connection_loop:
    
    
 }
-#endif
