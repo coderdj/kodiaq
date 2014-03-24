@@ -43,6 +43,8 @@ flags that tell kodiaq which modules to include.
 +--------------------+----------------------------------------+
 | --enable-ddc10     | Enable ddc-10 support for master       |
 +--------------------+----------------------------------------+
+| --enable-lite      | Compile standalone slave module        |
++--------------------+----------------------------------------+
 
 In all cases the shared common directory is compiled. For each option
 enabled the configure script automatically checks that the unique
@@ -92,7 +94,7 @@ to work.
         library)
       * mongodb greater than version 2.55 (earlier versions can work with
         a slight modification to the source code). Specifically
-	libmongoclient is needed.
+	libmongoclient is needed. 
       * libsnappy for on-the-fly compression
       * libpthread for parallel processing
       * Normal build libraries (build-essential package on ubuntu)
@@ -151,3 +153,6 @@ entry is the path to the .ini file for that mode. This file can be
 edited while the master is running. For an exampe .ini file take a
 look in src/master/data/RunModes/DAQOptionsMaster.ini. 
 
+=========================================
+Deployment of the Standalone Slave Module
+=========================================

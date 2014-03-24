@@ -94,6 +94,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#komaster">koMaster</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="#deployment-of-the-standalone-slave-module">Deployment of the Standalone Slave Module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options.html">DAQ Options</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="options.html#general-syntax">General Syntax</a></li>
 <li class="toctree-l2"><a class="reference internal" href="options.html#electronics-definitions">Electronics Definitions</a></li>
@@ -188,6 +189,9 @@ flags that tell kodiaq which modules to include.</p>
 </tr>
 <tr class="row-even"><td>&#8211;enable-ddc10</td>
 <td>Enable ddc-10 support for master</td>
+</tr>
+<tr class="row-odd"><td>&#8211;enable-lite</td>
+<td>Compile standalone slave module</td>
 </tr>
 </tbody>
 </table>
@@ -296,6 +300,32 @@ edited while the master is running. For an exampe .ini file take a
 look in src/master/data/RunModes/DAQOptionsMaster.ini.</p>
 </div>
 </div>
+</div>
+<div class="section" id="deployment-of-the-standalone-slave-module">
+<h1>Deployment of the Standalone Slave Module<a class="headerlink" href="#deployment-of-the-standalone-slave-module" title="Permalink to this headline">¶</a></h1>
+<p>It is also possible to deploy a standalone module for running small
+DAQ systems. This consists of the slave module which is steered via a
+text-based interface on the console.</p>
+<p>To deploy the standalone module, make sure all the same dependencies are met as
+for the slave module described previously. Then build using the
+following commands:</p>
+<div class="highlight-python"><pre>cd kodiaq
+./configure --enable-lite
+make</pre>
+</div>
+<p>Assuming you are successful, the koSlave executable should be
+installed with a special flag that allows local operation. To operate
+this module, use the script in the klite directory:</p>
+<div class="highlight-python"><pre>cd klite
+./StartDAQ.sh</pre>
+</div>
+<p>This will start the DAQ with the options defined in
+klite/DAQConfig.ini. Please note that editing of the DAQConfig.ini
+file is intended for expert users only. The available parameters in
+this file are described later in this documentation.</p>
+<p>The lite program has only two options. The DAQ is started with the &#8216;s&#8217;
+key. Pressing the &#8216;q&#8217; key at any time will shut down the DAQ and stop
+the program.</p>
 </div>
 
 

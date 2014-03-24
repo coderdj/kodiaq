@@ -43,6 +43,8 @@ flags that tell kodiaq which modules to include.
 +--------------------+----------------------------------------+
 | --enable-ddc10     | Enable ddc-10 support for master       |
 +--------------------+----------------------------------------+
+| --enable-lite      | Compile standalone slave module        |
++--------------------+----------------------------------------+
 
 In all cases the shared common directory is compiled. For each option
 enabled the configure script automatically checks that the unique
@@ -150,4 +152,36 @@ first entry is a string with a run mode identifier and the second
 entry is the path to the .ini file for that mode. This file can be
 edited while the master is running. For an exampe .ini file take a
 look in src/master/data/RunModes/DAQOptionsMaster.ini. 
+
+=========================================
+Deployment of the Standalone Slave Module
+=========================================
+
+It is also possible to deploy a standalone module for running small
+DAQ systems. This consists of the slave module which is steered via a
+text-based interface on the console.
+
+To deploy the standalone module, make sure all the same dependencies are met as
+for the slave module described previously. Then build using the
+following commands: ::
+
+    cd kodiaq
+    ./configure --enable-lite
+    make
+
+Assuming you are successful, the koSlave executable should be
+installed with a special flag that allows local operation. To operate
+this module, use the script in the klite directory: ::
+
+    cd klite
+    ./StartDAQ.sh
+
+This will start the DAQ with the options defined in
+klite/DAQConfig.ini. Please note that editing of the DAQConfig.ini
+file is intended for expert users only. The available parameters in
+this file are described later in this documentation.
+
+The lite program has only two options. The DAQ is started with the 's'
+key. Pressing the 'q' key at any time will shut down the DAQ and stop
+the program.
 
