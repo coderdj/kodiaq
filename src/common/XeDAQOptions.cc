@@ -77,7 +77,6 @@ int XeDAQOptions::ProcessLineHex(string line,string option, int &ret)
 
 int XeDAQOptions::ReadParameterFile(string filename)
 {
-   cout<<"Enter code"<<endl;
    Reset();
    ifstream initFile;
    initFile.open(filename.c_str());
@@ -85,7 +84,6 @@ int XeDAQOptions::ReadParameterFile(string filename)
       cout<<"init file not found."<<endl;
       return -1;
    }   
-   cout<<"File opened"<<endl;
    string line;
    while(!initFile.eof())  {
 //      cout<<"in initf"<<endl;
@@ -133,10 +131,8 @@ int XeDAQOptions::ReadParameterFile(string filename)
 	 continue;
       }      
       if(words[0]=="WRITE_MODE")	{
-	 cout<<"INWRITEMODE"<<endl;
 	 if(words.size()<2) continue;
 	 fRunOptions.WriteMode=XeDAQHelper::StringToInt(words[1]);
-	 cout<<endl<<"WRITEMODE:"<<fRunOptions.WriteMode<<endl;
 	 continue;
       }      
       if(words[0]=="BLT_SIZE"){

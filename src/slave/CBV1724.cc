@@ -39,7 +39,7 @@ CBV1724::~CBV1724()
 int CBV1724::Initialize(XeDAQOptions *options)
 {
    int retVal=0;
-   cout<<"Initializing"<<endl;
+//   cout<<"Initializing"<<endl;
    for(int x=0;x<options->GetVMEOptions();x++)  {
       if((options->GetVMEOption(x).BoardID==-1 || options->GetVMEOption(x).BoardID==fBID.BoardID)
 	 && (options->GetVMEOption(x).CrateID==-1 || options->GetVMEOption(x).CrateID==fBID.CrateID)
@@ -74,14 +74,18 @@ int CBV1724::Initialize(XeDAQOptions *options)
    fSizes   = new vector<u_int32_t>();
 
    if(options->GetBaselineMode()==1)    {	
+      cout<<"Determining baselines ";
       int tries = 0;
-      while(DetermineBaselines()!=0 && tries<5)
-	tries++;
+      while(DetermineBaselines()!=0 && tries<5){
+	 cout<<" .";
+	 tries++;
+      }
+      cout<<" . . . done!"<<endl;
    }
    else cout<<"Didn't determine baselines."<<endl;
    
    cout<<"Loading baselines"<<endl;
-   cout<<LoadBaselines()<<endl;
+   LoadBaselines();
    cout<<"Done with baselines."<<endl;
    return retVal;
 }
@@ -215,7 +219,7 @@ int CBV1724::LoadBaselines()
       stringstream sstr;
       sstr<<"Loaded baseline "<<hex<<baselines[x]<<dec<<" to channel "<<x;
       gLog->SendMessage(sstr.str());
-      cout<<sstr.str()<<endl;
+//      cout<<sstr.str()<<endl;
    }
    return 0;
 }
@@ -334,7 +338,7 @@ int CBV1724::DetermineBaselines()
 				      ((unsigned char*)buff)+blt_bytes,
 				      fBLTSize,cvA32_U_BLT,cvD32,&nb);
 	 if(ret!=cvSuccess && ret!=cvBusError)  {
-	    cout<<"CAENVME Read Error "<<ret<<endl;
+//	    cout<<"CAENVME Read Error "<<ret<<endl;
 	    continue;
 	 }
 	 blt_bytes+=nb;
@@ -354,7 +358,7 @@ int CBV1724::DetermineBaselines()
 	 continue;
       }
       samples = (buff[0]&0xFFFFFF);
-      cout<<"BUFFER SIZE "<<samples<<endl;
+//      cout<<"BUFFER SIZE "<<samples<<endl;
       samples-=4; //subtract header
       samples/=8; //get lines per channel
       samples*=2; //2 samples per line
@@ -374,10 +378,10 @@ int CBV1724::DetermineBaselines()
 	 pnt=pnt+(int)(samples/2);
 	 if(channelFinished[channel]) continue;
 	 
-	 cout<<"Channel: "<<dec<<channel<<endl;
-	 cout<<"Tot "<<dec<<mean<<" nsamples "<<samples;
+//	 cout<<"Channel: "<<dec<<channel<<endl;
+//	 cout<<"Tot "<<dec<<mean<<" nsamples "<<samples;
 	 mean=mean/(double)samples;
-	 cout<<" mean "<<dec<<mean<<" pnt "<<pnt<<endl;
+//	 cout<<" mean "<<dec<<mean<<" pnt "<<pnt<<endl;
 	 	 	 
 	 //Read DAC register. 
 	 ReadReg32(V1724_DACReg+(channel*0x100),data);
@@ -385,19 +389,19 @@ int CBV1724::DetermineBaselines()
 	 double diff=0;
 	 if((maxval-mean)<500 && (mean-minval)<500)  { //baseline is flat 
 	    diff=double(idealBaseline-mean);
-	    cout<<"Diff "<<diff<<" DAQ "<<hex<<newDAC<<dec<<endl;
+//	    cout<<"Diff "<<diff<<" DAQ "<<hex<<newDAC<<dec<<endl;
 	    if(diff<=MaxDev && diff>=MaxDev*(-1.))  {   //Existing baseline is still OK
 	       channelFinished[channel]=true;
 	       newBaselines[channel]=data;
-	       cout<<"Baseline of "<<hex<<data<<dec<<
-		 " retained for channel "<<channel<<" on board "<<fBID.BoardID<<endl;	       
+//	       cout<<"Baseline of "<<hex<<data<<dec<<
+//		 " retained for channel "<<channel<<" on board "<<fBID.BoardID<<endl;	       
 	       continue;
 	    }
 	    else  {       //Baseline must be adjusted
-	       if(channel==7) cout<<"diff "<<diff<<" maxdev "<<MaxDev<<" mean "<<mean<<" oldDAC "<<hex<<data<<endl;
-	       if(diff>MaxDev)	 { if(channel==7) cout<<"DIFFGTMD"<<endl;
+//	       if(channel==7) cout<<"diff "<<diff<<" maxdev "<<MaxDev<<" mean "<<mean<<" oldDAC "<<hex<<data<<endl;
+	       if(diff>MaxDev)	 { //if(channel==7) cout<<"DIFFGTMD"<<endl;
 		  if(diff>8){
-		     if(diff>50) { if(channel==7) cout<<"GT50 "<<newDAC<<" "<<diff/-0.265<<endl;
+		     if(diff>50) { //if(channel==7) cout<<"GT50 "<<newDAC<<" "<<diff/-0.265<<endl;
 			newDAC=(data+(int)(diff/(-.264))); }//coarse adjust
 		     else newDAC=data-30;                     //a bit less coarse
 		  }
@@ -413,18 +417,18 @@ int CBV1724::DetermineBaselines()
 	       else newDAC=data;                               //no adjust
 	    }	    
 	    if(iteration==maxIterations){
-	       cout<<" To do "<<channel<<endl;
+//	       cout<<" To do "<<channel<<endl;
 	       channelFinished[channel]=true;
 	       newBaselines[channel]=newDAC;//data;
 	       retval=1; //flag that at least one channel didn't finish
 	    }
-	    cout<<"New DAC "<<hex<<newDAC<<endl;	    
+//	    cout<<"New DAC "<<hex<<newDAC<<endl;	    
 	    WriteReg32(V1724_DACReg+(0x100*channel),(newDAC&0xFFFF)); //write updated DAC
 	 }//end if baseline is flat	 
 	 else
 	   {
-	      cout<<"Signal in baseline?"<<endl;	      
-///	   gLog->SendMessage("Problem during baseline determination. Is it not flat?");
+//	      cout<<"Signal in baseline?"<<endl;	      
+	      gLog->SendMessage("Problem during baseline determination. Is it not flat?");
 	   }
 	 
       }//end for through channels            

@@ -48,20 +48,25 @@ program_start:
    else if(input!='s')  goto program_start;
    
    //load options
+   cout<<"Reading options . . .";
    if(fDAQOptions.ReadParameterFile(fOptionsPath)!=0)   {	
       cout<<"Error reading options file!"<<endl;
       return 1;
    }   
+   cout<<" done!"<<endl;
    //start digi interface
+   cout<<"Initializing electronics."<<endl;
    if(fElectronics->Initialize(&fDAQOptions)!=0)  {	
       cout<<"Error initializing electronics"<<endl;
       return 1;
    }   
+   cout<<"Finished initializing electronics."<<endl;
    //start run
    if(fElectronics->StartRun()!=0)    {	
       cout<<"Error starting run."<<endl;
       return 1;
    }
+   cout<<XeDAQLogger::GetTimeString()<<" Start of run."<<endl;
    
    input='a';
    time_t prevTime = XeDAQLogger::GetCurrentTime();
@@ -72,7 +77,7 @@ program_start:
       
       //updates every second
       time_t tdiff;
-      if((tdiff = difftime(currentTime,prevTime))>1.0)  {	 
+      if((tdiff = difftime(currentTime,prevTime))>=1.0)  {	 
 	 prevTime=currentTime;
 	 unsigned int iFreq=0;
 	 unsigned int iRate = fElectronics->GetRate(iFreq);
@@ -81,9 +86,12 @@ program_start:
 	 rate = rate/tdiff;
 	 rate/=1048576;
 	 freq=freq/tdiff;
-	 cout<<"Rate: "<<rate<<"MB/s   Freq: "<<freq<<"Hz   Averaged over "<<tdiff<<"s"<<endl;
+	 cout<<"Rate: "<<rate<<"MB/s   Freq: "<<freq<<"Hz                   "<<'\r';//   Averaged over "<<tdiff<<"s"<<'\r';//endl;
+	 cout.flush();
       }      
    }      
+   cout<<XeDAQLogger::GetTimeString()<<" End of run."<<endl;
+   
    return 0;
 }
 #endif     
@@ -96,10 +104,7 @@ program_start:
 int main()
 {
 #ifdef KLITE
-   cout<<"KLITE"<<endl;
    return StandaloneMain();
-#else
-   cout<<"NO KLITE"<<endl;
 #endif
       
    
