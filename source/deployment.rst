@@ -185,3 +185,8 @@ The lite program has only two options. The DAQ is started with the 's'
 key. Pressing the 'q' key at any time will shut down the DAQ and stop
 the program.
 
+Currently the standalone module requires a mongodb database and the
+mongo C++ driver. It is anticipated that the ability to write directly
+to files (which would allow the mongodb driver dependency to be
+removed) will be added in a future update.
+
