@@ -147,7 +147,7 @@ int XeDAQOptions::ReadParameterFile(string filename)
       if(words[0]=="MONGO_OPTIONS")	{
 	 if(words.size()<7) continue;
 	 fMongoOptions.DBAddress=words[1];
-	 if(words[1][words[1].size()-1]=='*') fMongoOptions.DynamicRunNames=true;
+	 if(words[2][words[2].size()-1]=='*') fMongoOptions.DynamicRunNames=true;
 	 else fMongoOptions.DynamicRunNames=false;
 	 fMongoOptions.Collection=words[2];
 	 (words[3]=="1")?fMongoOptions.ZipOutput=true:fMongoOptions.ZipOutput=false;

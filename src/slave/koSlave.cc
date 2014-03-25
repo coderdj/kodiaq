@@ -31,13 +31,14 @@ XeDAQLogger *gLog = new XeDAQLogger("log/koSlave.log");
 //           STANDALONE CODE FOR KODIAQ_LITE, SINGLE-INSTANCE DAQ
 //           
 // *******************************************************************************
+
 int StandaloneMain()
 {   
    gLog->Message("Started program.");   
    DigiInterface *fElectronics = new DigiInterface();
    XeDAQOptions fDAQOptions;
    string fOptionsPath = "DAQConfig.ini";
-   
+      
 program_start:
    char input='a';
    cout<<"Welcome to kodiaq lite! Press 's' to start the run, 'q' to quit."<<endl;
@@ -86,7 +87,8 @@ program_start:
 	 rate = rate/tdiff;
 	 rate/=1048576;
 	 freq=freq/tdiff;
-	 cout<<"Rate: "<<rate<<"MB/s   Freq: "<<freq<<"Hz                   "<<'\r';//   Averaged over "<<tdiff<<"s"<<'\r';//endl;
+	 	 	 
+	 cout<<setw(4)<<"Rate: "<<rate<<"MB/s   Freq: "<<freq<<"Hz             "<<'\r';//   Averaged over "<<tdiff<<"s"<<'\r';//endl;
 	 cout.flush();
       }      
    }      
@@ -94,6 +96,7 @@ program_start:
    
    return 0;
 }
+
 #endif     
 
 // *******************************************************************************
