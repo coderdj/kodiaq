@@ -12,6 +12,7 @@
 
 #include <XeDAQLogger.hh>
 #include <iostream>
+#include <iomanip>
 #include <XeNetClient.hh>
 #include "DigiInterface.hh"
 #include <config.h>
@@ -87,8 +88,8 @@ program_start:
 	 rate = rate/tdiff;
 	 rate/=1048576;
 	 freq=freq/tdiff;
-	 	 	 
-	 cout<<setw(4)<<"Rate: "<<rate<<"MB/s   Freq: "<<freq<<"Hz             "<<'\r';//   Averaged over "<<tdiff<<"s"<<'\r';//endl;
+	 
+	 cout<<setprecision(2)<<"Rate: "<<rate<<"MB/s   Freq: "<<freq<<"Hz             "<<'\r';//   Averaged over "<<tdiff<<"s"<<'\r';//endl;
 	 cout.flush();
       }      
    }      
