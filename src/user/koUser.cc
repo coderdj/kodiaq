@@ -11,41 +11,43 @@
 // ****************************************************
 
 #include <iostream>
-#include "XeNetClient.hh"
-#include "XeCursesInterface.hh"
+#include <koNetClient.hh>
+#include "NCursesUI.hh"
 
 using namespace std;
+
+void ConfigureMenus(MainMenu_t &main, MainMenu_t &run, 
+		    MainMenu_t &start, MainMenu_t &admin);
 
 int main()
 {
    //Declare objects
    //
-   // MENU OPTIONS
-   // 
+   // Menu Options    
    MainMenu_t         o_MainMenu, o_RunMenu, o_StartMenu, o_AdminMenu;
    ConfigureMenus(o_MainMenu,o_RunMenu,o_StartMenu,o_AdminMenu);
    
-   //logger
-   XeDAQLogger        fLog("log/koUser.log");
+   // Logger
+   koLogger        fLog("log/koUser.log");
    
-   //network
-   XeNetClient        fMasterNetwork(&fLog);
+   // Network
+   koNetClient        fMasterNetwork(&fLog);
    
-   //DAQStatus
-   XeStatusPacket_t  fDAQStatus;
-   XeDAQHelper::InitializeStatus(fDAQStatus);
+   // DAQ Status
+   koStatusPacket_t  fDAQStatus;
+   koHelper::InitializeStatus(fDAQStatus);
    
    //Run info (must fetch from network)
-   XeRunInfo_t fRunInfo;
+   koRunInfo_t fRunInfo;
    fRunInfo.RunNumber=fRunInfo.StartedBy=fRunInfo.StartDate="";
    
    //UI
-   XeCursesInterface  fUI(&fLog);   
+   NCursesUI          fUI(&fLog);   
    bool               bAdminMode=false;
    
    //Timer used to periodically send a test message over open ports. If you don't 
    //do this the ports automatically close after some period of inactivity
-   time_t fKeepAlive=XeDAQLogger::GetCurrentTime();               
+   time_t fKeepAlive=koLogger::GetCurrentTime();               
                                                                 
    
    //***********************************************************
@@ -108,11 +110,11 @@ login_screen:
    //Have to declare all variables before switch statement. C++ doesn't seem
    //to live variable initialization within the case: statements.
    unsigned char command='0'; 
-   bool bBlockInput=false;    
+//   bool bBlockInput=false;    
    string message,tempString;
    vector<string> runModes;
   
-   fUI.DrawStartMenu();
+   fUI.DrawMainMenu(o_StartMenu);
    while(command!='q' && command!='Q')   {
       usleep(100); //keep processor use down
       command='0';
@@ -121,14 +123,14 @@ login_screen:
       //
       //MAIN MENU: Connected to master but DAQ not running
       if(((fDAQStatus.NetworkUp && UI_SCREEN_SHOWING<=1) || 
-	 (fDAQStatus.NetworkUp && fDAQStatus.DAQState!=XEDAQ_RUNNING
+	 (fDAQStatus.NetworkUp && fDAQStatus.DAQState!=KODAQ_RUNNING
 	  && UI_SCREEN_SHOWING==3)) && !bAdminMode)  	{
 	 fUI.DrawMainMenu(o_MainMenu);
 	 fUI.Update();
 	 UI_SCREEN_SHOWING=2;
       }      
       //RUN MENU: DAQ is running
-      if((fDAQStatus.DAQState==XEDAQ_RUNNING && UI_SCREEN_SHOWING!=3)
+      if((fDAQStatus.DAQState==KODAQ_RUNNING && UI_SCREEN_SHOWING!=3)
 	&& !bAdminMode)	{
 	 fUI.DrawMainMenu(o_RunMenu);
 	 fUI.Update();
@@ -136,12 +138,12 @@ login_screen:
       }
       //START MENU: Not connected to master
       if((!fDAQStatus.NetworkUp && UI_SCREEN_SHOWING!=1) && !bAdminMode) {
-	 fUI.DrawRunMenu(o_StartMenu);
+	 fUI.DrawMainMenu(o_StartMenu);
 	 fUI.Update();
 	 UI_SCREEN_SHOWING=1;
       }                              
       if(bAdminMode && UI_SCREEN_SHOWING!=4)	{
-	 fUI.DrawMainMenu(o_AdminWindow,true);
+	 fUI.DrawMainMenu(o_AdminMenu,true);
 	 fUI.Update();
 	 UI_SCREEN_SHOWING=4;
       }
@@ -169,7 +171,7 @@ login_screen:
        case 'b': //BROADCAST
 	 //broadcasts are possible at every stage as long as the network is connected
 	 //we will send a message to all UIs and to the DAQ log file
-	 message = fUI.BroadcastMessage(name,uiret);
+	 message = fUI.EnterMessage(name,uiret);
 	 UI_SCREEN_SHOWING=-1;
 	 if(fMasterNetwork.SendBroadcastMessage(message)!=0)
 	   fUI.PrintNotify("Failed to broadcast your message. How's your connection look?");
@@ -185,8 +187,8 @@ login_screen:
 	 //tell daq to disconnect everything then put network back up (if settings changed)
 	 //do this if you reconfigure slaves or something else that requires a complete network
 	 //reboot
-	 if(!fDAQStatus.NetworkUp || fDAQStatus.DAQState==XEDAQ_RUNNING || 
-	    fDAQStatus.DAQState==XEDAQ_ARMED || fDAQStatus.DAQState==XEDAQ_MIXED) {
+	 if(!fDAQStatus.NetworkUp || fDAQStatus.DAQState==KODAQ_RUNNING || 
+	    fDAQStatus.DAQState==KODAQ_ARMED || fDAQStatus.DAQState==KODAQ_MIXED) {
 	    fUI.PrintNotify("You can only mess with the network when the DAQ is in 'IDLE' mode.");
 	    break;
 	 }	 
@@ -202,8 +204,8 @@ login_screen:
        case 'd': //DISCONNECT
 	 //tell the DAQ network to disconnect from all slaves and close the master/slave interface
 	 //do this before bringing slaves offline for maintenance
-	 if(!fDAQStatus.NetworkUp || fDAQStatus.DAQState==XEDAQ_RUNNING || 
-	     fDAQStatus.DAQState==XEDAQ_ARMED || fDAQStatus.DAQState==XEDAQ_MIXED) {
+	 if(!fDAQStatus.NetworkUp || fDAQStatus.DAQState==KODAQ_RUNNING || 
+	     fDAQStatus.DAQState==KODAQ_ARMED || fDAQStatus.DAQState==KODAQ_MIXED) {
 	    fUI.PrintNotify("You can only mess with the DAQ network if the DAQ is in 'IDLE' mode.");
 	    break;
 	 }	 
@@ -219,8 +221,8 @@ login_screen:
        case 'm': //CHANGE RUN MODE
 	 //requests a list of run modes from the master. Then lets the user pick which mode he 
 	 //wants from a menu. The chosen mode is then sent to the DAQ to arm it
-	 if(!fDAQStatus.NetworkUp || fDAQStatus.DAQState==XEDAQ_RUNNING || 
-	    fDAQStatus.DAQState==XEDAQ_MIXED) break;
+	 if(!fDAQStatus.NetworkUp || fDAQStatus.DAQState==KODAQ_RUNNING ||
+	    fDAQStatus.DAQState==KODAQ_MIXED) break;
 	 fMasterNetwork.SendCommand("MODES");
 	 runModes.clear();
 	 if(fMasterNetwork.GetStringList(runModes)!=0) {
@@ -237,19 +239,19 @@ login_screen:
 	 command='0';
 	 break;
        case 'x'://sleep mode
-	 if(!fDAQStatus.DAQState==XEDAQ_ARMED || fDAQStatus.DAQState==XEDAQ_RUNNING
-	   || fDAQStatus.DAQState==XEDAQ_MIXED) break;
+	 if(!fDAQStatus.DAQState==KODAQ_ARMED || fDAQStatus.DAQState==KODAQ_RUNNING
+	   || fDAQStatus.DAQState==KODAQ_MIXED) break;
 	 fMasterNetwork.SendCommand("SLEEP");
 	 command='0';
 	 break;
        case 's':
-	 if(!fDAQStatus.DAQState==XEDAQ_ARMED || fDAQStatus.DAQState==XEDAQ_RUNNING
-	   || fDAQStatus.DAQState==XEDAQ_MIXED) break;
+	 if(!fDAQStatus.DAQState==KODAQ_ARMED || fDAQStatus.DAQState==KODAQ_RUNNING
+	   || fDAQStatus.DAQState==KODAQ_MIXED) break;
 	 fMasterNetwork.SendCommand("START");
 	 command='0';
 	 break;
        case 'p':
-	 if(fDAQStatus.DAQState==XEDAQ_RUNNING) 	    
+	 if(fDAQStatus.DAQState==KODAQ_RUNNING) 	    
 	   fMasterNetwork.SendCommand("STOP");
 	 command='0';
 	 break;
@@ -322,7 +324,7 @@ login_screen:
       }
       
       //watch for timeouts -- TIMEOUT HANDLING SHOULD BE IN MASTER NOT HERE
-      time_t currentTime=XeDAQLogger::GetCurrentTime();
+      time_t currentTime=koLogger::GetCurrentTime();
 //      for(unsigned int x=0;x<fDAQStatus.Slaves.size();x++)      	{	       
 //	 if(difftime(currentTime,fDAQStatus.Slaves[x].lastUpdate)<60.)
 //	   continue;
@@ -334,7 +336,7 @@ login_screen:
 //      }
       if(difftime(currentTime,fKeepAlive)>100.)	{
 	 fMasterNetwork.SendCommand("KEEPALIVE");
-	 fKeepAlive = XeDAQLogger::GetCurrentTime();
+	 fKeepAlive = koLogger::GetCurrentTime();
       }
       
       
@@ -375,20 +377,20 @@ void ConfigureMenus( MainMenu_t &main, MainMenu_t &run,
    run.MenuItemStrings.push_back("Quit");
    
    start.MenuItemIDs.push_back("C");
-   start.MenuItemString.push_back("Connect");
+   start.MenuItemStrings.push_back("Connect");
    start.MenuItemIDs.push_back("B");
-   start.MenuItemString.push_back("Broadcast message");
+   start.MenuItemStrings.push_back("Broadcast message");
    start.MenuItemIDs.push_back("Q");
-   start.MenuItemString.push_back("Quit");
+   start.MenuItemStrings.push_back("Quit");
    
    admin.MenuItemIDs.push_back("K");
-   admin.MenuItemString.push_back("View/boot connected users");
+   admin.MenuItemStrings.push_back("View/boot connected users");
    admin.MenuItemIDs.push_back("B");
-   admin.MenuItemString.push_back("Broadcast message");
+   admin.MenuItemStrings.push_back("Broadcast message");
    admin.MenuItemIDs.push_back("W");
-   admin.MenuItemString.push_back("Toggle WIMPs on/off");
+   admin.MenuItemStrings.push_back("Toggle WIMPs on/off");
    admin.MenuItemIDs.push_back("A");
-   admin.MenuItemString.push_back("Return to normal mode");
+   admin.MenuItemStrings.push_back("Return to normal mode");
    
 }
 

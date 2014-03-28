@@ -1,26 +1,40 @@
+// ****************************************************************
+// 
+// kodiaq Data Acquisition Software
+// 
+// File    : NCursesUI.cc
+// Author  : Daniel Coderre, LHEP, Universitaet Bern
+// Date    : 24.06.2013
+// Update  : 28.03.2014
+// 
+// Brief   : Functions for creating the ncurses UI
+// 
+// *****************************************************************
+
 #include <sstream>
 #include <cstring>
 #include <iterator>
 #include <algorithm>
 #include <form.h>
-#include "XeCursesInterface.hh"
+#include "NCursesUI.hh"
 
 
-XeCursesInterface::XeCursesInterface()
+NCursesUI::NCursesUI()
 {
    bInitialized=false;
    fBlockCount=0;   
    main_win=status_win=notify_win=title_win=NULL;
    fNotificationLower=0;
    fNotificationUpper=30;
+   fLog=NULL;
 }
 
-XeCursesInterface::~XeCursesInterface()
+NCursesUI::~NCursesUI()
 {
    endwin();
 }
 
-XeCursesInterface::XeCursesInterface(XeDAQLogger *logger)
+NCursesUI::NCursesUI(koLogger *logger)
 {
    fLog=logger;
    bInitialized=false;
@@ -30,7 +44,8 @@ XeCursesInterface::XeCursesInterface(XeDAQLogger *logger)
    fNotificationUpper=30;
 }
 
-int XeCursesInterface::GetLoginInfo(string &name, int &port, int &dataport,string &hostname,string UIMessage)
+int NCursesUI::GetLoginInfo(string &name, int &port, int &dataport,
+			    string &hostname,string UIMessage)
 {
    initscr();
    start_color();
@@ -79,7 +94,7 @@ int XeCursesInterface::GetLoginInfo(string &name, int &port, int &dataport,strin
    wrefresh(loginwin);
    refresh();
    wattron(loginwin,COLOR_PAIR(10));   
-   mvwprintw(loginwin,0,0," kodiaq - DAQ for XENON                                          Software version 0.9 ");
+   mvwprintw(loginwin,0,0," kodiaq - Data Acquisition Software                              Software version 0.9 ");
    mvwprintw(loginwin,rows+7,0," Use up/down arrows to change fields and enter to accept settings.      ctl-c to quit ");
    wattroff(loginwin,COLOR_PAIR(10));
    wattron(loginwin,COLOR_PAIR(5));
@@ -97,12 +112,12 @@ int XeCursesInterface::GetLoginInfo(string &name, int &port, int &dataport,strin
    wmove(loginwin,14,36);
    wattroff(loginwin,COLOR_PAIR(7));
    refresh();
-   int c;
+//   int c;
    bool getout=false; 
    stringstream converter1,converter2;
-   int cportint,cdportint;
+//   int cportint,cdportint;
    char choice;
-   const char *cport,*cdport;
+//   const char *cport,*cdport;
    form_driver(my_form,REQ_PREV_FIELD);
    int posy=0,posx=0;
    while(!getout)  {	
@@ -121,8 +136,8 @@ int XeCursesInterface::GetLoginInfo(string &name, int &port, int &dataport,strin
 	 buff4.erase( std::remove(buff4.begin(), buff4.end(), ' '), buff4.end() );
 	 getyx(loginwin,posy,posx);
 	 unsigned int cportint,cdportint;
-	 cportint=XeDAQHelper::StringToInt(buff2); 
-	 cdportint=XeDAQHelper::StringToInt(buff3);
+	 cportint=koHelper::StringToInt(buff2); 
+	 cdportint=koHelper::StringToInt(buff3);
 	 if(cportint<2000 || cdportint<2000 || cportint>32768 || cdportint>32768
 	    || buff=="" || buff4=="" || cportint==cdportint)  {
 	    wattron(loginwin,COLOR_PAIR(8));
@@ -178,7 +193,9 @@ int XeCursesInterface::GetLoginInfo(string &name, int &port, int &dataport,strin
    return 0;          
 }
 
-int XeCursesInterface::Initialize(XeStatusPacket_t *DAQStatus, XeRunInfo_t *RunInfo, vector <string> history, string name)
+int NCursesUI::Initialize(koStatusPacket_t *DAQStatus, 
+			  koRunInfo_t *RunInfo, vector <string> history, 
+			  string name)
 {  
    fDAQStatus=DAQStatus;
    fRunInfo=RunInfo;
@@ -234,7 +251,7 @@ int XeCursesInterface::Initialize(XeStatusPacket_t *DAQStatus, XeRunInfo_t *RunI
    wattroff(title_win,COLOR_PAIR(7));
    wattroff(title_win,A_BOLD);
    
-   DrawStartMenu();
+//   DrawStartMenu();
    bInitialized=true;
    
    SidebarRefresh();
@@ -249,7 +266,7 @@ int XeCursesInterface::Initialize(XeStatusPacket_t *DAQStatus, XeRunInfo_t *RunI
    return 0;
 }
 
-void XeCursesInterface::DrawBlockMenu(int n)
+void NCursesUI::DrawBlockMenu(int n)
 {
    wclear(main_win);
 //   box(main_win, 0 , 0);
@@ -282,18 +299,18 @@ int NCursesUI::DrawMainMenu(MainMenu_t config, bool drawBox)
    //Draw window title
    wattron(main_win,A_BOLD);   
    wattron(main_win,COLOR_PAIR(6));
-   mvwprintw(main_win,1,0,config.TitleString);
+   mvwprintw(main_win,1,0,config.TitleString.c_str());
    wattroff(main_win,COLOR_PAIR(6));
    wattroff(main_win,A_BOLD);
    for(unsigned int x=0;x<config.MenuItemStrings.size();x++)  {
       wattron(main_win, A_BOLD);
-      if(menuItems%2==0) wattron(main_win,COLOR_PAIR(7));
+      if(x%2==0) wattron(main_win,COLOR_PAIR(7));
       else wattron(main_win,COLOR_PAIR(6));
       string print = " ";
       print+=config.MenuItemIDs[x];
       print+=" ";
-      mvwprintw(x+1,30,print.c_str());
-      if(menuItems%2==0) wattroff(main_win,COLOR_PAIR(7));
+      mvwprintw(main_win,x+1,30,print.c_str());
+      if(x%2==0) wattroff(main_win,COLOR_PAIR(7));
       else wattroff(main_win,COLOR_PAIR(6));
       wattroff(main_win,A_BOLD);
       string item = config.MenuItemStrings[x];
@@ -306,7 +323,7 @@ int NCursesUI::DrawMainMenu(MainMenu_t config, bool drawBox)
 }
 
 
-int XeCursesInterface::NotificationsScroll(bool up)
+int NCursesUI::NotificationsScroll(bool up)
 {
    unsigned int stepsize=5;
    if(!bInitialized) return -1;
@@ -340,13 +357,13 @@ int XeCursesInterface::NotificationsScroll(bool up)
    return 0;
 }
 
-void XeCursesInterface::SetHistory(vector<string> history)
+void NCursesUI::SetHistory(vector<string> history)
 {   
    string space=" ";
    for(unsigned int x=0;x<history.size();x++){	
       string message;
       int id;
-      id=XeDAQHelper::StringToInt(history[x].substr(0,1));
+      id=koHelper::StringToInt(history[x].substr(0,1));
       message=history[x];
       message.erase(0,2);
       PrintNotify(message,id,false,true);      
@@ -358,7 +375,7 @@ void XeCursesInterface::SetHistory(vector<string> history)
    return;   
 }
 
-int XeCursesInterface::PrintNotify(string message, int priority, bool print, bool hasdate)
+int NCursesUI::PrintNotify(string message, int priority, bool print, bool hasdate)
 {
    if(!bInitialized) return -1;
    wclear(notify_win);
@@ -366,7 +383,7 @@ int XeCursesInterface::PrintNotify(string message, int priority, bool print, boo
    wbkgd(notify_win,COLOR_PAIR(4));
    string fullmessage=message;
    if(!hasdate){	
-      fullmessage = XeDAQLogger::GetTimeString();
+      fullmessage = koLogger::GetTimeString();
       fullmessage+=message;
    }
    
@@ -413,7 +430,7 @@ int XeCursesInterface::PrintNotify(string message, int priority, bool print, boo
    return 0;
 }
 
-void XeCursesInterface::DrawNotifications(unsigned int lower,unsigned int upper)
+void NCursesUI::DrawNotifications(unsigned int lower,unsigned int upper)
 {
    if(!bInitialized) return;
    wattron(notify_win,A_BOLD);
@@ -438,7 +455,9 @@ void XeCursesInterface::DrawNotifications(unsigned int lower,unsigned int upper)
       
       if(currentBin==30) currentBin--;
       //scroll bar
-      if(x-lower == currentBin ||x-lower==currentBin+1 || x-lower==currentBin-1)	{
+      if(x-lower == (unsigned int) currentBin ||
+	 x-lower== (unsigned int) currentBin+1 || 
+	 x-lower==(unsigned int) currentBin-1)	{
 	 wattron(notify_win,COLOR_PAIR(9));
 	 mvwprintw(notify_win,x-lower+2.0,94," ");
 	 wattroff(notify_win,COLOR_PAIR(9));
@@ -452,27 +471,28 @@ void XeCursesInterface::DrawNotifications(unsigned int lower,unsigned int upper)
       
       if(x>=fNotifications.size()) continue;
       
-      if(fNotificationPriorities[x]==XEMESS_WARNING){//yellow	   
+      if(fNotificationPriorities[x]==KOMESS_WARNING){//yellow	   
 	 wattron(notify_win,COLOR_PAIR(3));
 	 mvwprintw(notify_win,x-lower+2,0,"%s",fNotifications[x].c_str());
 	 wattroff(notify_win,COLOR_PAIR(3));
       }    
-      else if(fNotificationPriorities[x]==XEMESS_ERROR){//red	   
+      else if(fNotificationPriorities[x]==KOMESS_ERROR){//red	   
 	 wattron(notify_win,COLOR_PAIR(2));
 	 mvwprintw(notify_win,x-lower+2,0,"%s",fNotifications[x].c_str());
 	 wattroff(notify_win,COLOR_PAIR(2));
       }
-      else if(fNotificationPriorities[x]==XEMESS_NORMAL|| fNotificationPriorities[x]==XEMESS_UPDATE)	{
+      else if(fNotificationPriorities[x]==KOMESS_NORMAL|| 
+	      fNotificationPriorities[x]==KOMESS_UPDATE)	{
 	 wattron(notify_win,COLOR_PAIR(4)); //white
 	 mvwprintw(notify_win,x-lower+2,0,"%s",fNotifications[x].c_str());
 	 wattroff(notify_win,COLOR_PAIR(4));
       }      
-      else if(fNotificationPriorities[x]==XEMESS_BROADCAST){
+      else if(fNotificationPriorities[x]==KOMESS_BROADCAST){
 	 wattron(notify_win,COLOR_PAIR(11));//blue
 	 mvwprintw(notify_win,x-lower+2,0,"%s",fNotifications[x].c_str());
 	 wattroff(notify_win,COLOR_PAIR(11));
       }      
-      else if(fNotificationPriorities[x]==XEMESS_STATE)	{
+      else if(fNotificationPriorities[x]==KOMESS_STATE)	{
 	 wattron(notify_win,COLOR_PAIR(1));//green
 	 mvwprintw(notify_win,x-lower+2,0,"%s",fNotifications[x].c_str());
 	 wattroff(notify_win,COLOR_PAIR(1));
@@ -489,7 +509,7 @@ void XeCursesInterface::DrawNotifications(unsigned int lower,unsigned int upper)
    return;
 }
 
-int XeCursesInterface::SidebarRefresh()
+int NCursesUI::SidebarRefresh()
 {   
    if(!bInitialized || fDAQStatus==0) return -1;
 
@@ -516,23 +536,23 @@ int XeCursesInterface::SidebarRefresh()
       mvwprintw(status_win,3,18,"Disconnected");
       wattroff(status_win,COLOR_PAIR(2));
    }   
-   if(fDAQStatus->DAQState==XEDAQ_RUNNING)     {  
+   if(fDAQStatus->DAQState==KODAQ_RUNNING)     {  
       wattron(status_win,COLOR_PAIR(1));
       mvwprintw(status_win,4,18,"Running");
       wattroff(status_win,COLOR_PAIR(1));
       
    }   
-   else if(fDAQStatus->DAQState==XEDAQ_ARMED)  {
+   else if(fDAQStatus->DAQState==KODAQ_ARMED)  {
       wattron(status_win,COLOR_PAIR(3));
       mvwprintw(status_win,4,18,"Armed  ");
       wattroff(status_win,COLOR_PAIR(3));
    }   
-   else if(fDAQStatus->DAQState==XEDAQ_MIXED) {	
+   else if(fDAQStatus->DAQState==KODAQ_MIXED) {	
       wattron(status_win,COLOR_PAIR(11));
       mvwprintw(status_win,4,18,"Mixed  ");
       wattroff(status_win,COLOR_PAIR(11));
    }                      
-   else if(fDAQStatus->DAQState==XEDAQ_IDLE)  {
+   else if(fDAQStatus->DAQState==KODAQ_IDLE)  {
       wattron(status_win,COLOR_PAIR(2));
       mvwprintw(status_win,4,18,"Idle   ");
       wattroff(status_win,COLOR_PAIR(2));
@@ -563,19 +583,20 @@ int XeCursesInterface::SidebarRefresh()
    for(unsigned int x=0;x<fDAQStatus->Slaves.size();x++){      
       wattron(status_win,A_BOLD);
       //draw slave name in color to indicate status
-      if(fDAQStatus->Slaves[x].status==XEDAQ_IDLE) wattron(status_win,COLOR_PAIR(2));
-      if(fDAQStatus->Slaves[x].status==XEDAQ_MIXED) wattron(status_win,COLOR_PAIR(11));
-      if(fDAQStatus->Slaves[x].status==XEDAQ_ARMED) wattron(status_win,COLOR_PAIR(3));
-      if(fDAQStatus->Slaves[x].status==XEDAQ_RUNNING) wattron(status_win,COLOR_PAIR(1));
+      if(fDAQStatus->Slaves[x].status==KODAQ_IDLE) wattron(status_win,COLOR_PAIR(2));
+      if(fDAQStatus->Slaves[x].status==KODAQ_MIXED) wattron(status_win,COLOR_PAIR(11));
+      if(fDAQStatus->Slaves[x].status==KODAQ_ARMED) wattron(status_win,COLOR_PAIR(3));
+      if(fDAQStatus->Slaves[x].status==KODAQ_RUNNING) wattron(status_win,COLOR_PAIR(1));
       mvwprintw(status_win,13+(4*x),2,(fDAQStatus->Slaves[x].name).c_str());
-      if(fDAQStatus->Slaves[x].status==XEDAQ_IDLE) wattroff(status_win,COLOR_PAIR(2));
-      if(fDAQStatus->Slaves[x].status==XEDAQ_MIXED) wattroff(status_win,COLOR_PAIR(11));
-      if(fDAQStatus->Slaves[x].status==XEDAQ_ARMED) wattroff(status_win,COLOR_PAIR(3));
-      if(fDAQStatus->Slaves[x].status==XEDAQ_RUNNING) wattroff(status_win,COLOR_PAIR(1));	
+      if(fDAQStatus->Slaves[x].status==KODAQ_IDLE) wattroff(status_win,COLOR_PAIR(2));
+      if(fDAQStatus->Slaves[x].status==KODAQ_MIXED) wattroff(status_win,COLOR_PAIR(11));
+      if(fDAQStatus->Slaves[x].status==KODAQ_ARMED) wattroff(status_win,COLOR_PAIR(3));
+      if(fDAQStatus->Slaves[x].status==KODAQ_RUNNING) wattroff(status_win,COLOR_PAIR(1));	
       
       wattroff(status_win,A_BOLD);
       mvwprintw(status_win,13+(4*x),2+fDAQStatus->Slaves[x].name.size()+1," ");	
-      string numnodes = "Num. boards: "; numnodes+=XeDAQHelper::IntToString(fDAQStatus->Slaves[x].nBoards);
+      string numnodes = "Num. boards: "; 
+      numnodes+=koHelper::IntToString(fDAQStatus->Slaves[x].nBoards);
       mvwprintw(status_win,13+(4*x)+1,2+fDAQStatus->Slaves[x].name.size()+6,"Rate:     %2.2f MB/s",
 		fDAQStatus->Slaves[x].Rate);
       mvwprintw(status_win,13+(4*x)+2,2+fDAQStatus->Slaves[x].name.size()+6,"Boards:   %1i",
@@ -618,48 +639,15 @@ int XeCursesInterface::SidebarRefresh()
    return 0;
 }
 
-/*string XeCursesInterface::EnterName()
-{
-   wclear(main_win);
-   wbkgd(main_win,COLOR_PAIR(4));   
-   wattron(main_win,A_BOLD);
-   mvwprintw(main_win,4,3,"Name for run log:");
-   wattroff(main_win,A_BOLD);
-   string name;
-   bool getout=false;
-   while(!getout)  {
-      int c=wgetch(main_win);
-      switch(c)	{
-       case 10: getout=true; 
-	 break;
-       case KEY_BACKSPACE:
-       case 127:
-	 if(name.size()>0)
-	   name.erase(name.end()-1);
-	 wclear(main_win);
-	 wattron(main_win,A_BOLD);
-	 mvwprintw(main_win,4,3,"Name for run log:");
-	 wattroff(main_win,A_BOLD);
-	 mvwprintw(main_win,4,21,name.c_str());	 	 
-	 break;	 
-       default:
-	 name.push_back((char)c);
-	 mvwprintw(main_win,4,21,name.c_str());
-	 break;
-      }           
-   }
-   return name;
-   
-}*/
 
-int XeCursesInterface::PasswordPrompt()
+int NCursesUI::PasswordPrompt()
 {
-   string password = BroadcastMessage("root",42,true);
-   if(password[0]!='f' || XeDAQHelper::EasyPassHash(password)!=955) return -1;
+   string password = EnterMessage("root",42,true);
+   if(password[0]!='f' || koHelper::EasyPassHash(password)!=955) return -1;
    return 0;
 }
 
-string XeCursesInterface::BroadcastMessage(string user, int UID, bool pw)
+string NCursesUI::EnterMessage(string user, int UID, bool pw)
 {
    wclear(main_win);
    wbkgd(main_win,COLOR_PAIR(4));
@@ -733,7 +721,7 @@ string XeCursesInterface::BroadcastMessage(string user, int UID, bool pw)
    
 }
 
-string XeCursesInterface::DropDownMenu(vector <string> RMLabels, string title)
+string NCursesUI::DropDownMenu(vector <string> RMLabels, string title)
 {   
    wclear(main_win);
 //   box(main_win, 0 , 0);
@@ -808,8 +796,8 @@ string XeCursesInterface::DropDownMenu(vector <string> RMLabels, string title)
    return rVal;
 }
 
-WINDOW* XeCursesInterface::create_newwin(int height, int width, 
-					 int starty, int startx)
+WINDOW* NCursesUI::create_newwin(int height, int width, 
+				 int starty, int startx)
 {   
    WINDOW *local_win;
    local_win = newwin(height, width, starty, startx);

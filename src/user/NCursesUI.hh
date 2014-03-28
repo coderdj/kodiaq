@@ -29,16 +29,16 @@
 using namespace std;
 
 //
-// Struct :     MainMenu_t
+// Struct     : MainMenu_t
 // Desciption : Holds all options to be drawn in a user menu.
 //              The item IDs should be the key the user has to 
 //              press to select that option.
 //              
-typedef struct MainMenu_t {
+struct MainMenu_t {
    string          TitleString;
    vector <string> MenuItemStrings;
    vector <string> MenuItemIDs;
-}
+};
 
 
 class NCursesUI
@@ -99,32 +99,58 @@ class NCursesUI
    // 
    int          PrintNotify(string message,int priority=1, 
 			    bool print=true, bool hasdate=false);
-   int NotificationsScroll(bool up);
-   void DrawNotifications(unsigned int lower,unsigned int upper);
-   void SetHistory(vector<string> history);
-   int GetLoginInfo(string &name, int &port, int &dataport,string &hostname,string UIMessage);
+   //
+   // Name    : NotificationsScroll
+   // Purpose : Scroll the notifications window up (up==true) or down (up==false)
+   // 
+   int          NotificationsScroll(bool up);
+   //
+   // Name    : DrawNotifications
+   // Purpose : Draw the notifications window with lower and upper bounds defined.
+   // 
+   void         DrawNotifications(unsigned int lower,unsigned int upper);
+   //
+   // Name    : SetHistory
+   // Purpose : Set the messages buffer with a string vector
+   // 
+   void         SetHistory(vector<string> history);
+   //
+   //
+   // Name    : GetLoginInfo
+   // Purpose : This is the start screen that defines the connection to the master.
+   //           The user can input a name as well as the connection info.
+   // 
+   int GetLoginInfo(string &name, int &port, int &dataport,
+		    string &hostname,string UIMessage);
+   //
    
    
-   
-   
-   void Update()  {
-      doupdate();
+   //
+   // Name    : Update
+   // Purpose : Update the display (refresh)
+   // 
+   void         Update()  {
+                  doupdate();
    };
-   void Close(){
-      endwin();
+   //
+   // Name    : Close
+   // Purpose : Close the ncurse display. Should return the terminal to normal
+   // 
+   void         Close(){
+                  endwin();
    };   
+   
  private:
    bool bInitialized;
    WINDOW *main_win, *status_win, *notify_win, *title_win;
    WINDOW *create_newwin(int height, int width, int starty, int startx);
    
-//   map <string,string> fRunModes;
    vector <string> fNotifications;
    vector <int> fNotificationPriorities;
-   XeStatusPacket_t *fDAQStatus;
-   XeRunInfo_t *fRunInfo;
+   koStatusPacket_t *fDAQStatus;
+   koRunInfo_t *fRunInfo;
    int fBlockCount;
    unsigned int fNotificationLower,fNotificationUpper;
-   XeDAQLogger *fLog;
+   koLogger *fLog;
 };
 #endif

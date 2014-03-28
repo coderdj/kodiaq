@@ -1,10 +1,10 @@
 // ****************************************************
 // 
-// kodiaq DAQ Software for XENON1T
+// kodiaq Data Acquisition Software
 // 
+// File    : MasterMongodbConnection.cc
 // Author  : Daniel Coderre, LHEP, Universitaet Bern
 // Date    : 05.03.2014
-// File    : MasterMongodbConnection.cc
 // 
 // Brief   : Facilitates connection between master and
 //           mongodb database in order to update general
@@ -20,7 +20,7 @@ MasterMongodbConnection::MasterMongodbConnection()
    fLastDocOID.clear();
 }
 
-MasterMongodbConnection::MasterMongodbConnection(XeDAQLogger *Log)
+MasterMongodbConnection::MasterMongodbConnection(koLogger *Log)
 {
    fLog=Log;
    fLastDocOID.clear();
@@ -30,7 +30,8 @@ MasterMongodbConnection::~MasterMongodbConnection()
 {
 }
 
-int MasterMongodbConnection::Initialize(string user, string runMode, XeDAQOptions *options)
+int MasterMongodbConnection::Initialize(string user, string runMode, 
+					koOptions *options)
 {
    fMongoOptions = options->GetMongoOptions();
    
@@ -78,8 +79,6 @@ int MasterMongodbConnection::Initialize(string user, string runMode, XeDAQOption
    mongo::BSONElement OIDElement;
    bObj.getObjectID(OIDElement);
    fLastDocOID=OIDElement.__oid();
-//   if(!bObj.getObjectID(fLastDocOID) && fLog!=NULL)
-//     fLog->Error("MasterMongodbConnection::Initialize - Error getting OID of last insert.");
    return 0;   
 }
 

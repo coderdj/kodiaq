@@ -17,16 +17,16 @@
 /* #undef HAVE_LIBEXPECT */
 
 /* Define to 1 if you have the `form' library (-lform). */
-/* #undef HAVE_LIBFORM */
+#define HAVE_LIBFORM 1
 
 /* Define to 1 if you have the `menu' library (-lmenu). */
-/* #undef HAVE_LIBMENU */
+#define HAVE_LIBMENU 1
 
 /* Define to 1 if you have the `mongoclient' library (-lmongoclient). */
 /* #undef HAVE_LIBMONGOCLIENT */
 
 /* Define to 1 if you have the `ncurses' library (-lncurses). */
-/* #undef HAVE_LIBNCURSES */
+#define HAVE_LIBNCURSES 1
 
 /* Define to 1 if you have the `pthread' library (-lpthread). */
 /* #undef HAVE_LIBPTHREAD */
@@ -38,7 +38,7 @@
 /* #undef HAVE_LIBTCL8_5 */
 
 /* Define to 1 if you have the `tinfo' library (-ltinfo). */
-/* #undef HAVE_LIBTINFO */
+#define HAVE_LIBTINFO 1
 
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
@@ -108,4 +108,4 @@
 /* #undef WITH_SLAVE */
 
 /* Compile user interface */
-/* #undef WITH_USER */
+#define WITH_USER /**/

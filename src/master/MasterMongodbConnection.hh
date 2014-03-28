@@ -3,11 +3,11 @@
 
 // ****************************************************
 // 
-// kodiaq DAQ Software for XENON1T
+// kodiaq Data Acquisition Software
 // 
+// File    : MasterMongodbConnection.hh
 // Author  : Daniel Coderre, LHEP, Universitaet Bern
 // Date    : 05.03.2014
-// File    : MasterMongodbConnection.hh
 // 
 // Brief   : Facilitates connection between master and
 //           mongodb database in order to update general
@@ -15,27 +15,38 @@
 // 
 // ****************************************************
 
+#include <koOptions.hh>
+#include <koLogger.hh>
 #include "mongo/client/dbclient.h"
-#include "XeDAQOptions.hh"
-#include "XeDAQLogger.hh"
 
 class MasterMongodbConnection
 {
+
  public: 
-   MasterMongodbConnection();
-   explicit MasterMongodbConnection(XeDAQLogger *Log);
-   virtual ~MasterMongodbConnection();
    
-   int      Initialize(string user, string runMode, XeDAQOptions *options);  
-                          // Tries to connect to db, 0 on success, -1 on failure
-   int      UpdateEndTime();
-                          // Set run end time on DB
+                MasterMongodbConnection();
+   explicit     MasterMongodbConnection(XeDAQLogger *Log);
+   virtual     ~MasterMongodbConnection();
+   
+   // 
+   // Name    : Initialize
+   // Purpose : Initialize the mongodb connection according to the 
+   //           information in the koOptions object
+   // 
+   int          Initialize(string user, string runMode, koOptions *options);
+   //
+   // Name    : UpdateEndTime
+   // Purpose : Updates run control document with the time the run ended.
+   //           Since this field is created by this function this can also be 
+   //           seen as confirmation from the DAQ that the user stopped the run.
+   int          UpdateEndTime();
+   //
       
  private:
    MongodbOptions_t           fMongoOptions;
    mongo::DBClientConnection  fMongoDB;
    mongo::OID                 fLastDocOID;
-   XeDAQLogger               *fLog;
+   koLogger                  *fLog;
 };
 
 #endif
