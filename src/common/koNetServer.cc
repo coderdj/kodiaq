@@ -1,79 +1,81 @@
 
 // ****************************************************
 // 
-// DAQ Control for XENON1T
+// kodiaq Data Acquisition Software
 // 
-// File     : XeNetServer.cc
+// File     : koNetServer.cc
 // Author   : Daniel Coderre, LHEP, Universitaet Bern
 // Date     : 22.10.2013
+// Update   : 27.03.2014
 // 
-// Brief    : Server-specific class for xenet inferface
+// Brief    : Server-specific class for koNet inferface
 // 
 // ****************************************************
 
 #include <iostream>
-#include "XeNetServer.hh"
+#include "koNetServer.hh"
 #include <errno.h>
 
-XeNetServer::XeNetServer()
+koNetServer::koNetServer()
 {
+   fPORT=2000;
+   fDATAPORT=2001;
+   fNUMCLIENTS=0;
+   m_koBroadcastLog=NULL;
+}
+
+koNetServer::~koNetServer()
+{
+}
+
+koNetServer::koNetServer(koLogger *logger, koLogger *broadcastlogger) 
+            : koNet(logger)
+{
+   m_koBroadcastLog=broadcastlogger;
    fPORT=2000;
    fDATAPORT=2001;
    fNUMCLIENTS=0;
 }
 
-XeNetServer::~XeNetServer()
-{
-}
-
-XeNetServer::XeNetServer(XeDAQLogger *logger, XeDAQLogger *broadcastlogger)
-{
-   fLog=logger;
-   fBroadcastLog=broadcastlogger;
-   fPORT=2000;
-   fDATAPORT=2001;
-   fNUMCLIENTS=0;
-}
-
-void XeNetServer::Initialize(int PORT, int DATAPORT, int NUMCLIENTS)
+void koNetServer::Initialize(int PORT, int DATAPORT, int NUMCLIENTS)
 {
    fPORT=PORT;
    fDATAPORT=DATAPORT;
    fNUMCLIENTS=NUMCLIENTS;
 }
 
-int XeNetServer::Connect()
-{   
-   for(int x=0;x<fNUMCLIENTS;x++)  {	
-      int id; 
-      string name,ip;      
-      if(AddConnection(id,name,ip)!=0)      {	     
-	 fLog->Error("XeNetServer::Connect - Could not add connection.");
-	 Disconnect();
-	 return -1;
-      }	
-   }   
-   return 0;
-}
+//int XeNetServer::Connect()
+//{   
+//   for(int x=0;x<fNUMCLIENTS;x++)  {	
+//      int id; 
+//      string name,ip;      
+//      if(AddConnection(id,name,ip)!=0)      {	     
+//	 fLog->Error("XeNetServer::Connect - Could not add connection.");
+//	 Disconnect();
+//	 return -1;
+//      }	
+//   }   
+//   return 0;
+//}
 
 
-int XeNetServer::PutUpNetwork()
+int koNetServer::PutUpNetwork()
 {
    //Check plausibility of ports
    if(fPORT<=0 || fDATAPORT<=0)  {
-      fLog->Error("XeNetServer::Connect - Bad options, check configuration.");
+      LogError("koNetServer::Connect - Bad options, check configuration.");
       return -1;
    }
    
    //Declare sockets
    fConnectionSocket = socket(AF_INET,SOCK_STREAM,0);
    if(fConnectionSocket<0)  {
-      fLog->Error("XeNetServer::Connect - bad file descriptor for main socket.");
+      LogError("koNetServer::Connect - bad file descriptor for main socket.");
       return -1;
    }   
    fConnectionDataSocket = socket(AF_INET,SOCK_STREAM,0);
    if(fConnectionDataSocket<0)  {
-      fLog->Error("XeNetServer::Connect - bad file descriptor for data socket.");
+      LogError("koNetServer::Connect - bad file descriptor for data socket.");
       close(fConnectionSocket);
       return -1;
    }
@@ -82,7 +84,7 @@ int XeNetServer::PutUpNetwork()
    #ifdef SO_REUSEPORT
    if(setsockopt(fConnectionSocket,SOL_SOCKET,SO_REUSEPORT,&a,sizeof(int))<0 ||
       setsockopt(fConnectionDataSocket,SOL_SOCKET,SO_REUSEPORT,&a,sizeof(int))<0)  {
-      fLog->Error("XeNetServer::Connect - failed to set REUSEPORT.");
+      LogError("koNetServer::Connect - failed to set REUSEPORT.");
       close(fConnectionSocket);
       close(fConnectionDataSocket);
       return -1;
@@ -90,7 +92,7 @@ int XeNetServer::PutUpNetwork()
    #endif
    if(setsockopt(fConnectionSocket,SOL_SOCKET,SO_REUSEADDR,&a,sizeof(int))<0 ||
       setsockopt(fConnectionDataSocket,SOL_SOCKET,SO_REUSEADDR,&a,sizeof(int))<0)  {
-      fLog->Error("XeNetServer::Connect - failed to set REUSEADDR.");
+      LogError("koNetServer::Connect - failed to set REUSEADDR.");
       close(fConnectionSocket);
       close(fConnectionDataSocket);
       return -1;
@@ -110,30 +112,29 @@ int XeNetServer::PutUpNetwork()
    
    //bind sockets
    if(bind(fConnectionSocket,(struct sockaddr*)&server_addr,sizeof(server_addr))<0)  {
-      fLog->Error("XeNetServer::Connect - error binding main socket.");
+      LogError("koNetServer::Connect - error binding main socket.");
       close(fConnectionSocket);
       close(fConnectionDataSocket);
       return -1;
    }
    if(bind(fConnectionDataSocket,(struct sockaddr*)&dataserver_addr,sizeof(dataserver_addr))<0)    {
-      fLog->Error("XeNetServer::Connect - error binding data socket");
+      LogError("koNetServer::Connect - error binding data socket");
       close(fConnectionSocket);
       close(fConnectionDataSocket);
       return -1;
    }
    listen(fConnectionSocket,5);
-   cout<<fConnectionDataSocket<<endl;
    return 0;
 }
 
-int XeNetServer::TakeDownNetwork()
+int koNetServer::TakeDownNetwork()
 {
    close(fConnectionSocket);
    close(fConnectionDataSocket);
    return 0;
 }
 
-int XeNetServer::AddConnection(int &rid, string &rname,string &rIP)
+int koNetServer::AddConnection(int &rid, string &rname,string &rIP)
 {   
    //Listen for connections
    struct sockaddr_in client_addr, dataclient_addr;
@@ -141,7 +142,8 @@ int XeNetServer::AddConnection(int &rid, string &rname,string &rIP)
    unsigned int dataclientSize = sizeof(dataclient_addr);
 
    if(MessageOnPipe(fConnectionSocket)!=0) return -1;
-   int opensocket = accept(fConnectionSocket,(struct sockaddr*)&client_addr,&clientSize);
+   int opensocket = accept(fConnectionSocket,(struct sockaddr*)&client_addr,
+			   &clientSize);
    int wait=0;
    listen(fConnectionDataSocket,1);
    while(MessageOnPipe(fConnectionDataSocket)!=0)  {
@@ -153,11 +155,13 @@ int XeNetServer::AddConnection(int &rid, string &rname,string &rIP)
       }      
    }
    
-   int opendatasocket = accept(fConnectionDataSocket,(struct sockaddr*)&dataclient_addr,&dataclientSize);
+   int opendatasocket = accept(fConnectionDataSocket,
+			       (struct sockaddr*)&dataclient_addr,
+			       &dataclientSize);
    
    if(opensocket<0 || opendatasocket<0)	{
       stringstream mess;
-      fLog->Error("XeNetServer::Connect - failed to accept incoming connections.");
+      LogError("koNetServer::Connect - failed to accept incoming connections.");
       close(opensocket);
       close(opendatasocket);
       return -1;
@@ -165,7 +169,7 @@ int XeNetServer::AddConnection(int &rid, string &rname,string &rIP)
       
    int ID,DID;
    if(ReceiveInt(opensocket,ID)!=0 || ReceiveInt(opendatasocket,DID)!=0)	{
-      fLog->Error("XeNetServer::Connect - failed to fetch client IDs");
+      LogError("koNetServer::Connect - failed to fetch client IDs");
       close(opensocket);
       close(opendatasocket);
       return -1;
@@ -187,7 +191,7 @@ int XeNetServer::AddConnection(int &rid, string &rname,string &rIP)
 	 }	 
       }
       if(SendInt(opensocket,tryid)!=0 || SendInt(opendatasocket,tryid)!=0)	{
-	 fLog->Error("XeNetServer::Connect - failed to distribute ID to client.");
+	 LogError("koNetServer::Connect - failed to distribute ID to client.");
 	 return -1;
       }
       ID=DID=tryid;      
@@ -195,38 +199,38 @@ int XeNetServer::AddConnection(int &rid, string &rname,string &rIP)
    
    string name,dname;
    if(ReceiveString(opensocket,name)!=0 || ReceiveString(opendatasocket,dname)!=0)	{
-      fLog->Error("XeNetServer::Connect - failed to fetch client names.");
+      LogError("koNetServer::Connect - failed to fetch client names.");
       close(opensocket);
       close(opendatasocket);
       return -1;
    }
 
    //Set socket object information
-   XeSocket_t XeS,XeDS;
-   XeS.socket=opensocket;
-   XeDS.socket=opendatasocket;
-   XeS.name  = name;
-   XeDS.name = dname;
-   XeS.id=ID;
-   XeDS.id=DID;
-   XeS.loginTime  = XeDAQLogger::GetCurrentTime();
-   XeDS.loginTime = XeDAQLogger::GetCurrentTime();
+   koSocket_t koS,koDS;
+   koS.socket=opensocket;
+   koDS.socket=opendatasocket;
+   koS.name  = name;
+   koDS.name = dname;
+   koS.id=ID;
+   koDS.id=DID;
+   koS.loginTime  = koLogger::GetCurrentTime();
+   koDS.loginTime = koLogger::GetCurrentTime();
    
    //Get IP address of client
    char ipstr[INET_ADDRSTRLEN];
    inet_ntop(AF_INET,&(client_addr.sin_addr), ipstr, INET_ADDRSTRLEN);
-   XeS.ip.assign(ipstr);
-   XeDS.ip.assign(ipstr);
-   fSockets.push_back(XeS);
-   fDataSockets.push_back(XeDS);
+   koS.ip.assign(ipstr);
+   koDS.ip.assign(ipstr);
+   fSockets.push_back(koS);
+   fDataSockets.push_back(koDS);
    
-   rIP=XeDS.ip;
+   rIP=koDS.ip;
    rid=ID;
    rname=name;
    return 0;      
 }
 
-int XeNetServer::Disconnect()
+int koNetServer::Disconnect()
 {
    for(unsigned int x=0;x<fSockets.size();x++)
      close(fSockets[x].socket);
@@ -238,10 +242,10 @@ int XeNetServer::Disconnect()
    return 0;
 }
 
-int XeNetServer::CloseConnection(int id, string name)
+int koNetServer::CloseConnection(int id, string name)
 {
    if(id==-1 && name=="")  {
-      fLog->Error("XeNetServer::CloseConnection - told to close a connection without id/name.");
+      LogError("koNetServer::CloseConnection - told to close a connection without id/name.");
       return -1;
    }
    
@@ -254,7 +258,7 @@ int XeNetServer::CloseConnection(int id, string name)
       }      
    }
    if(!sockClosed)  {
-      fLog->Error("XeNetServer::CloseConnection - failed to find socket to close.");
+      LogError("koNetServer::CloseConnection - failed to find socket to close.");
       return -1;
    }   
    for(unsigned int x=0;x<fDataSockets.size();x++)  {
@@ -265,17 +269,17 @@ int XeNetServer::CloseConnection(int id, string name)
       }      
    }
    if(!dataSockClosed)  {
-      fLog->Error("XeNetServer::CloseConnection - failed to find data socket to close");
+      LogError("koNetServer::CloseConnection - failed to find data socket to close");
       return -1;
    }
    stringstream message;
-   if(id!=-1) message<<"XeNetServer::CloseConnection - closed connection with id "<<id;
-   else message<<"XeNetServer::CloseConnection - closed connection with name "<<name;
-   fLog->Message(message.str());
+   if(id!=-1) message<<"koNetServer::CloseConnection - closed connection with id "<<id;
+   else message<<"koNetServer::CloseConnection - closed connection with name "<<name;
+   LogMessage(message.str());
    return 0;      
 }
 
-int XeNetServer::WatchDataPipe(XeStatusPacket_t &status)
+int koNetServer::WatchDataPipe(koStatusPacket_t &status)
 //Watch the data pipe and update the status while updates and messages come in
 //decide the overall status of the DAQ by adding up the status of each slave
 {
@@ -285,11 +289,11 @@ int XeNetServer::WatchDataPipe(XeStatusPacket_t &status)
 	retval=0;
    }
    if(retval==0)
-     XeDAQHelper::ProcessStatus(status);
+     koHelper::ProcessStatus(status);
    return retval;
 }
 
-int XeNetServer::BroadcastMessage(string message, int priority, int UI)
+int koNetServer::BroadcastMessage(string message, int priority, int UI)
 {
    for(unsigned int x=0;x<fDataSockets.size();x++)  {
       if(UI!=-1 && UI!=fDataSockets[x].id) continue;
@@ -297,26 +301,26 @@ int XeNetServer::BroadcastMessage(string message, int priority, int UI)
 	 CloseConnection(fDataSockets[x].id);
       }
    }      
-   if(UI==-1)
-     fBroadcastLog->SaveBroadcast(message,priority);
+   if(UI==-1 && m_koBroadcastLog!=NULL)
+     m_koBroadcastLog->SaveBroadcast(message,priority);
    return 0; //no chance of failure. If a socket doesn't respond it gets closed   
 }
 
-int XeNetServer::SendCommand(string command)
+int koNetServer::SendCommand(string command)
 {
    int retval=0;
    for(unsigned int x=0;x<fSockets.size();x++)  {
       if(SendCommandToSocket(fSockets[x].socket,command,-1,"master")!=0){
 	 stringstream err;
-	 err<<"XeNetServer::SendCommand - error sending command "<<command<<" from master to socket "<<fSockets[x].id;
-	 fLog->Error(err.str());
+	 err<<"koNetServer::SendCommand - error sending command "<<command<<" from master to socket "<<fSockets[x].id;
+	 LogError(err.str());
 	 retval=-1;
       }      
    }
    return retval;   
 }
 
-int XeNetServer::ListenForCommand(string &command,int &id, string &sender)
+int koNetServer::ListenForCommand(string &command,int &id, string &sender)
 {
    for(unsigned int x=0;x<fSockets.size();x++)  {
       int a;
@@ -330,7 +334,7 @@ int XeNetServer::ListenForCommand(string &command,int &id, string &sender)
    return -1;   
 }
 
-int XeNetServer::SendFilePartial(int id, string filepath)
+int koNetServer::SendFilePartial(int id, string filepath)
 {
    string temp;
    int socket=-1;
@@ -338,7 +342,7 @@ int XeNetServer::SendFilePartial(int id, string filepath)
       if(fSockets[x].id==id) socket=fSockets[x].socket;
    }
    if(socket==-1)  {
-      fLog->Error("XeNetServer::SendFilePartial - id not found.");
+      LogError("koNetServer::SendFilePartial - id not found.");
       return -1;
    }   
    
@@ -347,24 +351,24 @@ int XeNetServer::SendFilePartial(int id, string filepath)
       sleep(1);
       timer++;
       if(timer==10){	   
-	 fLog->Error("XeNetServer::SendFilePartial - No message on pipe.");
+	 LogError("koNetServer::SendFilePartial - No message on pipe.");
 	 return -1;
       }      
    }   
    if(ReceiveString(socket,temp)!=0 || temp!="HISTORY") {
-      fLog->Error("XeNetServer::SendFilePartial - No or incorrect header received.");
+      LogError("koNetServer::SendFilePartial - No or incorrect header received.");
       return -1;
    }   
    int nLines=-1;
    if(ReceiveInt(socket,nLines)!=0 || nLines<0) {
-      fLog->Error("XeNetServer::SendFilePartial - No or incorrect line count received.");
+      LogError("koNetServer::SendFilePartial - No or incorrect line count received.");
       return -1;
    }   
    vector <string> fileBuff;
    ifstream infile;
    infile.open(filepath.c_str());
    if(!infile) {
-      fLog->Error("XeNetServer::SendFilePartial - no file found.");
+      LogError("koNetServer::SendFilePartial - no file found.");
       return -1;
    }   
    while(!infile.eof())  {
@@ -376,19 +380,19 @@ int XeNetServer::SendFilePartial(int id, string filepath)
    //if(fileBuff.size()==0) return -1;
    for(unsigned int x=0;x<fileBuff.size();x++){	
       if(SendString(socket,fileBuff[x])!=0) {
-	 fLog->Error("XeNetServer::SendFilePartial - Error sending line of file.");
+	 LogError("koNetServer::SendFilePartial - Error sending line of file.");
 	 return -1;
       }
    }           
    if(SendString(socket,temp)!=0) {
-      fLog->Error("XeNetServer::SendFilePartial - Error sending footer.");
+      LogError("koNetServer::SendFilePartial - Error sending footer.");
       return -1;
    }   
    return 0;
    
 }
 
-int XeNetServer::SendRunInfoUI(int id, XeRunInfo_t runInfo)
+int koNetServer::SendRunInfoUI(int id, koRunInfo_t runInfo)
 {
    for(unsigned int x=0;x<fSockets.size();x++)  {
       if(fSockets[x].id==id && SendRunInfo(fSockets[x].socket,runInfo)==0)
@@ -397,7 +401,7 @@ int XeNetServer::SendRunInfoUI(int id, XeRunInfo_t runInfo)
    return -1;
 }
 
-int XeNetServer::ReceiveBroadcast(int id, string &broadcast)
+int koNetServer::ReceiveBroadcast(int id, string &broadcast)
 {
    for(unsigned int x=0;x<fSockets.size();x++)  {
       if(fSockets[x].id==id)	{
@@ -410,7 +414,7 @@ int XeNetServer::ReceiveBroadcast(int id, string &broadcast)
    return -1;
 }
 
-int XeNetServer::TransmitStatus(XeStatusPacket_t status)
+int koNetServer::TransmitStatus(koStatusPacket_t status)
 {
    int success=0;   
    vector <int> removeIDs;
@@ -446,10 +450,10 @@ int XeNetServer::TransmitStatus(XeStatusPacket_t status)
    return success;
 }
 
-int XeNetServer::GetUserList(vector <string> &stringList)
+int koNetServer::GetUserList(vector <string> &stringList)
 {  
    stringList.clear();
-   time_t currentTime = XeDAQLogger::GetCurrentTime();
+   time_t currentTime = koLogger::GetCurrentTime();
    for(unsigned int x=0;x<fSockets.size();x++)  {
       stringstream uss;     
       double tdiff = difftime(currentTime,fSockets[x].loginTime);
@@ -462,7 +466,7 @@ int XeNetServer::GetUserList(vector <string> &stringList)
    return 0;
 }
 
-int XeNetServer::SendStringList(int id, vector<string> stringList)
+int koNetServer::SendStringList(int id, vector<string> stringList)
 {
    int success=-1;
    for(unsigned int x=0;x<fSockets.size();x++)  {
@@ -478,7 +482,7 @@ int XeNetServer::SendStringList(int id, vector<string> stringList)
    return success;
 }
 
-int XeNetServer::SendOptions(string filepath)
+int koNetServer::SendOptions(string filepath)
 {
    int retval=0;
    for(unsigned int x=0;x<fSockets.size();x++)  {

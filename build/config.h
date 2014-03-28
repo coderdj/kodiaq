@@ -8,7 +8,7 @@
 #define HAVE_INTTYPES_H 1
 
 /* Define to 1 if you have the `CAENVME' library (-lCAENVME). */
-#define HAVE_LIBCAENVME 1
+/* #undef HAVE_LIBCAENVME */
 
 /* Define to 1 if you have the `DDC' library (-lDDC). */
 /* #undef HAVE_LIBDDC */
@@ -17,28 +17,28 @@
 /* #undef HAVE_LIBEXPECT */
 
 /* Define to 1 if you have the `form' library (-lform). */
-#define HAVE_LIBFORM 1
+/* #undef HAVE_LIBFORM */
 
 /* Define to 1 if you have the `menu' library (-lmenu). */
-#define HAVE_LIBMENU 1
+/* #undef HAVE_LIBMENU */
 
 /* Define to 1 if you have the `mongoclient' library (-lmongoclient). */
-#define HAVE_LIBMONGOCLIENT 1
+/* #undef HAVE_LIBMONGOCLIENT */
 
 /* Define to 1 if you have the `ncurses' library (-lncurses). */
-#define HAVE_LIBNCURSES 1
+/* #undef HAVE_LIBNCURSES */
 
 /* Define to 1 if you have the `pthread' library (-lpthread). */
-#define HAVE_LIBPTHREAD 1
+/* #undef HAVE_LIBPTHREAD */
 
 /* Define to 1 if you have the `snappy' library (-lsnappy). */
-#define HAVE_LIBSNAPPY 1
+/* #undef HAVE_LIBSNAPPY */
 
 /* Define to 1 if you have the `tcl8.5' library (-ltcl8.5). */
 /* #undef HAVE_LIBTCL8_5 */
 
 /* Define to 1 if you have the `tinfo' library (-ltinfo). */
-#define HAVE_LIBTINFO 1
+/* #undef HAVE_LIBTINFO */
 
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
@@ -65,7 +65,7 @@
 #define HAVE_UNISTD_H 1
 
 /* Compile standalone slave */
-#define KLITE 1
+/* #undef KLITE */
 
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */
@@ -108,4 +108,4 @@
 /* #undef WITH_SLAVE */
 
 /* Compile user interface */
-#define WITH_USER /**/
+/* #undef WITH_USER */

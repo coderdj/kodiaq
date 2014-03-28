@@ -1,34 +1,35 @@
 // ******************************************************
 // 
-// DAQ Control for Xenon-1t
+// kodaiq Data Acquisition Software
 // 
 // Author    : Daniel Coderre, LHEP, Universitaet Bern
 // Date      : 03.07.2013
-// File      : XeDAQHelper.cc
+// Updated   : 27.03.2014
+// File      : koHelper.cc
 // 
 // Brief     : Collection of helpful functions for use
 //             throughout the DAQ software
 //             
 // ******************************************************
-#include "XeDAQHelper.hh"
+#include "koHelper.hh"
 #include <iostream>
-XeDAQHelper::XeDAQHelper()
+koHelper::koHelper()
 {}
 
-XeDAQHelper::~XeDAQHelper()
+koHelper::~koHelper()
 {}
 
-bool XeDAQHelper::ParseMessageFull(const int pipe,vector<string> &data, 
-					  char &command)    
-{
-   char temp;
-   if(read(pipe,&temp,1)<0) return false;
-   command=temp;
-   if(!ParseMessage(pipe,data)) return false;
-   return true;
-}
+//bool koHelper::ParseMessageFull(const int pipe,vector<string> &data, 
+//					  char &command)    
+//{
+//   char temp;
+//   if(read(pipe,&temp,1)<0) return false;
+//   command=temp;
+//   if(!ParseMessage(pipe,data)) return false;
+//   return true;
+//}
 
-bool XeDAQHelper::ParseMessage(const int pipe,vector<string> &data)
+/*bool XeDAQHelper::ParseMessage(const int pipe,vector<string> &data)
 {
    char chin;
    if(read(pipe,&chin,1)<0 || chin!='!') 
@@ -48,8 +49,8 @@ bool XeDAQHelper::ParseMessage(const int pipe,vector<string> &data)
    }while(chin!='@');
    
    return true;   
-}
-
+}*/
+/*
 bool XeDAQHelper::ComposeMessage(string &message,vector <string> data,
 					char type)
 {
@@ -62,8 +63,9 @@ bool XeDAQHelper::ComposeMessage(string &message,vector <string> data,
    }
    message+=ender;
    return true;   
-}
+}*/
 
+/*
 bool XeDAQHelper::MessageOnPipe(int pipe)
 {
    struct timeval timeout; //we will define how long to listen
@@ -72,52 +74,52 @@ bool XeDAQHelper::MessageOnPipe(int pipe)
    timeout.tv_usec=0;
    FD_ZERO(&readfds);
    FD_SET(pipe,&readfds);
-   select(/*pipe+1*/FD_SETSIZE,&readfds,NULL,NULL,&timeout);
+   select(FD_SETSIZE,&readfds,NULL,NULL,&timeout);
    if(FD_ISSET(pipe,&readfds)==1) return true;
    else return false;
 //   return (FD_ISSET(pipe,&readfds));   
 }
+*/
 
-
-u_int32_t XeDAQHelper::StringToInt(const string &str)
+u_int32_t koHelper::StringToInt(const string &str)
 {
    stringstream ss(str);
    u_int32_t result;
    return ss >> result ? result : 0;
 }
 
-u_int32_t XeDAQHelper::StringToHex(const string &str)
+u_int32_t koHelper::StringToHex(const string &str)
 {
    stringstream ss(str);
    u_int32_t result;
    return ss >> std::hex >> result ? result : 0;
 }
 
-double XeDAQHelper::StringToDouble(const string &str)
+double koHelper::StringToDouble(const string &str)
 {
    stringstream ss(str);
    double result;
    return ss >> result ? result : -1.;
 }
 
-string XeDAQHelper::IntToString(const int num)
+string koHelper::IntToString(const int num)
 {
    ostringstream convert;
    convert<<num;
    return convert.str();
 }
 
-string XeDAQHelper::DoubleToString(const double num)
+string koHelper::DoubleToString(const double num)
 {
    ostringstream convert;
    convert<<num;
    return convert.str();
 }
 
-void XeDAQHelper::InitializeStatus(XeStatusPacket_t &Status)
+void koHelper::InitializeStatus(koStatusPacket_t &Status)
 {
    Status.NetworkUp=false;
-   Status.DAQState=XEDAQ_IDLE;
+   Status.DAQState=KODAQ_IDLE;
    Status.Slaves.clear();
    Status.RunMode="None";
    Status.RunModeLabel="None";
@@ -125,9 +127,9 @@ void XeDAQHelper::InitializeStatus(XeStatusPacket_t &Status)
    return;
 }
 
-string XeDAQHelper::GetRunNumber()
+string koHelper::GetRunNumber()
 {
-   time_t now = XeDAQLogger::GetCurrentTime();
+   time_t now = koLogger::GetCurrentTime();
    struct tm *timeinfo;
    char idstring[25];
    
@@ -137,9 +139,9 @@ string XeDAQHelper::GetRunNumber()
    return retstring;
 }
 
-int XeDAQHelper::CurrentTimeInt()
+int koHelper::CurrentTimeInt()
 {
-   time_t now = XeDAQLogger::GetCurrentTime();
+   time_t now = koLogger::GetCurrentTime();
    struct tm *timeinfo;
    timeinfo = localtime(&now);
    char yrmdhr[10];
@@ -148,31 +150,31 @@ int XeDAQHelper::CurrentTimeInt()
    return StringToInt(timestring);
 }
 
-void XeDAQHelper::InitializeNode(XeNode_t &node)
+void koHelper::InitializeNode(koNode_t &node)
 {
    node.status=node.ID=node.nBoards=0;
    node.Rate=node.Freq=0.;
    node.name="";
-   node.lastUpdate=XeDAQLogger::GetCurrentTime();
+   node.lastUpdate=koLogger::GetCurrentTime();
 }
 
-void XeDAQHelper::ProcessStatus(XeStatusPacket_t &Status)
+void koHelper::ProcessStatus(koStatusPacket_t &Status)
 {
-   Status.DAQState=XEDAQ_IDLE;
+   Status.DAQState=KODAQ_IDLE;
    unsigned int nArmed=0,nRunning=0, nIdle=0;
    for(unsigned int x=0;x<Status.Slaves.size();x++)  {
-      if(Status.Slaves[x].status==XEDAQ_ARMED) nArmed++;
-      if(Status.Slaves[x].status==XEDAQ_RUNNING) nRunning++;
-      if(Status.Slaves[x].status==XEDAQ_IDLE) nIdle++;
+      if(Status.Slaves[x].status==KODAQ_ARMED) nArmed++;
+      if(Status.Slaves[x].status==KODAQ_RUNNING) nRunning++;
+      if(Status.Slaves[x].status==KODAQ_IDLE) nIdle++;
    }
-   if(nRunning==Status.Slaves.size() && Status.Slaves.size()!=0) Status.DAQState=XEDAQ_RUNNING;
-   if(nArmed==Status.Slaves.size() && Status.Slaves.size()!=0) Status.DAQState=XEDAQ_ARMED;
-   if(nIdle == Status.Slaves.size() && Status.Slaves.size()!=0) Status.DAQState=XEDAQ_IDLE;
-   else if(Status.Slaves.size()!=0 && Status.DAQState==XEDAQ_IDLE) Status.DAQState=XEDAQ_MIXED;
+   if(nRunning==Status.Slaves.size() && Status.Slaves.size()!=0) Status.DAQState=KODAQ_RUNNING;
+   if(nArmed==Status.Slaves.size() && Status.Slaves.size()!=0) Status.DAQState=KODAQ_ARMED;
+   if(nIdle == Status.Slaves.size() && Status.Slaves.size()!=0) Status.DAQState=KODAQ_IDLE;
+   else if(Status.Slaves.size()!=0 && Status.DAQState==KODAQ_IDLE) Status.DAQState=KODAQ_MIXED;
    return;
 }
 
-int XeDAQHelper::InitializeRunInfo(XeRunInfo_t &fRunInfo)
+int koHelper::InitializeRunInfo(koRunInfo_t &fRunInfo)
 {
    ifstream infile;
    infile.open(fRunInfo.RunInfoPath.c_str());
@@ -190,7 +192,7 @@ int XeDAQHelper::InitializeRunInfo(XeRunInfo_t &fRunInfo)
    return 0;
 }
 
-string XeDAQHelper::MakeDBName(XeRunInfo_t RunInfo, string CollectionName)
+string koHelper::MakeDBName(koRunInfo_t RunInfo, string CollectionName)
 {
    std::size_t pos;
    pos=CollectionName.find_first_of(".",0);
@@ -200,21 +202,21 @@ string XeDAQHelper::MakeDBName(XeRunInfo_t RunInfo, string CollectionName)
    return retstring;
 }
 
-int XeDAQHelper::UpdateRunInfo(XeRunInfo_t &fRunInfo, string startedby)
+int koHelper::UpdateRunInfo(koRunInfo_t &fRunInfo, string startedby)
 {
    ofstream outfile;
    outfile.open(fRunInfo.RunInfoPath.c_str());
    if(!outfile) return -1;
-   fRunInfo.RunNumber=XeDAQHelper::GetRunNumber();
+   fRunInfo.RunNumber=koHelper::GetRunNumber();
    fRunInfo.StartedBy=startedby;
-   fRunInfo.StartDate=XeDAQLogger::GetTimeString();
+   fRunInfo.StartDate=koLogger::GetTimeString();
    fRunInfo.StartDate.resize(fRunInfo.StartDate.size()-2);
    outfile<<fRunInfo.RunNumber<<endl<<fRunInfo.StartedBy<<endl<<fRunInfo.StartDate<<endl;
    outfile.close();
    return 0;
 }
 
-int XeDAQHelper::EasyPassHash(string pass)
+int koHelper::EasyPassHash(string pass)
 {
    int retVal=0;
    for(unsigned int x=0;x<pass.size();x++){

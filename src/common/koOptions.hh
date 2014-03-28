@@ -1,16 +1,17 @@
-#ifndef _XEDAQOPTIONS_HH_
-#define _XEDAQOPTIONS_HH_
+#ifndef _KOOPTIONS_HH_
+#define _KOOPTIONS_HH_
 
 // *************************************************************
-// *************************************************************
 // 
-// File     :  XeDAQOptions.hh
+// kodiaq Data Acquisition Software
+// 
+// File     :  koOptions.hh
 // Author   :  Daniel Coderre, LHEP, Universitaet Bern
-// Date     :  27.6.2013
+// Date     :  27.06.2013
+// Update   :  27.03.2014
 // 
 // Brief    :  Options handler for Xenon-1t DAQ software
 // 
-// *************************************************************
 // *************************************************************
 
 #include <vector>
@@ -18,7 +19,7 @@
 #include <fstream>
 #include <math.h>
 
-#include "XeDAQHelper.hh"
+#include "koHelper.hh"
 
 using namespace std;
 
@@ -58,7 +59,23 @@ struct RunOptions_t {
    int RunStart; //0-board internal 1-sin controlled
    int RunStartModule; //must be set if RunStart==1
    unsigned int BLTPerBulkInsert;
+   int BaselineMode;
 };
+
+/*! \brief Options for intermediate data processing
+ */
+struct ProcessingOptions_t {
+   int NumThreads;
+   int Mode;
+};
+
+/*! \brief Options for file output
+ */
+struct OutfileOptions_t{
+   string Path;
+   bool DynamicRunNames;
+};
+
 
 /*! \brief Configuration options for mongodb.
  */
@@ -67,9 +84,9 @@ struct MongodbOptions_t {
    bool DynamicRunNames;
    int  MinInsertSize;
    bool WriteConcern;
-   int  BlockSplitting;
    string DBAddress;
    string Collection;
+   int ReadoutThreshold;
 };
 
 /*! \brief Configuration options for ddc-10 FPGA module.
@@ -89,14 +106,13 @@ struct DDC10Options_t{
  
     This class automatically reads, parses, and stores the information in an options file. Various functions allow access to this information. This class can be used throughout the program but it most imprortant for the slave PCs.
  */
-class XeDAQOptions
+class koOptions
 {
  public:
-   XeDAQOptions();
-   virtual ~XeDAQOptions();
+   koOptions();
+   virtual ~koOptions();
    
    int ReadParameterFile(string filename);                         /*!< Read options for slave modules. */
-   int ReadFileMaster(string filename);                            /*!< Read options for master module. */
    static int ProcessLine(string line,string option,int &ret);   
    static int ProcessLineHex(string line,string option, int &ret);
    
@@ -126,21 +142,13 @@ class XeDAQOptions
    };
    MongodbOptions_t GetMongoOptions(){
       return fMongoOptions;
+   };         
+   ProcessingOptions_t GetProcessingOptions()  {
+      return fProcessingOptions;
+   };
+   OutfileOptions_t GetOutfileOptions()  {
+      return fOutfileOptions;
    };   
-   
-   int GetWriteMode()  {
-      return fWriteMode;
-   };
-   
-   int GetProcessingThreads()  {
-      return fProcessingThreads;
-   };
-   int GetBaselineMode(){
-      return fBaselineMode;
-   };   
-   int GetReadoutThreshold()  {
-      return fReadoutThreshold;
-   };
    DDC10Options_t GetVetoOptions()  {
       return fDDC10Options;
    };
@@ -163,14 +171,14 @@ class XeDAQOptions
    vector<BoardDefinition_t> fBoards;
    vector<VMEOption_t>       fVMEOptions;
    vector<int>               vSumModules;
+   
    RunOptions_t              fRunOptions;
    MongodbOptions_t          fMongoOptions;   
    DDC10Options_t            fDDC10Options;
+   ProcessingOptions_t       fProcessingOptions;
+   OutfileOptions_t          fOutfileOptions;
+   
    string                    fRunModeID;
-   int                       fWriteMode;
-   int                       fProcessingThreads;
-   int                       fBaselineMode;
-   unsigned int              fReadoutThreshold;
    void                      Reset();
 };
 #endif

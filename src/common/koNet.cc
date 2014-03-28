@@ -1,10 +1,11 @@
 // ****************************************************
 // 
-// DAQ Control for XENON1T
+// kodiaq Data Acquisition Software
 // 
-// File     : XeNet.cc
+// File     : koNet.cc
 // Author   : Daniel Coderre, LHEP, Universitaet Bern
 // Date     : 14.10.2013
+// Updated  : 27.03.2014
 // 
 // Brief    : General Network Interface for the DAQ
 // 
@@ -12,31 +13,43 @@
 
 #include <math.h>
 #include <netinet/in.h>
-#include "XeNet.hh"
+#include "koNet.hh"
 
-XeNet::XeNet()
+koNet::koNet()
+{
+   m_koLog=NULL;
+}
+
+koNet::~koNet()
 {
 }
 
-XeNet::~XeNet()
+koNet::koNet(koLogger *fLogger)
 {
+   m_koLog=fLogger;
 }
 
-XeNet::XeNet(XeDAQLogger *fLogger)
+void koNet::LogError(string error)
 {
-   fLog=fLogger;
+   if(m_koLog!=NULL)
+     m_koLog->Error(error);
+}
+void koNet::LogMessage(string message)
+{
+   if(m_koLog!=NULL)
+     m_koLog->Message(message);
 }
 
-int XeNet::SendChar(int socket, char buff)
+int koNet::SendChar(int socket, char buff)
 {
    return send(socket,&buff,1,MSG_NOSIGNAL);
 }
-int XeNet::ReceiveChar(int socket, char &buff)
+int koNet::ReceiveChar(int socket, char &buff)
 {
    return recv(socket,&buff,1,0);
 }
 
-int XeNet::SendString(int socket, string buff)
+int koNet::SendString(int socket, string buff)
 //0-success, -1 failure
 {
    int retval=0;
@@ -48,7 +61,7 @@ int XeNet::SendString(int socket, string buff)
    if(SendChar(socket,end)<=0) retval=-1;
    return retval;      
 }
-int XeNet::ReceiveString(int socket,string &buff)
+int koNet::ReceiveString(int socket,string &buff)
 {
    string retstring="";
    bool end=false;
@@ -67,17 +80,16 @@ int XeNet::ReceiveString(int socket,string &buff)
 	 return -1; //crazy loop
       }      
    }
-//   if(retstring.size()==0) return -1;
    buff=retstring;
    return 0;
 }
 
-int XeNet::SendFile(int socket, int id, string filepath)
+int koNet::SendFile(int socket, int id, string filepath)
 {
    ifstream infile;
    infile.open(filepath.c_str());
    if(!infile) {
-      fLog->Error("XeNet::SendFile - failed to open file. Check path.");
+      LogError("koNet::SendFile - failed to open file. Check path.");
       return -1;
    }
    string line;
@@ -91,31 +103,31 @@ int XeNet::SendFile(int socket, int id, string filepath)
 	   continue;
       }      
       if(SendString(socket,line)<0)	{
-	 fLog->Error("XeNet::SendFile - error sending file line.");
+	 LogError("koNet::SendFile - error sending file line.");
 	 return -1;
       }            
    }
    infile.close();
    string end = "@";
    if(SendString(socket,end)!=0)  {
-      fLog->Error("XeNet::SendFile - error sending file ender. Data probably mangled.");
+      LogError("koNet::SendFile - error sending file ender. Data probably mangled.");
       return -1;
    }
    
    //Remote connection will return if he got the file
    if(ReceiveAck(socket)!=0)  {
-      fLog->Error("XeNet::SendFile - file sent but no acknowledgement received.");
+      LogError("koNet::SendFile - file sent but no acknowledgement received.");
       return -1;
    }
    return 0;   
 }
 
-int XeNet::ReceiveFile(int socket, string path)
+int koNet::ReceiveFile(int socket, string path)
 {
    ofstream outfile;
    outfile.open(path.c_str());
    if(!outfile)  {
-      fLog->Error("XeNet::ReceiveFile - failed to open file. Check path.");
+      LogError("koNet::ReceiveFile - failed to open file. Check path.");
       string s="b";
       while(s!="@") //dump file
 	if(ReceiveString(socket,s)!=0) return -1;
@@ -124,7 +136,7 @@ int XeNet::ReceiveFile(int socket, string path)
    string line="line";
    while(line!="@")  {
       if(ReceiveString(socket,line)!=0)	{
-	 fLog->Error("XeNet::ReceiveFile - failed to get line. Check connection.");
+	 LogError("koNet::ReceiveFile - failed to get line. Check connection.");
 	 int x=-1;
 	 while(x!=0 &&x!=-2)
 	   x=ReceiveAck(socket);
@@ -134,13 +146,13 @@ int XeNet::ReceiveFile(int socket, string path)
    }
    outfile.close();
    if(SendAck(socket)!=0) {
-      fLog->Error("XeNet::ReceiveFile - error sending acknowledgement.");
+      LogError("koNet::ReceiveFile - error sending acknowledgement.");
       return -1;
    }   
    return 0;
 }
 
-int XeNet::SendAck(int socket)
+int koNet::SendAck(int socket)
 {
    int retval=0;
    char c='y';
@@ -151,7 +163,7 @@ int XeNet::SendAck(int socket)
    return -1;
 }
 
-int XeNet::ReceiveAck(int socket)
+int koNet::ReceiveAck(int socket)
 {
    int retval=0;
    char c='a';
@@ -164,25 +176,25 @@ int XeNet::ReceiveAck(int socket)
    return 0;
 }
 
-int XeNet::SendInt(int socket, int buff)
+int koNet::SendInt(int socket, int buff)
 {
    for(unsigned int t=0;t<sizeof(int);t++)  {
       char sChar = (char)((buff>>(t*8))&0xFF);
       if(SendChar(socket,sChar)<=0) {
-	 fLog->Error("XeNet::SendInt - error sending byte of int.");
+	 LogError("koNet::SendInt - error sending byte of int.");
 	 return -1;
       }      
    }
    return 0;
 }
 
-int XeNet::ReceiveInt(int socket, int &buff)
+int koNet::ReceiveInt(int socket, int &buff)
 {
    int retInt = 0; 
    for(unsigned int t=0;t<sizeof(int);t++)  {     
       char rChar;
       if(ReceiveChar(socket,rChar)<=0)	{
-	 fLog->Error("XeNet::ReceiveInt - error receiving byte of int.");
+	 LogError("koNet::ReceiveInt - error receiving byte of int.");
 	 return -1;
       }      
 //      stringstream stream;
@@ -192,27 +204,27 @@ int XeNet::ReceiveInt(int socket, int &buff)
    return 0;   
 }
 
-int XeNet::SendDouble(int socket, double buff)
+int koNet::SendDouble(int socket, double buff)
 {
-   if(SendString(socket,XeDAQHelper::DoubleToString(buff))!=0)  {
-      fLog->Error("XeNet::SendDouble - Error sending double.");
+   if(SendString(socket,koHelper::DoubleToString(buff))!=0)  {
+      LogError("koNet::SendDouble - Error sending double.");
       return -1;
    }
    return 0;   
 }
 
-int XeNet::ReceiveDouble(int socket, double &buff)
+int koNet::ReceiveDouble(int socket, double &buff)
 {
    string temp;
    if(ReceiveString(socket,temp)!=0)  {
-      fLog->Error("XeNet::ReceiveDouble - Error receiving double.");
+      LogError("koNet::ReceiveDouble - Error receiving double.");
       return -1;
    }
-   buff=XeDAQHelper::StringToDouble(temp);
+   buff=koHelper::StringToDouble(temp);
    return 0;   
 }
 
-int XeNet::MessageOnPipe(int pipe)
+int koNet::MessageOnPipe(int pipe)
 {
    struct timeval timeout; //we will define how long to listen
    fd_set readfds;
@@ -226,14 +238,14 @@ int XeNet::MessageOnPipe(int pipe)
    
 }
 
-int XeNet::CheckDataSocket(int socket, XeStatusPacket_t &status)
+int koNet::CheckDataSocket(int socket, koStatusPacket_t &status)
 {
    int retval=-1;
    while(MessageOnPipe(socket)==0) {
       string type;
       if((ReceiveString(socket,type))!=0)   {
-	 fLog->Error("XeNet::CheckDataSocket - Saw message on pipe but no header. Partial message follows:");
-	 fLog->Error(type);
+	 LogError("koNet::CheckDataSocket - Saw message on pipe but no header. Partial message follows:");
+	 LogError(type);
 	 return -2;
       }   
       if(type=="UPDATE")        {      
@@ -241,7 +253,7 @@ int XeNet::CheckDataSocket(int socket, XeStatusPacket_t &status)
 	 double rate,freq;
 	 string name;
 	 if(ReceiveUpdate(socket,id,name,rate,freq,nboards,stat)!=0)  {	 
-	    fLog->Error("XeNet::CheckDataSocket - Saw update on pipe but failed to fetch.");
+	    LogError("koNet::CheckDataSocket - Saw update on pipe but failed to fetch.");
 	    return -2;
 	 }	
 	 bool found=false;
@@ -253,17 +265,17 @@ int XeNet::CheckDataSocket(int socket, XeStatusPacket_t &status)
 	    status.Slaves[y].Freq=freq;
 	    status.Slaves[y].status=stat;
 	    status.Slaves[y].nBoards=nboards;
-	    status.Slaves[y].lastUpdate=XeDAQLogger::GetCurrentTime();
+	    status.Slaves[y].lastUpdate=koLogger::GetCurrentTime();
 	    retval=0;
 	 }	
 	 if(!found)    {
-	    XeNode_t newnode;
+	    koNode_t newnode;
 	    newnode.name=name;
 	    newnode.Rate=rate;
 	    newnode.Freq=freq;
 	    newnode.status=stat;
 	    newnode.nBoards=nboards;
-	    newnode.lastUpdate=XeDAQLogger::GetCurrentTime();
+	    newnode.lastUpdate=koLogger::GetCurrentTime();
 	    newnode.ID=id;
 	    status.Slaves.push_back(newnode);
 	    retval=0;
@@ -273,10 +285,10 @@ int XeNet::CheckDataSocket(int socket, XeStatusPacket_t &status)
 	 string message;
 	 int code;
 	 if(ReceiveMessage(socket,message,code)!=0)  {	     
-	    fLog->Error("XeNetServer::CheckDataSocket - Saw message on pipe but failed to fetch.");
+	    LogError("koNet::CheckDataSocket - Saw message on pipe but failed to fetch.");
 	    return -2;
 	 }	
-	 XeMessage_t mess;
+	 koMessage_t mess;
 	 mess.message=message;
 	 mess.priority=code;
 	 status.Messages.push_back(mess);
@@ -285,7 +297,7 @@ int XeNet::CheckDataSocket(int socket, XeStatusPacket_t &status)
       else if(type=="RUNMODE")	{
 	 string mode;
 	 if(ReceiveRunMode(socket,mode)!=0)  {
-	    fLog->Error("XeNetServer::CheckDataSocket - Saw run mode on pipe but failed to fetch.");
+	    LogError("koNet::CheckDataSocket - Saw run mode on pipe but failed to fetch.");
 	    return -2;
 	 }
 	 status.RunMode=mode;
@@ -296,96 +308,96 @@ int XeNet::CheckDataSocket(int socket, XeStatusPacket_t &status)
    return retval;
 }
 
-int XeNet::SendRunMode(int socket, string runMode)
+int koNet::SendRunMode(int socket, string runMode)
 {
    if(SendString(socket,"RUNMODE")!=0)  {
-      fLog->Error("XeNet::SendRunMode - Error sending header.");
+      LogError("koNet::SendRunMode - Error sending header.");
       return -1;
    }
    if(SendString(socket,runMode)!=0)  {
-      fLog->Error("XeNet::SendRunMode - Error sending run mode.");
+      LogError("koNet::SendRunMode - Error sending run mode.");
       return -1;
    }
    if(SendString(socket,"@END@")!=0)  {
-      fLog->Error("XeNet::SendRunMode - Error sending footer.");
+      LogError("koNet::SendRunMode - Error sending footer.");
       return -1;
    }
    return 0;
 }
 
-int XeNet::ReceiveRunMode(int socket, string &runMode)
+int koNet::ReceiveRunMode(int socket, string &runMode)
 {
    if(ReceiveString(socket,runMode)!=0)  {
-      fLog->Error("XeNet::ReceiveRunMode - error receiving run mode string.");
+      LogError("koNet::ReceiveRunMode - error receiving run mode string.");
       return -1;
    }
    string temp;
    if(ReceiveString(socket,temp)!=0 || temp!="@END@")  {
-      fLog->Error("XeNet::ReceiveRunMode - error receiving footer.");
+      LogError("koNet::ReceiveRunMode - error receiving footer.");
       return -1;
    }   
    return 0;
 }
 
-int XeNet::ReceiveUpdate(int socket,int &id, string &name,
+int koNet::ReceiveUpdate(int socket,int &id, string &name,
 			 double &rate, double &freq, int &nBoards,int &status)
 {
    //assumption: header UPDATE has already been received by the function
    //that watches the socket
    string temp;
    if(ReceiveInt(socket,id)!=0)    {      
-      fLog->Error("XeNetServer::ReceiveUpdate - Error receiving ID.");
+      LogError("koNet::ReceiveUpdate - Error receiving ID.");
       return -1;
    }   
    if(ReceiveString(socket,name)!=0)   {	
-      fLog->Error("XeNetServer::ReceiveUpdate - Error receiving name.");
+      LogError("koNet::ReceiveUpdate - Error receiving name.");
       return -1;
    }   
    if(ReceiveInt(socket,status)!=0)    {      
-      fLog->Error("XeNetServer::ReceiveUpdate - Error receiving status.");
+      LogError("koNet::ReceiveUpdate - Error receiving status.");
       return -1;
    }   
    if(ReceiveInt(socket,nBoards)!=0)    {      
-      fLog->Error("XeNetServer::ReceiveUpdate - Error receiving nboards.");
+      LogError("koNet::ReceiveUpdate - Error receiving nboards.");
       return -1;
    }   
    if(ReceiveDouble(socket,rate)!=0)    {	
-      fLog->Error("XeNetServer::ReceiveUpdate - Error receiving rate.");
+      LogError("koNet::ReceiveUpdate - Error receiving rate.");
       return -1;
    }   
    if(ReceiveDouble(socket,freq)!=0)    {      
-      fLog->Error("XeNetServer::ReceiveUpdate - Error receiving frequency.");
+      LogError("koNet::ReceiveUpdate - Error receiving frequency.");
       return -1;
    }   
    if(ReceiveString(socket,temp)!=0 || temp!="DONE")    {	
-      fLog->Error("XeNetServer::ReceiveUpdate - Error receiving footer.");
+      LogError("koNet::ReceiveUpdate - Error receiving footer.");
       return -1;
    }   
    return 0;   
 }
 
-int XeNet::ReceiveMessage(int socket, string &message, int &code)
+int koNet::ReceiveMessage(int socket, string &message, int &code)
 {   
    int id;
    string name,temp,foot;
    if(ReceiveInt(socket,code)!=0)  {	
-      fLog->Error("XeNetServer::ReceiveMessage - Error receiving type code.");
+      LogError("koNet::ReceiveMessage - Error receiving type code.");
       return -1;
    }   
    if(ReceiveInt(socket,id)!=0)    {	
-      fLog->Error("XeNetServer::ReceiveMessage - Error receiving sender ID.");
+      LogError("koNet::ReceiveMessage - Error receiving sender ID.");
       return -1;
    }   
    if(ReceiveString(socket,name)!=0)    {	
-      fLog->Error("XeNetServer::ReceiveMessage - Error receiving sender name.");
+      LogError("koNet::ReceiveMessage - Error receiving sender name.");
       return -1;
    }
    if(ReceiveString(socket,temp)!=0)    {	
-      fLog->Error("XeNetServer::ReceiveMessage - Error receiving message.");
+      LogError("koNet::ReceiveMessage - Error receiving message.");
       return -1;
    }   
    if(ReceiveString(socket,foot)!=0 || foot !="DONE")    {	
-      fLog->Error("XeNetServer::ReceiveMessage - Error receiving footer.");
+      LogError("koNet::ReceiveMessage - Error receiving footer.");
       return -1;
    }   
    
@@ -395,11 +407,11 @@ int XeNet::ReceiveMessage(int socket, string &message, int &code)
       message=ret.str();
    }   
    else message=temp;
-   fLog->Message(message);
+   LogMessage(message);
    return 0;
 }
 
-int XeNet::SendUpdate(int socket, int id, string name, int status, 
+int koNet::SendUpdate(int socket, int id, string name, int status, 
 		      double rate, double freq, int nBoards)
 {   
    //format: 
@@ -413,85 +425,86 @@ int XeNet::SendUpdate(int socket, int id, string name, int status,
     
    string UPDATEHEADER="UPDATE";
    if(SendString(socket,UPDATEHEADER)!=0)  {
-      fLog->Error("XeNet::SendUpdate() - Error sending update header.");
+      LogError("koNet::SendUpdate() - Error sending update header.");
       return -1;
    }
    if(SendInt(socket,id)!=0)  {
-      fLog->Error("XeNet::SendUpdate() - Error sending update ID.");
+      LogError("koNet::SendUpdate() - Error sending update ID.");
       return -1;
    }
    if(SendString(socket,name)!=0)  {
-             fLog->Error("XeNet::SendUpdate() - Error sending update name.");
+      LogError("koNet::SendUpdate() - Error sending update name.");
       return -1;
    }
    if(SendInt(socket,status)!=0)  {
-      fLog->Error("XeNet::SendUpdate() - Error sending status.");
+      LogError("koNet::SendUpdate() - Error sending status.");
       return -1;
    }
    if(SendInt(socket, nBoards)!=0)  {
-      fLog->Error("XeNet::SendUpdate() - Error sending nBoards.");
+      LogError("koNet::SendUpdate() - Error sending nBoards.");
       return -1;
    }
    if(SendDouble(socket,rate)!=0)   {
-      fLog->Error("XeNet::SendUpdate() - Error sending rate.");
+      LogError("koNet::SendUpdate() - Error sending rate.");
       return -1;
    }
    if(SendDouble(socket,freq)!=0)  {
-      fLog->Error("XeNet::SendUpdate() - Error sending freq.");
+      LogError("koNet::SendUpdate() - Error sending freq.");
       return -1;
    }
    string UPDATEFOOTER="DONE";
    if(SendString(socket,UPDATEFOOTER)!=0)  {
-      fLog->Error("XeNet::SendUpdate() - Error sending footer.");
+      LogError("koNet::SendUpdate() - Error sending footer.");
       return -1;
    }
    return 0;
 }
 
-int XeNet::SendMessage(int socket, int id, string name,string message, int type)
+int koNet::SendMessage(int socket, int id, string name,string message, int type)
 {   
    string MESSAGEHEADER="MESSAGE";
    string MESSAGEFOOTER="DONE";
    if(SendString(socket,MESSAGEHEADER)!=0)   {      
-      fLog->Error("XeNet::SendMessage - Error sending header.");
+      LogError("koNet::SendMessage - Error sending header.");
       return -1;
    }   
    if(SendInt(socket,type)!=0)  {	
-      fLog->Error("XeNet::SendMessage - Error sending type code.");
+      LogError("koNet::SendMessage - Error sending type code.");
       return -1;
    }   
    if(SendInt(socket,id)!=0)  {	
-      fLog->Error("XeNet::SendMessage - Error sending ID.");
+      LogError("koNet::SendMessage - Error sending ID.");
       return -1;
    }   
    if(SendString(socket,name)!=0)  {	
-      fLog->Error("XeNet::SendMessage - Error sending name.");
+      LogError("koNet::SendMessage - Error sending name.");
       return -1;
    }   
    if(SendString(socket,message)!=0)  {	
-      fLog->Error("XeNet::SendMessage - Error sending message string");
+      LogError("koNet::SendMessage - Error sending message string");
       return -1;
    }   
    if(SendString(socket,MESSAGEFOOTER)!=0)  {	
-      fLog->Error("XeNet::SendMessage - Error sending message footer.");
+      LogError("koNet::SendMessage - Error sending message footer.");
       return -1;
    }   
    return 0;
 }
 
-int XeNet::SendCommandToSocket(int socket,string command,int id, string sender)
+int koNet::SendCommandToSocket(int socket,string command,int id, string sender)
 {
    string header="COMMAND";
    string footer="DONE";
+   //You may now bask in the beauty of this nested if statement
    if(SendString(socket,header)==0)  {
       if(SendString(socket,sender)==0)	{
 	 if(SendInt(socket,id)==0)  {
 	    if(SendString(socket,command)==0){
 	       if(SendString(socket,footer)==0)	 {
-		  if(command!="KEEPALIVE") {		       
+		  if(command!="KEEPALIVE") { 
 		     stringstream mess;
-		     mess<<"XeNet::SendCommandToSocket - Sent command "<<command<<" to "<<socket<<" from "<<sender<<"("<<id<<")";
-		     fLog->Message(mess.str());
+		     mess<<"koNet::SendCommandToSocket - Sent command "<<command<<" to "<<socket<<" from "<<sender<<"("<<id<<")";
+		     LogMessage(mess.str());
 		  }		  
 		  return 0;
 	       }	       
@@ -499,11 +512,11 @@ int XeNet::SendCommandToSocket(int socket,string command,int id, string sender)
 	 }	 
       }      
    }
-   fLog->Error("XeNet::SendCommandToSocket - Error sending command.");
+   LogError("koNet::SendCommandToSocket - Error sending command.");
    return -1;   
 }
 
-int XeNet::CommandOnSocket(int socket, string &command, int &senderid, string &sender)
+int koNet::CommandOnSocket(int socket, string &command, int &senderid, string &sender)
 {
    if(MessageOnPipe(socket)!=0) return -1; 
    string temp;
@@ -514,9 +527,9 @@ int XeNet::CommandOnSocket(int socket, string &command, int &senderid, string &s
 	    if(ReceiveString(socket,command)==0)  {
 	       if(ReceiveString(socket,temp)==0 && temp=="DONE"){		    
 		  stringstream mess;		
-		  mess<<"XeNet::CommandOnSocket - Received command "<<command<<" from "<<sender<<"("<<senderid<<")";
+		  mess<<"koNet::CommandOnSocket - Received command "<<command<<" from "<<sender<<"("<<senderid<<")";
 		  if(command!="KEEPALIVE") //specifically ignore this one
-		    fLog->Message(mess.str());
+		    LogMessage(mess.str());
 		  return 0;
 	       }	       
 	    }	    
@@ -524,13 +537,13 @@ int XeNet::CommandOnSocket(int socket, string &command, int &senderid, string &s
       }      
    }
    if(a==-2)     {      
-      fLog->Error("XeNet::CommandOnSocket - Error receiving command.");      
+      LogError("koNet::CommandOnSocket - Error receiving command.");      
       return -2;
    }
    return -1;
 }
 
-int XeNet::SendRunInfo(int socket, XeRunInfo_t runInfo)
+int koNet::SendRunInfo(int socket, koRunInfo_t runInfo)
 {
    string temp="RUNINFO";
    if(SendString(socket,temp)!=0) return -1;
@@ -542,7 +555,7 @@ int XeNet::SendRunInfo(int socket, XeRunInfo_t runInfo)
    return 0;
 }
 
-int XeNet::ReceiveRunInfo(int socket, XeRunInfo_t &runInfo)
+int koNet::ReceiveRunInfo(int socket, koRunInfo_t &runInfo)
 {
    string temp;
    if(ReceiveString(socket,temp)!=0 || temp!="RUNINFO") return -1;
