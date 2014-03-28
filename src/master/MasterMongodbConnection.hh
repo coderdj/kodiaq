@@ -25,7 +25,7 @@ class MasterMongodbConnection
  public: 
    
                 MasterMongodbConnection();
-   explicit     MasterMongodbConnection(XeDAQLogger *Log);
+   explicit     MasterMongodbConnection(koLogger *Log);
    virtual     ~MasterMongodbConnection();
    
    // 

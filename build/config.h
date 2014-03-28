@@ -23,13 +23,13 @@
 #define HAVE_LIBMENU 1
 
 /* Define to 1 if you have the `mongoclient' library (-lmongoclient). */
-/* #undef HAVE_LIBMONGOCLIENT */
+#define HAVE_LIBMONGOCLIENT 1
 
 /* Define to 1 if you have the `ncurses' library (-lncurses). */
 #define HAVE_LIBNCURSES 1
 
 /* Define to 1 if you have the `pthread' library (-lpthread). */
-/* #undef HAVE_LIBPTHREAD */
+#define HAVE_LIBPTHREAD 1
 
 /* Define to 1 if you have the `snappy' library (-lsnappy). */
 /* #undef HAVE_LIBSNAPPY */
@@ -102,7 +102,7 @@
 /* #undef WITH_DDC10 */
 
 /* Compile master module */
-/* #undef WITH_MASTER */
+#define WITH_MASTER /**/
 
 /* Compile slave module */
 /* #undef WITH_SLAVE */

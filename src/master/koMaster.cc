@@ -47,7 +47,7 @@ int main()
    //DAQ run info
    koRunInfo_t            fRunInfo;
    fRunInfo.RunInfoPath = fRunInfoPath;
-   koDAQHelper::InitializeRunInfo(fRunInfo);
+   koHelper::InitializeRunInfo(fRunInfo);
    //
    //Mongodb Connection
    MasterMongodbConnection fMongodb(&fLog);   
@@ -234,7 +234,7 @@ int main()
 		  continue;
 	       }
 	       
-	       if(fDAQOptions.ReadFileMaster(tempStringList2[tempint])!=0){		 
+	       if(fDAQOptions.ReadParameterFile(tempStringList2[tempint])!=0){		 
 		  fUserNetwork.BroadcastMessage("Error setting veto options. Bad file!",KOMESS_WARNING);
 		  continue;
 	       }
