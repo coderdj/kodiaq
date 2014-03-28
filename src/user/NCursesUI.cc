@@ -249,31 +249,6 @@ int XeCursesInterface::Initialize(XeStatusPacket_t *DAQStatus, XeRunInfo_t *RunI
    return 0;
 }
 
-int XeCursesInterface::DrawStartMenu()
-{
-   wclear(main_win);
-   wbkgd(main_win,COLOR_PAIR(4));
-   wattron(main_win,COLOR_PAIR(7));
-   wattron(main_win,A_BOLD);
-   mvwprintw(main_win,1,0,"   Start menu:   ");
-   wattroff(main_win,COLOR_PAIR(7));
-   wattron(main_win,COLOR_PAIR(6));
-   mvwprintw(main_win,3,30," C ");
-   wattroff(main_win,COLOR_PAIR(6));
-   wattron(main_win,COLOR_PAIR(7));   
-   mvwprintw(main_win,4,30," B ");
-   wattroff(main_win,COLOR_PAIR(7));
-   wattron(main_win,COLOR_PAIR(6));   
-   mvwprintw(main_win,5,30," Q ");
-    wattroff(main_win,COLOR_PAIR(6));   
-   wattroff(main_win,A_BOLD);
-   mvwprintw(main_win,3,35,"Connect                              ");
-   mvwprintw(main_win,4,35,"Broadcast Message                    ");
-   mvwprintw(main_win,5,35,"Quit                                 ");
-   wnoutrefresh(main_win);
-   return 0;
-}
-
 void XeCursesInterface::DrawBlockMenu(int n)
 {
    wclear(main_win);
@@ -295,103 +270,41 @@ void XeCursesInterface::DrawBlockMenu(int n)
    return;
 }
 
-int XeCursesInterface::PrintDAQRunScreen()
-{
-   
-   wclear(main_win);
-//   box(main_win, 0 , 0);
-   wbkgd(main_win,COLOR_PAIR(4));
-   wattron(main_win,A_BOLD);
-   wattron(main_win,COLOR_PAIR(7));
-   mvwprintw(main_win,1,0,"   Runtime menu: ");
-   wattroff(main_win,COLOR_PAIR(7));
-   wattron(main_win,COLOR_PAIR(6));
-   mvwprintw(main_win,2,30," P ");
-   wattroff(main_win,COLOR_PAIR(6));
-   wattron(main_win,COLOR_PAIR(7));
-   mvwprintw(main_win,3,30," B ");
-   wattroff(main_win,COLOR_PAIR(7));
-   wattron(main_win,COLOR_PAIR(6));
-   mvwprintw(main_win,4,30," Q "); 
-   wattroff(main_win,COLOR_PAIR(6));
-   wattroff(main_win,A_BOLD);
-   mvwprintw(main_win,2,35,"Stop acquisition                     ");
-   mvwprintw(main_win,3,35,"Broadcast message                    ");
-   mvwprintw(main_win,4,35,"Sign out                             ");
-   wnoutrefresh(main_win);
-   return 0;
-}
-
-int XeCursesInterface::DrawAdminWindow()
-{      
-   wclear(main_win);
-   box(main_win, 0 , 0);
-   wbkgd(main_win,COLOR_PAIR(4));
-   wattron(main_win,A_BOLD);
-   wattron(main_win,COLOR_PAIR(7));
-   mvwprintw(main_win,1,0,"   Admin menu:   ");
-   wattroff(main_win,COLOR_PAIR(7));
-   wattron(main_win,COLOR_PAIR(6));
-   mvwprintw(main_win,2,30," K ");
-   wattroff(main_win,COLOR_PAIR(6));
-   wattron(main_win,COLOR_PAIR(7));
-   mvwprintw(main_win,3,30," B ");
-   wattroff(main_win,COLOR_PAIR(7));
-   wattron(main_win,COLOR_PAIR(6));
-   mvwprintw(main_win,4,30," W ");
-   wattroff(main_win,COLOR_PAIR(6));
-   wattron(main_win,COLOR_PAIR(7));
-   mvwprintw(main_win,5,30," A ");
-   wattroff(main_win,COLOR_PAIR(7));
-   wattroff(main_win,A_BOLD);
-   mvwprintw(main_win,2,35,"View/boot connected users            ");
-   mvwprintw(main_win,3,35,"Broadcast message                    ");
-   mvwprintw(main_win,4,35,"Toggle WIMPs On/Off                  ");
-   mvwprintw(main_win,5,35,"Back to normal mode                  ");
-   wnoutrefresh(main_win);
-   return 0;
-}
-    
-
-int XeCursesInterface::DrawMainMenu()
+int NCursesUI::DrawMainMenu(MainMenu_t config, bool drawBox)
 {
    if(!bInitialized) return -1;
    wbkgd(main_win,COLOR_PAIR(4));
-   
    wclear(main_win);
-   wattron(main_win,A_BOLD);
-//   box(main_win, 0 , 0);
-   wattron(main_win,COLOR_PAIR(7));
-   mvwprintw(main_win,1,0,"   Main menu:    ");
-   wattroff(main_win,COLOR_PAIR(7));
+   
+   if(drawBox)
+     box(main_win, 0 , 0);   
+   
+   //Draw window title
+   wattron(main_win,A_BOLD);   
    wattron(main_win,COLOR_PAIR(6));
-   mvwprintw(main_win,1,30," S ");
+   mvwprintw(main_win,1,0,config.TitleString);
    wattroff(main_win,COLOR_PAIR(6));
-   wattron(main_win,COLOR_PAIR(7));
-   mvwprintw(main_win,2,30," M ");
-   wattroff(main_win,COLOR_PAIR(7));
-   wattron(main_win,COLOR_PAIR(6));
-   mvwprintw(main_win,3,30," X ");
-   wattroff(main_win,COLOR_PAIR(6));
-   wattron(main_win,COLOR_PAIR(7));
-   mvwprintw(main_win,4,30," B ");
-   wattroff(main_win,COLOR_PAIR(7));
-   wattron(main_win,COLOR_PAIR(6));
-   mvwprintw(main_win,5,30," R ");
-   wattroff(main_win,COLOR_PAIR(6));
-   wattron(main_win,COLOR_PAIR(7));
-   mvwprintw(main_win,6,30," Q ");
-   wattroff(main_win,COLOR_PAIR(7));
    wattroff(main_win,A_BOLD);
-   mvwprintw(main_win,1,35,"Start DAQ                          ");
-   mvwprintw(main_win,2,35,"Choose operation mode              ");
-   mvwprintw(main_win,3,35,"Put DAQ to standby mode            ");
-   mvwprintw(main_win,4,35,"Broadcast message                  ");
-   mvwprintw(main_win,5,35,"Reset DAQ                          ");
-   mvwprintw(main_win,6,35,"Quit                               ");   
+   for(unsigned int x=0;x<config.MenuItemStrings.size();x++)  {
+      wattron(main_win, A_BOLD);
+      if(menuItems%2==0) wattron(main_win,COLOR_PAIR(7));
+      else wattron(main_win,COLOR_PAIR(6));
+      string print = " ";
+      print+=config.MenuItemIDs[x];
+      print+=" ";
+      mvwprintw(x+1,30,print.c_str());
+      if(menuItems%2==0) wattroff(main_win,COLOR_PAIR(7));
+      else wattroff(main_win,COLOR_PAIR(6));
+      wattroff(main_win,A_BOLD);
+      string item = config.MenuItemStrings[x];
+      while(item.size()<35)
+	item+=" ";
+      mvwprintw(main_win,x+1,35,item.c_str());
+   }
    wnoutrefresh(main_win);
    return 0;
 }
+
 
 int XeCursesInterface::NotificationsScroll(bool up)
 {
@@ -705,7 +618,7 @@ int XeCursesInterface::SidebarRefresh()
    return 0;
 }
 
-string XeCursesInterface::EnterName()
+/*string XeCursesInterface::EnterName()
 {
    wclear(main_win);
    wbkgd(main_win,COLOR_PAIR(4));   
@@ -737,7 +650,7 @@ string XeCursesInterface::EnterName()
    }
    return name;
    
-}
+}*/
 
 int XeCursesInterface::PasswordPrompt()
 {

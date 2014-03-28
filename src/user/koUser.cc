@@ -19,6 +19,11 @@ using namespace std;
 int main()
 {
    //Declare objects
+   //
+   // MENU OPTIONS
+   // 
+   MainMenu_t         o_MainMenu, o_RunMenu, o_StartMenu, o_AdminMenu;
+   ConfigureMenus(o_MainMenu,o_RunMenu,o_StartMenu,o_AdminMenu);
    
    //logger
    XeDAQLogger        fLog("log/koUser.log");
@@ -118,25 +123,25 @@ login_screen:
       if(((fDAQStatus.NetworkUp && UI_SCREEN_SHOWING<=1) || 
 	 (fDAQStatus.NetworkUp && fDAQStatus.DAQState!=XEDAQ_RUNNING
 	  && UI_SCREEN_SHOWING==3)) && !bAdminMode)  	{
-	 fUI.DrawMainMenu();
+	 fUI.DrawMainMenu(o_MainMenu);
 	 fUI.Update();
 	 UI_SCREEN_SHOWING=2;
       }      
       //RUN MENU: DAQ is running
       if((fDAQStatus.DAQState==XEDAQ_RUNNING && UI_SCREEN_SHOWING!=3)
 	&& !bAdminMode)	{
-	 fUI.PrintDAQRunScreen();
+	 fUI.DrawMainMenu(o_RunMenu);
 	 fUI.Update();
 	 UI_SCREEN_SHOWING=3;
       }
       //START MENU: Not connected to master
       if((!fDAQStatus.NetworkUp && UI_SCREEN_SHOWING!=1) && !bAdminMode) {
-	 fUI.DrawStartMenu();
+	 fUI.DrawRunMenu(o_StartMenu);
 	 fUI.Update();
 	 UI_SCREEN_SHOWING=1;
       }                              
       if(bAdminMode && UI_SCREEN_SHOWING!=4)	{
-	 fUI.DrawAdminWindow();
+	 fUI.DrawMainMenu(o_AdminWindow,true);
 	 fUI.Update();
 	 UI_SCREEN_SHOWING=4;
       }
@@ -339,3 +344,52 @@ login_screen:
    endwin();
    return 0;
 }
+
+
+void ConfigureMenus( MainMenu_t &main, MainMenu_t &run,
+		     MainMenu_t &start, MainMenu_t &admin)
+{   
+   main.TitleString = "  Main Menu:    ";
+   run.TitleString  = "  Run Menu:     ";
+   start.TitleString= "  Start Menu:   ";
+   admin.TitleString= "  Admin Menu:   ";
+   
+   main.MenuItemIDs.push_back("S");
+   main.MenuItemStrings.push_back("Start acquisition");
+   main.MenuItemIDs.push_back("M");
+   main.MenuItemStrings.push_back("Choose operational mode");
+   main.MenuItemIDs.push_back("X");
+   main.MenuItemStrings.push_back("Shut down DAQ");
+   main.MenuItemIDs.push_back("B");
+   main.MenuItemStrings.push_back("Broadcast message");
+   main.MenuItemIDs.push_back("R");
+   main.MenuItemStrings.push_back("Reset DAQ");
+   main.MenuItemIDs.push_back("Q");
+   main.MenuItemStrings.push_back("Quit");
+   
+   run.MenuItemIDs.push_back("P");
+   run.MenuItemStrings.push_back("Stop acquisition");
+   run.MenuItemIDs.push_back("B");
+   run.MenuItemStrings.push_back("Broadcast message");
+   run.MenuItemIDs.push_back("Q");
+   run.MenuItemStrings.push_back("Quit");
+   
+   start.MenuItemIDs.push_back("C");
+   start.MenuItemString.push_back("Connect");
+   start.MenuItemIDs.push_back("B");
+   start.MenuItemString.push_back("Broadcast message");
+   start.MenuItemIDs.push_back("Q");
+   start.MenuItemString.push_back("Quit");
+   
+   admin.MenuItemIDs.push_back("K");
+   admin.MenuItemString.push_back("View/boot connected users");
+   admin.MenuItemIDs.push_back("B");
+   admin.MenuItemString.push_back("Broadcast message");
+   admin.MenuItemIDs.push_back("W");
+   admin.MenuItemString.push_back("Toggle WIMPs on/off");
+   admin.MenuItemIDs.push_back("A");
+   admin.MenuItemString.push_back("Return to normal mode");
+   
+}
+
+		     
