@@ -21,11 +21,9 @@ class CBV2718 : public VMEBoard {
  public:
    CBV2718();
    virtual ~CBV2718();
-   explicit CBV2718(BoardDefinition_t BID)  {
-      fBID=BID;
-   };   
+   explicit CBV2718(BoardDefinition_t BID, koLogger *kLog);
    
-   int Initialize(XeDAQOptions *options);
+   int Initialize(koOptions *options);
    int SendStartSignal();
    int SendStopSignal();
    

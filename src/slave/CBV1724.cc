@@ -36,7 +36,12 @@ CBV1724::~CBV1724()
    pthread_cond_destroy(&fReadyCondition);
 }
 
-int CBV1724::Initialize(XeDAQOptions *options)
+CBV1724::CBV1724(BoardDefinition_t BoardDef, koLogger *kLog)
+        :VMEBoard(BoardDef,kLog)
+{
+}
+
+int CBV1724::Initialize(koOptions *options)
 {
    int retVal=0;
 //   cout<<"Initializing"<<endl;
@@ -68,12 +73,12 @@ int CBV1724::Initialize(XeDAQOptions *options)
    fBLTSize=options->GetRunOptions().BLTBytes;
    fBufferSize = data*eventSize*(u_int32_t)4+(fBLTSize);
    fBufferSize = eventSize*data + fBLTSize;
-   fReadoutThresh = options->GetReadoutThreshold();
+   fReadoutThresh = options->GetProcessingOptions().ReadoutThreshold;
    
    fBuffers = new vector<u_int32_t*>();
    fSizes   = new vector<u_int32_t>();
 
-   if(options->GetBaselineMode()==1)    {	
+   if(options->GetRunOptions().BaselineMode==1)    {	
       cout<<"Determining baselines ";
       int tries = 0;
       while(DetermineBaselines()!=0 && tries<5){
@@ -103,7 +108,7 @@ unsigned int CBV1724::ReadMBLT()
       if((ret!=cvSuccess) && (ret!=cvBusError)){
 	 stringstream ss;
 	 ss<<"Board "<<fBID.BoardID<<" reports read error "<<dec<<ret<<endl;
-	 gLog->Error(ss.str());
+	 LogError(ss.str());
 	 delete[] buff;
 	 return 0;
       }
@@ -111,7 +116,7 @@ unsigned int CBV1724::ReadMBLT()
       if(blt_bytes>fBufferSize)	{
 	 stringstream ss;
 	 ss<<"Board "<<fBID.BoardID<<" reports insufficient BLT buffer size."<<endl;	 
-	 gLog->Error(ss.str());
+	 LogError(ss.str());
 	 delete[] buff;
 	 return 0;
       }
@@ -206,19 +211,19 @@ int CBV1724::LoadBaselines()
 {
    vector <int> baselines;
    if(GetBaselines(baselines)!=0) {
-      gLog->SendMessage("Error loading baselines.");
+      LogMessage("Error loading baselines.");
       return -1;
    }   
    if(baselines.size()==0)
      return -1;
    for(unsigned int x=0;x<baselines.size();x++)  {
       if(WriteReg32((0x1098)+(0x100*x),baselines[x])!=0){	   
-	 gLog->SendMessage("Error loading baselines");
+	 LogMessage("Error loading baselines");
 	 return -1;
       } 
       stringstream sstr;
       sstr<<"Loaded baseline "<<hex<<baselines[x]<<dec<<" to channel "<<x;
-      gLog->SendMessage(sstr.str());
+      LogMessage(sstr.str());
 //      cout<<sstr.str()<<endl;
    }
    return 0;
@@ -233,32 +238,33 @@ int CBV1724::GetBaselines(vector <int> &baselines, bool bQuiet)
    if(!infile)  {
       stringstream error;
       error<<"No baselines found for board "<<fBID.BoardID;
-      gLog->Error(error.str());
-      gLog->SendMessage(error.str());
+      LogError(error.str());
+      LogSendMessage(error.str());
       return -1;
    }
    baselines.clear();
    //Get date and determine how old baselines are. If older than 24 hours give a warning.
    string line;
    getline(infile,line);
-   unsigned int filetime = XeDAQHelper::StringToInt(line);
+   unsigned int filetime = koHelper::StringToInt(line);
    //filetime of form YYMMDDHH
-   if(XeDAQHelper::CurrentTimeInt()-filetime > 100 && !bQuiet)  {
+   if(koHelper::CurrentTimeInt()-filetime > 100 && !bQuiet)  {
       stringstream warning;   	   
       warning<<"Warning: Module "<<fBID.BoardID<<" is using baselines that are more than a day old.";
-      gLog->SendMessage(warning.str());
+      LogSendMessage(warning.str());
    }
    while(getline(infile,line)){
       int value=0;
-      if(XeDAQOptions::ProcessLineHex(line,XeDAQHelper::IntToString(baselines.size()+1),value)!=0)
+      if(koOptions::ProcessLineHex(line,koHelper::IntToString(baselines.size()+1),
+				   value)!=0)
 	break;
       baselines.push_back(value);
    }
    if(baselines.size()!=8)   {
       stringstream error;
       error<<"Warning from module "<<fBID.BoardID<<". Error loading baselines.";
-      gLog->SendMessage(error.str());
-      gLog->Error(error.str());
+      LogSendMessage(error.str());
+      LogError(error.str());
       infile.close();
       return -1;
    }
@@ -282,7 +288,7 @@ int CBV1724::DetermineBaselines()
    //load the old baselines
    for(unsigned int x=0;x<oldBaselines.size();x++)    {	
       if(WriteReg32((0x1098)+(0x100*x),oldBaselines[x])!=0){	     
-	 gLog->SendMessage("Error loading baselines");
+	 LogSendMessage("Error loading baselines");
 	 return -1;
       }
    }            
@@ -347,14 +353,14 @@ int CBV1724::DetermineBaselines()
 	 }	 
       }while(ret!=cvBusError);      
       if(blt_bytes==0)	{
-	 gLog->Message("Baseline calibration: read nothing from board.");
+	 LogMessage("Baseline calibration: read nothing from board.");
 	 continue;
       }
       
       //Process what you just read
       int minval=0,maxval=0,mean=0;
       if((buff[0]>>20)!=0xA00)	{
-	 gLog->Message("Baseline calibration: unexpected buffer format");      
+	 LogMessage("Baseline calibration: unexpected buffer format");      
 	 continue;
       }
       samples = (buff[0]&0xFFFFFF);
@@ -427,8 +433,8 @@ int CBV1724::DetermineBaselines()
 	 }//end if baseline is flat	 
 	 else
 	   {
-//	      cout<<"Signal in baseline?"<<endl;	      
-	      gLog->SendMessage("Problem during baseline determination. Is it not flat?");
+	      //	      cout<<"Signal in baseline?"<<endl;	      
+	      LogSendMessage("Problem during baseline determination. Is it not flat?");
 	   }
 	 
       }//end for through channels            
@@ -439,7 +445,7 @@ int CBV1724::DetermineBaselines()
    stringstream filename;
    filename<<"baselines/XeBaselines_"<<fBID.BoardID<<".ini";
    outfile.open(filename.str().c_str());
-   outfile<<XeDAQHelper::CurrentTimeInt()<<endl;
+   outfile<<koHelper::CurrentTimeInt()<<endl;
    for(unsigned int x=0;x<newBaselines.size();x++)  {
       outfile<<x+1<<"  "<<hex<<setw(4)<<setfill('0')<<((newBaselines[x])&0xFFFF)<<endl;
    }

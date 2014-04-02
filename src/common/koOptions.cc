@@ -39,13 +39,13 @@ void koOptions::Reset()
    fMongoOptions.ZipOutput=fMongoOptions.WriteConcern=
      fMongoOptions.DynamicRunNames=false;
    fMongoOptions.MinInsertSize=1000000;
-   fMongoOptions.ReadoutThreshold=1;
    fMongoOptions.Collection="data.test";
    
    //Reset processing options
    fProcessingOptions.NumThreads=1;
    fProcessingOptions.Mode=0;
-      
+   fProcessingOptions.ReadoutThreshold=1;
+   
    //Reset file options
    fOutfileOptions.Path="./data.out";
    fOutfileOptions.DynamicRunNames=false;
@@ -162,14 +162,13 @@ int koOptions::ReadParameterFile(string filename)
 	 (words[3]=="1")?fMongoOptions.ZipOutput=true:fMongoOptions.ZipOutput=false;
 	 fMongoOptions.MinInsertSize = koHelper::StringToInt(words[4]);
 	 (words[5]=="1")?fMongoOptions.WriteConcern=true:fMongoOptions.WriteConcern=false;
-	 fMongoOptions.ReadoutThreshold=koHelper::StringToInt(words[6]);
       }
       if(words[0]=="PROCESSING_OPTIONS")	{
-	 if(words.size()<3) continue;
+	 if(words.size()<4) continue;
 	 fProcessingOptions.NumThreads=koHelper::StringToInt(words[1]);
 	 if(fProcessingOptions.NumThreads<=0) fProcessingOptions.NumThreads=1;
-	 fProcessingOptions.Mode = koHelper::StringToInt(words[1]);
-	 
+	 fProcessingOptions.Mode = koHelper::StringToInt(words[2]);
+	 fProcessingOptions.ReadoutThreshold = koHelper::StringToInt(words[3]);
       }
       if(words[0]=="OUTFILE_OPTIONS")	{
 	 if(words.size()<2) continue;

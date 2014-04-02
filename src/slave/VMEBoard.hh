@@ -3,7 +3,7 @@
 
 // ******************************************************
 // 
-// DAQ Control for Xenon-1t
+// kodiaq Data Acquisition Software
 // 
 // File     : VMEBoard.hh
 // Author   : Daniel Coderre, LHEP, Universitaet Bern
@@ -14,12 +14,11 @@
 // ******************************************************
 
 #include <sys/types.h>
-#include <XeDAQOptions.hh>
-#include <XeDAQLogger.hh>
+#include <koOptions.hh>
+#include <koLogger.hh>
 #include <CAENVMElib.h>
 
 using namespace std;
-extern XeDAQLogger *gLog;
 
 /*! \brief General class for CAEN VME boards.
  
@@ -29,7 +28,7 @@ class VMEBoard
 {
  public:
    VMEBoard();
-   explicit VMEBoard(BoardDefinition_t BID);
+   explicit VMEBoard(BoardDefinition_t BID, koLogger *koLog);
    virtual ~VMEBoard();
    
    void SetID(BoardDefinition_t BID){
@@ -57,7 +56,7 @@ class VMEBoard
    int ReadReg16(u_int32_t address,u_int16_t &data);
    
    //Functions for board access
-   virtual int Initialize(XeDAQOptions *options);
+   virtual int Initialize(koOptions *options);
 //   virtual int GetInfo();    //get info to some type of struct?
    
    //Can set if board is active
@@ -81,6 +80,12 @@ class VMEBoard
    int fCrateHandle;
    bool bActivated;
    bool bIsSumModule;                           //Designating a digitizer a sum module means it always gets saved and the event builder does not use it for peak finding
+   void LogError(string err);
+   void LogMessage(string mess);
+   void LogSendMessage(string mess);
+   
+ private:
+   koLogger *m_koLog;
 };
 
 #endif

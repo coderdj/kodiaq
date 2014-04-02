@@ -62,21 +62,32 @@ class koLogger
    // Function : Returns a time_t object with the current time
    // 
    static time_t GetCurrentTime();
-   
-   //I think the next two are depreciated?
-   /*
+   //
+   // Name     : SendMessage(string message)
+   // Function : Put a message into the message buffer. Used to communicate 
+   //            with the outside world if we are in an object without
+   //            access to networking classes.
+   // 
    void SendMessage(string message)  {
       fMessageBuffer.push_back(message);
    };
+   //
+   // Name     : GetMessages
+   // Function : Get number of messages in message buffer
+   // 
    int GetMessages(){
       return fMessageBuffer.size();
-   };*/
-   //string GetMessage();
+   };
+   //
+   // Name     : GetMessage()
+   // Function : Get message at position 0 in message buffer
+   // 
+   string GetMessage();
    
    
  private: 
    ofstream fLogfile;   
-//   std::vector <string> fMessageBuffer;
+   std::vector <string> fMessageBuffer;
 };
 
 #endif

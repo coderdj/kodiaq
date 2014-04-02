@@ -1,7 +1,7 @@
 
 // ******************************************************
 // 
-// DAQ Control for Xenon-1t
+// kodiaq Data Acquisition Software
 // 
 // File    : VMEBoard.cc
 // Author  : Daniel Coderre, LHEP, Universitaet Bern
@@ -19,16 +19,34 @@ VMEBoard::VMEBoard()
    fCrateHandle=-1;
    bActivated=false;
    bIsSumModule=false;
+   m_koLog=NULL;
 }
 
 VMEBoard::~VMEBoard()
 {   
 }
 
-VMEBoard::VMEBoard(BoardDefinition_t BID)
+VMEBoard::VMEBoard(BoardDefinition_t BID, koLogger *koLog)
 {
    fBID=BID;   
    fCrateHandle=-1;
+   m_koLog = koLog;
+}
+
+void VMEBoard::LogError(string err)
+{
+   if(m_koLog!=NULL)
+     m_koLog->Error(err);
+}
+void VMEBoard::LogMessage(string mess)
+{
+   if(m_koLog!=NULL)
+     m_koLog->Message(mess);
+}
+void VMEBoard::LogSendMessage(string mess)
+{
+   if(m_koLog!=NULL)
+     m_koLog->SendMessage(mess);
 }
 
 int VMEBoard::WriteReg32(u_int32_t address, u_int32_t data)
@@ -67,7 +85,7 @@ int VMEBoard::ReadReg16(u_int32_t address,u_int16_t &data)
    return 0;
 }
 
-int VMEBoard::Initialize(XeDAQOptions *options)
+int VMEBoard::Initialize(koOptions *options)
 {
    bActivated=false;
    return -1; //? or should this return 0

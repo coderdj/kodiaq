@@ -1,11 +1,12 @@
 
 // ********************************************************
 // 
-// DAQ Control for Xenon-1t
+// kodiaq Data Acquisition Software
 // 
 // File     : DigiInterface.cc
 // Author   : Daniel Coderre, LHEP, Universitaet Bern
 // Date     : 12.07.2013
+// Update   : 31.03.2014
 // 
 // Brief    : Class for managing electronics
 // 
@@ -16,10 +17,9 @@
 
 DigiInterface::DigiInterface()
 {
-   fRunStartModule=0;
-   fDAQRecorder=NULL;
-   fWriteMode=0;
-   fReadThread.IsOpen=false;
+   m_ReadThread.IsOpen=false;
+   m_WriteThread.IsOpen=false;
+   Close();
 }
 
 DigiInterface::~DigiInterface()
@@ -27,57 +27,67 @@ DigiInterface::~DigiInterface()
    Close();
 }
 
-int DigiInterface::Initialize(XeDAQOptions *options)
+DigiInterface::DigiInterface(koLogger *logger)
+{
+   m_ReadThread.IsOpen  = false;
+   m_WriteThread.IsOpen = false;
+   m_koLog              = logger;
+   Close();
+}
+
+int DigiInterface::Initialize(koOptions *options)
 {
    Close();
   
+   m_koOptions = options;
+   
    //First define crates   
    for(int x=0;x<options->GetLinks();x++)  {
       VMECrate *crate = new VMECrate();
       if(crate->Define(options->GetLink(x))==0)
-	fCrates.push_back(crate);
+	m_vCrates.push_back(crate);
       else{	         
 	 delete crate;
-	 gLog->Error("DigiInterface::InitializeElectronics - Error in crate definitions.");
+	 if(m_koLog!=NULL)
+	   m_koLog->Error("DigiInterface::InitializeElectronics - Error in crate definitions.");
 	 return -1;
       }      
    } 
    
    //Set up threads
-   pthread_mutex_init(&fRateLock,NULL);
-   fReadSize=0;
-   fReadFreq=0;
-   if(options->GetProcessingThreads()>0)
-     fProcessingThreads.resize(options->GetProcessingThreads());
-   else fProcessingThreads.resize(1);
+   pthread_mutex_init(&m_RateMutex,NULL);
+   m_iReadSize=0;
+   m_iReadFreq=0;
+   if(options->GetProcessingOptions().NumThreads>0)
+     m_vProcThreads.resize(options->GetProcessingOptions().NumThreads);
+   else m_vProcThreads.resize(1);
    
-   for(unsigned int x=0;x<fProcessingThreads.size();x++)  {
-      fProcessingThreads[x].IsOpen=false;
-      fProcessingThreads[x].XeP=NULL;
+   for(unsigned int x=0;x<m_vProcThreads.size();x++)  {
+      m_vProcThreads[x].IsOpen=false;
+      m_vProcThreads[x].Processor=NULL;
    }
-   fReadThread.IsOpen=false;
-   
+         
    //Now define modules
    for(int x=0;x<options->GetBoards();x++)  {
-      for(unsigned int y=0;y<fCrates.size();y++)	{
-	 if(fCrates[y]->Info().CrateID!=options->GetBoard(x).CrateID ||
-	    fCrates[y]->Info().LinkID!=options->GetBoard(x).LinkID)
+      for(unsigned int y=0;y<m_vCrates.size();y++)	{
+	 if(m_vCrates[y]->Info().CrateID!=options->GetBoard(x).CrateID ||
+	    m_vCrates[y]->Info().LinkID!=options->GetBoard(x).LinkID)
 	   continue;
-	 fCrates[y]->AddModule(options->GetBoard(x));
+	 m_vCrates[y]->AddModule(options->GetBoard(x));
       }      
    }   
    
    //Define how run is started
    if(options->GetRunOptions().RunStart==1)
-     fRunStartModule=GetModuleByID(options->GetRunOptions().RunStartModule);
+     m_RunStartModule=GetModuleByID(options->GetRunOptions().RunStartModule);
    else 
-     fRunStartModule=0;
+     m_RunStartModule=NULL;
    
 
    
    //Load options to individual modules
-   for(unsigned int x=0;x<fCrates.size();x++){	
-      if(fCrates[x]->InitializeModules(options)!=0)
+   for(unsigned int x=0;x<m_vCrates.size();x++){	
+      if(m_vCrates[x]->InitializeModules(options)!=0)
 	return -1;
    }
 
@@ -89,24 +99,34 @@ int DigiInterface::Initialize(XeDAQOptions *options)
    }
    
    //Set up daq recorder
-   fDAQRecorder = new XeMongoRecorder();      	
-   fDAQRecorder->Initialize(options);
+   m_DAQRecorder = NULL;
+   if(options->GetRunOptions().WriteMode==WRITEMODE_FILE)
+     m_DAQRecorder = new DAQRecorder_protobuff(m_koLog);
+#ifdef HAS_MONGODB
+   else if(options->GetRunOptions().WriteMode==WRITEMODE_MONGODB)
+     m_DAQRecorder = new DAQRecorder_mongodb(m_koLog);
+#endif
+   if(m_DAQRecorder!=NULL)
+     m_DAQRecorder->Initialize(options);
    
    return 0;
 }
 
-void DigiInterface::UpdateRecorderCollection(XeDAQOptions *options)
+void DigiInterface::UpdateRecorderCollection(koOptions *options)
 {
-   fDAQRecorder->UpdateCollection(options);
+#ifdef HAS_MONGODB
+   DAQRecorder_mongodb *dr = dynamic_cast<DAQRecorder_mongodb*>(m_DAQRecorder);
+   dr->UpdateCollection(options);
+#endif
 }
 
 
 VMEBoard* DigiInterface::GetModuleByID(int ID)
 {
-   for(unsigned int x=0;x<fCrates.size();x++)  {
-      for(int y=0;y<fCrates[x]->GetModules();y++)	{
-	 if(fCrates[x]->GetModule(y)->GetID().BoardID==ID)
-	   return fCrates[x]->GetModule(y);
+   for(unsigned int x=0;x<m_vCrates.size();x++)  {
+      for(int y=0;y<m_vCrates[x]->GetModules();y++)	{
+	 if(m_vCrates[x]->GetModule(y)->GetID().BoardID==ID)
+	   return m_vCrates[x]->GetModule(y);
       }      
    }   
    return NULL;
@@ -114,17 +134,25 @@ VMEBoard* DigiInterface::GetModuleByID(int ID)
 
 void DigiInterface::Close()
 {
-   pthread_mutex_destroy(&fRateLock);
+   pthread_mutex_destroy(&m_RateMutex);
    
-   for(unsigned int x=0;x<fCrates.size();x++){	
-      fCrates[x]->Close();
-      delete fCrates[x];
+   for(unsigned int x=0;x<m_vCrates.size();x++){	
+      m_vCrates[x]->Close();
+      delete m_vCrates[x];
    }   
-   if(fDAQRecorder!=NULL) delete fDAQRecorder;
-   fDAQRecorder=NULL;
-   fCrates.clear();
+   m_vCrates.clear();
+
    CloseThreads(true);
-     
+
+   //Didn't create these objects, so just reset pointers
+   m_RunStartModule=NULL;
+   m_koLog=NULL;
+   m_koOptions=NULL;
+   
+   //Created the DAQ recorder, so must destroy it
+   if(m_DAQRecorder!=NULL) delete m_DAQRecorder;
+   m_DAQRecorder=NULL;
+   
    return;
 }
 
@@ -141,16 +169,16 @@ void DigiInterface::ReadThread()
    while(!ExitCondition)  {
       ExitCondition=true;
       unsigned int rate=0,freq=0;
-      for(unsigned int x=0; x<fCrates.size();x++)  {
-	 if(fCrates[x]->IsActive()) ExitCondition=false; //at least one crate is active
+      for(unsigned int x=0; x<m_vCrates.size();x++)  {
+	 if(m_vCrates[x]->IsActive()) ExitCondition=false; //at least one crate is active
 	 unsigned int tf=0;
-	 unsigned int ratecycle=fCrates[x]->ReadCycle(tf);	 	 
+	 unsigned int ratecycle=m_vCrates[x]->ReadCycle(tf);	 	 
 	 rate+=ratecycle;
 	 freq+=tf;
       }  
       LockRateMutex();
-      fReadSize+=rate;
-      fReadFreq+=freq;
+      m_iReadSize+=rate;
+      m_iReadFreq+=freq;
       UnlockRateMutex();
    }
    
@@ -160,109 +188,144 @@ void DigiInterface::ReadThread()
 int DigiInterface::StartRun()
 {   
    //Reset timer on DAQ recorder
-   fDAQRecorder->ResetTimer();
+   m_DAQRecorder->ResetTimer();
+
    
    //Tell Boards to start acquisition
-   if(fRunStartModule!=0){
-      for(unsigned int x=0;x<fCrates.size();x++)
-	fCrates[x]->SetActive();
-      fRunStartModule->SendStartSignal();
-   }
-   else {
-      for(unsigned int x=0;x<fCrates.size();x++)
-	fCrates[x]->StartRunSW();
+   if(m_RunStartModule!=NULL)    {	
+      for(unsigned int x=0;x<m_vCrates.size();x++)
+	m_vCrates[x]->SetActive();
+      m_RunStartModule->SendStartSignal();
+   }   
+   else   {	
+      for(unsigned int x=0;x<m_vCrates.size();x++)
+	m_vCrates[x]->StartRunSW();
    }
    
+   
    //Spawn read, write, and processing threads
-   for(unsigned int x=0; x<fProcessingThreads.size();x++)  {
-      if(fProcessingThreads[x].IsOpen) {
+   for(unsigned int x=0; x<m_vProcThreads.size();x++)  {
+      if(m_vProcThreads[x].IsOpen) {
 	 CloseThreads();
 	 return -1;
       }
       usleep(100);
-      if(fProcessingThreads[x].XeP!=NULL) delete fProcessingThreads[x].XeP;
-      fProcessingThreads[x].XeP=new XeProcessor(this,fDAQRecorder);
-  //    if(fWriteMode==2)
-	pthread_create(&fProcessingThreads[x].Thread,NULL,XeProcessor::WProcessMongoDB,
-		       static_cast<void*>(fProcessingThreads[x].XeP));
-//      else 
-//	pthread_create(&fProcessingThreads[x].Thread,NULL,XeProcessor::WProcessStd,
-//		       static_cast<void*>(fProcessingThreads[x].XeP));      
-      fProcessingThreads[x].IsOpen=true;
+      if(m_vProcThreads[x].Processor!=NULL) delete m_vProcThreads[x].Processor;
+      
+      // Spawning of processing threads. depends on readout options.
+/*      if(m_koOptions.GetRunOptions().WriteMode == WRITEMODE_NONE) {	   
+	 m_vProcThreads[x].Processor = new DataProcessor_dump(this,m_DAQRecorder);
+	 pthread_create(&m_vProcThreads[x].Thread,NULL,DataProcessor_dump::WProcess,
+			static_cast<void*>(m_vProcThreads[x].Processor));
+	 m_vProcThreads[x].IsOpen = true;
+      }      */
+      if(m_koOptions->GetRunOptions().WriteMode == WRITEMODE_FILE){	   
+	 m_vProcThreads[x].Processor = new DataProcessor_protobuff(this,
+								   m_DAQRecorder,
+								   m_koOptions);
+	 pthread_create(&m_vProcThreads[x].Thread,NULL,DataProcessor_protobuff::WProcess,
+			static_cast<void*>(m_vProcThreads[x].Processor));
+	 m_vProcThreads[x].IsOpen = true;
+      }      
+      else if(m_koOptions->GetRunOptions().WriteMode == WRITEMODE_MONGODB){
+#ifdef HAS_MONGODB
+	 m_vProcThreads[x].Processor = new DataProcessor_mongodb(this,
+								 m_DAQRecorder,
+								 m_koOptions);
+	 pthread_create(&m_vProcThreads[x].Thread,NULL,DataProcessor_mongodb::WProcess,
+			static_cast<void*>(m_vProcThreads[x].Processor));
+	 m_vProcThreads[x].IsOpen=true;
+#else
+	 if(m_koLog!=NULL) 
+	   m_koLog->Error("DigiInterface::StartRun - Asked for mongodb output but didn't compile with mongodb support!");
+	 StopRun();
+	 return -1;
+#endif
+      }
+      else	{
+	 if(m_koLog!=NULL) 
+	   m_koLog->Error("DigiInterface::StartRun - Undefined write mode.");
+	 StopRun();
+	 return -1;
+      }
    }
    
-   if(fReadThread.IsOpen)  {
+   if(m_ReadThread.IsOpen)  {
       CloseThreads();
+      if(m_koLog!=NULL) 
+	m_koLog->Error("DigiInterface::StartRun - Read thread was already open.");
       return -1;
    }
    
    //Create read thread even if not writing
-   pthread_create(&fReadThread.Thread,NULL,DigiInterface::ReadThreadWrapper,
+   pthread_create(&m_ReadThread.Thread,NULL,DigiInterface::ReadThreadWrapper,
 		  static_cast<void*>(this));
-   fReadThread.IsOpen=true;
-   
+   m_ReadThread.IsOpen=true;
+      
    return 0;
 }
 
 int DigiInterface::StopRun()
 {
-   if(fRunStartModule!=0){      
-     fRunStartModule->SendStopSignal();
-      for(unsigned int x=0;x<fCrates.size();x++)
-	fCrates[x]->SetInactive();
+   if(m_RunStartModule!=0){      
+     m_RunStartModule->SendStopSignal();
+      for(unsigned int x=0;x<m_vCrates.size();x++)
+	m_vCrates[x]->SetInactive();
    }   
    else   {
-      for(unsigned int x=0;x<fCrates.size();x++)	{
-	 fCrates[x]->StopRunSW();
+      for(unsigned int x=0;x<m_vCrates.size();x++)	{
+	 m_vCrates[x]->StopRunSW();
       }      
    }   
    CloseThreads();
-   fDAQRecorder->ShutdownRecorder();
+   if(m_DAQRecorder != NULL)
+     m_DAQRecorder->Shutdown();
+
    return 0;
 }
 
 unsigned int DigiInterface::GetDigis()
 {
    int ret=0;
-   for(unsigned int x=0;x<fCrates.size();x++)
-     ret+=fCrates[x]->GetDigitizers();
+   for(unsigned int x=0;x<m_vCrates.size();x++)
+     ret+=m_vCrates[x]->GetDigitizers();
    return ret;
 }
 
 void DigiInterface::CloseThreads(bool Completely)
 {
-   if(fReadThread.IsOpen)  {
-      fReadThread.IsOpen=false;
-      pthread_join(fReadThread.Thread,NULL);      
+   if(m_ReadThread.IsOpen)  {
+      m_ReadThread.IsOpen=false;
+      pthread_join(m_ReadThread.Thread,NULL);      
    }
-   for(unsigned int x=0;x<fProcessingThreads.size();x++)  {
-      if(fProcessingThreads[x].IsOpen==false) continue;
-      fProcessingThreads[x].IsOpen=false;
-      pthread_join(fProcessingThreads[x].Thread,NULL);
+   for(unsigned int x=0;x<m_vProcThreads.size();x++)  {
+      if(m_vProcThreads[x].IsOpen==false) continue;
+      m_vProcThreads[x].IsOpen=false;
+      pthread_join(m_vProcThreads[x].Thread,NULL);
    }
    
    if(Completely)  {
-      for(unsigned int x=0;x<fProcessingThreads.size();x++)	{
-	 if(fProcessingThreads[x].XeP!=NULL)  {
-	    delete fProcessingThreads[x].XeP;
-	    fProcessingThreads[x].XeP=NULL;
+      for(unsigned int x=0;x<m_vProcThreads.size();x++)	{
+	 if(m_vProcThreads[x].Processor != NULL)  {
+	    delete m_vProcThreads[x].Processor;
+	    m_vProcThreads[x].Processor = NULL;
 	 }
       }
-      fProcessingThreads.clear();		 
+      m_vProcThreads.clear();		 
    }           
    return;
 }
 
 bool DigiInterface::LockRateMutex()
 {
-   int error = pthread_mutex_lock(&fRateLock);
+   int error = pthread_mutex_lock(&m_RateMutex);
    if(error==0) return true;
    return false;
 }
 
 bool DigiInterface::UnlockRateMutex()
 {
-   int error = pthread_mutex_unlock(&fRateLock);
+   int error = pthread_mutex_unlock(&m_RateMutex);
    if(error==0) return true;
    return false;
 }
@@ -270,9 +333,9 @@ bool DigiInterface::UnlockRateMutex()
 u_int32_t DigiInterface::GetRate(u_int32_t &freq)
 {
    if(!LockRateMutex()) return 0;
-   freq=fReadFreq;
-   u_int32_t retRate=fReadSize;
-   fReadFreq=fReadSize=0;
+   freq=m_iReadFreq;
+   u_int32_t retRate=m_iReadSize;
+   m_iReadFreq=m_iReadSize=0;
    UnlockRateMutex();
    return retRate;
 }
@@ -281,12 +344,12 @@ bool DigiInterface::RunError(string &err)
 {
    //check mongo and processors for an error and report it
    string error;
-   if(fDAQRecorder!=NULL){	
-      if(fDAQRecorder->QueryError(err)) return true;
+   if(m_DAQRecorder!=NULL){	
+      if(m_DAQRecorder->QueryError(err)) return true;
    }   
-   for(unsigned int x=0;x<fProcessingThreads.size();x++)  {
-      if(fProcessingThreads[x].XeP==NULL) continue;
-      if(fProcessingThreads[x].XeP->QueryError(err)) return true;
+   for(unsigned int x=0;x<m_vProcThreads.size();x++)  {
+      if(m_vProcThreads[x].Processor == NULL) continue;
+      if(m_vProcThreads[x].Processor->QueryError(err)) return true;
    }   
    return false;   
 }

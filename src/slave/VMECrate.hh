@@ -32,10 +32,11 @@ class VMECrate
  public:
    VMECrate();
    virtual ~VMECrate();
+   explicit VMECrate(koLogger *koLog);
    
    //Crate Actions
    int     AddModule(BoardDefinition_t BoardID);
-   int     InitializeModules(XeDAQOptions *options);   
+   int     InitializeModules(koOptions *options);   
    int     Define(LinkDefinition_t Link);
    int     Close();
    void    StartRunSW();
@@ -71,6 +72,7 @@ class VMECrate
    vector <VMEBoard*> fBoards;        //All boards
    vector <VMEBoard*> fDigitizers;    //Digitizers only
    bool               bCrateActive;
+   koLogger          *m_koLog;
 };
 
 #endif

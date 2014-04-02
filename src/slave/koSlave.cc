@@ -10,10 +10,10 @@
 // 
 // *****************************************************
 
-#include <XeDAQLogger.hh>
+#include <koLogger.hh>
 #include <iostream>
 #include <iomanip>
-#include <XeNetClient.hh>
+#include <koNetClient.hh>
 #include "DigiInterface.hh"
 #include <config.h>
 
@@ -24,7 +24,6 @@
 
 using namespace std;
 
-XeDAQLogger *gLog = new XeDAQLogger("log/koSlave.log");
 
 #ifdef KLITE
 // *******************************************************************************
@@ -36,8 +35,9 @@ XeDAQLogger *gLog = new XeDAQLogger("log/koSlave.log");
 int StandaloneMain()
 {   
    gLog->Message("Started program.");   
-   DigiInterface *fElectronics = new DigiInterface();
-   XeDAQOptions fDAQOptions;
+   koLogger fLog;
+   DigiInterface *fElectronics = new DigiInterface(&fLog);
+   koOptions fDAQOptions;
    string fOptionsPath = "DAQConfig.ini";
       
 program_start:
@@ -68,14 +68,14 @@ program_start:
       cout<<"Error starting run."<<endl;
       return 1;
    }
-   cout<<XeDAQLogger::GetTimeString()<<" Start of run."<<endl;
+   cout<<koLogger::GetTimeString()<<" Start of run."<<endl;
    
    input='a';
-   time_t prevTime = XeDAQLogger::GetCurrentTime();
+   time_t prevTime = koLogger::GetCurrentTime();
    while(1)  {	
       if(kbhit()) cin.get(input);
       if(input=='q') break;
-      time_t currentTime = XeDAQLogger::GetCurrentTime();
+      time_t currentTime = koLogger::GetCurrentTime();
       
       //updates every second
       time_t tdiff;
@@ -93,7 +93,7 @@ program_start:
 	 cout.flush();
       }      
    }      
-   cout<<XeDAQLogger::GetTimeString()<<" End of run."<<endl;
+   cout<<koLogger::GetTimeString()<<" End of run."<<endl;
    
    return 0;
 }
@@ -110,21 +110,21 @@ int main()
 #ifdef KLITE
    return StandaloneMain();
 #endif
-      
-   
-   gLog->Message("Started koSlave module.");
-
+         
    //Set up objects
-   XeNetClient    fNetworkInterface(gLog);
+   koLogger      *koLog = new koLogger();
+   koNetClient    fNetworkInterface(koLog);
    fNetworkInterface.Initialize("xedaq02",2002,2003,2,"xedaq02");
-   DigiInterface  *fElectronics = new DigiInterface();
-   XeDAQOptions   fDAQOptions;
-   XeRunInfo_t    fRunInfo;
+   DigiInterface  *fElectronics = new DigiInterface(koLog);
+   koOptions   fDAQOptions;
+   koRunInfo_t    fRunInfo;
    
    string         fOptionsPath = "DAQConfig.ini";
-   time_t         fPrevTime = XeDAQLogger::GetCurrentTime();
+   time_t         fPrevTime = koLogger::GetCurrentTime();
    bool           bArmed=false,bRunning=false,bConnected=false;
    //
+   koLog->Message("Started koSlave module.");
+   
    
    //try to connect. this is the idle state where the module will revert to if reset.
 connection_loop:
@@ -146,7 +146,7 @@ connection_loop:
 	    fElectronics->Close();
 	    if(fNetworkInterface.ReceiveOptions(fOptionsPath)==0)  {
 	       if(fDAQOptions.ReadParameterFile(fOptionsPath)!=0)	 {
-		  gLog->Error("koSlave - error loading options");
+		  koLog->Error("koSlave - error loading options");
 		  fNetworkInterface.SlaveSendMessage("Error loading options!");
 		  continue;
 	       }	         		    	       
@@ -156,12 +156,12 @@ connection_loop:
 	       }	       
 	       else{		    
 		  fNetworkInterface.SlaveSendMessage("Error initializing electronics!");
-		  gLog->Error("koSlave - error initializing electronics.");		  
+		  koLog->Error("koSlave - error initializing electronics.");		  
 		  continue;
 	       }	       
 	    }
 	    else   {
-	       gLog->Error("koSlave - error receiving options!");
+	       koLog->Error("koSlave - error receiving options!");
 	       fNetworkInterface.SlaveSendMessage("Error receiving options!");
 	       continue;
 	    }	    
@@ -176,7 +176,7 @@ connection_loop:
 		 break;
 	    }
 	    if(count==20)  {
-	       gLog->Error("koSlave - error receiving new mongodb collection.");
+	       koLog->Error("koSlave - error receiving new mongodb collection.");
 	       continue;
 	    }	    
 	    //change the write collection
@@ -205,12 +205,12 @@ connection_loop:
       
       //Send status
       double tdiff;
-      time_t fCurrentTime=XeDAQLogger::GetCurrentTime();
+      time_t fCurrentTime=koLogger::GetCurrentTime();
       if((tdiff=difftime(fCurrentTime,fPrevTime))>=1.0){
 	 fPrevTime=fCurrentTime;
-	 int status=XEDAQ_IDLE;
-	 if(bArmed && !bRunning) status=XEDAQ_ARMED;
-	 if(bRunning) status=XEDAQ_RUNNING;
+	 int status=KODAQ_IDLE;
+	 if(bArmed && !bRunning) status=KODAQ_ARMED;
+	 if(bRunning) status=KODAQ_RUNNING;
 	 double rate=0.,freq=0.,nBoards=fElectronics->GetDigis();
 	 unsigned int iFreq=0;	 
 	 unsigned int iRate=fElectronics->GetRate(iFreq);
@@ -222,7 +222,7 @@ connection_loop:
 	 cout<<"rate: "<<rate<<" freq: "<<freq<<" iRate: "<<iRate<<" tdiff: "<<tdiff<<endl;
 	 if(fNetworkInterface.SendStatusUpdate(status,rate,freq,nBoards)!=0){
 	    bConnected=false;
-	   gLog->Error("koSlave::main - [ FATAL ERROR ] Could not send status update. Going to idle state!");
+	   koLog->Error("koSlave::main - [ FATAL ERROR ] Could not send status update. Going to idle state!");
 	 }	 
       }
       
@@ -238,6 +238,9 @@ connection_loop:
    fNetworkInterface.Disconnect();
    bConnected=false;
    goto connection_loop;
+   
+   delete koLog;
+   delete fElectronics;
    return 0;
    
    

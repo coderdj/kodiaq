@@ -18,10 +18,15 @@
 #include <string>
 #include <fstream>
 #include <math.h>
+#include "config.h"
 
 #include "koHelper.hh"
 
 using namespace std;
+
+#define WRITEMODE_NONE    0
+#define WRITEMODE_FILE    1
+#define WRITEMODE_MONGODB 2
 
 /*! \brief Stores configuration information for an optical link.
  */ 
@@ -67,6 +72,7 @@ struct RunOptions_t {
 struct ProcessingOptions_t {
    int NumThreads;
    int Mode;
+   int ReadoutThreshold;
 };
 
 /*! \brief Options for file output
@@ -86,7 +92,6 @@ struct MongodbOptions_t {
    bool WriteConcern;
    string DBAddress;
    string Collection;
-   int ReadoutThreshold;
 };
 
 /*! \brief Configuration options for ddc-10 FPGA module.

@@ -21,7 +21,12 @@ CBV2718::~CBV2718()
 {
 }
 
-int CBV2718::Initialize(XeDAQOptions *options)
+CBV2718::CBV2718(BoardDefinition_t BID, koLogger *kLog)
+        :VMEBoard(BID,kLog)
+{
+}
+
+int CBV2718::Initialize(koOptions *options)
 {
    //Set output multiplex register to channels 0-4 to configure them to 
    //output whatever is written to the output buffer

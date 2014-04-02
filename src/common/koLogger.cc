@@ -74,14 +74,14 @@ time_t koLogger::GetCurrentTime()
    time(&rawtime);
    return rawtime;
 }
-/*
-string XeDAQLogger::GetMessage()
+
+string koLogger::GetMessage()
 {
    string temp = fMessageBuffer[0];
    fMessageBuffer.erase(fMessageBuffer.begin());
    return temp;
 }
-*/
+
 void koLogger::SaveBroadcast(string message,int priority)
 {
    if(!fLogfile.is_open()) return;

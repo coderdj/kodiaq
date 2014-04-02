@@ -18,11 +18,19 @@ VMECrate::VMECrate()
 {
    fCrateHandle=-1;
    bCrateActive=false;
+   m_koLog=NULL;
 }
 
 VMECrate::~VMECrate()
 {
    Close();
+}
+
+VMECrate::VMECrate(koLogger *koLog)
+{
+   fCrateHandle = -1;
+   bCrateActive = false;
+   m_koLog      = koLog;
 }
 
 int VMECrate::Define(LinkDefinition_t Link)
@@ -34,7 +42,8 @@ int VMECrate::Define(LinkDefinition_t Link)
    else if(Link.LinkType=="V2718")
      BType = cvV2718;
    else  {
-      gLog->Error("VMECrate::Define - Invalid link type, check file definition.");
+      if(m_koLog!=NULL)
+	m_koLog->Error("VMECrate::Define - Invalid link type, check file definition.");
       return -1;
    }
    int temp;
@@ -42,7 +51,8 @@ int VMECrate::Define(LinkDefinition_t Link)
    if((cerr=CAENVME_Init(BType,Link.LinkID,Link.CrateID,&temp))!=cvSuccess)  {
       stringstream message;
       message<<"VMECrate::Define - Failed to initialize link "<<Link.LinkID<<". CAEN error "<<cerr;
-      gLog->Error(message.str());
+      if(m_koLog!=NULL)
+	m_koLog->Error(message.str());
       return -1;
    }
 //   CAENVME_DeviceReset(temp);
@@ -51,7 +61,8 @@ int VMECrate::Define(LinkDefinition_t Link)
    stringstream ss;
    ss<<"Defined crate "<<Link.CrateID<<" over link "<<Link.LinkID<<
      " with handle "<<fCrateHandle;
-   gLog->Message(ss.str());  
+   if(m_koLog!=NULL)
+     m_koLog->Message(ss.str());  
    bCrateActive=false;
    return 0;
 }
@@ -61,39 +72,44 @@ int VMECrate::AddModule(BoardDefinition_t BoardID)
    //Only defined types will be added to the code
    stringstream ss;
    if(BoardID.BoardType=="V1724")  {
-      CBV1724 *module = new CBV1724(BoardID);
+      CBV1724 *module = new CBV1724(BoardID,m_koLog);
       module->SetCrateHandle(fCrateHandle);
       fBoards.push_back(module);
       fDigitizers.push_back(module);
       ss<<"VMECrate::AddModule - Module type V1724 with VME Address "
 	<<hex<<(BoardID.VMEAddress &0xFFFFFFFF)<<" added.";
-      gLog->Message(ss.str());
+      if(m_koLog!=NULL)
+	m_koLog->Message(ss.str());
       return 0;
    }
    else if(BoardID.BoardType=="V2718")  {
-      CBV2718 *module = new CBV2718(BoardID);
+      CBV2718 *module = new CBV2718(BoardID,m_koLog);
       module->SetCrateHandle(fCrateHandle);
       fBoards.push_back(module);
       ss<<"VMECrate::AddModule - Module type V2718 with VME Address "
 	<<hex<<(BoardID.VMEAddress &0xFFFFFFFF)<<" added.";
-      gLog->Message(ss.str());
+      if(m_koLog!=NULL)
+	m_koLog->Message(ss.str());
       return 0;
    }   
    else     {
       ss<<"VMECrate::AddModule - Module type "<<BoardID.BoardType<<" unknown.";
-      gLog->Error(ss.str());
-      gLog->Message(ss.str());
+      if(m_koLog!=NULL) {	   
+	 m_koLog->Error(ss.str());
+	 m_koLog->Message(ss.str());
+      }      
    }      
    return 0;
 }
 
-int VMECrate::InitializeModules(XeDAQOptions *options)
+int VMECrate::InitializeModules(koOptions *options)
 {
    stringstream ss;
    for(unsigned int x=0; x<fBoards.size();x++)    {
       if(fBoards[x]->Initialize(options)!=0)	{
 	 ss<<"VMECrate::InitializeModules - Could not initialize module "<<fBoards[x]->GetID().BoardID;
-	 gLog->Error(ss.str());
+	 if(m_koLog!=NULL)
+	   m_koLog->Error(ss.str());
 	 return -1;
       }      
    }   
@@ -111,11 +127,13 @@ int VMECrate::Close()
    stringstream ss;
    if(CAENVME_End(fCrateHandle)!=cvSuccess)  {
       ss<<"VMECrate::Close - Failed to close crate "<<fCrateHandle;
-      gLog->Error(ss.str());
+      if(m_koLog!=NULL)
+	m_koLog->Error(ss.str());
       return -1;
    }
    ss<<"VMECrate::Close - Closed crate "<<fCrateHandle;
-   gLog->Message(ss.str());   
+   if(m_koLog!=NULL)
+     m_koLog->Message(ss.str());   
    return 0;
 }
 
