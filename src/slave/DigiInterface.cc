@@ -19,6 +19,7 @@ DigiInterface::DigiInterface()
 {
    m_ReadThread.IsOpen=false;
    m_WriteThread.IsOpen=false;
+   m_koLog = NULL;
    Close();
 }
 
@@ -43,7 +44,7 @@ int DigiInterface::Initialize(koOptions *options)
    
    //First define crates   
    for(int x=0;x<options->GetLinks();x++)  {
-      VMECrate *crate = new VMECrate();
+      VMECrate *crate = new VMECrate(m_koLog);
       if(crate->Define(options->GetLink(x))==0)
 	m_vCrates.push_back(crate);
       else{	         
@@ -79,7 +80,8 @@ int DigiInterface::Initialize(koOptions *options)
    
    //Define how run is started
    if(options->GetRunOptions().RunStart==1)
-     m_RunStartModule=GetModuleByID(options->GetRunOptions().RunStartModule);
+     m_RunStartModule=GetModuleByID(options->GetRunOptions().
+				    RunStartModule);
    else 
      m_RunStartModule=NULL;
    
@@ -146,7 +148,6 @@ void DigiInterface::Close()
 
    //Didn't create these objects, so just reset pointers
    m_RunStartModule=NULL;
-   m_koLog=NULL;
    m_koOptions=NULL;
    
    //Created the DAQ recorder, so must destroy it
@@ -188,13 +189,15 @@ void DigiInterface::ReadThread()
 int DigiInterface::StartRun()
 {   
    //Reset timer on DAQ recorder
-   m_DAQRecorder->ResetTimer();
+   if(m_DAQRecorder!=NULL)
+     m_DAQRecorder->ResetTimer();
 
    
    //Tell Boards to start acquisition
    if(m_RunStartModule!=NULL)    {	
       for(unsigned int x=0;x<m_vCrates.size();x++)
 	m_vCrates[x]->SetActive();
+      cout<<"SENDING START SIGNAL"<<endl;
       m_RunStartModule->SendStartSignal();
    }   
    else   {	
@@ -213,13 +216,14 @@ int DigiInterface::StartRun()
       if(m_vProcThreads[x].Processor!=NULL) delete m_vProcThreads[x].Processor;
       
       // Spawning of processing threads. depends on readout options.
-/*      if(m_koOptions.GetRunOptions().WriteMode == WRITEMODE_NONE) {	   
-	 m_vProcThreads[x].Processor = new DataProcessor_dump(this,m_DAQRecorder);
+      if(m_koOptions->GetRunOptions().WriteMode == WRITEMODE_NONE) {	   
+	 m_vProcThreads[x].Processor = new DataProcessor_dump(this,m_DAQRecorder,
+							     m_koOptions);
 	 pthread_create(&m_vProcThreads[x].Thread,NULL,DataProcessor_dump::WProcess,
 			static_cast<void*>(m_vProcThreads[x].Processor));
 	 m_vProcThreads[x].IsOpen = true;
-      }      */
-      if(m_koOptions->GetRunOptions().WriteMode == WRITEMODE_FILE){	   
+      }      
+      else if(m_koOptions->GetRunOptions().WriteMode == WRITEMODE_FILE){	   
 	 m_vProcThreads[x].Processor = new DataProcessor_protobuff(this,
 								   m_DAQRecorder,
 								   m_koOptions);

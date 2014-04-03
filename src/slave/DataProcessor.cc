@@ -258,6 +258,7 @@ void DataProcessor_mongodb::ProcessMongoDB()
    vector <mongo::BSONObj> *vInsertVec = new vector<mongo::BSONObj>();
    
    while(!bExitCondition) {
+      bExitCondition = true;
       for(int x=0; x<fDigiInterface->NumCrates();x++)  {	   
 	 for(unsigned int y=0;y<fDigiInterface->GetCrate(x)->GetDigitizers();y++)  {		
 	    CBV1724 *digi = (*fDigiInterface)(x,y);
@@ -289,7 +290,7 @@ void DataProcessor_mongodb::ProcessMongoDB()
 	    // INSERTION
 	    // *********
 	    
-	    int ModuleNumber = digi->GetID().BoardID;
+	//    int ModuleNumber = digi->GetID().BoardID;
 	    int nBuff        = buffvec->size();
 	    
 	    for(int b=0; b<nBuff;b++) {
@@ -401,6 +402,99 @@ void DataProcessor_protobuff::ProcessProtoBuff()
 {		 
    return;
 }
+
+
+//
+//
+// DataProcessor_dump - debug processor
+// 
+DataProcessor_dump::DataProcessor_dump() : DataProcessor()
+{
+}
+
+
+DataProcessor_dump::~DataProcessor_dump()
+{
+   
+}
+
+
+DataProcessor_dump::DataProcessor_dump(DigiInterface *digi,
+				       DAQRecorder *recorder,
+				       koOptions *options)
+                    :DataProcessor(digi,recorder,options)
+{
+}
+
+
+void* DataProcessor_dump::WProcess(void* data)
+{
+   DataProcessor_dump *DP = static_cast<DataProcessor_dump*>(data);
+   DP->Process();
+   return (void*)data;
+}
+
+void DataProcessor_dump::Process()
+{
+   
+   bool      bExitCondition     = false;
+      
+   // Get the digi interface object. Will pull data from here.
+   if(DataProcessor::GetDigiInterface()==NULL)
+     return;
+   DigiInterface *fDigiInterface = DataProcessor::GetDigiInterface();
+   
+   // Declare containers for data
+   vector<u_int32_t*> *buffvec  =NULL;
+   vector<u_int32_t > *sizevec  =NULL;
+   vector<u_int32_t > *channels =NULL;
+   vector<u_int32_t > *times    =NULL;
+   
+   while(!bExitCondition) {
+      bExitCondition = true;
+      for(int x=0; x<fDigiInterface->NumCrates();x++)  {
+         for(unsigned int y=0;y<fDigiInterface->GetCrate(x)->GetDigitizers();y++)  {
+            CBV1724 *digi = (*fDigiInterface)(x,y);
+	    //keep exit condition false as long as at least one board is active
+            if(digi->Activated())         bExitCondition=false;
+
+            //Data buffer of "filled" digi is only locked for long enough to 
+            //get the data out. Then it can go back to taking data.
+            if(digi->RequestDataLock()!=0) continue;
+            buffvec = digi->ReadoutBuffer(sizevec);
+            digi->UnlockDataBuffer();
+
+	    // **********
+            // PROCESSING
+            // **********
+                     
+            if(m_koOptions->GetProcessingOptions().Mode==1)    //Trigger Splitting
+              SplitData(buffvec,sizevec);
+            else if(m_koOptions->GetProcessingOptions().Mode==2){ //Occurence splitt$
+               channels = new vector<u_int32_t>();
+               times    = new vector<u_int32_t>();
+               SplitDataChannels(buffvec,sizevec,times,channels);
+            }
+                  
+            // **************
+            // END PROCESSING
+            // **************
+	    
+	    //delete data
+	    for(unsigned int b=0; b<buffvec->size();b++)  
+	       delete[] ((*buffvec)[b]);
+	    if(channels!=NULL) delete channels;
+	    if(times!=NULL) delete times;
+	    if(buffvec!=NULL) delete buffvec;
+	    if(sizevec!=NULL) delete sizevec;
+	    buffvec=NULL;
+	    sizevec=channels=times=NULL;	    	    	    
+	 }
+      }
+   }
+   return;
+}
+
 
 	
 

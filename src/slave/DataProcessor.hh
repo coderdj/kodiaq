@@ -181,4 +181,40 @@ class DataProcessor_protobuff : public DataProcessor {
 
 };
 
+
+/* \brief Derived class for running without output (for debugging)                
+   
+ Sometimes it might be a good idea for debugging to run without saving the data
+ anywhere. For example for testing performance and stability without filling 
+ a disk. In this case this data processor can perform some block splitting, but
+ then just delete the data instead of sending it to a recorder (the recorder
+ sent in the constructor can be a NULL pointer)
+  */                                           
+class DataProcessor_dump : public DataProcessor 
+{
+                                  
+                                                                          
+ public:                                                                  
+                                                                          
+      DataProcessor_dump();                                                        
+      virtual ~DataProcessor_dump();                                               
+      DataProcessor_dump(DigiInterface *digi, DAQRecorder *recorder,               
+			 koOptions *options);                                       
+                                                                                 
+   // Name      : virtual static void* koDataProcessor_dump::WProcess(void* data)
+   // Purpose   : Required pthread-compatible function to drive processing
+   //                                                                     
+   static void* WProcess(void* data);                                     
+   
+ private:                                                                 
+   
+   //                                                                     
+   // Name      : void DataProcessor_dump::Process();
+   // Purpose   : This is the function called in WProcess. In the end it should
+   //             delete the data. It can also do formatting if required.
+   //                                                                    
+   void Process();                                              
+   //                                                                    
+   
+}; 
 #endif

@@ -35,7 +35,7 @@ using namespace std;
 int StandaloneMain()
 {   
    gLog->Message("Started program.");   
-   koLogger fLog;
+   koLogger fLog("log/slave.log");
    DigiInterface *fElectronics = new DigiInterface(&fLog);
    koOptions fDAQOptions;
    string fOptionsPath = "DAQConfig.ini";
@@ -112,7 +112,7 @@ int main()
 #endif
          
    //Set up objects
-   koLogger      *koLog = new koLogger();
+   koLogger      *koLog = new koLogger("log/slave.log");
    koNetClient    fNetworkInterface(koLog);
    fNetworkInterface.Initialize("xedaq02",2002,2003,2,"xedaq02");
    DigiInterface  *fElectronics = new DigiInterface(koLog);

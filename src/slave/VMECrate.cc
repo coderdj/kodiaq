@@ -61,8 +61,10 @@ int VMECrate::Define(LinkDefinition_t Link)
    stringstream ss;
    ss<<"Defined crate "<<Link.CrateID<<" over link "<<Link.LinkID<<
      " with handle "<<fCrateHandle;
+   cout<<ss.str()<<endl;
    if(m_koLog!=NULL)
-     m_koLog->Message(ss.str());  
+     m_koLog->Message(ss.str());
+   
    bCrateActive=false;
    return 0;
 }
