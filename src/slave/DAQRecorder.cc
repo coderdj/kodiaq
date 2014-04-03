@@ -109,6 +109,7 @@ void DAQRecorder_mongodb::CloseConnections()
       m_vScopedConnections[x]->done();
       delete m_vScopedConnections[x];
    }   
+   m_vScopedConnections.clear();
    pthread_mutex_destroy(&m_ConnectionMutex);
 }
 
