@@ -15962,6 +15962,47 @@ else
   as_fn_error $? "" "$LINENO" 5
 fi
 
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lprotobuf" >&5
+$as_echo_n "checking for main in -lprotobuf... " >&6; }
+if ${ac_cv_lib_protobuf_main+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lprotobuf  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+return main ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  ac_cv_lib_protobuf_main=yes
+else
+  ac_cv_lib_protobuf_main=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_protobuf_main" >&5
+$as_echo "$ac_cv_lib_protobuf_main" >&6; }
+if test "x$ac_cv_lib_protobuf_main" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBPROTOBUF 1
+_ACEOF
+
+  LIBS="-lprotobuf $LIBS"
+
+else
+  as_fn_error $? "libprotobuf missing" "$LINENO" 5
+fi
+
 
 else
 
@@ -16571,6 +16612,46 @@ $as_echo "#define HAS_MONGODB /**/" >>confdefs.h
 
 fi
 
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lprotobuf" >&5
+$as_echo_n "checking for main in -lprotobuf... " >&6; }
+if ${ac_cv_lib_protobuf_main+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lprotobuf  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+return main ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  ac_cv_lib_protobuf_main=yes
+else
+  ac_cv_lib_protobuf_main=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_protobuf_main" >&5
+$as_echo "$ac_cv_lib_protobuf_main" >&6; }
+if test "x$ac_cv_lib_protobuf_main" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBPROTOBUF 1
+_ACEOF
+
+  LIBS="-lprotobuf $LIBS"
+
+else
+  as_fn_error $? "libprotobuf missing" "$LINENO" 5
+fi
 
 
 #    AC_CHECK_LIB(mongoclient,main,[],AC_MSG_ERROR([libmongoclient not found.]))

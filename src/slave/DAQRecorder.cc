@@ -198,76 +198,106 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
 //
 // DAQRecorder_protobuff
 // 
+#include "protBuffDef.pb.h"
 
 DAQRecorder_protobuff::DAQRecorder_protobuff()
                       :DAQRecorder()
 {
-   pthread_mutex_init(&m_CBuffMutex,NULL);
+   pthread_mutex_init(&m_BuffMutex,NULL);
+   pthread_mutex_init(&m_OutfileMutex,NULL);
+   iEventNumber = 0;
 }
 
 DAQRecorder_protobuff::~DAQRecorder_protobuff()                     
 {
-   pthread_mutex_destroy(&m_CBuffMutex);
+   pthread_mutex_destroy(&m_BuffMutex);
+   pthread_mutex_destroy(&m_OutfileMutex);
 }
 
 DAQRecorder_protobuff::DAQRecorder_protobuff(koLogger *koLog)
                       :DAQRecorder(koLog)
 {
-   pthread_mutex_init(&m_CBuffMutex,NULL);
+   pthread_mutex_init(&m_BuffMutex,NULL);
+   pthread_mutex_init(&m_OutfileMutex,NULL);
+   iEventNumber = 0;
 }
 
 int DAQRecorder_protobuff::Initialize(koOptions *options)
 {
+   Shutdown();
+   
+   //set outfile name and open
+   pthread_mutex_lock(&m_OutfileMutex);
+   m_FileOptions = options->GetOutfileOptions();
+   m_Outfile.open(m_FileOptions.Path.c_str());
+   pthread_mutex_unlock(&m_OutfileMutex);
+   
+   iEventNumber = 0;
+   
+   if(!m_Outfile.is_open()) return -1;   
    return 0;
 }
 
 int DAQRecorder_protobuff::RegisterProcessor()
 {
-   vector<int> empty;
-   return RegisterProcessor(empty);
+   return 0;
 }
 
-int DAQRecorder_protobuff::RegisterProcessor(vector <int> Digitizers)
-{
-   //Take a vector of digitizer IDs. This will be used for sorting.
-   int retval = -1;
-   
-   int lock = pthread_mutex_lock(&m_CBuffMutex);
-   if(lock!=0)  {
-      LogError("DAQRecorder_protobuff::RegisterProcessor - Failed to get mutex lock.");
-      return retval;
-   }
-   ProtoChannelBuffer cBuff;
-   cBuff.Digis = Digitizers;
-   pthread_mutex_init(&cBuff.Mutex,NULL);
-   m_vPChanBuffs.push_back(cBuff);
-   retval = m_vPChanBuffs.size()-1;   
-   pthread_mutex_unlock(&m_CBuffMutex);
-   
-   return retval;
-}
-
-void DAQRecorder_protobuff::CloseWriteBuffer()
-{
-   for(unsigned int x=0; x<m_vPChanBuffs.size(); x++)  {
-      //delete any remaining data
-      pthread_mutex_destroy(&m_vPChanBuffs[x].Mutex);
-   }
-   m_vPChanBuffs.clear();   
-}
-
-int DAQRecorder_protobuff::InsertThreaded(int ID)
+int DAQRecorder_protobuff::InsertThreaded(vector<kodiaq_data::Event*> *vInsert)
 {
    //should insert into m_vPChanBuffs[ID]
+   if(vInsert->size()==0) {
+      delete vInsert;
+      return 0;
+   }
+   
+   pthread_mutex_lock(&m_BuffMutex);
+   for(unsigned int x=0; x<vInsert->size(); x++)  {
+      m_vBuffer.push_back((*vInsert)[x]);
+   }
+   pthread_mutex_unlock(&m_BuffMutex);
+   delete vInsert;   
+   
+   WriteToFile();   
    return 0;
 }
 
 void DAQRecorder_protobuff::Shutdown()
 {
-   CloseWriteBuffer();
+   WriteToFile(); //write data if possible
+   
+   //clear buffer if anything is left and put size to zero
+   pthread_mutex_lock(&m_BuffMutex);
+   for(unsigned int x=0; x<m_vBuffer.size(); x++)    {      
+      //delete any remaining data
+      delete m_vBuffer[x];
+   }
+   m_vBuffer.clear();
+   pthread_mutex_unlock(&m_BuffMutex);
+   
+   //Close file
+   pthread_mutex_lock(&m_OutfileMutex);
+   if(m_Outfile.is_open()) m_Outfile.close();
+   pthread_mutex_unlock(&m_OutfileMutex);
+   
+   return;
 }
 
 void DAQRecorder_protobuff::WriteToFile()
 {
+   pthread_mutex_lock(&m_BuffMutex);
+   pthread_mutex_lock(&m_OutfileMutex);
+   for(unsigned int x=0; x<m_vBuffer.size(); x++)  {
+      int size = m_vBuffer[x]->ByteSize();
+      m_Outfile<<size;
+      m_vBuffer[x]->set_number(iEventNumber);
+      iEventNumber++;
+      m_vBuffer[x]->SerializeToOstream(&m_Outfile);
+      delete m_vBuffer[x];
+   }
+   pthread_mutex_unlock(&m_OutfileMutex);
+   m_vBuffer.clear();
+   pthread_mutex_unlock(&m_BuffMutex);
+   return;   
 }
 

@@ -400,6 +400,107 @@ void* DataProcessor_protobuff::WProcess(void* data)
 
 void DataProcessor_protobuff::ProcessProtoBuff()
 {		 
+   bool      bExitCondition     = false;
+   int       iModule            = -1;
+   
+   //Get the digi interface object. Will pull data from here.
+     if(DataProcessor::GetDigiInterface()==NULL ||
+	DataProcessor::GetDAQRecorder()==NULL)
+             return;
+   DigiInterface *fDigiInterface = DataProcessor::GetDigiInterface();
+   DAQRecorder_protobuff *protorecorder = dynamic_cast<DAQRecorder_protobuff*>
+     (DataProcessor::GetDAQRecorder());
+   
+   // Declare containers for data
+   vector<u_int32_t*> *buffvec  =NULL;
+   vector<u_int32_t > *sizevec  =NULL;
+   vector<u_int32_t > *channels =NULL;
+   vector<u_int32_t > *times    =NULL;
+
+   //This vector will hold the objects we will write
+   vector<kodiaq_data::Event*> *vInsert = new vector<kodiaq_data::Event*>();
+   
+   while(!bExitCondition) {
+      bExitCondition = true;
+      for(int x=0; x<fDigiInterface->NumCrates();x++)  {
+	 for(unsigned int y=0;y<fDigiInterface->GetCrate(x)->GetDigitizers();y++)  {
+	    CBV1724 *digi = (*fDigiInterface)(x,y);
+	    //keep exit condition false as long as at least one board is active
+	    if(digi->Activated())         bExitCondition=false;
+      
+	    //Data buffer of "filled" digi is only locked for long enough to 
+	    //get the data out. Then it can go back to taking data.
+	    if(digi->RequestDataLock()!=0) continue;
+	    buffvec = digi->ReadoutBuffer(sizevec);
+	    iModule = digi->GetID().BoardID;
+	    digi->UnlockDataBuffer();
+	    
+            // **********
+	    // PROCESSING
+	    // **********
+      
+//	    if(m_koOptions->GetProcessingOptions().Mode==1)    //Trigger Splitting
+	      SplitData(buffvec,sizevec);
+//            else if(m_koOptions->GetProcessingOptions().Mode==2){ //Occurence splitting
+//	       channels = new vector<u_int32_t>();
+//	       times    = new vector<u_int32_t>();
+//	       SplitDataChannels(buffvec,sizevec,times,channels);
+  //          }
+	    
+	    // **************
+	    // END PROCESSING
+	    // **************
+   
+	    //
+	    // Loop though vector of parsed buffers
+	    for(unsigned int b = 0; b < buffvec->size(); b++) {
+		 
+	       //create protocol buffer object
+	       //we set everything here except the number. That will be set in the recorder class
+	       kodiaq_data::Event *Event = new kodiaq_data::Event();
+	       
+	       //time
+	       u_int32_t TimeStamp = GetTimeStamp((*buffvec)[b]);
+	       int ResetCounter = protorecorder->GetResetCounter(TimeStamp);
+	       long long Time64 = ((unsigned long)ResetCounter << 31) | TimeStamp;	    
+	       Event->set_time(Time64);
+	       
+	       //
+	       kodiaq_data::Event_Module *Module = Event->add_module();
+	       Module->set_moduleid(iModule);
+	       
+	       kodiaq_data::Event_Module_Channel *Channel = Module->add_channel();
+	       Channel->set_channelid(-1);
+
+	       //data
+	       Channel->set_data((const void*)((*buffvec)[b]),(size_t)((*sizevec)[b]));
+	       
+	       vInsert->push_back(Event);
+	       	       	       
+	       //delete data
+	       delete[] ((*buffvec)[b]);
+	    }//end loop through buffers
+	    
+	    //insert data to recorder
+	    if(protorecorder->InsertThreaded(vInsert)==0)  {
+	       //ownership of vInsert has now been passed. The recorder must delete
+	       //it when it's finished. We will set vInsert to a new vector now.
+	       vInsert = new vector<kodiaq_data::Event*>();
+	    }
+	    
+	    if(channels!=NULL) delete channels;
+	    if(times!=NULL) delete times;
+	    if(buffvec!=NULL) delete buffvec;
+	    if(sizevec!=NULL) delete sizevec;
+	    buffvec=NULL;
+	    sizevec=channels=times=NULL;
+	 }	 
+      }      
+   }      
+
+   if(vInsert!=NULL)
+     delete vInsert;
+   
    return;
 }
 

@@ -189,7 +189,9 @@ class DataProcessor_protobuff : public DataProcessor {
  a disk. In this case this data processor can perform some block splitting, but
  then just delete the data instead of sending it to a recorder (the recorder
  sent in the constructor can be a NULL pointer)
-  */                                           
+
+*/
+
 class DataProcessor_dump : public DataProcessor 
 {
                                   

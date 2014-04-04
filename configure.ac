@@ -76,6 +76,7 @@ AS_IF([test "x$enable_lite" = "xyes"], [
     AC_CHECK_LIB(mongoclient,main,[],AC_DEFINE(HAS_MONGODB,[],[Mongodb installed]))
     AC_CHECK_LIB(mongoclient,main,[],AM_CONDITIONAL(WITH_MONGODB,true),AM_CONDITIONAL(WITH_MONGODB,false))
     AC_CHECK_LIB([ncurses],initscr,[],AC_MSG_ERROR)   
+    AC_CHECK_LIB(protobuf,main,[],AC_MSG_ERROR([libprotobuf missing]))
     ], [
     AM_CONDITIONAL(KODIAQ_LITE,false)
     AM_CONDITIONAL(WITH_MONGODB,false)
@@ -113,7 +114,7 @@ AS_IF([test "x$enable_all" = "xyes"], [
     AC_CHECK_LIB(snappy,_ZN6snappy11RawCompressEPKcmPcPm,[],AC_MSG_ERROR([libsnappy missing.]))
     AC_CHECK_LIB(mongoclient,main,[],AM_CONDITIONAL(WITH_MONGODB,true),AM_CONDITIONAL(WITH_MONGODB,false))
     AC_CHECK_LIB(mongoclient,main,[],AC_DEFINE(HAS_MONGODB,[],[Mongodb installed]))
-
+    AC_CHECK_LIB(protobuf,main,[],AC_MSG_ERROR([libprotobuf missing]))    
 
 #    AC_CHECK_LIB(mongoclient,main,[],AC_MSG_ERROR([libmongoclient not found.]))
     ], [

@@ -20,6 +20,7 @@ DigiInterface::DigiInterface()
    m_ReadThread.IsOpen=false;
    m_WriteThread.IsOpen=false;
    m_koLog = NULL;
+   m_DAQRecorder=NULL;
    Close();
 }
 
@@ -33,6 +34,7 @@ DigiInterface::DigiInterface(koLogger *logger)
    m_ReadThread.IsOpen  = false;
    m_WriteThread.IsOpen = false;
    m_koLog              = logger;
+   m_DAQRecorder        = NULL;
    Close();
 }
 

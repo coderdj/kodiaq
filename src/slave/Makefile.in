@@ -51,7 +51,8 @@ am_koSlave_OBJECTS = koSlave-koSlave.$(OBJEXT) \
 	koSlave-CBV1724.$(OBJEXT) koSlave-CBV2718.$(OBJEXT) \
 	koSlave-DigiInterface.$(OBJEXT) koSlave-VMEBoard.$(OBJEXT) \
 	koSlave-VMECrate.$(OBJEXT) koSlave-DAQRecorder.$(OBJEXT) \
-	koSlave-DataProcessor.$(OBJEXT)
+	koSlave-DataProcessor.$(OBJEXT) \
+	koSlave-protBuffDef.pb.$(OBJEXT)
 koSlave_OBJECTS = $(am_koSlave_OBJECTS)
 koSlave_DEPENDENCIES =
 koSlave_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
@@ -202,10 +203,10 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-koSlave_SOURCES = koSlave.cc CBV1724.cc CBV1724.hh CBV2718.cc CBV2718.hh DigiInterface.cc DigiInterface.hh VMEBoard.cc VMEBoard.hh VMECrate.cc VMECrate.hh DAQRecorder.cc DAQRecorder.hh DataProcessor.cc DataProcessor.hh
+koSlave_SOURCES = koSlave.cc CBV1724.cc CBV1724.hh CBV2718.cc CBV2718.hh DigiInterface.cc DigiInterface.hh VMEBoard.cc VMEBoard.hh VMECrate.cc VMECrate.hh DAQRecorder.cc DAQRecorder.hh DataProcessor.cc DataProcessor.hh protBuffDef.pb.h protBuffDef.pb.cc
 koSlave_CPPFLAGS = -I$(top_srcdir)/src/common -Wall -g -DLINUX -fPIC
-@WITH_MONGODB_FALSE@koSlave_LDADD = -L$(top_srcdir)/src/common/.libs -lkodiaq -lCAENVME
-@WITH_MONGODB_TRUE@koSlave_LDADD = -L$(top_srcdir)/src/common/.libs -lkodiaq -lCAENVME -lmongoclient -lboost_thread -lboost_filesystem -lboost_program_options -lboost_system  -lsnappy -lrt
+@WITH_MONGODB_FALSE@koSlave_LDADD = -L$(top_srcdir)/src/common/.libs -lkodiaq -lCAENVME -lprotobuf
+@WITH_MONGODB_TRUE@koSlave_LDADD = -L$(top_srcdir)/src/common/.libs -lkodiaq -lCAENVME -lmongoclient -lboost_thread -lboost_filesystem -lboost_program_options -lboost_system  -lsnappy -lrt -lprotobuf
 koSlave_LDFLAGS = -static
 all: all-am
 
@@ -302,6 +303,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/koSlave-VMEBoard.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/koSlave-VMECrate.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/koSlave-koSlave.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/koSlave-protBuffDef.pb.Po@am__quote@
 
 .cc.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -435,6 +437,20 @@ koSlave-DataProcessor.obj: DataProcessor.cc
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='DataProcessor.cc' object='koSlave-DataProcessor.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(koSlave_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o koSlave-DataProcessor.obj `if test -f 'DataProcessor.cc'; then $(CYGPATH_W) 'DataProcessor.cc'; else $(CYGPATH_W) '$(srcdir)/DataProcessor.cc'; fi`
+
+koSlave-protBuffDef.pb.o: protBuffDef.pb.cc
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(koSlave_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT koSlave-protBuffDef.pb.o -MD -MP -MF $(DEPDIR)/koSlave-protBuffDef.pb.Tpo -c -o koSlave-protBuffDef.pb.o `test -f 'protBuffDef.pb.cc' || echo '$(srcdir)/'`protBuffDef.pb.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/koSlave-protBuffDef.pb.Tpo $(DEPDIR)/koSlave-protBuffDef.pb.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='protBuffDef.pb.cc' object='koSlave-protBuffDef.pb.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(koSlave_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o koSlave-protBuffDef.pb.o `test -f 'protBuffDef.pb.cc' || echo '$(srcdir)/'`protBuffDef.pb.cc
+
+koSlave-protBuffDef.pb.obj: protBuffDef.pb.cc
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(koSlave_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT koSlave-protBuffDef.pb.obj -MD -MP -MF $(DEPDIR)/koSlave-protBuffDef.pb.Tpo -c -o koSlave-protBuffDef.pb.obj `if test -f 'protBuffDef.pb.cc'; then $(CYGPATH_W) 'protBuffDef.pb.cc'; else $(CYGPATH_W) '$(srcdir)/protBuffDef.pb.cc'; fi`
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/koSlave-protBuffDef.pb.Tpo $(DEPDIR)/koSlave-protBuffDef.pb.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='protBuffDef.pb.cc' object='koSlave-protBuffDef.pb.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(koSlave_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o koSlave-protBuffDef.pb.obj `if test -f 'protBuffDef.pb.cc'; then $(CYGPATH_W) 'protBuffDef.pb.cc'; else $(CYGPATH_W) '$(srcdir)/protBuffDef.pb.cc'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

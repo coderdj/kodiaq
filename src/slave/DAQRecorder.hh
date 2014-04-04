@@ -158,14 +158,16 @@ class DAQRecorder_mongodb : public DAQRecorder
 #endif
 
 
-struct ProtoChannelBuffer
+#include "protBuffDef.pb.h"
+
+/*struct ProtoChannelBuffer
 {
    vector <int> Digis;
    vector <u_int32_t> DataStream; // replace with the protocol buffer format
    vector <u_int64_t> DigisLatestTime; // last time seen for each digi
    u_int64_t          TotalLatestTime; // last time seen by all digis
    pthread_mutex_t    Mutex;           // lock for reads and writes
-};
+};*/
 
 /*! \brief Derived class for recording to file using google protocol buffers
     
@@ -189,18 +191,16 @@ class DAQRecorder_protobuff : public DAQRecorder
    //
    // Name      : int DAQRecorder_protobuff::RegisterProcessor()
    // Purpose   : A data processor registers with the recorder using this
-   //             function and received an ID value. The recorder uses the
-   //             ID for temporal ordering between boards
+   //             function and receives an ID value. 
    // 
-   int            RegisterProcessor(vector<int> Digitizers);
    int            RegisterProcessor();
    //
-   // Name      : int DAQRecorder_protobuff::InsertThreaded(int ID)
+   // Name      : int InsertThreaded(vector <kodiaq::Event> *vInsert)
    // Purpose   : Insert data into the output buffer. This is thread-safe.
-   //             the argument ID gets the value returned by the RegisterProcessor
-   //             function.
+   //             Ownership of vInsert and its elements is passed to the 
+   //             recorder.
    // 
-   int            InsertThreaded(int ID);
+   int            InsertThreaded(vector<kodiaq_data::Event*> *vInsert);
    //
    // Name      : int DAQRecorder_protobuff::Shutdown()
    // Purpose   : When the DAQ is done with the file it can be close 
@@ -210,13 +210,14 @@ class DAQRecorder_protobuff : public DAQRecorder
    //
    
  private:
-
-   void          CloseWriteBuffer();
+   int                iEventNumber;
+   
    void          WriteToFile();
    
-   pthread_mutex_t     m_CBuffMutex;
-   vector <ProtoChannelBuffer> m_vPChanBuffs;
-   
+   pthread_mutex_t     m_BuffMutex;
+   vector <kodiaq_data::Event*> m_vBuffer;
+
+   pthread_mutex_t     m_OutfileMutex;
    ofstream            m_Outfile;
    OutfileOptions_t    m_FileOptions;
    
