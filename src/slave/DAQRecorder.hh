@@ -17,6 +17,7 @@
 #include <koLogger.hh>
 #include <koOptions.hh>
 #include <pthread.h>
+#include <iomanip>
 
 using namespace std;
 
@@ -159,15 +160,9 @@ class DAQRecorder_mongodb : public DAQRecorder
 
 
 #include "protBuffDef.pb.h"
+#include <google/protobuf/io/zero_copy_stream_impl.h>
+#include <fcntl.h>
 
-/*struct ProtoChannelBuffer
-{
-   vector <int> Digis;
-   vector <u_int32_t> DataStream; // replace with the protocol buffer format
-   vector <u_int64_t> DigisLatestTime; // last time seen for each digi
-   u_int64_t          TotalLatestTime; // last time seen by all digis
-   pthread_mutex_t    Mutex;           // lock for reads and writes
-};*/
 
 /*! \brief Derived class for recording to file using google protocol buffers
     
@@ -210,17 +205,23 @@ class DAQRecorder_protobuff : public DAQRecorder
    //
    
  private:
-   int                iEventNumber;
+   u_int32_t           iEventNumber;
    
-   void          WriteToFile();
+   int           WriteToFile();
+   int           OpenFile();
+   void          IncrementFileNumber();
    
    pthread_mutex_t     m_BuffMutex;
    vector <kodiaq_data::Event*> m_vBuffer;
 
    pthread_mutex_t     m_OutfileMutex;
    ofstream            m_Outfile;
+   google::protobuf::io::ZeroCopyOutputStream *m_protOOut;
+   google::protobuf::io::CodedOutputStream    *m_protCOut;
    OutfileOptions_t    m_FileOptions;
-   
+
+   string              m_SWritePath;
+   string              m_SWriteNumber;
 };
 
 #endif

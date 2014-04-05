@@ -462,7 +462,7 @@ void DataProcessor_protobuff::ProcessProtoBuff()
 	       //time
 	       u_int32_t TimeStamp = GetTimeStamp((*buffvec)[b]);
 	       int ResetCounter = protorecorder->GetResetCounter(TimeStamp);
-	       long long Time64 = ((unsigned long)ResetCounter << 31) | TimeStamp;	    
+	       u_int64_t Time64 = ((u_int64_t)ResetCounter << 31) | TimeStamp;	    
 	       Event->set_time(Time64);
 	       
 	       //

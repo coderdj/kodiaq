@@ -206,6 +206,10 @@ DAQRecorder_protobuff::DAQRecorder_protobuff()
    pthread_mutex_init(&m_BuffMutex,NULL);
    pthread_mutex_init(&m_OutfileMutex,NULL);
    iEventNumber = 0;
+   m_protOOut = NULL;
+   m_protCOut  = NULL;
+   m_SWritePath="data.dat";
+   m_SWriteNumber="";
 }
 
 DAQRecorder_protobuff::~DAQRecorder_protobuff()                     
@@ -220,23 +224,64 @@ DAQRecorder_protobuff::DAQRecorder_protobuff(koLogger *koLog)
    pthread_mutex_init(&m_BuffMutex,NULL);
    pthread_mutex_init(&m_OutfileMutex,NULL);
    iEventNumber = 0;
+   m_protOOut = NULL;
+   m_protCOut  = NULL;
+   m_SWritePath="data.dat";
+   m_SWriteNumber="";
 }
 
 int DAQRecorder_protobuff::Initialize(koOptions *options)
 {
    Shutdown();
    
-   //set outfile name and open
-   pthread_mutex_lock(&m_OutfileMutex);
    m_FileOptions = options->GetOutfileOptions();
-   m_Outfile.open(m_FileOptions.Path.c_str());
-   pthread_mutex_unlock(&m_OutfileMutex);
+
+   // get a file name
+   if(m_FileOptions.DynamicRunNames == 1)  { //if we have time-based filenames
+      std::size_t pos;
+      pos = m_FileOptions.Path.find_first_of("*",0);   
+      if(pos>0 && pos<=m_FileOptions.Path.size())
+	m_SWritePath = m_FileOptions.Path.substr(0,pos);
+      else
+	m_SWritePath = m_FileOptions.Path;
+      m_SWritePath+="_";
+      m_SWritePath+=koHelper::GetRunNumber();
+   }
+   else
+     m_SWritePath = m_FileOptions.Path;
    
+   if(m_FileOptions.EventsPerFile!=-1)
+     m_SWriteNumber = "0000";
    iEventNumber = 0;
+   return OpenFile();
+}
+
+int DAQRecorder_protobuff::OpenFile()
+{
+   pthread_mutex_lock(&m_OutfileMutex);
    
-   if(!m_Outfile.is_open()) return -1;   
+   if(m_protCOut!=NULL) delete m_protCOut;
+   if(m_protOOut!=NULL) delete m_protOOut;
+   if(m_Outfile.is_open()) m_Outfile.close();
+   
+   string fileTot = m_SWritePath;
+   if(m_SWriteNumber!="") {
+      fileTot += ".";
+      fileTot += m_SWriteNumber;
+   }
+   fileTot += ".kodata";
+   
+   m_Outfile.open(fileTot.c_str(), ios::out | ios::trunc | ios::binary);
+   if(!m_Outfile.is_open())   {	
+      pthread_mutex_unlock(&m_OutfileMutex);
+      return -1;
+   }   
+   m_protOOut = new google::protobuf::io::OstreamOutputStream(&m_Outfile);
+   m_protCOut  = new google::protobuf::io::CodedOutputStream(m_protOOut);   
+   pthread_mutex_unlock(&m_OutfileMutex);
    return 0;
 }
+
 
 int DAQRecorder_protobuff::RegisterProcessor()
 {
@@ -258,8 +303,23 @@ int DAQRecorder_protobuff::InsertThreaded(vector<kodiaq_data::Event*> *vInsert)
    pthread_mutex_unlock(&m_BuffMutex);
    delete vInsert;   
    
-   WriteToFile();   
-   return 0;
+   return WriteToFile();   
+}
+
+void DAQRecorder_protobuff::IncrementFileNumber()
+{
+   if(m_SWriteNumber=="") return;
+   int num = koHelper::StringToInt(m_SWriteNumber);
+   num++;
+   if(num>=1000){	
+      LogError("Exceeded 1000 output files!");
+      m_SWriteNumber="rest";
+      m_FileOptions.EventsPerFile=-1;
+      return;
+   }   
+   stringstream ss;
+   ss << setfill('0') << setw(4) << num;
+   m_SWriteNumber = ss.str();       
 }
 
 void DAQRecorder_protobuff::Shutdown()
@@ -277,27 +337,51 @@ void DAQRecorder_protobuff::Shutdown()
    
    //Close file
    pthread_mutex_lock(&m_OutfileMutex);
-   if(m_Outfile.is_open()) m_Outfile.close();
+   if( m_protCOut  != NULL) delete m_protCOut;   
+   if( m_protOOut != NULL) delete m_protOOut;
+   if(m_Outfile.is_open()) m_Outfile.close();   
+   m_protOOut=NULL;
+   m_protCOut=NULL;
    pthread_mutex_unlock(&m_OutfileMutex);
    
    return;
 }
 
-void DAQRecorder_protobuff::WriteToFile()
+int DAQRecorder_protobuff::WriteToFile()
 {
+   if(!m_Outfile.is_open()) return -1;
    pthread_mutex_lock(&m_BuffMutex);
    pthread_mutex_lock(&m_OutfileMutex);
    for(unsigned int x=0; x<m_vBuffer.size(); x++)  {
-      int size = m_vBuffer[x]->ByteSize();
-      m_Outfile<<size;
+      
+      // Have to set a unique event number. This starts at zero for
+      // each file
       m_vBuffer[x]->set_number(iEventNumber);
       iEventNumber++;
-      m_vBuffer[x]->SerializeToOstream(&m_Outfile);
+  
+      //create string with data
+      string s="";      
+      m_vBuffer[x]->SerializeToString(&s);
+      //write size
+      m_protCOut->WriteVarint32(s.size());
+      //write data
+      m_protCOut->WriteRaw(s.data(),s.size());
+
+      //check if a new file needs to be opened
+      if(iEventNumber>(m_FileOptions.EventsPerFile * 
+		       koHelper::StringToInt(m_SWriteNumber)) && 
+	 m_FileOptions.EventsPerFile!=-1)	{
+	 IncrementFileNumber();
+	 pthread_mutex_unlock(&m_OutfileMutex);
+	 if(OpenFile()!=0) return -1;
+	 pthread_mutex_lock(&m_OutfileMutex);
+      }
+      
       delete m_vBuffer[x];
    }
    pthread_mutex_unlock(&m_OutfileMutex);
    m_vBuffer.clear();
    pthread_mutex_unlock(&m_BuffMutex);
-   return;   
+   return 0;   
 }
 

@@ -48,7 +48,7 @@ void koOptions::Reset()
    
    //Reset file options
    fOutfileOptions.Path="./data.out";
-   fOutfileOptions.DynamicRunNames=false;
+   fOutfileOptions.DynamicRunNames=fOutfileOptions.Compressed=false;
    
    fRunModeID="";
    vSumModules.clear();
@@ -171,10 +171,12 @@ int koOptions::ReadParameterFile(string filename)
 	 fProcessingOptions.ReadoutThreshold = koHelper::StringToInt(words[3]);
       }
       if(words[0]=="OUTFILE_OPTIONS")	{
-	 if(words.size()<2) continue;
+	 if(words.size()<4) continue;
 	 fOutfileOptions.Path=words[1];
 	 if(words[1][words[1].size()-1]=='*') fOutfileOptions.DynamicRunNames=true;
 	 else fOutfileOptions.DynamicRunNames=false;
+	 (words[2]=="1")?fOutfileOptions.Compressed=true:fOutfileOptions.Compressed=false;
+	 fOutfileOptions.EventsPerFile = koHelper::StringToInt(words[3]);
       }      
       if(words[0]=="BASELINE_MODE")	{ //0 - off  1 - auto
 	 if(words.size()<2) continue;

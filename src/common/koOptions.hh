@@ -80,6 +80,8 @@ struct ProcessingOptions_t {
 struct OutfileOptions_t{
    string Path;
    bool DynamicRunNames;
+   bool Compressed;
+   int EventsPerFile;
 };
 
 

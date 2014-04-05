@@ -254,10 +254,10 @@ int main()
 	 //               Then just tell the DAQ network to send out the start command.
 	 // 
 	 else if(command=="START")  {
-	    	    
+	    
+	    koHelper::UpdateRunInfo(fRunInfo,sender);
 	    if(fDAQOptions.GetRunOptions().WriteMode==2) {
 	       //if we have dynamic run names, tell mongo the new collection name
-	       koHelper::UpdateRunInfo(fRunInfo,sender);	    
 	       if(fDAQOptions.GetMongoOptions().DynamicRunNames){		    
 		  fDAQOptions.UpdateMongodbCollection(koHelper::MakeDBName(fRunInfo,fDAQOptions.GetMongoOptions().Collection));
 		  stringstream ss;
@@ -270,6 +270,7 @@ int main()
 	       if(fMongodb.Initialize(sender,fDAQStatus.RunMode,&fDAQOptions)!=0)
 		 fUserNetwork.BroadcastMessage("Failed to send run info to event builder",KOMESS_WARNING);
 	    }
+	    
 	    
 	    //send the actual start command
 	    fDAQNetwork.SendCommand("START");   
