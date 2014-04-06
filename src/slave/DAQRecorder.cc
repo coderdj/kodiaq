@@ -311,8 +311,8 @@ void DAQRecorder_protobuff::IncrementFileNumber()
    if(m_SWriteNumber=="") return;
    int num = koHelper::StringToInt(m_SWriteNumber);
    num++;
-   if(num>=1000){	
-      LogError("Exceeded 1000 output files!");
+   if(num>=10000){	
+      LogError("Exceeded 10000 output files!");
       m_SWriteNumber="rest";
       m_FileOptions.EventsPerFile=-1;
       return;
@@ -369,7 +369,7 @@ int DAQRecorder_protobuff::WriteToFile()
 
       //check if a new file needs to be opened
       if(iEventNumber>(m_FileOptions.EventsPerFile * 
-		       koHelper::StringToInt(m_SWriteNumber)) && 
+		      ((koHelper::StringToInt(m_SWriteNumber))+1)) &&
 	 m_FileOptions.EventsPerFile!=-1)	{
 	 IncrementFileNumber();
 	 pthread_mutex_unlock(&m_OutfileMutex);

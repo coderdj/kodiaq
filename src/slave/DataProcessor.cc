@@ -473,7 +473,16 @@ void DataProcessor_protobuff::ProcessProtoBuff()
 	       Channel->set_channelid(-1);
 
 	       //data
-	       Channel->set_data((const void*)((*buffvec)[b]),(size_t)((*sizevec)[b]));
+	       if(m_koOptions->GetOutfileOptions().Compressed) { //zip using snappy
+		  char* compressed = new char[snappy::MaxCompressedLength((*sizevec)[b])];
+		  size_t compressedLength=0;
+		  snappy::RawCompress((const char*)(*buffvec)[b], (*sizevec)[b],
+				      compressed,&compressedLength);
+		  Channel->set_data((const void*)(compressed),compressedLength);
+		  delete[] compressed;
+	       }
+	       else		 		    
+		 Channel->set_data((const void*)((*buffvec)[b]),(size_t)((*sizevec)[b]));
 	       
 	       vInsert->push_back(Event);
 	       	       	       
