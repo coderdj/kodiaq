@@ -34,8 +34,8 @@ using namespace std;
 
 int StandaloneMain()
 {   
-   gLog->Message("Started program.");   
    koLogger fLog("log/slave.log");
+   fLog.Message("Started standalone reader");
    DigiInterface *fElectronics = new DigiInterface(&fLog);
    koOptions fDAQOptions;
    string fOptionsPath = "DAQConfig.ini";
