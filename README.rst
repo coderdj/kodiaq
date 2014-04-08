@@ -61,20 +61,18 @@ Steps to build the code:
 ---------------------------------------------
 
 Prerequisites:
-
-     * For user module see above
-     * For master module:
-       * For DDC10 online high energy veto support, libtcl8.5 and
-         libexpect are required.
-     * For slave module:
-       * CAENVMElib as well as an A2818/A3818 PCI card with its driver
-         installed. 
-       * libsnappy, libpthread, libprotoc (dev versions)
-       * For mongodb support, libmongoclient. Note that this also
-         requires the boost libraries.
+   * For user module see above
+   * For master module:
+     * For DDC10 online high energy veto support, libtcl8.5 and
+       libexpect are required.
+   * For slave module:
+     * CAENVMElib as well as an A2818/A3818 PCI card with its driver
+       installed. 
+     * libsnappy, libpthread, libprotoc (dev versions)
+     * For mongodb support, libmongoclient. Note that this also
+       requires the boost libraries.
 
 Steps:
-
      1. Cofigure with ./configure. Possible options:
         * --enable-master : compile with master program
 	* --enable-slave : compile with slave program
