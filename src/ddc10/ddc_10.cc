@@ -1,6 +1,6 @@
 // **************************************************************
 // 
-// DAQ Control for Xenon-1t
+// kodiaq data acquisition software
 // 
 // File     : ddc_10.cc
 // Author   : Lukas Buetikofer, LHEP, Universitaet Bern
