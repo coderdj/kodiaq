@@ -44,11 +44,11 @@ to login to the DAQ.
 
 Prerequisites:
     * This code has only been tested and will only be supported on
-    Linux. Compilation on any other OS is accidental.
+      Linux. Compilation on any other OS is accidental.
     * You need the standard build libraries, such as gcc and make (on
-    Ubuntu these are provided in build-essential)
+      Ubuntu these are provided in build-essential)
     * The ncurses libraries (development version) are also needed:
-    libncurses, libmenu, libform libtinfo
+      libncurses, libmenu, libform libtinfo
 
 Steps to build the code:
     1. ./configure
@@ -65,13 +65,13 @@ Prerequisites:
      * For user module see above
      * For master module:
        * For DDC10 online high energy veto support, libtcl8.5 and
-       libexpect are required.
+         libexpect are required.
      * For slave module:
        * CAENVMElib as well as an A2818/A3818 PCI card with its driver
-       installed. 
+         installed. 
        * libsnappy, libpthread, libprotoc (dev versions)
        * For mongodb support, libmongoclient. Note that this also
-       requires the boost libraries.
+         requires the boost libraries.
 
 Steps:
 
@@ -80,17 +80,17 @@ Steps:
 	* --enable-slave : compile with slave program
 	* --disable-user :  do not compile UI
 	* --enable-ddc10 :  compile with support for DDC module. Only
-	activated if koMaster is also compiled.
+	  activated if koMaster is also compiled.
 	* --enable-all : compile master (with ddc10 support), slave,
-	and user programs
+	  and user programs
 	* --enable-lite : compile a lite version of the software that
-	is suitable for standalone systems	
+	  is suitable for standalone systems	
       2. make
       3. The executables for master/slave/user programs should be available
-      in src/*. A shortcut to starting the UI is in the top directory.
-      The folder klite contains shortcuts to the lite version executable and
-      the initializeation file. Please refer to the online
-      documentation to configure this file.
+         in src/*. A shortcut to starting the UI is in the top directory.
+         The folder klite contains shortcuts to the lite version executable and
+         the initializeation file. Please refer to the online
+         documentation to configure this file.
    
    
 Contact
