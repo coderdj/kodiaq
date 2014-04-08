@@ -77,13 +77,13 @@ Steps:
 	 * --enable-ddc10 to compile with support for DDC module. Only activated if koMaster is also compiled.
 	 * --enable-all to compile master (with ddc10 support), slave, and user programs
 	 * --enable-lite to compile a lite version of the software that is suitable for standalone systems	
-      2. make
-      3. The executables for master/slave/user programs should be
-      available in src/*. A shortcut to starting the UI is in the top
-      directory. The folder klite contains shortcuts to the lite
-      version executable and the initializeation file. Please refer to
-      the online documentation to configure this file.
-   
+     2. make
+     3. The executables for master/slave/user programs should be
+     available in src/*. A shortcut to starting the UI is in the top
+     directory. The folder klite contains shortcuts to the lite
+     version executable and the initializeation file. Please refer to
+     the online documentation to configure this file.
+     
    
 Contact
 ---------
