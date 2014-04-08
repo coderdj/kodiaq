@@ -62,27 +62,27 @@ Steps to build the code:
 
 Prerequisites:
    * For user module see above
-   * For master module
-     * For DDC10 online high energy veto support, libtcl8.5 and
-       libexpect are required.
+   * Master module
+      * For DDC10 online high energy veto support, libtcl8.5 and
+      libexpect are required.
    * For slave module
-     * CAENVMElib as well as an A2818/A3818 PCI card with its driver
-       installed. 
-     * libsnappy, libpthread, libprotoc (dev versions)
-     * For mongodb support, libmongoclient. Note that this also
-       requires the boost libraries.
+      * CAENVMElib as well as an A2818/A3818 PCI card with its driver
+      installed. 
+      * libsnappy, libpthread, libprotoc (dev versions)
+      * For mongodb support, libmongoclient. Note that this also
+      requires the boost libraries.
 
 Steps:
      1. Cofigure with ./configure. There are some possible options.
-        * --enable-master to compile with master program
-	* --enable-slave to compile with slave program
-	* --disable-user to not compile UI
-	* --enable-ddc10 to compile with support for DDC module. Only
-	  activated if koMaster is also compiled.
-	* --enable-all to compile master (with ddc10 support), slave,
-	  and user programs
-	* --enable-lite to compile a lite version of the software that
-	  is suitable for standalone systems	
+         * --enable-master to compile with master program
+	 * --enable-slave to compile with slave program
+	 * --disable-user to not compile UI
+	 * --enable-ddc10 to compile with support for DDC module. Only
+	 activated if koMaster is also compiled.
+	 * --enable-all to compile master (with ddc10 support), slave,
+	 and user programs
+	 * --enable-lite to compile a lite version of the software that
+	 is suitable for standalone systems	
       2. make
       3. The executables for master/slave/user programs should be available
          in src/*. A shortcut to starting the UI is in the top directory.
