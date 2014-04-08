@@ -23,6 +23,10 @@ LT_INIT
 
 #Add options for which modules to compile
 #default is just the UI
+
+############################
+# Compile UI
+############################
 AC_ARG_ENABLE( [user],
     AS_HELP_STRING([--disable-user], [Disable compilation of UI]))
 AS_IF([test "x$enable_user" != "xno"], [
@@ -36,6 +40,9 @@ AS_IF([test "x$enable_user" != "xno"], [
     AM_CONDITIONAL(WITH_USER,false)
     ])
 
+###########################
+# Compile Master Module
+###########################
 AC_ARG_ENABLE( [master],
     AS_HELP_STRING([--enable-master], [Enable compilation of master executable]))
 AS_IF([test "x$enable_master" = "xyes"], [
@@ -47,6 +54,9 @@ AS_IF([test "x$enable_master" = "xyes"], [
     AM_CONDITIONAL(WITH_MASTER,false)
     ])    
     
+###########################
+# Compile Slave Module
+###########################
 AC_ARG_ENABLE( [slave],
     AS_HELP_STRING([--enable-slave], [Enable slave module]))
 AS_IF([test "x$enable_slave" = "xyes"], [
@@ -64,6 +74,9 @@ AS_IF([test "x$enable_slave" = "xyes"], [
     AM_CONDITIONAL(WITH_MONGODB,false)
     ])
 
+###########################
+# Compile lite module
+###########################
 AC_ARG_ENABLE( [lite],
     AS_HELP_STRING([--enable-lite], [Compile standalone slave]))
 AS_IF([test "x$enable_lite" = "xyes"], [
@@ -82,19 +95,25 @@ AS_IF([test "x$enable_lite" = "xyes"], [
     AM_CONDITIONAL(WITH_MONGODB,false)
     ])
 
+###################################
+# Compile DDC10 Module
+###################################
 #Now some more specific options. For example, should we compile with DDC10 support?
 AC_ARG_ENABLE( [DDC10],
-    AS_HELP_STRING([--enable-ddc10], [Disable support for DDC10 HE veto module]))
+    AS_HELP_STRING([--enable-ddc10], [Enable support for DDC10 HE veto module]))
 AS_IF([test "x$enable_ddc10" = "xyes"], [
     AM_CONDITIONAL(WITH_DDC10, true)
     AC_DEFINE(WITH_DDC10,[],[Compile with DDC HE veto support])    
-    AC_CHECK_LIB([DDC],ddc_10,[],AC_MSG_ERROR)
+#    AC_CHECK_LIB([DDC],ddc_10,[],AC_MSG_ERROR)
     AC_CHECK_LIB([tcl8.5],main,[],AC_MSG_ERROR)
     AC_CHECK_LIB([expect],exp_popen,[],AC_MSG_ERROR)
     ], [
     AM_CONDITIONAL(WITH_DDC10,false)
     ])
 
+###################################
+# Compile all modules
+###################################
 AC_ARG_ENABLE( [all],
     AS_HELP_STRING([--enable-all], [Enable compilation of all modules]))
 AS_IF([test "x$enable_all" = "xyes"], [
@@ -106,7 +125,7 @@ AS_IF([test "x$enable_all" = "xyes"], [
     AC_DEFINE(WITH_SLAVE,[],[Compile slave module])
     AC_DEFINE(WITH_DDC10,[],[Compile with DDC HE veto support])
     AC_DEFINE(WITH_USER,[],[Compile user interface])   
-    AC_CHECK_LIB([DDC],main,[],AC_MSG_ERROR([libddc not found]))
+#    AC_CHECK_LIB([DDC],main,[],AC_MSG_ERROR([libddc not found]))
     AC_CHECK_LIB([tcl8.5],main,[],AC_MSG_ERROR([libtcl8.5 not found]))
     AC_CHECK_LIB([expect],exp_popen,[],AC_MSG_ERROR([libexpect not found]))
     AC_CHECK_LIB(pthread,pthread_mutex_init,[],AC_MSG_ERROR([libpthread missing.]))
@@ -121,4 +140,4 @@ AS_IF([test "x$enable_all" = "xyes"], [
     AM_CONDITIONAL(WITH_MONGODB,false)
     ])
 #AC_CONFIG_FILES([Makefile])
-AC_OUTPUT(Makefile src/common/Makefile src/master/Makefile src/slave/Makefile src/user/Makefile)
+AC_OUTPUT(Makefile src/ddc10/Makefile src/common/Makefile src/master/Makefile src/slave/Makefile src/user/Makefile)

@@ -1405,7 +1405,7 @@ Optional Features:
   --enable-master         Enable compilation of master executable
   --enable-slave          Enable slave module
   --enable-lite           Compile standalone slave
-  --enable-ddc10          Disable support for DDC10 HE veto module
+  --enable-ddc10          Enable support for DDC10 HE veto module
   --enable-all            Enable compilation of all modules
 
 Optional Packages:
@@ -7781,6 +7781,10 @@ _lt_linker_boilerplate=`cat conftest.err`
 $RM -r conftest*
 
 
+## CAVEAT EMPTOR:
+## There is no encapsulation within the following macros, do not change
+## the running order or otherwise move them around unless you know exactly
+## what you are doing...
 if test -n "$compiler"; then
 
 lt_prog_compiler_no_builtin_flag=
@@ -15035,6 +15039,10 @@ fi
 
 #Add options for which modules to compile
 #default is just the UI
+
+############################
+# Compile UI
+############################
 # Check whether --enable-user was given.
 if test "${enable_user+set}" = set; then :
   enableval=$enable_user;
@@ -15249,6 +15257,9 @@ fi
 
 fi
 
+###########################
+# Compile Master Module
+###########################
 # Check whether --enable-master was given.
 if test "${enable_master+set}" = set; then :
   enableval=$enable_master;
@@ -15369,6 +15380,9 @@ fi
 
 fi
 
+###########################
+# Compile Slave Module
+###########################
 # Check whether --enable-slave was given.
 if test "${enable_slave+set}" = set; then :
   enableval=$enable_slave;
@@ -15650,6 +15664,9 @@ fi
 
 fi
 
+###########################
+# Compile lite module
+###########################
 # Check whether --enable-lite was given.
 if test "${enable_lite+set}" = set; then :
   enableval=$enable_lite;
@@ -16025,6 +16042,9 @@ fi
 
 fi
 
+###################################
+# Compile DDC10 Module
+###################################
 #Now some more specific options. For example, should we compile with DDC10 support?
 # Check whether --enable-DDC10 was given.
 if test "${enable_DDC10+set}" = set; then :
@@ -16044,53 +16064,7 @@ fi
 
 $as_echo "#define WITH_DDC10 /**/" >>confdefs.h
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ddc_10 in -lDDC" >&5
-$as_echo_n "checking for ddc_10 in -lDDC... " >&6; }
-if ${ac_cv_lib_DDC_ddc_10+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lDDC  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char ddc_10 ();
-int
-main ()
-{
-return ddc_10 ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_link "$LINENO"; then :
-  ac_cv_lib_DDC_ddc_10=yes
-else
-  ac_cv_lib_DDC_ddc_10=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_DDC_ddc_10" >&5
-$as_echo "$ac_cv_lib_DDC_ddc_10" >&6; }
-if test "x$ac_cv_lib_DDC_ddc_10" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBDDC 1
-_ACEOF
-
-  LIBS="-lDDC $LIBS"
-
-else
-  as_fn_error $? "" "$LINENO" 5
-fi
-
+#    AC_CHECK_LIB([DDC],ddc_10,[],AC_MSG_ERROR)
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -ltcl8.5" >&5
 $as_echo_n "checking for main in -ltcl8.5... " >&6; }
 if ${ac_cv_lib_tcl8_5_main+:} false; then :
@@ -16193,6 +16167,9 @@ fi
 
 fi
 
+###################################
+# Compile all modules
+###################################
 # Check whether --enable-all was given.
 if test "${enable_all+set}" = set; then :
   enableval=$enable_all;
@@ -16244,47 +16221,7 @@ $as_echo "#define WITH_DDC10 /**/" >>confdefs.h
 
 $as_echo "#define WITH_USER /**/" >>confdefs.h
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lDDC" >&5
-$as_echo_n "checking for main in -lDDC... " >&6; }
-if ${ac_cv_lib_DDC_main+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lDDC  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-int
-main ()
-{
-return main ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_link "$LINENO"; then :
-  ac_cv_lib_DDC_main=yes
-else
-  ac_cv_lib_DDC_main=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_DDC_main" >&5
-$as_echo "$ac_cv_lib_DDC_main" >&6; }
-if test "x$ac_cv_lib_DDC_main" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBDDC 1
-_ACEOF
-
-  LIBS="-lDDC $LIBS"
-
-else
-  as_fn_error $? "libddc not found" "$LINENO" 5
-fi
-
+#    AC_CHECK_LIB([DDC],main,[],AC_MSG_ERROR([libddc not found]))
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -ltcl8.5" >&5
 $as_echo_n "checking for main in -ltcl8.5... " >&6; }
 if ${ac_cv_lib_tcl8_5_main+:} false; then :
@@ -16669,7 +16606,7 @@ fi
 
 fi
 #AC_CONFIG_FILES([Makefile])
-ac_config_files="$ac_config_files Makefile src/common/Makefile src/master/Makefile src/slave/Makefile src/user/Makefile"
+ac_config_files="$ac_config_files Makefile src/ddc10/Makefile src/common/Makefile src/master/Makefile src/slave/Makefile src/user/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -17879,6 +17816,7 @@ do
     "depfiles") CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
     "libtool") CONFIG_COMMANDS="$CONFIG_COMMANDS libtool" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
+    "src/ddc10/Makefile") CONFIG_FILES="$CONFIG_FILES src/ddc10/Makefile" ;;
     "src/common/Makefile") CONFIG_FILES="$CONFIG_FILES src/common/Makefile" ;;
     "src/master/Makefile") CONFIG_FILES="$CONFIG_FILES src/master/Makefile" ;;
     "src/slave/Makefile") CONFIG_FILES="$CONFIG_FILES src/slave/Makefile" ;;

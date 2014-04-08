@@ -19,8 +19,11 @@
 #include <fstream>
 #include <math.h>
 #include "config.h"
-
 #include "koHelper.hh"
+
+#ifdef WITH_DDC10
+#include <ddc_10.hh>
+#endif
 
 using namespace std;
 
@@ -96,18 +99,6 @@ struct MongodbOptions_t {
    string Collection;
 };
 
-/*! \brief Configuration options for ddc-10 FPGA module.
- */
-struct DDC10Options_t{
-   int Sign;
-   int IntegrationWindow;
-   int VetoDelay;
-   int SignalThreshold;
-   int IntegrationThreshold;
-   int WidthCut;
-   int RunMode;
-   string Address;
-};
 
 /*! \brief Reads and processes an options file.
  
@@ -155,11 +146,7 @@ class koOptions
    };
    OutfileOptions_t GetOutfileOptions()  {
       return fOutfileOptions;
-   };   
-   DDC10Options_t GetVetoOptions()  {
-      return fDDC10Options;
-   };
-   
+   };      
    int SumModules()  {
       return vSumModules.size();
    };
@@ -171,6 +158,12 @@ class koOptions
       fMongoOptions.Collection=collection;
    };
    
+   //Put any dependency-specific public members here
+#ifdef WITH_DDC10
+   ddc10_par_t GetVetoOptions()  {	
+      return fDDC10Options;
+   };
+#endif
    
    
  private:
@@ -181,11 +174,16 @@ class koOptions
    
    RunOptions_t              fRunOptions;
    MongodbOptions_t          fMongoOptions;   
-   DDC10Options_t            fDDC10Options;
    ProcessingOptions_t       fProcessingOptions;
    OutfileOptions_t          fOutfileOptions;
-   
+     
    string                    fRunModeID;
-   void                      Reset();
+   void                      Reset();   
+   
+// put any dependency-specific private members here   
+#ifdef WITH_DDC10
+   ddc10_par_t               fDDC10Options;
+#endif
+   
 };
 #endif

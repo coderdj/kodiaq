@@ -35,10 +35,20 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 bin_PROGRAMS = koSlave$(EXEEXT)
+
+#options flags
+@WITH_MONGODB_TRUE@am__append_1 = -lmongoclient -lboost_thread -lboost_filesystem -lboost_program_options -lboost_system
+@WITH_DDC10_TRUE@am__append_2 = -L$(top_srcdir)/src/ddc10/.libs -lddc
+@WITH_DDC10_TRUE@am__append_3 = -I$(top_srcdir)/src/ddc10
 subdir = src/slave
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/configure.ac
+am__aclocal_m4_deps = $(top_srcdir)/build/m4/libtool.m4 \
+	$(top_srcdir)/build/m4/ltoptions.m4 \
+	$(top_srcdir)/build/m4/ltsugar.m4 \
+	$(top_srcdir)/build/m4/ltversion.m4 \
+	$(top_srcdir)/build/m4/lt~obsolete.m4 \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -54,7 +64,8 @@ am_koSlave_OBJECTS = koSlave-koSlave.$(OBJEXT) \
 	koSlave-DataProcessor.$(OBJEXT) \
 	koSlave-protBuffDef.pb.$(OBJEXT)
 koSlave_OBJECTS = $(am_koSlave_OBJECTS)
-koSlave_DEPENDENCIES =
+am__DEPENDENCIES_1 =
+koSlave_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 koSlave_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(koSlave_LDFLAGS) $(LDFLAGS) -o $@
@@ -204,9 +215,12 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 koSlave_SOURCES = koSlave.cc CBV1724.cc CBV1724.hh CBV2718.cc CBV2718.hh DigiInterface.cc DigiInterface.hh VMEBoard.cc VMEBoard.hh VMECrate.cc VMECrate.hh DAQRecorder.cc DAQRecorder.hh DataProcessor.cc DataProcessor.hh protBuffDef.pb.h protBuffDef.pb.cc
-koSlave_CPPFLAGS = -I$(top_srcdir)/src/common -Wall -g -DLINUX -fPIC
-@WITH_MONGODB_FALSE@koSlave_LDADD = -L$(top_srcdir)/src/common/.libs -lkodiaq -lCAENVME -lprotobuf
-@WITH_MONGODB_TRUE@koSlave_LDADD = -L$(top_srcdir)/src/common/.libs -lkodiaq -lCAENVME -lmongoclient -lboost_thread -lboost_filesystem -lboost_program_options -lboost_system  -lsnappy -lrt -lprotobuf
+koSlave_CPPFLAGS = -I$(top_srcdir)/src/common -Wall -g -DLINUX -fPIC \
+	$(am__append_3)
+#if WITH_MONGODB
+#koSlave_LDADD = -L$(top_srcdir)/src/common/.libs -lkodiaq -lCAENVME -lmongoclient -lboost_thread -lboost_filesystem -lboost_program_options -lboost_system  -lsnappy -lrt -lprotobuf
+koSlave_LDADD = -L$(top_srcdir)/src/common/.libs -lkodiaq -lCAENVME \
+	-lprotobuf $(am__append_1) $(am__append_2)
 koSlave_LDFLAGS = -static
 all: all-am
 

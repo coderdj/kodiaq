@@ -1,4 +1,15 @@
-SUBDIRS = src/common 
+ACLOCAL_AMFLAGS = -I build/m4
+
+SUBDIRS = 
+if WITH_DDC10
+SUBDIRS += src/ddc10
+endif
+
+#else
+#SUBDIRS = 
+#endif
+SUBDIRS += src/common 
+
 if WITH_USER
 SUBDIRS += src/user
 endif

@@ -238,8 +238,15 @@ int main()
 		  fUserNetwork.BroadcastMessage("Error setting veto options. Bad file!",KOMESS_WARNING);
 		  continue;
 	       }
-	       cout<<"Got veto options and the address is "<<fDAQOptions.GetVetoOptions().Address<<endl;
-	    
+#ifdef WITH_DDC10
+	       ddc_10 vetoModule;
+	       if(vetoModule.Initialize(fDAQOptions.GetVetoOptions())==0)  		    
+		 vetoModule.LEDTestFlash(fDAQOptions.GetVetoOptions().IPAddress);
+	       else
+		 fUserNetwork.BroadcastMessage("Failed to contact ddc10",KOMESS_WARNING);
+//	       cout<<"Got veto options and the address is "<<fDAQOptions.GetVetoOptions().Address<<endl;
+#endif
+	       
 	       fDAQStatus.RunMode=command;
 	       errstring.str(std::string());//flush();
 	       errstring<<"Armed DAQ in mode "<<command;
@@ -397,3 +404,4 @@ int GetRunModeList(vector <string> &runModeList,vector <string> &runModePaths)
      return 0;
    return -1;   
 }
+

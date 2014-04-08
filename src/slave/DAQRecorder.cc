@@ -244,7 +244,9 @@ int DAQRecorder_protobuff::Initialize(koOptions *options)
 	m_SWritePath = m_FileOptions.Path.substr(0,pos);
       else
 	m_SWritePath = m_FileOptions.Path;
-      m_SWritePath+="_";
+      if(m_SWritePath[m_SWritePath.size()]!='/' && 
+	 m_SWritePath[m_SWritePath.size()]!='_')
+	m_SWritePath+="_";
       m_SWritePath+=koHelper::GetRunNumber();
    }
    else

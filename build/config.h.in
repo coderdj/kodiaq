@@ -12,9 +12,6 @@
 /* Define to 1 if you have the `CAENVME' library (-lCAENVME). */
 #undef HAVE_LIBCAENVME
 
-/* Define to 1 if you have the `DDC' library (-lDDC). */
-#undef HAVE_LIBDDC
-
 /* Define to 1 if you have the `expect' library (-lexpect). */
 #undef HAVE_LIBEXPECT
 

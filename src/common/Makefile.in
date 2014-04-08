@@ -34,10 +34,17 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
+@WITH_DDC10_TRUE@am__append_1 = -L$(top_srcdir)/src/ddc10/.libs -lddc
+@WITH_DDC10_TRUE@am__append_2 = -I$(top_srcdir)/src/ddc10
 subdir = src/common
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/configure.ac
+am__aclocal_m4_deps = $(top_srcdir)/build/m4/libtool.m4 \
+	$(top_srcdir)/build/m4/ltoptions.m4 \
+	$(top_srcdir)/build/m4/ltsugar.m4 \
+	$(top_srcdir)/build/m4/ltversion.m4 \
+	$(top_srcdir)/build/m4/lt~obsolete.m4 \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -232,8 +239,9 @@ top_srcdir = @top_srcdir@
 ACLOCAL_AMFLAGS = -I m4
 lib_LTLIBRARIES = libkodiaq.la
 libkodiaq_la_SOURCES = kbhit.cc kbhit.hh koHelper.hh koHelper.cc koLogger.hh koLogger.cc koOptions.hh koOptions.cc koNet.hh koNet.cc koNetClient.hh koNetClient.cc koNetServer.hh koNetServer.cc
-libkodiaq_la_CPPFLAGS = -I$(top_srcdir)/src/common -Wall -g -DLINUX -fPIC
-libkodiaq_la_LDFLAGS = -shared
+libkodiaq_la_CPPFLAGS = -I$(top_srcdir)/src/common -Wall -g -DLINUX \
+	-fPIC $(am__append_2)
+libkodiaq_la_LDFLAGS = -shared $(am__append_1)
 all: all-am
 
 .SUFFIXES:

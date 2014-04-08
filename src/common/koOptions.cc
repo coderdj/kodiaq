@@ -53,11 +53,16 @@ void koOptions::Reset()
    fRunModeID="";
    vSumModules.clear();
    
+#ifdef HAS_DDC
    //Reset ddc10 options
-   fDDC10Options.Sign=0; fDDC10Options.IntegrationWindow=100;
-   fDDC10Options.VetoDelay=200; fDDC10Options.SignalThreshold=150;
-   fDDC10Options.IntegrationThreshold=20000; fDDC10Options.WidthCut=50;
-   fDDC10Options.RunMode=0; fDDC10Options.Address="";
+   fDDC10Options.Sign=0; fDDC10Options.IntWindow=100;
+   fDDC10Options.VetoDelay=200; fDDC10Options.SigThreshold=150;
+   fDDC10Options.IntThreshold=20000; fDDC10Options.WidthCut=50;
+   fDDC10Options.IPAddress=""; fDDC10Options.RiseTimeCut=0;
+   fDDC10Options.ComponentStatus=0;fDDC10Options.OuterRingFactor=0;
+   fDDC10Options.InnerRingFactor=0;fDDC10Options.PreScaling=0;
+   for(int x=0;x<4;x++) fDDC10Options.Par[x]=0;
+#endif
 }
 
 int koOptions::ProcessLine(string line, string option,int &ret)
@@ -192,17 +197,30 @@ int koOptions::ReadParameterFile(string filename)
 	 if(words.size()<2) continue;
 	 fRunModeID=words[1];
       }
+
+      //dependency-specific options. ddc10 support must be compiled in
+#ifdef WITH_DDC10
       if(words[0] == "DDC10_OPTIONS")   {	   
 	 if(words.size()<9) continue;
-	 fDDC10Options.Address = words[1];
-	 fDDC10Options.RunMode = koHelper::StringToInt(words[2]);
-	 fDDC10Options.Sign    = koHelper::StringToInt(words[3]);
-	 fDDC10Options.IntegrationWindow = koHelper::StringToInt(words[4]);
-	 fDDC10Options.VetoDelay    = koHelper::StringToInt(words[5]);
-	 fDDC10Options.SignalThreshold = koHelper::StringToInt(words[6]);
-	 fDDC10Options.IntegrationThreshold    = koHelper::StringToInt(words[7]);
-	 fDDC10Options.WidthCut = koHelper::StringToInt(words[8]);
+	 fDDC10Options.IPAddress = words[1];
+	 fDDC10Options.Sign = koHelper::StringToInt(words[2]);
+	 fDDC10Options.IntWindow = koHelper::StringToInt(words[3]);
+	 fDDC10Options.VetoDelay = koHelper::StringToInt(words[4]);
+	 fDDC10Options.SigThreshold = koHelper::StringToInt(words[5]);
+	 fDDC10Options.IntThreshold = koHelper::StringToInt(words[6]);
+	 fDDC10Options.WidthCut = koHelper::StringToInt(words[7]);
+	 fDDC10Options.RiseTimeCut = koHelper::StringToInt(words[8]);
+	 fDDC10Options.ComponentStatus = koHelper::StringToInt(words[9]);
+	 fDDC10Options.Par[0] = koHelper::StringToDouble(words[10]);
+	 fDDC10Options.Par[1] = koHelper::StringToDouble(words[11]);
+	 fDDC10Options.Par[2] = koHelper::StringToDouble(words[12]);
+	 fDDC10Options.Par[3] = koHelper::StringToDouble(words[13]);
+	 fDDC10Options.OuterRingFactor = koHelper::StringToInt(words[14]);
+	 fDDC10Options.InnerRingFactor = koHelper::StringToInt(words[15]);
+	 fDDC10Options.PreScaling = koHelper::StringToInt(words[16]);
       }
+#endif
+      //
       
    }   
    initFile.close();
