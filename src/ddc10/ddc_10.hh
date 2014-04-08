@@ -35,6 +35,8 @@ struct ddc10_par_t{
    int OuterRingFactor;	//OuterRingFactor for radial position veto 16bit 2complement
    int InnerRingFactor;	//InnerRingFactor for radial position veto 16bit 2complement
    int PreScaling;	//PreScaling : every x veto event passes the veto
+
+   bool Initialized;    //Can use to monitor whether values have been filled
 };
 
 

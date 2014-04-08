@@ -38,7 +38,7 @@ host_triplet = @host@
 @WITH_MASTER_TRUE@am__append_3 = src/master
 @WITH_SLAVE_TRUE@am__append_4 = src/slave
 subdir = .
-DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
+DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(top_srcdir)/build/config.h.in \
 	$(top_srcdir)/configure build/build-aux/config.guess \
 	build/build-aux/config.sub build/build-aux/depcomp \

@@ -55,13 +55,7 @@ void koOptions::Reset()
    
 #ifdef HAS_DDC
    //Reset ddc10 options
-   fDDC10Options.Sign=0; fDDC10Options.IntWindow=100;
-   fDDC10Options.VetoDelay=200; fDDC10Options.SigThreshold=150;
-   fDDC10Options.IntThreshold=20000; fDDC10Options.WidthCut=50;
-   fDDC10Options.IPAddress=""; fDDC10Options.RiseTimeCut=0;
-   fDDC10Options.ComponentStatus=0;fDDC10Options.OuterRingFactor=0;
-   fDDC10Options.InnerRingFactor=0;fDDC10Options.PreScaling=0;
-   for(int x=0;x<4;x++) fDDC10Options.Par[x]=0;
+   fDDC10Options.Initialized=false;
 #endif
 }
 
@@ -218,6 +212,7 @@ int koOptions::ReadParameterFile(string filename)
 	 fDDC10Options.OuterRingFactor = koHelper::StringToInt(words[14]);
 	 fDDC10Options.InnerRingFactor = koHelper::StringToInt(words[15]);
 	 fDDC10Options.PreScaling = koHelper::StringToInt(words[16]);
+	 fDDC10Options.Initialized = true;
       }
 #endif
       //

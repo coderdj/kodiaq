@@ -240,11 +240,12 @@ int main()
 	       }
 #ifdef WITH_DDC10
 	       ddc_10 vetoModule;
-	       if(vetoModule.Initialize(fDAQOptions.GetVetoOptions())==0)  		    
-		 vetoModule.LEDTestFlash(fDAQOptions.GetVetoOptions().IPAddress);
-	       else
-		 fUserNetwork.BroadcastMessage("Failed to contact ddc10",KOMESS_WARNING);
-//	       cout<<"Got veto options and the address is "<<fDAQOptions.GetVetoOptions().Address<<endl;
+	       if(fDAQOptions.GetVetoOptions().Initialized) {		    
+		  if(vetoModule.Initialize(fDAQOptions.GetVetoOptions())==0)  		    
+		    vetoModule.LEDTestFlash(fDAQOptions.GetVetoOptions().IPAddress);
+		  else
+		    fUserNetwork.BroadcastMessage("Failed to contact ddc10",KOMESS_WARNING);
+	       }	       
 #endif
 	       
 	       fDAQStatus.RunMode=command;
