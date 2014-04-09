@@ -83,7 +83,7 @@ int DAQRecorder::GetCurPrevNext(u_int32_t timestamp)
    return 0;      
 }
 
-#ifdef HAS_MONGODB
+#ifdef HAVE_LIBMONGOCLIENT
 //
 // DAQRecorder_mongodb
 // 

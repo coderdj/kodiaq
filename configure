@@ -616,18 +616,20 @@ ac_subst_vars='am__EXEEXT_FALSE
 am__EXEEXT_TRUE
 LTLIBOBJS
 LIBOBJS
+WITH_ALL_FALSE
+WITH_ALL_TRUE
 WITH_DDC10_FALSE
 WITH_DDC10_TRUE
 KODIAQ_LITE_FALSE
 KODIAQ_LITE_TRUE
-WITH_MONGODB_FALSE
-WITH_MONGODB_TRUE
 WITH_SLAVE_FALSE
 WITH_SLAVE_TRUE
 WITH_MASTER_FALSE
 WITH_MASTER_TRUE
 WITH_USER_FALSE
 WITH_USER_TRUE
+WITH_MONGODB_FALSE
+WITH_MONGODB_TRUE
 CXXCPP
 am__fastdepCXX_FALSE
 am__fastdepCXX_TRUE
@@ -2279,7 +2281,6 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 ac_config_headers="$ac_config_headers build/config.h"
 
-#AM_CONFIG_HEADER([build/config.h])
 
 am__api_version='1.11'
 
@@ -2759,7 +2760,6 @@ am__tar='$${TAR-tar} chof - "$$tardir"' am__untar='$${TAR-tar} xf -'
 
 
 
-#AC_CONFIG_HEADERS([config.h])
 
 case `pwd` in
   *\ * | *\	*)
@@ -15036,9 +15036,17 @@ fi
 
 
 
-
 #Add options for which modules to compile
 #default is just the UI
+
+ if false; then
+  WITH_MONGODB_TRUE=
+  WITH_MONGODB_FALSE='#'
+else
+  WITH_MONGODB_TRUE='#'
+  WITH_MONGODB_FALSE=
+fi
+
 
 ############################
 # Compile UI
@@ -15543,49 +15551,7 @@ else
   as_fn_error $? "libsnappy missing." "$LINENO" 5
 fi
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lmongoclient" >&5
-$as_echo_n "checking for main in -lmongoclient... " >&6; }
-if ${ac_cv_lib_mongoclient_main+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lmongoclient  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-int
-main ()
-{
-return main ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_link "$LINENO"; then :
-  ac_cv_lib_mongoclient_main=yes
-else
-  ac_cv_lib_mongoclient_main=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mongoclient_main" >&5
-$as_echo "$ac_cv_lib_mongoclient_main" >&6; }
-if test "x$ac_cv_lib_mongoclient_main" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBMONGOCLIENT 1
-_ACEOF
-
-  LIBS="-lmongoclient $LIBS"
-
-else
-
-$as_echo "#define HAS_MONGODB /**/" >>confdefs.h
-
-fi
-
+#    AC_CHECK_LIB(mongoclient,main,[],AC_DEFINE(HAS_MONGODB,[],[mongodb installed]))
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lmongoclient" >&5
 $as_echo_n "checking for main in -lmongoclient... " >&6; }
 if ${ac_cv_lib_mongoclient_main+:} false; then :
@@ -15641,7 +15607,6 @@ fi
 
 fi
 
-#    AC_SEARCH_LIBS([_ZZN5mongo11BSONElementC1EvE1z],[mongoclient],[],AC_MSG_ERROR([libmongoclient not found!]))
 
 else
 
@@ -15651,14 +15616,6 @@ else
 else
   WITH_SLAVE_TRUE='#'
   WITH_SLAVE_FALSE=
-fi
-
-     if false; then
-  WITH_MONGODB_TRUE=
-  WITH_MONGODB_FALSE='#'
-else
-  WITH_MONGODB_TRUE='#'
-  WITH_MONGODB_FALSE=
 fi
 
 
@@ -15877,61 +15834,7 @@ $as_echo "#define HAS_MONGODB /**/" >>confdefs.h
 
 fi
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lmongoclient" >&5
-$as_echo_n "checking for main in -lmongoclient... " >&6; }
-if ${ac_cv_lib_mongoclient_main+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lmongoclient  if false; then
-  WITH_MONGODB_TRUE=
-  WITH_MONGODB_FALSE='#'
-else
-  WITH_MONGODB_TRUE='#'
-  WITH_MONGODB_FALSE=
-fi
- $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-int
-main ()
-{
-return main ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_link "$LINENO"; then :
-  ac_cv_lib_mongoclient_main=yes
-else
-  ac_cv_lib_mongoclient_main=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mongoclient_main" >&5
-$as_echo "$ac_cv_lib_mongoclient_main" >&6; }
-if test "x$ac_cv_lib_mongoclient_main" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBMONGOCLIENT 1
-_ACEOF
-
-  LIBS="-lmongoclient $LIBS"
-
-else
-   if true; then
-  WITH_MONGODB_TRUE=
-  WITH_MONGODB_FALSE='#'
-else
-  WITH_MONGODB_TRUE='#'
-  WITH_MONGODB_FALSE=
-fi
-
-fi
-
+#    AC_CHECK_LIB(mongoclient,main,[],AM_CONDITIONAL(WITH_MONGODB,true),AM_CONDITIONAL(WITH_MONGODB,false))
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for initscr in -lncurses" >&5
 $as_echo_n "checking for initscr in -lncurses... " >&6; }
 if ${ac_cv_lib_ncurses_initscr+:} false; then :
@@ -16031,14 +15934,6 @@ else
   KODIAQ_LITE_FALSE=
 fi
 
-     if false; then
-  WITH_MONGODB_TRUE=
-  WITH_MONGODB_FALSE='#'
-else
-  WITH_MONGODB_TRUE='#'
-  WITH_MONGODB_FALSE=
-fi
-
 
 fi
 
@@ -16064,7 +15959,6 @@ fi
 
 $as_echo "#define WITH_DDC10 /**/" >>confdefs.h
 
-#    AC_CHECK_LIB([DDC],ddc_10,[],AC_MSG_ERROR)
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -ltcl8.5" >&5
 $as_echo_n "checking for main in -ltcl8.5... " >&6; }
 if ${ac_cv_lib_tcl8_5_main+:} false; then :
@@ -16221,7 +16115,6 @@ $as_echo "#define WITH_DDC10 /**/" >>confdefs.h
 
 $as_echo "#define WITH_USER /**/" >>confdefs.h
 
-#    AC_CHECK_LIB([DDC],main,[],AC_MSG_ERROR([libddc not found]))
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -ltcl8.5" >&5
 $as_echo_n "checking for main in -ltcl8.5... " >&6; }
 if ${ac_cv_lib_tcl8_5_main+:} false; then :
@@ -16451,61 +16344,7 @@ else
   as_fn_error $? "libsnappy missing." "$LINENO" 5
 fi
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lmongoclient" >&5
-$as_echo_n "checking for main in -lmongoclient... " >&6; }
-if ${ac_cv_lib_mongoclient_main+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lmongoclient  if false; then
-  WITH_MONGODB_TRUE=
-  WITH_MONGODB_FALSE='#'
-else
-  WITH_MONGODB_TRUE='#'
-  WITH_MONGODB_FALSE=
-fi
- $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-int
-main ()
-{
-return main ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_link "$LINENO"; then :
-  ac_cv_lib_mongoclient_main=yes
-else
-  ac_cv_lib_mongoclient_main=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mongoclient_main" >&5
-$as_echo "$ac_cv_lib_mongoclient_main" >&6; }
-if test "x$ac_cv_lib_mongoclient_main" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBMONGOCLIENT 1
-_ACEOF
-
-  LIBS="-lmongoclient $LIBS"
-
-else
-   if true; then
-  WITH_MONGODB_TRUE=
-  WITH_MONGODB_FALSE='#'
-else
-  WITH_MONGODB_TRUE='#'
-  WITH_MONGODB_FALSE=
-fi
-
-fi
-
+#    AC_CHECK_LIB(mongoclient,main,[],AM_CONDITIONAL(WITH_MONGODB,true),AM_CONDITIONAL(WITH_MONGODB,false))
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lmongoclient" >&5
 $as_echo_n "checking for main in -lmongoclient... " >&6; }
 if ${ac_cv_lib_mongoclient_main+:} false; then :
@@ -16591,16 +16430,14 @@ else
 fi
 
 
-#    AC_CHECK_LIB(mongoclient,main,[],AC_MSG_ERROR([libmongoclient not found.]))
-
 else
 
      if false; then
-  WITH_MONGODB_TRUE=
-  WITH_MONGODB_FALSE='#'
+  WITH_ALL_TRUE=
+  WITH_ALL_FALSE='#'
 else
-  WITH_MONGODB_TRUE='#'
-  WITH_MONGODB_FALSE=
+  WITH_ALL_TRUE='#'
+  WITH_ALL_FALSE=
 fi
 
 
@@ -16737,6 +16574,10 @@ if test -z "${am__fastdepCXX_TRUE}" && test -z "${am__fastdepCXX_FALSE}"; then
   as_fn_error $? "conditional \"am__fastdepCXX\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
+if test -z "${WITH_MONGODB_TRUE}" && test -z "${WITH_MONGODB_FALSE}"; then
+  as_fn_error $? "conditional \"WITH_MONGODB\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${WITH_USER_TRUE}" && test -z "${WITH_USER_FALSE}"; then
   as_fn_error $? "conditional \"WITH_USER\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
@@ -16767,10 +16608,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${WITH_SLAVE_TRUE}" && test -z "${WITH_SLAVE_FALSE}"; then
   as_fn_error $? "conditional \"WITH_SLAVE\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${WITH_MONGODB_TRUE}" && test -z "${WITH_MONGODB_FALSE}"; then
-  as_fn_error $? "conditional \"WITH_MONGODB\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${KODIAQ_LITE_TRUE}" && test -z "${KODIAQ_LITE_FALSE}"; then
@@ -16781,20 +16618,8 @@ if test -z "${WITH_SLAVE_TRUE}" && test -z "${WITH_SLAVE_FALSE}"; then
   as_fn_error $? "conditional \"WITH_SLAVE\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${WITH_MONGODB_TRUE}" && test -z "${WITH_MONGODB_FALSE}"; then
-  as_fn_error $? "conditional \"WITH_MONGODB\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${WITH_MONGODB_TRUE}" && test -z "${WITH_MONGODB_FALSE}"; then
-  as_fn_error $? "conditional \"WITH_MONGODB\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
 if test -z "${KODIAQ_LITE_TRUE}" && test -z "${KODIAQ_LITE_FALSE}"; then
   as_fn_error $? "conditional \"KODIAQ_LITE\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${WITH_MONGODB_TRUE}" && test -z "${WITH_MONGODB_FALSE}"; then
-  as_fn_error $? "conditional \"WITH_MONGODB\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${WITH_DDC10_TRUE}" && test -z "${WITH_DDC10_FALSE}"; then
@@ -16821,16 +16646,8 @@ if test -z "${WITH_DDC10_TRUE}" && test -z "${WITH_DDC10_FALSE}"; then
   as_fn_error $? "conditional \"WITH_DDC10\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${WITH_MONGODB_TRUE}" && test -z "${WITH_MONGODB_FALSE}"; then
-  as_fn_error $? "conditional \"WITH_MONGODB\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${WITH_MONGODB_TRUE}" && test -z "${WITH_MONGODB_FALSE}"; then
-  as_fn_error $? "conditional \"WITH_MONGODB\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${WITH_MONGODB_TRUE}" && test -z "${WITH_MONGODB_FALSE}"; then
-  as_fn_error $? "conditional \"WITH_MONGODB\" was never defined.
+if test -z "${WITH_ALL_TRUE}" && test -z "${WITH_ALL_FALSE}"; then
+  as_fn_error $? "conditional \"WITH_ALL\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 

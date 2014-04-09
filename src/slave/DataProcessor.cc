@@ -193,7 +193,7 @@ void DataProcessor::SplitDataChannels(vector<u_int32_t*> *&buffvec, vector<u_int
    return;
 }
 
-#ifdef HAS_MONGODB
+#ifdef HAVE_LIBMONGOCLIENT
 //
 //
 // DataProcessor_mongodb

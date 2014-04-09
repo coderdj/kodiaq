@@ -93,7 +93,7 @@ class DAQRecorder
 
 };
 
-#ifdef HAS_MONGODB
+#ifdef HAVE_LIBMONGOCLIENT
 
 #include "mongo/client/dbclient.h"
 

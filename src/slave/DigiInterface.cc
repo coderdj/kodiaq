@@ -106,7 +106,7 @@ int DigiInterface::Initialize(koOptions *options)
    m_DAQRecorder = NULL;
    if(options->GetRunOptions().WriteMode==WRITEMODE_FILE)
      m_DAQRecorder = new DAQRecorder_protobuff(m_koLog);
-#ifdef HAS_MONGODB
+#ifdef HAVE_LIBMONGOCLIENT
    else if(options->GetRunOptions().WriteMode==WRITEMODE_MONGODB)
      m_DAQRecorder = new DAQRecorder_mongodb(m_koLog);
 #endif
@@ -118,7 +118,7 @@ int DigiInterface::Initialize(koOptions *options)
 
 void DigiInterface::UpdateRecorderCollection(koOptions *options)
 {
-#ifdef HAS_MONGODB
+#ifdef HAVE_LIBMONGOCLIENT
    DAQRecorder_mongodb *dr = dynamic_cast<DAQRecorder_mongodb*>(m_DAQRecorder);
    dr->UpdateCollection(options);
 #endif
@@ -234,7 +234,7 @@ int DigiInterface::StartRun()
 	 m_vProcThreads[x].IsOpen = true;
       }      
       else if(m_koOptions->GetRunOptions().WriteMode == WRITEMODE_MONGODB){
-#ifdef HAS_MONGODB
+#ifdef HAVE_LIBMONGOCLIENT
 	 m_vProcThreads[x].Processor = new DataProcessor_mongodb(this,
 								 m_DAQRecorder,
 								 m_koOptions);

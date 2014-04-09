@@ -5,10 +5,8 @@ AC_CONFIG_SRCDIR(src/common)
 AC_CONFIG_AUX_DIR(build/build-aux)
 AC_CONFIG_MACRO_DIR(build/m4)
 AC_CONFIG_HEADERS([build/config.h])
-#AM_CONFIG_HEADER([build/config.h])
 
 AM_INIT_AUTOMAKE([1.10 -Wall -Wno-portability foreign])
-#AC_CONFIG_HEADERS([config.h])
 
 AC_PROG_LIBTOOL
 
@@ -20,9 +18,10 @@ AC_ENABLE_SHARED
 AC_DISABLE_STATIC
 LT_INIT
 
-
 #Add options for which modules to compile
 #default is just the UI
+
+AM_CONDITIONAL(WITH_MONGODB,false)
 
 ############################
 # Compile UI
@@ -66,12 +65,10 @@ AS_IF([test "x$enable_slave" = "xyes"], [
     AC_CHECK_LIB(pthread,pthread_mutex_init,[],AC_MSG_ERROR([libpthread missing.]))
     AC_CHECK_LIB(CAENVME,CAENVME_Init,[],AC_MSG_ERROR([libCAENVME missing.]))
     AC_CHECK_LIB(snappy,_ZN6snappy11RawCompressEPKcmPcPm,[],AC_MSG_ERROR([libsnappy missing.]))
-    AC_CHECK_LIB(mongoclient,main,[],AC_DEFINE(HAS_MONGODB,[],[mongodb installed]))
+#    AC_CHECK_LIB(mongoclient,main,[],AC_DEFINE(HAS_MONGODB,[],[mongodb installed]))
     AC_CHECK_LIB(mongoclient,main,[],AM_CONDITIONAL(WITH_MONGODB,true),AM_CONDITIONAL(WITH_MONGODB,false))
-#    AC_SEARCH_LIBS([_ZZN5mongo11BSONElementC1EvE1z],[mongoclient],[],AC_MSG_ERROR([libmongoclient not found!]))
     ], [
     AM_CONDITIONAL(WITH_SLAVE,false)
-    AM_CONDITIONAL(WITH_MONGODB,false)
     ])
 
 ###########################
@@ -87,12 +84,11 @@ AS_IF([test "x$enable_lite" = "xyes"], [
     AC_CHECK_LIB(CAENVME,CAENVME_Init,[],AC_MSG_ERROR([libCAENVME missing.]))
     AC_CHECK_LIB(snappy,_ZN6snappy11RawCompressEPKcmPcPm,[],AC_MSG_ERROR([libsnappymissing.]))
     AC_CHECK_LIB(mongoclient,main,[],AC_DEFINE(HAS_MONGODB,[],[Mongodb installed]))
-    AC_CHECK_LIB(mongoclient,main,[],AM_CONDITIONAL(WITH_MONGODB,true),AM_CONDITIONAL(WITH_MONGODB,false))
+#    AC_CHECK_LIB(mongoclient,main,[],AM_CONDITIONAL(WITH_MONGODB,true),AM_CONDITIONAL(WITH_MONGODB,false))
     AC_CHECK_LIB([ncurses],initscr,[],AC_MSG_ERROR)   
     AC_CHECK_LIB(protobuf,main,[],AC_MSG_ERROR([libprotobuf missing]))
     ], [
     AM_CONDITIONAL(KODIAQ_LITE,false)
-    AM_CONDITIONAL(WITH_MONGODB,false)
     ])
 
 ###################################
@@ -104,7 +100,6 @@ AC_ARG_ENABLE( [DDC10],
 AS_IF([test "x$enable_ddc10" = "xyes"], [
     AM_CONDITIONAL(WITH_DDC10, true)
     AC_DEFINE(WITH_DDC10,[],[Compile with DDC HE veto support])    
-#    AC_CHECK_LIB([DDC],ddc_10,[],AC_MSG_ERROR)
     AC_CHECK_LIB([tcl8.5],main,[],AC_MSG_ERROR)
     AC_CHECK_LIB([expect],exp_popen,[],AC_MSG_ERROR)
     ], [
@@ -125,19 +120,16 @@ AS_IF([test "x$enable_all" = "xyes"], [
     AC_DEFINE(WITH_SLAVE,[],[Compile slave module])
     AC_DEFINE(WITH_DDC10,[],[Compile with DDC HE veto support])
     AC_DEFINE(WITH_USER,[],[Compile user interface])   
-#    AC_CHECK_LIB([DDC],main,[],AC_MSG_ERROR([libddc not found]))
     AC_CHECK_LIB([tcl8.5],main,[],AC_MSG_ERROR([libtcl8.5 not found]))
     AC_CHECK_LIB([expect],exp_popen,[],AC_MSG_ERROR([libexpect not found]))
     AC_CHECK_LIB(pthread,pthread_mutex_init,[],AC_MSG_ERROR([libpthread missing.]))
     AC_CHECK_LIB(CAENVME,CAENVME_Init,[],AC_MSG_ERROR([libCAENVME missing.]))
     AC_CHECK_LIB(snappy,_ZN6snappy11RawCompressEPKcmPcPm,[],AC_MSG_ERROR([libsnappy missing.]))
-    AC_CHECK_LIB(mongoclient,main,[],AM_CONDITIONAL(WITH_MONGODB,true),AM_CONDITIONAL(WITH_MONGODB,false))
+#    AC_CHECK_LIB(mongoclient,main,[],AM_CONDITIONAL(WITH_MONGODB,true),AM_CONDITIONAL(WITH_MONGODB,false))
     AC_CHECK_LIB(mongoclient,main,[],AC_DEFINE(HAS_MONGODB,[],[Mongodb installed]))
     AC_CHECK_LIB(protobuf,main,[],AC_MSG_ERROR([libprotobuf missing]))    
-
-#    AC_CHECK_LIB(mongoclient,main,[],AC_MSG_ERROR([libmongoclient not found.]))
     ], [
-    AM_CONDITIONAL(WITH_MONGODB,false)
+    AM_CONDITIONAL(WITH_ALL, false)
     ])
 #AC_CONFIG_FILES([Makefile])
 AC_OUTPUT(Makefile src/ddc10/Makefile src/common/Makefile src/master/Makefile src/slave/Makefile src/user/Makefile)
