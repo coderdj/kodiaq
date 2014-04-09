@@ -66,7 +66,7 @@ AS_IF([test "x$enable_slave" = "xyes"], [
     AC_CHECK_LIB(CAENVME,CAENVME_Init,[],AC_MSG_ERROR([libCAENVME missing.]))
     AC_CHECK_LIB(snappy,_ZN6snappy11RawCompressEPKcmPcPm,[],AC_MSG_ERROR([libsnappy missing.]))
 #    AC_CHECK_LIB(mongoclient,main,[],AC_DEFINE(HAS_MONGODB,[],[mongodb installed]))
-    AC_CHECK_LIB(mongoclient,main,[],AM_CONDITIONAL(WITH_MONGODB,true),AM_CONDITIONAL(WITH_MONGODB,false))
+    AC_CHECK_LIB(mongoclient,main,[],AM_CONDITIONAL(WITH_MONGODB,true))
     ], [
     AM_CONDITIONAL(WITH_SLAVE,false)
     ])
@@ -83,8 +83,8 @@ AS_IF([test "x$enable_lite" = "xyes"], [
     AC_CHECK_LIB(pthread,pthread_mutex_init,[],AC_MSG_ERROR([libpthread missing.]))
     AC_CHECK_LIB(CAENVME,CAENVME_Init,[],AC_MSG_ERROR([libCAENVME missing.]))
     AC_CHECK_LIB(snappy,_ZN6snappy11RawCompressEPKcmPcPm,[],AC_MSG_ERROR([libsnappymissing.]))
-    AC_CHECK_LIB(mongoclient,main,[],AC_DEFINE(HAS_MONGODB,[],[Mongodb installed]))
-#    AC_CHECK_LIB(mongoclient,main,[],AM_CONDITIONAL(WITH_MONGODB,true),AM_CONDITIONAL(WITH_MONGODB,false))
+#    AC_CHECK_LIB(mongoclient,main,[],AC_DEFINE(HAS_MONGODB,[],[Mongodb installed]))
+    AC_CHECK_LIB(mongoclient,main,[],AM_CONDITIONAL(WITH_MONGODB,true))
     AC_CHECK_LIB([ncurses],initscr,[],AC_MSG_ERROR)   
     AC_CHECK_LIB(protobuf,main,[],AC_MSG_ERROR([libprotobuf missing]))
     ], [
@@ -125,11 +125,10 @@ AS_IF([test "x$enable_all" = "xyes"], [
     AC_CHECK_LIB(pthread,pthread_mutex_init,[],AC_MSG_ERROR([libpthread missing.]))
     AC_CHECK_LIB(CAENVME,CAENVME_Init,[],AC_MSG_ERROR([libCAENVME missing.]))
     AC_CHECK_LIB(snappy,_ZN6snappy11RawCompressEPKcmPcPm,[],AC_MSG_ERROR([libsnappy missing.]))
-#    AC_CHECK_LIB(mongoclient,main,[],AM_CONDITIONAL(WITH_MONGODB,true),AM_CONDITIONAL(WITH_MONGODB,false))
-    AC_CHECK_LIB(mongoclient,main,[],AC_DEFINE(HAS_MONGODB,[],[Mongodb installed]))
+    AC_CHECK_LIB(mongoclient,main,[],AM_CONDITIONAL(WITH_MONGODB,true))
+#    AC_CHECK_LIB(mongoclient,main,[],AC_DEFINE(HAS_MONGODB,[],[Mongodb installed]))
     AC_CHECK_LIB(protobuf,main,[],AC_MSG_ERROR([libprotobuf missing]))    
     ], [
-    AM_CONDITIONAL(WITH_ALL, false)
     ])
 #AC_CONFIG_FILES([Makefile])
 AC_OUTPUT(Makefile src/ddc10/Makefile src/common/Makefile src/master/Makefile src/slave/Makefile src/user/Makefile)

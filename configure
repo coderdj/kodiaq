@@ -616,8 +616,6 @@ ac_subst_vars='am__EXEEXT_FALSE
 am__EXEEXT_TRUE
 LTLIBOBJS
 LIBOBJS
-WITH_ALL_FALSE
-WITH_ALL_TRUE
 WITH_DDC10_FALSE
 WITH_DDC10_TRUE
 KODIAQ_LITE_FALSE
@@ -15558,14 +15556,7 @@ if ${ac_cv_lib_mongoclient_main+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-lmongoclient  if false; then
-  WITH_MONGODB_TRUE=
-  WITH_MONGODB_FALSE='#'
-else
-  WITH_MONGODB_TRUE='#'
-  WITH_MONGODB_FALSE=
-fi
- $LIBS"
+LIBS="-lmongoclient  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -15791,6 +15782,7 @@ else
   as_fn_error $? "libsnappymissing." "$LINENO" 5
 fi
 
+#    AC_CHECK_LIB(mongoclient,main,[],AC_DEFINE(HAS_MONGODB,[],[Mongodb installed]))
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lmongoclient" >&5
 $as_echo_n "checking for main in -lmongoclient... " >&6; }
 if ${ac_cv_lib_mongoclient_main+:} false; then :
@@ -15829,12 +15821,16 @@ _ACEOF
   LIBS="-lmongoclient $LIBS"
 
 else
-
-$as_echo "#define HAS_MONGODB /**/" >>confdefs.h
+   if true; then
+  WITH_MONGODB_TRUE=
+  WITH_MONGODB_FALSE='#'
+else
+  WITH_MONGODB_TRUE='#'
+  WITH_MONGODB_FALSE=
+fi
 
 fi
 
-#    AC_CHECK_LIB(mongoclient,main,[],AM_CONDITIONAL(WITH_MONGODB,true),AM_CONDITIONAL(WITH_MONGODB,false))
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for initscr in -lncurses" >&5
 $as_echo_n "checking for initscr in -lncurses... " >&6; }
 if ${ac_cv_lib_ncurses_initscr+:} false; then :
@@ -16344,7 +16340,6 @@ else
   as_fn_error $? "libsnappy missing." "$LINENO" 5
 fi
 
-#    AC_CHECK_LIB(mongoclient,main,[],AM_CONDITIONAL(WITH_MONGODB,true),AM_CONDITIONAL(WITH_MONGODB,false))
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lmongoclient" >&5
 $as_echo_n "checking for main in -lmongoclient... " >&6; }
 if ${ac_cv_lib_mongoclient_main+:} false; then :
@@ -16383,11 +16378,17 @@ _ACEOF
   LIBS="-lmongoclient $LIBS"
 
 else
-
-$as_echo "#define HAS_MONGODB /**/" >>confdefs.h
+   if true; then
+  WITH_MONGODB_TRUE=
+  WITH_MONGODB_FALSE='#'
+else
+  WITH_MONGODB_TRUE='#'
+  WITH_MONGODB_FALSE=
+fi
 
 fi
 
+#    AC_CHECK_LIB(mongoclient,main,[],AC_DEFINE(HAS_MONGODB,[],[Mongodb installed]))
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lprotobuf" >&5
 $as_echo_n "checking for main in -lprotobuf... " >&6; }
 if ${ac_cv_lib_protobuf_main+:} false; then :
@@ -16427,17 +16428,6 @@ _ACEOF
 
 else
   as_fn_error $? "libprotobuf missing" "$LINENO" 5
-fi
-
-
-else
-
-     if false; then
-  WITH_ALL_TRUE=
-  WITH_ALL_FALSE='#'
-else
-  WITH_ALL_TRUE='#'
-  WITH_ALL_FALSE=
 fi
 
 
@@ -16602,10 +16592,6 @@ if test -z "${WITH_MONGODB_TRUE}" && test -z "${WITH_MONGODB_FALSE}"; then
   as_fn_error $? "conditional \"WITH_MONGODB\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${WITH_MONGODB_TRUE}" && test -z "${WITH_MONGODB_FALSE}"; then
-  as_fn_error $? "conditional \"WITH_MONGODB\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
 if test -z "${WITH_SLAVE_TRUE}" && test -z "${WITH_SLAVE_FALSE}"; then
   as_fn_error $? "conditional \"WITH_SLAVE\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
@@ -16616,6 +16602,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${WITH_SLAVE_TRUE}" && test -z "${WITH_SLAVE_FALSE}"; then
   as_fn_error $? "conditional \"WITH_SLAVE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${WITH_MONGODB_TRUE}" && test -z "${WITH_MONGODB_FALSE}"; then
+  as_fn_error $? "conditional \"WITH_MONGODB\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${KODIAQ_LITE_TRUE}" && test -z "${KODIAQ_LITE_FALSE}"; then
@@ -16646,8 +16636,8 @@ if test -z "${WITH_DDC10_TRUE}" && test -z "${WITH_DDC10_FALSE}"; then
   as_fn_error $? "conditional \"WITH_DDC10\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${WITH_ALL_TRUE}" && test -z "${WITH_ALL_FALSE}"; then
-  as_fn_error $? "conditional \"WITH_ALL\" was never defined.
+if test -z "${WITH_MONGODB_TRUE}" && test -z "${WITH_MONGODB_FALSE}"; then
+  as_fn_error $? "conditional \"WITH_MONGODB\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 

@@ -1,9 +1,6 @@
 /* build/config.h.  Generated from config.h.in by configure.  */
 /* build/config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Mongodb installed */
-/* #undef HAS_MONGODB */
-
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #define HAVE_DLFCN_H 1
 
@@ -23,7 +20,7 @@
 #define HAVE_LIBMENU 1
 
 /* Define to 1 if you have the `mongoclient' library (-lmongoclient). */
-/* #undef HAVE_LIBMONGOCLIENT */
+#define HAVE_LIBMONGOCLIENT 1
 
 /* Define to 1 if you have the `ncurses' library (-lncurses). */
 #define HAVE_LIBNCURSES 1
