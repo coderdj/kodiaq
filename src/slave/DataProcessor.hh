@@ -109,10 +109,10 @@ class DataProcessor
 // Note on mongodb driver dependency: lite versions of the code
 // may have no mongodb dependency defined. If this is the case
 // then there will be no mongo output possible with this class.
-// To use mongoDB dependency the variable HAS_MONGODB must be 
+// To use mongoDB dependency the variable HAVE_LIBMONGOCLIENT must be 
 // defined.
 
-#ifdef HAS_MONGODB
+#ifdef HAVE_LIBMONGOCLIENT
 
 /*! \brief Derived class for creating mongodb BSON objects.
  
