@@ -38,7 +38,7 @@ void koOptions::Reset()
    //Reset mongodb options
    fMongoOptions.ZipOutput=fMongoOptions.WriteConcern=
      fMongoOptions.DynamicRunNames=false;
-   fMongoOptions.MinInsertSize=1000000;
+   fMongoOptions.MinInsertSize=1;
    fMongoOptions.Collection="data.test";
    
    //Reset processing options
@@ -153,7 +153,7 @@ int koOptions::ReadParameterFile(string filename)
 	 fRunOptions.RunStartModule=koHelper::StringToInt(words[2]);
       }      
       if(words[0]=="MONGO_OPTIONS")	{
-	 if(words.size()<7) continue;
+	 if(words.size()<6) continue;
 	 fMongoOptions.DBAddress=words[1];
 	 if(words[2][words[2].size()-1]=='*') fMongoOptions.DynamicRunNames=true;
 	 else fMongoOptions.DynamicRunNames=false;
