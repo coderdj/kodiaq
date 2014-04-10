@@ -53,7 +53,7 @@ class NCursesUI
    // Name    : Initialize
    // Purpose : Initialize the UI at the beginning of the session
    // 
-   int          Initialize(koStatusPacket_t *DAQStatus,koRunInfo_t *RunInfo, 
+   int          Initialize(koStatusPacket_t *DAQStatus, 
 			   vector <string> history, string name);
    //
    // Name    : DrawMainMenu
