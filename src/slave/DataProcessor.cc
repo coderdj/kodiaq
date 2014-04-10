@@ -269,7 +269,6 @@ void DataProcessor_mongodb::ProcessMongoDB()
 	    if(digi->RequestDataLock()!=0) continue;
 	    buffvec = digi->ReadoutBuffer(sizevec);
 	    digi->UnlockDataBuffer();
-	    
 	    // **********
 	    // PROCESSING
 	    // **********
@@ -339,7 +338,7 @@ void DataProcessor_mongodb::ProcessMongoDB()
 	       vInsertVec->push_back(bson.obj());
 	       
 	       //if we are above the required insert size, put it in
-	       if((int)uiInsertSize> m_koOptions->GetMongoOptions().MinInsertSize)	 {
+	       if((int)uiInsertSize> m_koOptions->GetMongoOptions().MinInsertSize) {
 		  if(mongo->InsertThreaded(vInsertVec,imongoID)==0)  {
 		     //insert successful and ownership of vInsertVec passed
 		     uiInsertSize=0;

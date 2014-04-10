@@ -135,10 +135,10 @@ int DAQRecorder_mongodb::RegisterProcessor()
       //conn = new mongo::ScopedDbConnection(m_koMongoOptions.DBAddress,10000.);
    }
    catch(const mongo::DBException &e)  {
-      stringstream err;
-      err<<"DAQRecorder_mongodb::RegisterProcessor - Error connecting to mongodb "<<
-	e.toString();
-      LogError(err.str());
+//      stringstream err;
+//      err<<"DAQRecorder_mongodb::RegisterProcessor - Error connecting to mongodb "<<
+//	e.toString();
+//      LogError(err.str());
       return -1;
    }
    int lock = pthread_mutex_lock(&m_ConnectionMutex);
