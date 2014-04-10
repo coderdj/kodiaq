@@ -289,7 +289,7 @@ void DataProcessor_mongodb::ProcessMongoDB()
 	    // INSERTION
 	    // *********
 	    
-	//    int ModuleNumber = digi->GetID().BoardID;
+	    int ModuleNumber = digi->GetID().BoardID;
 	    int nBuff        = buffvec->size();
 	    
 	    for(int b=0; b<nBuff;b++) {
@@ -306,6 +306,8 @@ void DataProcessor_mongodb::ProcessMongoDB()
 		  TimeStamp = (*times)[b]; //time stamp from parsed vector
 		  bson.append("channel",(*channels)[b]);
 	       }
+	    
+	       bson.append("module",ModuleNumber);
 	       
 	       int ResetCounter = mongo->GetResetCounter(TimeStamp);
 	       long long Time64 = ((unsigned long)ResetCounter << 31) | TimeStamp;
