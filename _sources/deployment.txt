@@ -184,9 +184,9 @@ entry is the path to the .ini file for that mode. This file can be
 edited while the master is running. For an exampe .ini file take a
 look in src/master/data/RunModes/DAQOptionsMaster.ini. 
 
-=========================================
+
 Deployment of the Standalone Slave Module
-=========================================
+-----------------------------------------
 
 It is also possible to deploy a standalone module for running small
 DAQ systems. This consists of the slave module which is steered via a

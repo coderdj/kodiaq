@@ -1,6 +1,6 @@
-#########################
+========================
 DAQ Options
-#########################
+========================
 
 The DAQ options are stored in .ini files, usually found in
 src/master/data/RunModes and linked in the RunModes.ini file. The

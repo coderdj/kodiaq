@@ -319,6 +319,17 @@ related to your chosen write mode.
     where rates fluctuate. At the end of a run the entire buffer will
     be written out regardless of whether this threshold was reached or not.
 
+  * **OUTFILE_OPTIONS {string} {int} {int}**
+    This defines options for file output. The string argument defines
+    the path. Using a wildcard (*) at the end of the string only will
+    cause the end of the filename to be dynamically generated based on
+    time and date. Please don't put a wildcard anywhere except the end
+    of the string. The first integer defines the compression (0-off
+    1-snappy). The second int defines the number of events per file.
+    The software only supports up to 10,000 files per run so don't
+    make this too huge (the last file will just get all the data if
+    this number is overrun). Writing -1 means all data in one file.
+    
 An example of how these options appear in the .ini file is shown
 below. ::
 
@@ -343,11 +354,15 @@ below. ::
      ##            board says it is ready to be read)
      PROCESSING_OPTIONS 6 2 1
      
-     ## READOUT_THRESHOLD {int}
-     ##     Usage:  Define a minimum number of events that must be in the
-     ##             buffer before a write is performed. (Number of events
-     ##             in buffer must be greater than this number.)
-     READOUT_THRESHOLD 1
+     ## OUTFILE_OPTIONS {string} {int} {int}
+     ##     Usage: define options for file output. The first string argument
+     ##            is the path. A wildcard means to end the file name with
+     ##            a number determined by the current date/time.
+     ##            The first int is used to define the compression. 1-on 0-off
+     ##            The second int defines the number of events per file. -1
+     ##            means unlimited.
+     OUTFILE_OPTIONS koData* 1 5000
+     
 
 VME Options
 ------------------
