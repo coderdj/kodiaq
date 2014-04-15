@@ -51,9 +51,8 @@ enabled the configure script automatically checks that the unique
 dependencies for each module are installed. The make script then
 compiles only the activated modules.
 
-==================================
 Summary of Dependencies per Module
-==================================
+----------------------------------
 
 +--------------------+----------------------------------------+
 | Module             |  Dependencies                          |
