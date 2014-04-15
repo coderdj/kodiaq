@@ -88,7 +88,8 @@
 <li class="toctree-l2"><a class="reference internal" href="usage.html#messages-window">Messages Window</a></li>
 </ul>
 </li>
-<li class="toctree-l1 current"><a class="current reference internal" href="">Deployment of the Full System</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Deployment of the Full System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#summary-of-dependencies-per-module">Summary of Dependencies per Module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#deployment-step-by-step">Deployment, Step by Step</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#koslave">koSlave</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#komaster">koMaster</a></li>
@@ -199,6 +200,67 @@ flags that tell kodiaq which modules to include.</p>
 enabled the configure script automatically checks that the unique
 dependencies for each module are installed. The make script then
 compiles only the activated modules.</p>
+</div>
+<div class="section" id="summary-of-dependencies-per-module">
+<h1>Summary of Dependencies per Module<a class="headerlink" href="#summary-of-dependencies-per-module" title="Permalink to this headline">¶</a></h1>
+<table border="1" class="docutils">
+<colgroup>
+<col width="33%" />
+<col width="67%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Module</th>
+<th class="head">Dependencies</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>common</td>
+<td><div class="first last line-block">
+<div class="line">* c++ compiler (i.e. gcc)</div>
+</div>
+</td>
+</tr>
+<tr class="row-odd"><td>user</td>
+<td><div class="first last line-block">
+<div class="line">* libncurses-dev</div>
+<div class="line">* must contain libmenu, libform, and</div>
+<div class="line-block">
+<div class="line">libtinfo</div>
+</div>
+</div>
+</td>
+</tr>
+<tr class="row-even"><td>slave/lite</td>
+<td><div class="first last line-block">
+<div class="line">* libpthread-dev</div>
+<div class="line">* libCAENVME</div>
+<div class="line">* libsnappy-dev</div>
+<div class="line">* libmongoclient (if mongodb output</div>
+<div class="line-block">
+<div class="line">is required)</div>
+</div>
+<div class="line">* libprotobuf-dev</div>
+</div>
+</td>
+</tr>
+<tr class="row-odd"><td>master</td>
+<td><div class="first last line-block">
+<div class="line">* libmongoclient (if mongodb output</div>
+<div class="line-block">
+<div class="line">is required)</div>
+</div>
+</div>
+</td>
+</tr>
+<tr class="row-even"><td>ddc10</td>
+<td><div class="first last line-block">
+<div class="line">* libtcl8.5</div>
+<div class="line">* libexpect</div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
 <div class="section" id="deployment-step-by-step">
 <h2>Deployment, Step by Step<a class="headerlink" href="#deployment-step-by-step" title="Permalink to this headline">¶</a></h2>
 <p>Here is a general outline of the steps needed to deploy a system. More
@@ -247,6 +309,8 @@ a slight modification to the source code). Specifically
 libmongoclient is needed.</li>
 <li>libsnappy for on-the-fly compression</li>
 <li>libpthread for parallel processing</li>
+<li>Google protocol buffers libraries (called libprotobuf-dev on
+ubuntu)</li>
 <li>Normal build libraries (build-essential package on ubuntu)</li>
 </ul>
 </dd>
@@ -290,6 +354,7 @@ make</pre>
 <p>The executable is in src/master/koMaster. This should also be run in a
 detached screen and can be left on more or less indefinitely unless
 there are issues.</p>
+<p>The DDC-10 module uses telnet and requires libtcl8.5 and libexpect.</p>
 <div class="section" id="run-modes">
 <h3>Run Modes<a class="headerlink" href="#run-modes" title="Permalink to this headline">¶</a></h3>
 <p>The operational modes for the DAQ are defined in

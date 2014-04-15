@@ -51,6 +51,34 @@ enabled the configure script automatically checks that the unique
 dependencies for each module are installed. The make script then
 compiles only the activated modules.
 
+==================================
+Summary of Dependencies per Module
+==================================
+
++--------------------+----------------------------------------+
+| Module             |  Dependencies                          |
++====================+========================================+
+| common             | | * c++ compiler (i.e. gcc)            |
++--------------------+----------------------------------------+
+| user               | | * libncurses-dev                     |
+|                    | | * must contain libmenu, libform, and |
+|                    | |   libtinfo                           |
++--------------------+----------------------------------------+
+| slave/lite         | | * libpthread-dev                     |
+|                    | | * libCAENVME                         |
+|                    | | * libsnappy-dev                      |
+|                    | | * libmongoclient (if mongodb output  |
+|                    | |   is required)                       |
+|                    | | * libprotobuf-dev                    |
++--------------------+----------------------------------------+
+| master             | | * libmongoclient (if mongodb output  |
+|                    | |   is required)                       |
++--------------------+----------------------------------------+
+| ddc10              | | * libtcl8.5                          |
+|                    | | * libexpect                          |
++--------------------+----------------------------------------+
+
+
 Deployment, Step by Step
 ------------------------
 
@@ -97,8 +125,10 @@ to work.
 	libmongoclient is needed. 
       * libsnappy for on-the-fly compression
       * libpthread for parallel processing
+      * Google protocol buffers libraries (called libprotobuf-dev on
+        ubuntu)
       * Normal build libraries (build-essential package on ubuntu)
-
+     
 Checkout the code from github. To compile use the following steps: ::
     
       cd kodiaq (top-level directory)
@@ -143,6 +173,8 @@ To build use the following: ::
 The executable is in src/master/koMaster. This should also be run in a
 detached screen and can be left on more or less indefinitely unless
 there are issues.
+
+The DDC-10 module uses telnet and requires libtcl8.5 and libexpect.
 
 Run Modes
 ^^^^^^^^^^^^^
@@ -189,4 +221,5 @@ Currently the standalone module requires a mongodb database and the
 mongo C++ driver. It is anticipated that the ability to write directly
 to files (which would allow the mongodb driver dependency to be
 removed) will be added in a future update.
+
 

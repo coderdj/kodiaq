@@ -190,10 +190,24 @@ the section on board options.
      flag more than one digitizer, just put a second SUM_MODULE option
      in (do not make one with two arguments as the second will be
      ignored).
-   * **DDC10_OPTIONS**
+   * **DDC10_OPTIONS {string} {int0} {int1} ... {int 14}**
      If a DDC10 high energy veto module is used, this line lets you
-     define the options. An explanation of the options will follow
-     once a more finalized version of the DDC10 class exists.
+     define the options. There is one string followed by fifteen
+     integer arguments. A detailed explanation of the arguments
+     appears in the documentation for the custom ddc10 firmware. The arguments are:
+     * string: address of the module (ip)
+     * int0: sign
+     * int1: integration window
+     * int2: veto delay
+     * int3: signal threshold
+     * int4: integration threshold
+     * int5: width cut
+     * int6: rise time cut
+     * int7: component status
+     * int8-int11: 4 parameters for veto function (see ddc10 docs)
+     * int12: outer ring factor
+     * int13: inner ring factor
+     * int14: prescaling
 
 An example of how these options appears in the .ini file is shown below. ::
 
@@ -211,10 +225,15 @@ An example of how these options appears in the .ini file is shown below. ::
      ##             digitized and will not be included in the event builder
      SUM_MODULE 991
 
-     ## DDC10_Options {string1} {int1} {int2} {int3} {int4} {int5} {int6} {int7}
+     ## DDC10_Options {string0} {int0} ... {int 14}
      ##      Usage: Define options for the ddc10 veto module
-     ##              ADDRESS       MODE    SIGN     INT WINDOW    VETO DELAY     SIG THRESHOLD      INT THRESHOLD      WIDTH CUT
-     DDC10_OPTIONS 130.92.139.240    0      10        100             200            150                  20000        50
+     ##             {string0}:  ADDRESS
+     ##             {int0} Sign {int1} Integration Window {int2} VETO DELAY
+     ##             {int3} Signal Threshold {int4} Integration Threshold
+     ##             {int5} Width Cut {int6} Rise time cut {int7} Component status
+     ##             {int8-11} Par[0-3] {int12} Outer ring factor
+     ##             {int13} Inner ring factor {int14} Prescaling
+     DDC10_OPTIONS 130.92.139.240  1 100 200 150 20000 50 30 1 0 0 0 50 2 1 1000
      
      ## BASELINE_MODE {int}
      ##     Usage: 0 - no baselines determined. read from file if available.
@@ -258,35 +277,19 @@ related to your chosen write mode.
        compression. Whether or not the data is compressed is communicated to
        the event builder via the run attributes document (see the protocols
        section).
-     * {int2} gives the max insert size. kodiaq uses bulk inserts to
+     * {int2} gives the min insert size. kodiaq uses bulk inserts to
        put data into mongodb. This means each insert is actually a vector of
-       BSON documents. If the vector hits this maximum size, an insert is
-       forced before more documents are generated.
+       BSON documents. An insert must exceed this size before being
+       put in the database. Size is in bytes.
      * {int3} defines the write concern for mongo. Putting this to
        normal mode (set 0) turns write concern on. This means the client will
        wait for a reply from the mongo database after writing. On the
        one hand, this is very good since it confirms an insert made it to
        mongo. On the other hand it is very slow. Turning the option of (value
        1) is required for high-rate data-taking.
-     * {int4} defines a block splitting mode. This is a reformatting
-       of the data before it is put into the database. The options are: 
-
-       * 0 - No block splitting. Each mongodb document will contain an
-         entire block transfer which could contain one or many event headers.
-       * 1 - coarse block splitting. Splits the block into separate
-         events. This is for the default board firmware where each
-         event is a trigger. One mongodb document contains data from
-         all the channels for this trigger.
-       * 2 - fine block splitting. Splits the block into separate
-         events. Then further splits the events into occurrences (only works if
-         zero length encoding is set on via VME option). This means each
-         zero-length-encoded chunk of data is its own doc. This mode
-         only works with the default firmware and is meant to emulate the
-         custom firmware.
-       * 3 - header extraction for custom firmware. Not yet implemented.
-
-  * **PROCESSING_THREADS {int}**
-    Defines how many parallel threads should be used for data
+       
+  * **PROCESSING_OPTIONS {int} {int} {int}**
+    The first int defines how many parallel threads should be used for data
     processing. It isn't suggested to make this a ridiculous number. The
     boards can only be read one at a time (there is a mutex-protected call
     to the CAEN block transfer function). The goal at high rates is to
@@ -294,13 +297,39 @@ related to your chosen write mode.
     (and processing power) must exist to do all of the data parsing, BSON
     creation, and data input. As a rule this number is usually set based
     on the number of threads in the processor on the computer.
-  * **READOUT_THRESHOLD {int}**
-    Defines a minimum number of documents that must be ready before
-    being inserted into mongodb. Can be tuned to achieve maximum write
-    speeds in cases where rates fluctuate. At the end of a run the entire
-    buffer will be written out regardless of whether this threshold was
-    reached or not.
+    The second int defines the block splitting mode. This is a
+    reformatting of the data before it is put into the database. The
+    options are:     
+       * 0 - No block splitting. Each mongodb document will contain an
+         entire block transfer which could contain one or many event headers.
+       * 1 - coarse block splitting. Splits the block into separate
+         events. This is for the default board firmware where each
+         event is a trigger. One mongodb document contains data from
+	 all the channels for this trigger.
+       * 2 - fine block splitting. Splits the block
+         into separate events. Then further splits the events into occurrences (only
+	 works if zero length encoding is set on via VME option). This means each
+	 zero-length-encoded chunk of data is its own doc. This mode
+         only works with the default firmware and is meant to emulate
+	 the custom firmware.
+       * 3 - header extraction for custom firmware. Not yet implemented.
+    The third int is the readout threshold. This defines a minimum
+    number of documents that must be read before being inserted into
+    mongodb. Can be tuned to achieve maximum write speeds in cases
+    where rates fluctuate. At the end of a run the entire buffer will
+    be written out regardless of whether this threshold was reached or not.
 
+  * **OUTFILE_OPTIONS {string} {int} {int}**
+    This defines options for file output. The string argument defines
+    the path. Using a wildcard (*) at the end of the string only will
+    cause the end of the filename to be dynamically generated based on
+    time and date. Please don't put a wildcard anywhere except the end
+    of the string. The first integer defines the compression (0-off
+    1-snappy). The second int defines the number of events per file.
+    The software only supports up to 10,000 files per run so don't
+    make this too huge (the last file will just get all the data if
+    this number is overrun). Writing -1 means all data in one file.
+    
 An example of how these options appear in the .ini file is shown
 below. ::
 
@@ -308,26 +337,32 @@ below. ::
      ##     Usage: define write mode. 0-no writing 1-to file 2-mongodb
      WRITE_MODE 2
      
-     ## MONGO_OPTIONS {string} {string} {int} {int} {int} {int}
+     ## MONGO_OPTIONS {string} {string} {int} {int} {int}
      ##     Usage: first string mongodb address
      ##            second string collection name
      ##            first int 0-do not zip output 1-zip output
      ##            second int {int} max insert size
      ##            third int {int} write concern (0-normal 1-off)
-     ##            fourth int {int} block splitting mode (0-none,
-     ##                          1-coarse, 2-occurrences old fw)
-     MONGO_OPTIONS lheppc42 data.test 1 5000 1 1
+     MONGO_OPTIONS lheppc42 data.test 1 5000 1 
      
-     ## PROCESSING_THREADS {int}
+     ## PROCESSING_OPTIONSS {int} {int} {int}
      ##     Usage: define the number of processing threads. program will
      ##            assign one by default if this number is not set or is garbage
-     PROCESSING_THREADS 6
+     ##            second int defined the processing mode (0-none, 1-coarse,
+     ##            2-occurrence building old fw)
+     ##            third int is readout threshold (how many BLTs before
+     ##            board says it is ready to be read)
+     PROCESSING_OPTIONS 6 2 1
      
-     ## READOUT_THRESHOLD {int}
-     ##     Usage:  Define a minimum number of events that must be in the
-     ##             buffer before a write is performed. (Number of events
-     ##             in buffer must be greater than this number.)
-     READOUT_THRESHOLD 1
+     ## OUTFILE_OPTIONS {string} {int} {int}
+     ##     Usage: define options for file output. The first string argument
+     ##            is the path. A wildcard means to end the file name with
+     ##            a number determined by the current date/time.
+     ##            The first int is used to define the compression. 1-on 0-off
+     ##            The second int defines the number of events per file. -1
+     ##            means unlimited.
+     OUTFILE_OPTIONS koData* 1 5000
+     
 
 VME Options
 ------------------
