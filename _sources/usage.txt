@@ -99,7 +99,8 @@ Messages Window
 ------------------
 
 The messages window displays the last 1000 lines of the DAQ log file
-as well as any messages for the user. Scrolling is done with the arrow
+as well as any messages for the user (certain messages are not
+recorder in the log). Scrolling is done with the arrow
 keys or the mouse wheel. In order to place a message in the log file
 use the "Broadcast Message" command. If you want to see something
 older than 1000 lines you have to look up the actual DAQ log files. 

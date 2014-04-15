@@ -19,6 +19,20 @@
 
   
   
+
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:'',
+        VERSION:'0.9',
+        COLLAPSE_INDEX:false,
+        FILE_SUFFIX:'.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
     
 
   
@@ -26,6 +40,7 @@
   
   
     <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+    <script type="text/javascript" src="_static/js/theme.js"></script>
   
 
   
@@ -33,29 +48,26 @@
         <link rel="next" title="Deployment of the Full System" href="deployment.html"/>
         <link rel="prev" title="Installation of the client UI" href="installation.html"/> 
 
-  
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
   <div class="wy-grid-for-nav">
 
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-nav-search">
-        <a href="index.html" class="fa fa-home"> kodiaq</a>
-        <div role="search">
-  <form id ="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
-    <input type="hidden" name="check_keywords" value="yes" />
-    <input type="hidden" name="area" value="default" />
-  </form>
-</div>
+        <a href="index.html" class="icon icon-home"> kodiaq</a>
+        <form class="wy-form" action="search.html" method="get">
+  <input type="text" name="q" placeholder="Search docs" />
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
       </div>
 
-      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+      <div class="wy-menu wy-menu-vertical" data-spy="affix">
         
         
             <ul class="current">
@@ -108,30 +120,23 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
-        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-        <a href="index.html">kodiaq</a>
+      <nav class="wy-nav-top">
+        <i data-toggle="wy-nav-top" class="icon icon-reorder"></i>
+        <a href="/">kodiaq</a>
       </nav>
 
 
       
       <div class="wy-nav-content">
         <div class="rst-content">
-          <div role="navigation" aria-label="breadcrumbs navigation">
-  <ul class="wy-breadcrumbs">
-    <li><a href="index.html">Docs</a> &raquo;</li>
-      
-    <li>Using the Client Program</li>
-      <li class="wy-breadcrumbs-aside">
-        
-          <a href="_sources/usage.txt" rel="nofollow"> View page source</a>
-        
-      </li>
-  </ul>
-  <hr/>
-</div>
-          <div role="main">
-            
+          <ul class="wy-breadcrumbs">
+  <li><a href="index.html">Docs</a> &raquo;</li>
+  <li><a href="">Using the Client Program</a></li>
+  
+</ul>
+<hr/>
+
+          
   <div class="section" id="using-the-client-program">
 <h1>Using the Client Program<a class="headerlink" href="#using-the-client-program" title="Permalink to this headline">¶</a></h1>
 <p>The DAQ client program is written in ncurses and is designed to be run
@@ -299,7 +304,8 @@ Standby Mode</td>
 <div class="section" id="messages-window">
 <h2>Messages Window<a class="headerlink" href="#messages-window" title="Permalink to this headline">¶</a></h2>
 <p>The messages window displays the last 1000 lines of the DAQ log file
-as well as any messages for the user. Scrolling is done with the arrow
+as well as any messages for the user (certain messages are not
+recorder in the log). Scrolling is done with the arrow
 keys or the mouse wheel. In order to place a message in the log file
 use the &#8220;Broadcast Message&#8221; command. If you want to see something
 older than 1000 lines you have to look up the actual DAQ log files.</p>
@@ -307,28 +313,25 @@ older than 1000 lines you have to look up the actual DAQ log files.</p>
 </div>
 
 
-          </div>
           <footer>
   
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+    <div class="rst-footer-buttons">
       
-        <a href="deployment.html" class="btn btn-neutral float-right" title="Deployment of the Full System"/>Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="deployment.html" class="btn btn-neutral float-right" title="Deployment of the Full System"/>Next <span class="icon icon-circle-arrow-right"></span></a>
       
       
-        <a href="installation.html" class="btn btn-neutral" title="Installation of the client UI"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="installation.html" class="btn btn-neutral" title="Installation of the client UI"><span class="icon icon-circle-arrow-left"></span> Previous</a>
       
     </div>
   
 
   <hr/>
 
-  <div role="contentinfo">
-    <p>
-        &copy; Copyright 2014, Daniel Coderre.
-    </p>
-  </div>
+  <p>
+      &copy; Copyright 2014, Daniel Coderre.
+  </p>
 
-  <a href="https://github.com/snide/sphinx_rtd_theme">Sphinx theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>
+  <a href="https://www.github.com/snide/sphinx_rtd_theme">Sphinx theme</a> provided by <a href="http://readthedocs.org">Read the Docs</a>
 </footer>
         </div>
       </div>
@@ -337,38 +340,6 @@ older than 1000 lines you have to look up the actual DAQ log files.</p>
 
   </div>
   
-
-
-  
-
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'',
-            VERSION:'0.9',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true
-        };
-    </script>
-      <script type="text/javascript" src="_static/jquery.js"></script>
-      <script type="text/javascript" src="_static/underscore.js"></script>
-      <script type="text/javascript" src="_static/doctools.js"></script>
-
-  
-
-  
-  
-    <script type="text/javascript" src="_static/js/theme.js"></script>
-  
-
-  
-  
-  <script type="text/javascript">
-      jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
-      });
-  </script>
-   
 
 </body>
 </html>

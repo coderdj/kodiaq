@@ -10,9 +10,8 @@ Welcome to kodiaq - The networked parallel data reader
     :align: left
     :alt: alternate text
     
-Welcome to the documentation for kodiaq and thank you for your
-interest in the project. If you are a user looking to install the
-program and steer a running data acquisition system, look at the
+Welcome to the documentation for kodiaq. If you are a user looking to
+install the program and steer a running data acquisition system, look at the
 beginning sections on installation and usage of the UI. Devs will want
 to delve further into the docs in order to learn how to install a full
 deployment.
@@ -26,7 +25,7 @@ Contents
 ================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    
    intro
    installation
