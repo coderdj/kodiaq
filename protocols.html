@@ -1,0 +1,515 @@
+
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Data Formats &mdash; kodiaq 0.9 documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  
+  
+
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:'',
+        VERSION:'0.9',
+        COLLAPSE_INDEX:false,
+        FILE_SUFFIX:'.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+    <link rel="top" title="kodiaq 0.9 documentation" href="index.html"/>
+        <link rel="prev" title="DAQ Options" href="options.html"/> 
+
+  <script src="//cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        <a href="index.html" class="icon icon-home"> kodiaq</a>
+        <form class="wy-form" action="search.html" method="get">
+  <input type="text" name="q" placeholder="Search docs" />
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix">
+        
+        
+            <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Welcome</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#scope-of-the-program">Scope of the program</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#use-guidelines">Use Guidelines</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation of the client UI</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#fetching-the-source-code">Fetching the source code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#compiling-the-ui-module">Compiling the UI module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#running-the-code">Running the code</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Using the Client Program</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#daq-status-window">DAQ Status window</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#control-window">Control Window</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#messages-window">Messages Window</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment of the Full System</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#deployment-step-by-step">Deployment, Step by Step</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#koslave">koSlave</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deployment.html#komaster">koMaster</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="options.html">DAQ Options</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="options.html#general-syntax">General Syntax</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options.html#electronics-definitions">Electronics Definitions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options.html#run-options">Run Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options.html#output-options">Output Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="options.html#vme-options">VME Options</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Data Formats</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#output-to-mongodb">Output to Mongodb</a></li>
+</ul>
+</li>
+</ul>
+
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top">
+        <i data-toggle="wy-nav-top" class="icon icon-reorder"></i>
+        <a href="/">kodiaq</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <ul class="wy-breadcrumbs">
+  <li><a href="index.html">Docs</a> &raquo;</li>
+  <li><a href="">Data Formats</a></li>
+  
+</ul>
+<hr/>
+
+          
+  <div class="section" id="data-formats">
+<h1>Data Formats<a class="headerlink" href="#data-formats" title="Permalink to this headline">¶</a></h1>
+<p>Right now the only option for data output is writing to a mongodb
+database. It is forseen to add later direct file output, at which
+point this documentation will be updated.</p>
+<p>This section describes the data formats produced by the DAQ reader.</p>
+<div class="section" id="output-to-mongodb">
+<h2>Output to Mongodb<a class="headerlink" href="#output-to-mongodb" title="Permalink to this headline">¶</a></h2>
+<p>Mongodb is an open-source enterprise level no-sql database package. It
+automatically indexes and stores data sent to it locally or over a
+network. Kodiaq uses mongodb both as a buffer to store data
+temporarily while it is processed by an event builder, or as a more
+long term storage for data taken in triggered mode.</p>
+<p>Mongodb takes data in the form of BSON document objects. A BSON object
+always contains a unique ID number assigned and may also contain other
+data fields such as integers, strings, and binary data. The general
+procedure followed by the reader is to process the raw data from the
+digitizers, strip the headers and put the information contained
+therein into meta-data fields in the BSON documents, put the binary
+data into a data field, and ship the document to mongodb.</p>
+<div class="section" id="run-control-document">
+<h3>Run Control Document<a class="headerlink" href="#run-control-document" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="data-documents">
+<h3>Data Documents<a class="headerlink" href="#data-documents" title="Permalink to this headline">¶</a></h3>
+<p>The following fields <em>must</em> be included in a data document.</p>
+<blockquote>
+<div><ul class="simple">
+<li><em>_id</em> - Is the mongodb-assigned ID tag of the document. This must
+be unique for each doc. It is possible to extract the date and
+time of creation from this number.</li>
+<li><em>module</em> - The module ID. This is the serial number printed on
+the front of the digitizer.</li>
+<li><em>channel</em> - A value from 0-7 corresponding to the input channel.</li>
+<li><em>time</em> - Time stamp from the digitizer. Digitizers have 31-bit
+clocks with 10ns samples, so they wrap around about every 21 seconds.
+Kodiaq senses this wraparound and increments a counter which starts on
+the 32nd bit. The time stamp is then saved as a 64-bit integer.</li>
+<li><em>data</em> - This is the data payload. It is in binary format. The
+exact formatting of this payload depends on what mode the detector is
+run in. See the &#8220;data format&#8221; section below.</li>
+</ul>
+</div></blockquote>
+<p>The following fields <em>may</em> be included in the data document and can
+provide additional debugging information. The information is not
+needed for event building.</p>
+<blockquote>
+<div><ul class="simple">
+<li><em>insertsize</em> - The size of the mongodb bulk insert. A bulk
+insert is when a vector of documents is pushed to the DB at the same
+time. This is simply the length of this vector. The minimum and
+maximum lengths are configurable via the options file.</li>
+<li><em>override</em> - Flags a document that it should not be included in
+event building. Currently however not recognized by cito. This flag is
+probably not needed.</li>
+<li><em>datalength</em> - The length of the data in bytes.</li>
+<li><em>zipped</em> - If the data is compressed or not (this information is
+also given in the run control document).</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="data-format">
+<h3>Data Format<a class="headerlink" href="#data-format" title="Permalink to this headline">¶</a></h3>
+<p>The data format always follows closely the CAEN digitizer format. The
+data can be thought of as an array of 32-bit words. Raw samples are 14
+bits and are stored two per word (16-bits are allocated for each with
+the highest two bits simply being ignored).</p>
+<p>Depending on the options chosen, some formatting may be done which strips
+headers out of the data and extracts this information into metadata.</p>
+<div class="section" id="full-events-in-triggered-mode">
+<h4>Full Events in Triggered Mode<a class="headerlink" href="#full-events-in-triggered-mode" title="Permalink to this headline">¶</a></h4>
+<p>In triggered mode, the digitizers are triggered via the TRIN connector
+on the front of each board. This mode can be used, for example, for
+LED calibration or for triggering via a discriminator module. In this
+case the binary data provided in the mongodb docs is exactly in the
+CAEN digitizer format.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>31</td>
+<td>30</td>
+<td>29</td>
+<td>28</td>
+<td>27</td>
+<td>26</td>
+<td>25</td>
+<td>24</td>
+<td>23</td>
+<td>22</td>
+<td>21</td>
+<td>20</td>
+<td>19</td>
+<td>18</td>
+<td>17</td>
+<td>16</td>
+<td>15</td>
+<td>14</td>
+<td>13</td>
+<td>12</td>
+<td>11</td>
+<td>10</td>
+<td>09</td>
+<td>08</td>
+<td>07</td>
+<td>06</td>
+<td>05</td>
+<td>04</td>
+<td>03</td>
+<td>02</td>
+<td>01</td>
+<td>00</td>
+</tr>
+<tr class="row-even"><td>1</td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+<td colspan="28">Event Size</td>
+</tr>
+<tr class="row-odd"><td colspan="5">Board ID</td>
+<td colspan="2">RES</td>
+<td>0</td>
+<td colspan="16">Pattern</td>
+<td colspan="8">Channel Mask</td>
+</tr>
+<tr class="row-even"><td colspan="8">Reserved</td>
+<td colspan="24">Event Counter</td>
+</tr>
+<tr class="row-odd"><td colspan="32">Trigger Time Tag</td>
+</tr>
+<tr class="row-even"><td colspan="32">Size Ch. 0</td>
+</tr>
+<tr class="row-odd"><td colspan="32">Control Word</td>
+</tr>
+<tr class="row-even"><td>0</td>
+<td>0</td>
+<td colspan="14">Sample[1]  CH[0]</td>
+<td>0</td>
+<td>0</td>
+<td colspan="14">Sample[0]  CH[0]</td>
+</tr>
+<tr class="row-odd"><td colspan="32">{MORE SAMPLES}</td>
+</tr>
+<tr class="row-even"><td colspan="32">Contol Word</td>
+</tr>
+<tr class="row-odd"><td>0</td>
+<td>0</td>
+<td colspan="14">Sample [N-1]  CH[0]</td>
+<td>0</td>
+<td>0</td>
+<td colspan="14">Sample[N-2]  CH[0]</td>
+</tr>
+<tr class="row-even"><td colspan="32">Size Ch. 1</td>
+</tr>
+<tr class="row-odd"><td colspan="32">Control Word</td>
+</tr>
+<tr class="row-even"><td>0</td>
+<td>0</td>
+<td colspan="14">Sample[1]  CH[1]</td>
+<td>0</td>
+<td>0</td>
+<td colspan="14">Sample[0]  CH[1]</td>
+</tr>
+<tr class="row-odd"><td colspan="32">{MORE SAMPLES}</td>
+</tr>
+<tr class="row-even"><td colspan="32">Control Word</td>
+</tr>
+<tr class="row-odd"><td>0</td>
+<td>0</td>
+<td colspan="14">Sample [N-1]  CH[1]</td>
+<td>0</td>
+<td>0</td>
+<td colspan="14">Sample[N-2]  CH[1]</td>
+</tr>
+<tr class="row-even"><td colspan="32">MORE CHANNELS</td>
+</tr>
+<tr class="row-odd"><td colspan="32">Size Ch. 7</td>
+</tr>
+<tr class="row-even"><td colspan="32">Control Word</td>
+</tr>
+<tr class="row-odd"><td>0</td>
+<td>0</td>
+<td colspan="14">Sample[1]  CH[1]</td>
+<td>0</td>
+<td>0</td>
+<td colspan="14">Sample[0]  CH[1]</td>
+</tr>
+<tr class="row-even"><td colspan="32">{MORE SAMPLES}</td>
+</tr>
+<tr class="row-odd"><td colspan="32">Control Word</td>
+</tr>
+<tr class="row-even"><td>0</td>
+<td>0</td>
+<td colspan="14">Sample [N-1]  CH[7]</td>
+<td>0</td>
+<td>0</td>
+<td colspan="14">Sample[N-2]  CH[7]</td>
+</tr>
+</tbody>
+</table>
+<p>Keep in mind that this data format is <em>after</em> extraction in the case
+that the &#8220;compressed&#8221; flag is true in the run control document.</p>
+</div>
+<div class="section" id="occurrences-recorded-in-self-triggering-mode">
+<h4>Occurrences recorded in Self-Triggering Mode<a class="headerlink" href="#occurrences-recorded-in-self-triggering-mode" title="Permalink to this headline">¶</a></h4>
+<p>In self-triggering mode (or when turning on occurrence parsing to
+simulate it) each document contains just one channel worth of data. In
+this mode all headers are stripped and the information is extracted
+into the BSON metadata fields. The binary data contains only the
+samples and has the following format. Again, the first line in the table is not
+part of the data format and is only included to illustrate where each
+bit is.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+<col width="3%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>31</td>
+<td>30</td>
+<td>29</td>
+<td>28</td>
+<td>27</td>
+<td>26</td>
+<td>25</td>
+<td>24</td>
+<td>23</td>
+<td>22</td>
+<td>21</td>
+<td>20</td>
+<td>19</td>
+<td>18</td>
+<td>17</td>
+<td>16</td>
+<td>15</td>
+<td>14</td>
+<td>13</td>
+<td>12</td>
+<td>11</td>
+<td>10</td>
+<td>09</td>
+<td>08</td>
+<td>07</td>
+<td>06</td>
+<td>05</td>
+<td>04</td>
+<td>03</td>
+<td>02</td>
+<td>01</td>
+<td>00</td>
+</tr>
+<tr class="row-even"><td>0</td>
+<td>0</td>
+<td colspan="14">Sample[1]</td>
+<td>0</td>
+<td>0</td>
+<td colspan="14">Sample[0]</td>
+</tr>
+<tr class="row-odd"><td>0</td>
+<td>0</td>
+<td colspan="14">Sample[3]</td>
+<td>0</td>
+<td>0</td>
+<td colspan="14">Sample[2]</td>
+</tr>
+<tr class="row-even"><td>0</td>
+<td>0</td>
+<td colspan="14">Sample[5]</td>
+<td>0</td>
+<td>0</td>
+<td colspan="14">Sample[4]</td>
+</tr>
+<tr class="row-odd"><td colspan="32">MORE SAMPLES</td>
+</tr>
+<tr class="row-even"><td>0</td>
+<td>0</td>
+<td colspan="14">Sample[N]</td>
+<td>0</td>
+<td>0</td>
+<td colspan="14">Sample[N-1]</td>
+</tr>
+</tbody>
+</table>
+<p>Of course this data is once again after extraction in the case that
+the compression flag is true in the run control document.</p>
+</div>
+</div>
+</div>
+</div>
+
+
+          <footer>
+  
+    <div class="rst-footer-buttons">
+      
+      
+        <a href="options.html" class="btn btn-neutral" title="DAQ Options"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <p>
+      &copy; Copyright 2014, Daniel Coderre.
+  </p>
+
+  <a href="https://www.github.com/snide/sphinx_rtd_theme">Sphinx theme</a> provided by <a href="http://readthedocs.org">Read the Docs</a>
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+</body>
+</html>
