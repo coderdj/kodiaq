@@ -127,15 +127,18 @@ int VMECrate::Close()
    fDigitizers.clear();
    
    stringstream ss;
-   if(CAENVME_End(fCrateHandle)!=cvSuccess)  {
-      ss<<"VMECrate::Close - Failed to close crate "<<fCrateHandle;
+   if(fCrateHandle!=-1){	
+      if(CAENVME_End(fCrateHandle)!=cvSuccess)  {
+	 ss<<"VMECrate::Close - Failed to close crate "<<fCrateHandle;
+	 if(m_koLog!=NULL)
+	   m_koLog->Error(ss.str());
+	 return -1;
+      }
+      fCrateHandle=-1;
+      ss<<"VMECrate::Close - Closed crate "<<fCrateHandle;
       if(m_koLog!=NULL)
-	m_koLog->Error(ss.str());
-      return -1;
-   }
-   ss<<"VMECrate::Close - Closed crate "<<fCrateHandle;
-   if(m_koLog!=NULL)
-     m_koLog->Message(ss.str());   
+	m_koLog->Message(ss.str());
+   }   
    return 0;
 }
 

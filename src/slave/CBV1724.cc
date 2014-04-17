@@ -306,14 +306,15 @@ int CBV1724::DetermineBaselines()
    buff=new u_int32_t[fBufferSize];
    vector<bool> channelFinished(8,false);
    
-   u_int32_t ACR,STR,ZLE;
+   u_int32_t ACR,ZLE;
    ReadReg32(AcquisitionControlReg,ACR);
-   ReadReg32(SoftwareTriggerReg,STR);
+  // ReadReg32(SoftwareTriggerReg,STR);
    ReadReg32(ZLEReg,ZLE);
    
    int iteration=0;
    u_int32_t data=0xD0; //turn ZLE off, simple data format
    WriteReg32(ZLEReg,data);
+   usleep(200000);
    while(iteration<=maxIterations)  {
       iteration++;
       
@@ -452,8 +453,10 @@ int CBV1724::DetermineBaselines()
    outfile.close();
 
    WriteReg32(AcquisitionControlReg,ACR);
-   WriteReg32(SoftwareTriggerReg,STR);
+//   WriteReg32(SoftwareTriggerReg,STR);
+   usleep(1000);
    WriteReg32(ZLEReg,ZLE);
+   usleep(2000);
    
    delete buff;
    return retval;

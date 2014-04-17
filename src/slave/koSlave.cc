@@ -43,10 +43,34 @@ int StandaloneMain()
 program_start:
    char input='a';
    cout<<"Welcome to kodiaq lite! Press 's' to start the run, 'q' to quit."<<endl;
+   cout<<"To arm over and over again (5 seconds in between) press 'l'"<<endl;
    while(!kbhit())
      usleep(100);
    cin.get(input);
    if(input=='q') return 0;
+   else if(input=='l')  {
+      if(fDAQOptions.ReadParameterFile(fOptionsPath)!=0)
+	return -1;
+      int n=0;
+      while(input!='q')	{
+	 if(fElectronics->Initialize(&fDAQOptions)==0)
+	   cout<<"Initialized! That was number "<<n<<"! (q-quit)"<<endl;
+	 else{
+	    cout<<"Initialization FAILED!!!!"<<endl;
+//	    n=-1;
+	   return -1;
+	 }	 
+	 n++;
+	 int counter=0;
+	 while(!kbhit() && counter<1000)  {
+	    usleep(1000);
+	    counter++;
+	 }
+	 if(counter<1000)
+	   cin.get(input);	        
+      }      
+      return -1;
+   }   
    else if(input!='s')  goto program_start;
    
    //load options
@@ -114,7 +138,7 @@ int main()
    //Set up objects
    koLogger      *koLog = new koLogger("log/slave.log");
    koNetClient    fNetworkInterface(koLog);
-   fNetworkInterface.Initialize("xedaq02",2002,2003,2,"xedaq02");
+   fNetworkInterface.Initialize("xedaq02",2002,2003,1,"xedaq01");
    DigiInterface  *fElectronics = new DigiInterface(koLog);
    koOptions   fDAQOptions;
    koRunInfo_t    fRunInfo;
