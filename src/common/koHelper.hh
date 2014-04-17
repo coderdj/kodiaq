@@ -69,6 +69,17 @@ struct koMessage_t{
 };
 
 //
+// Object    : koRunInfo_t
+// Brief     : Information about the current run
+// 
+struct koRunInfo_t{
+   string StartedBy;              // user who started (user's login name)
+   string RunNumber;              // name or number of run
+   string StartDate;              // date and time string
+   string RunInfoPath;            // where to find the run info
+};
+            
+//
 // Object   : koStatusPacket_t
 // Brief    : Holds the status of the entire DAQ
 // 
@@ -81,17 +92,7 @@ struct koStatusPacket_t{
       
    vector <koMessage_t> Messages; // Pending messages from slaves
    vector <koNode_t> Slaves;      // Rates of slaves      
-};
-
-//
-// Object    : koRunInfo_t
-// Brief     : Information about the current run
-// 
-struct koRunInfo_t{
-   string StartedBy;              // user who started (user's login name)
-   string RunNumber;              // name or number of run
-   string StartDate;              // date and time string
-   string RunInfoPath;            // where to find the run info
+   koRunInfo_t RunInfo;           // info for current run
 };
 
 

@@ -83,7 +83,7 @@ class koNetClient : public koNet
    // Function : The koRunInfo object is transferred from the server and 
    //            received by the UI.
    // 
-   int           GetRunInfoUI(koRunInfo_t &fRunInfo);
+//   int           GetRunInfoUI(koRunInfo_t &fRunInfo);
    //
    // Name     : SendBroadcastMessage
    // Function : Broadcast a message from one UI to all others. Actually this

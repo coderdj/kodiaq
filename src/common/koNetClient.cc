@@ -193,10 +193,10 @@ int koNetClient::GetHistory(vector <string> &history,int linesToGet)
    return 0;
 }
 
-int koNetClient::GetRunInfoUI(koRunInfo_t &runInfo)
-{
-   return ReceiveRunInfo(fSocket,runInfo);
-}
+//int koNetClient::GetRunInfoUI(koRunInfo_t &runInfo)
+//{
+//   return ReceiveRunInfo(fSocket,runInfo);
+//}
 
 int koNetClient::SendBroadcastMessage(string message)
 {

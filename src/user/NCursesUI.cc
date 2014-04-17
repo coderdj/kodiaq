@@ -194,11 +194,11 @@ int NCursesUI::GetLoginInfo(string &name, int &port, int &dataport,
 }
 
 int NCursesUI::Initialize(koStatusPacket_t *DAQStatus, 
-			  koRunInfo_t *RunInfo, vector <string> history, 
+			  vector <string> history, 
 			  string name)
 {  
    fDAQStatus=DAQStatus;
-   fRunInfo=RunInfo;
+   fRunInfo=&(DAQStatus->RunInfo);
    int startx_status=95, starty_status=1, width_status=37, height_status=42;
    int startx_main=0, starty_main=1, width_main=95, height_main=9;
    int startx_title=0,starty_title=0,width_title=132,height_title=1;

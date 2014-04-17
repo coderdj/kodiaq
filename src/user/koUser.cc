@@ -36,10 +36,8 @@ int main()
    // DAQ Status
    koStatusPacket_t  fDAQStatus;
    koHelper::InitializeStatus(fDAQStatus);
-   
-   //Run info (must fetch from network)
-   koRunInfo_t fRunInfo;
-   fRunInfo.RunNumber=fRunInfo.StartedBy=fRunInfo.StartDate="";
+   fDAQStatus.RunInfo.RunNumber = fDAQStatus.RunInfo.StartedBy = 
+     fDAQStatus.RunInfo.StartDate = "";
    
    //UI
    NCursesUI          fUI(&fLog);   
@@ -92,11 +90,11 @@ login_screen:
    while(fMasterNetwork.GetHistory(fHistory,1000)!=0)  {        
       sleep(1);
    }  
-   while(fMasterNetwork.GetRunInfoUI(fRunInfo)!=0)  {
-      sleep(1);
-   }   
+//   while(fMasterNetwork.GetRunInfoUI(fRunInfo)!=0)  {
+//      sleep(1);
+//   }   
    
-   fUI.Initialize(&fDAQStatus,&fRunInfo,fHistory,name);   
+   fUI.Initialize(&fDAQStatus,fHistory,name);   
 
    
    //**********************************************************************

@@ -303,7 +303,15 @@ int koNet::CheckDataSocket(int socket, koStatusPacket_t &status)
 	 status.RunMode=mode;
 	 retval=0;
       }
-      
+      else if(type=="RUNINFO")	{
+	 koRunInfo_t RI;
+	 if(ReceiveRunInfo(socket,RI)!=0)  {
+	    LogError("koNet::CheckDataSocket - Got RUNINFO header but failed to fetch.");
+	    return -2;
+	 }	 
+	 status.RunInfo=RI;
+	 retval=0;
+      }      
    }   
    return retval;
 }
@@ -558,7 +566,7 @@ int koNet::SendRunInfo(int socket, koRunInfo_t runInfo)
 int koNet::ReceiveRunInfo(int socket, koRunInfo_t &runInfo)
 {
    string temp;
-   if(ReceiveString(socket,temp)!=0 || temp!="RUNINFO") return -1;
+//   if(ReceiveString(socket,temp)!=0 || temp!="RUNINFO") return -1;
    if(ReceiveString(socket,runInfo.RunNumber)!=0) return -1;
    if(ReceiveString(socket,runInfo.StartedBy)!=0) return -1;
    if(ReceiveString(socket,runInfo.StartDate)!=0) return -1;

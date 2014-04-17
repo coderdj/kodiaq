@@ -45,9 +45,8 @@ int main()
    koHelper::InitializeStatus(fDAQStatus);
    //
    //DAQ run info
-   koRunInfo_t            fRunInfo;
-   fRunInfo.RunInfoPath = fRunInfoPath;
-   koHelper::InitializeRunInfo(fRunInfo);
+   fDAQStatus.RunInfo.RunInfoPath = fRunInfoPath;
+   koHelper::InitializeRunInfo(fDAQStatus.RunInfo);
    //
    //Mongodb Connection
    MasterMongodbConnection fMongodb(&fLog);   
@@ -86,7 +85,7 @@ int main()
 	 cout<<"Start login process for user "<<cName<<"("<<cID<<") at "<<cIP<<"."<<endl;
 	 if(fUserNetwork.SendFilePartial(cID,fBroadcastPath)!=0)
 	   cout<<"Could not send log."<<endl;
-	 fUserNetwork.SendRunInfoUI(cID,fRunInfo);
+	 fUserNetwork.SendRunInfoUI(cID,fDAQStatus.RunInfo);
 	 stringstream messagestream;
 	 messagestream<<"User "<<cName<<"("<<cID<<") has logged into the DAQ from "<<cIP<<".";
 	 fUserNetwork.BroadcastMessage(messagestream.str(),KOMESS_NORMAL);
@@ -263,11 +262,14 @@ int main()
 	 // 
 	 else if(command=="START")  {
 	    
-	    koHelper::UpdateRunInfo(fRunInfo,sender);
+	    koHelper::UpdateRunInfo(fDAQStatus.RunInfo,sender);
+	    fUserNetwork.SendRunInfoUI(-1,fDAQStatus.RunInfo);
 	    if(fDAQOptions.GetRunOptions().WriteMode==2) {
 	       //if we have dynamic run names, tell mongo the new collection name
 	       if(fDAQOptions.GetMongoOptions().DynamicRunNames){		    
-		  fDAQOptions.UpdateMongodbCollection(koHelper::MakeDBName(fRunInfo,fDAQOptions.GetMongoOptions().Collection));
+		  fDAQOptions.UpdateMongodbCollection(koHelper::MakeDBName
+						      (fDAQStatus.RunInfo,
+						       fDAQOptions.GetMongoOptions().Collection));
 		  stringstream ss;
 		  ss<<"Writing to collection "<<fDAQOptions.GetMongoOptions().Collection;
 		  fUserNetwork.BroadcastMessage(ss.str(),KOMESS_STATE);

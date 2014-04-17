@@ -394,11 +394,14 @@ int koNetServer::SendFilePartial(int id, string filepath)
 
 int koNetServer::SendRunInfoUI(int id, koRunInfo_t runInfo)
 {
-   for(unsigned int x=0;x<fSockets.size();x++)  {
-      if(fSockets[x].id==id && SendRunInfo(fSockets[x].socket,runInfo)==0)
-	return 0;
+   int retval=0;
+   for(unsigned int x=0;x<fDataSockets.size();x++)  {
+      if((fSockets[x].id==id || id==-1)) { 	   
+	 if(SendRunInfo(fDataSockets[x].socket,runInfo)!=0)
+	   retval=-1;
+      }      
    }
-   return -1;
+   return retval;
 }
 
 int koNetServer::ReceiveBroadcast(int id, string &broadcast)
