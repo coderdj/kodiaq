@@ -1,0 +1,22 @@
+package kodiaq_data;
+
+message Event {
+required int64      number    = 1;
+required uint64     time      = 2;
+
+message Module {
+required int32      moduleID  = 1;
+
+message Channel {
+required int32      channelID = 1;
+required bytes      data      = 2;
+}
+
+repeated Channel    channel   = 2;
+
+}
+
+repeated Module     module    = 3;
+}
+
+			    
