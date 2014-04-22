@@ -45,14 +45,14 @@ class DAQRecorder
    // are spammed in several threads). The following functions are used
    // to count how many times the 31-bit TTT in the digitizer resets.
    //
-   // Name     : DAQRecorder::GetResetCounter(u_int32_t currentTime)
+   // Name     : DAQRecorder::GetResetCounter(u_int32_t currentTime, bool b30BitTimes)
    // Purpose  : Gets the total number of times the digitizer clock has 
    //            reset and increments this number if required (based on 
    //            the value of currentTime). For best results this should 
    //            be called at least once per few seconds (no problem under 
    //            any type of normal circumstances).
    // 
-   int           GetResetCounter(u_int32_t currentTime);
+   int           GetResetCounter(u_int32_t currentTime, bool b30BitTimes=false);
    //
    // Name     : DAQRecorder::ResetTimer()
    // Purpose  : Resets the digitizer clock reset counter. Use then when the
@@ -80,11 +80,12 @@ class DAQRecorder
    
  private:
    
-   // Name     : int DAQRecorder::GetCurPrevNext(u_int32_t timestamp)
+   // Name     : int DAQRecorder::GetCurPrevNext(u_int32_t timestamp,
+   //                                            bool b30BitTimes)
    // Purpose  : Checks to see if this timestamp is in the current, previous,
    //            or next clock cycle (0,-1,1 return value)
    // 
-   int           GetCurPrevNext(u_int32_t timestamp);
+   int           GetCurPrevNext(u_int32_t timestamp,bool b30BitTimes);
    int           m_iResetCounter; 
    bool          m_bTimeOverTen;
    

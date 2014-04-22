@@ -35,9 +35,9 @@ DAQRecorder::~DAQRecorder()
 {
 }
 
-int DAQRecorder::GetResetCounter(u_int32_t currentTime)
+int DAQRecorder::GetResetCounter(u_int32_t currentTime, bool b30BitTimes)
 {
-   int a=GetCurPrevNext(currentTime);
+   int a=GetCurPrevNext(currentTime,b30BitTimes);
    if(a==1) m_iResetCounter++;
    if(a==-1) return m_iResetCounter-1;
    return m_iResetCounter;
@@ -70,17 +70,29 @@ void DAQRecorder::ResetError()
    m_bErrorSet  = false;
 }
 
-int DAQRecorder::GetCurPrevNext(u_int32_t timestamp)
+int DAQRecorder::GetCurPrevNext(u_int32_t timestamp, bool b30BitTimes)
 {
-   if(timestamp<3E8 && m_bTimeOverTen)  { //within first 3 seconds, reset ToT
-      m_bTimeOverTen = false;
-      return 1;
+   if(!b30BitTimes) {	
+      if(timestamp<3E8 && m_bTimeOverTen)  { //within first 3 seconds, reset ToT
+	 m_bTimeOverTen = false;
+	 return 1;
+      }
+      else if(timestamp>1E9 && !m_bTimeOverTen)  //after 10 sec and ToT not set yet
+	m_bTimeOverTen = true;
+      else if(timestamp>2E9 && !m_bTimeOverTen)
+	return -1;
+      return 0;      
    }
-   else if(timestamp>1E9 && !m_bTimeOverTen)  //after 10 sec and ToT not set yet
-     m_bTimeOverTen = true;
-   else if(timestamp>2E9 && !m_bTimeOverTen)
+   //for 30 bit times maximum is 10 seconds. Time Over Ten is now time over 4
+   if(timestamp<2E8 && m_bTimeOverTen)  {
+      m_bTimeOverTen=false;
+      return 1;
+     }
+   else if(timestamp>4E8 && !m_bTimeOverTen) // after 4 seconds set ToT
+     m_bTimeOverTen=true;
+   else if(timestamp>9E8 && !m_bTimeOverTen) //more than 9 seconds but ToT not set, belongs to last
      return -1;
-   return 0;      
+   return 0;   
 }
 
 #ifdef HAVE_LIBMONGOCLIENT

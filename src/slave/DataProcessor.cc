@@ -111,7 +111,7 @@ void DataProcessor::SplitData(vector<u_int32_t*> *&buffvec,
 }
 
 void DataProcessor::SplitDataChannels(vector<u_int32_t*> *&buffvec, vector<u_int32_t> *&sizevec,
-				                                    vector<u_int32_t> *timeStamps, vector<u_int32_t> *channels)
+				      vector<u_int32_t> *timeStamps, vector<u_int32_t> *channels)
 {
 //   if(m_DAQRecorder!=NULL)  {              
       //this is the best this function can do for checking that ZLE is on
@@ -193,6 +193,73 @@ void DataProcessor::SplitDataChannels(vector<u_int32_t*> *&buffvec, vector<u_int
    return;
 }
 
+void DataProcessor::SplitDataChannelsNewFW(vector<u_int32_t*> *&buffvec, vector<u_int32_t> *&sizevec, 
+					   vector<u_int32_t> *timeStamps, vector<u_int32_t> *channels)
+{
+   vector <u_int32_t*> *retbuff = new vector <u_int32_t*>();
+   vector <u_int32_t>  *retsize = new vector <u_int32_t>();
+   
+   //timestamps, channels should be provided as pointers to empty vectors
+      
+   //buffvec is the buffers to be parsed (one blt per element)
+   //sizevec is the size of each buffer in buffvec (in bytes)
+   //retbuff will be the returned buffers with headers stripped
+   //retsize will be the returned sizes in words
+   //timeStamps will be the timestamps of the returned buffers
+   //channels will be the channels of the returned buffers
+
+    for(unsigned int x=0; x<buffvec->size();x++)  {	
+       //loop through main vector containing the raw data
+       if((*sizevec)[x]==0)      {
+	  //sanity check
+	  delete[] (*buffvec)[x];
+	  continue;
+       }	
+       
+       unsigned int idx=0;           //used to iterate through the buffer
+       u_int32_t headerTime=0;
+       
+       while(idx<(((*sizevec)[x])/(sizeof(u_int32_t)))) {	    
+	  if(((*buffvec)[x][idx])==0xFFFFFFFF){
+	     idx++; continue;
+	  }
+	  //empty data, iterate
+	  if(((*buffvec)[x][idx]>>20)!=0xA00)   {
+	     idx++; continue;
+	  }
+	  //found a header
+	    
+	  //Read information from header. Need channel mask and header time
+	  u_int32_t mask = ((*buffvec)[x][idx+1])&0xFF;
+	  headerTime = ((*buffvec)[x][idx+3])&0x7FFFFFFF;
+	  idx+=4;    //skip header, we have what we need
+	  
+	  for(int channel=0; channel<8;channel++){
+	     //loop through channels
+	     if(!((mask>>channel)&1))      //Do we have this channel in the event?
+	       continue;	     
+	     u_int32_t channelSize = ((*buffvec)[x][idx]);
+	     idx++; //iterate past the size word
+	     u_int32_t channelTime = ((*buffvec)[x][idx])&0x3FFFFFFF;
+	     idx++;
+	     char *keep = new char[(channelSize-2)*4];
+	     copy((*buffvec)[x]+idx,(*buffvec)[x]+(idx+channelSize),keep); //copy channel data
+	     idx+=channelSize-2;
+	     retbuff->push_back((u_int32_t*)keep);
+	     retsize->push_back((channelSize-2)*4);
+	     channels->push_back(channel);
+	     timeStamps->push_back(channelTime);
+	  }
+       }//end while       
+       delete(*buffvec)[x];
+    }//end for through buffvec
+   delete buffvec;
+   delete sizevec;
+   buffvec=retbuff;
+   sizevec=retsize;
+   return;   
+}
+
 #ifdef HAVE_LIBMONGOCLIENT
 //
 //
@@ -255,6 +322,8 @@ void DataProcessor_mongodb::ProcessMongoDB()
    vector<u_int32_t > *channels =NULL;
    vector<u_int32_t > *times    =NULL;
    
+   bool b30BitTimes=false; //difference if using old or new fw timing
+   
    vector <mongo::BSONObj> *vInsertVec = new vector<mongo::BSONObj>();
    
    while(!bExitCondition) {
@@ -273,6 +342,7 @@ void DataProcessor_mongodb::ProcessMongoDB()
 	    // PROCESSING
 	    // **********
 	   
+	    b30BitTimes=false;
 	    if(m_koOptions->GetProcessingOptions().Mode==1)    //Trigger Splitting
 	      SplitData(buffvec,sizevec);
 	    else if(m_koOptions->GetProcessingOptions().Mode==2){ //Occurence splitting
@@ -280,6 +350,13 @@ void DataProcessor_mongodb::ProcessMongoDB()
 	       times    = new vector<u_int32_t>();
 	       SplitDataChannels(buffvec,sizevec,times,channels);
 	    }
+	    else if(m_koOptions->GetProcessingOptions().Mode==3)  { //NewFW Channel Splitting
+	       channels = new vector<u_int32_t>();
+	       times    = new vector<u_int32_t>();
+	       SplitDataChannelsNewFW(buffvec,sizevec,times,channels);
+	       b30BitTimes=true;
+	    }
+	    
 	    
 	    // **************
 	    // END PROCESSING
@@ -298,7 +375,8 @@ void DataProcessor_mongodb::ProcessMongoDB()
 	       u_int32_t eventSize = (*sizevec)[b];
 	       u_int32_t TimeStamp = 0;
 	       
-	       if(m_koOptions->GetProcessingOptions().Mode!=2){		    
+	       if(m_koOptions->GetProcessingOptions().Mode!=2
+		 && m_koOptions->GetProcessingOptions().Mode!=3){
 		  TimeStamp = GetTimeStamp(buff); //time stamp out of header
 		  bson.append("channel",-1); //all channels
 	       }	       
@@ -309,8 +387,10 @@ void DataProcessor_mongodb::ProcessMongoDB()
 	    
 	       bson.append("module",ModuleNumber);
 	       
-	       int ResetCounter = mongo->GetResetCounter(TimeStamp);
-	       long long Time64 = ((unsigned long)ResetCounter << 31) | TimeStamp;
+	       int ResetCounter = mongo->GetResetCounter(TimeStamp,b30BitTimes);
+	       long long Time64=0;
+	       if(!b30BitTimes) Time64 = ((unsigned long)ResetCounter << 31) | TimeStamp;
+	       else Time64 = ((unsigned long)ResetCounter << 30) | TimeStamp;
 	       bson.append("time",Time64);
 	       
 	       //should we zip the output?
@@ -403,6 +483,7 @@ void DataProcessor_protobuff::ProcessProtoBuff()
 {		 
    bool      bExitCondition     = false;
    int       iModule            = -1;
+   bool      b30BitTimes        = false;
    
    //Get the digi interface object. Will pull data from here.
      if(DataProcessor::GetDigiInterface()==NULL ||
@@ -441,7 +522,15 @@ void DataProcessor_protobuff::ProcessProtoBuff()
 	    // **********
       
 //	    if(m_koOptions->GetProcessingOptions().Mode==1)    //Trigger Splitting
+	    b30BitTimes=false;
+	    if(m_koOptions->GetProcessingOptions().Mode!=3)
 	      SplitData(buffvec,sizevec);
+	    else{
+	       channels = new vector<u_int32_t>();
+	       times = new vector<u_int32_t>();
+	       SplitDataChannelsNewFW(buffvec,sizevec,channels,times);
+	       b30BitTimes=true;
+	    }	    
 //            else if(m_koOptions->GetProcessingOptions().Mode==2){ //Occurence splitting
 //	       channels = new vector<u_int32_t>();
 //	       times    = new vector<u_int32_t>();
@@ -461,17 +550,25 @@ void DataProcessor_protobuff::ProcessProtoBuff()
 	       kodiaq_data::Event *Event = new kodiaq_data::Event();
 	       
 	       //time
-	       u_int32_t TimeStamp = GetTimeStamp((*buffvec)[b]);
-	       int ResetCounter = protorecorder->GetResetCounter(TimeStamp);
-	       u_int64_t Time64 = ((u_int64_t)ResetCounter << 31) | TimeStamp;	    
+	       u_int32_t TimeStamp = 0;
+	       if(m_koOptions->GetProcessingOptions().Mode!=3)
+		 TimeStamp = GetTimeStamp((*buffvec)[b]);
+	       else TimeStamp = (*times)[b];
+	       int ResetCounter = protorecorder->GetResetCounter(TimeStamp,b30BitTimes);
+	       u_int64_t Time64 = 0;
+	       if(!b30BitTimes) Time64 = ((u_int64_t)ResetCounter << 31) | TimeStamp;	    
+	       else Time64 = ((u_int64_t)ResetCounter <<30 ) | TimeStamp;
 	       Event->set_time(Time64);
-	       
+
 	       //
 	       kodiaq_data::Event_Module *Module = Event->add_module();
 	       Module->set_moduleid(iModule);
 	       
 	       kodiaq_data::Event_Module_Channel *Channel = Module->add_channel();
-	       Channel->set_channelid(-1);
+	       if(m_koOptions->GetProcessingOptions().Mode!=3)
+		 Channel->set_channelid(-1);
+	       else
+		 Channel->set_channelid((*channels)[b]);
 
 	       //data
 	       if(m_koOptions->GetOutfileOptions().Compressed) { //zip using snappy

@@ -73,6 +73,18 @@ class DataProcessor
 				 vector <u_int32_t>   *timestamps,
 				 vector <u_int32_t>   *channels);
    //
+   // Name      : void DataProcessor::SplitDataChannelsNewFW(vector <u_int32_t*> *&buffvec,
+   //                                                        vector <u_int32_t> *&sizevec,
+   //                                                        vector <u_int32_t> *timestamps,
+   //                                                        vector <u_int32_t> *channels)
+   // Purpose   : Split data blocks into channels without any channel parsing
+   //
+   void           SplitDataChannelsNewFW(vector <u_int32_t*> *&buffvec,
+					  vector <u_int32_t> *&sizevec,
+					  vector <u_int32_t> *timestamps,
+					  vector <u_int32_t> *channels);
+					  
+   //
    // Name      : void DataProcessor::LogError(string err)
    // Purpose   : The data processor routines can report errors using this
    //             function.
