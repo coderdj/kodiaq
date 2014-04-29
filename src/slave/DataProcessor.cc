@@ -500,7 +500,6 @@ void DataProcessor_protobuff::ProcessProtoBuff()
    vector<u_int32_t > *times    =NULL;
 
    //This vector will hold the objects we will write
-   vector<kodiaq_data::Event*> *vInsert = new vector<kodiaq_data::Event*>();
    
    while(!bExitCondition) {
       bExitCondition = true;
@@ -521,7 +520,6 @@ void DataProcessor_protobuff::ProcessProtoBuff()
 	    // PROCESSING
 	    // **********
       
-//	    if(m_koOptions->GetProcessingOptions().Mode==1)    //Trigger Splitting
 	    b30BitTimes=false;
 	    if(m_koOptions->GetProcessingOptions().Mode!=3)
 	      SplitData(buffvec,sizevec);
@@ -531,11 +529,6 @@ void DataProcessor_protobuff::ProcessProtoBuff()
 	       SplitDataChannelsNewFW(buffvec,sizevec,channels,times);
 	       b30BitTimes=true;
 	    }	    
-//            else if(m_koOptions->GetProcessingOptions().Mode==2){ //Occurence splitting
-//	       channels = new vector<u_int32_t>();
-//	       times    = new vector<u_int32_t>();
-//	       SplitDataChannels(buffvec,sizevec,times,channels);
-  //          }
 	    
 	    // **************
 	    // END PROCESSING
@@ -545,9 +538,7 @@ void DataProcessor_protobuff::ProcessProtoBuff()
 	    // Loop though vector of parsed buffers
 	    for(unsigned int b = 0; b < buffvec->size(); b++) {
 		 
-	       //create protocol buffer object
-	       //we set everything here except the number. That will be set in the recorder class
-	       kodiaq_data::Event *Event = new kodiaq_data::Event();
+	       //right now no combining events from separate occurences
 	       
 	       //time
 	       u_int32_t TimeStamp = 0;
@@ -558,43 +549,22 @@ void DataProcessor_protobuff::ProcessProtoBuff()
 	       u_int64_t Time64 = 0;
 	       if(!b30BitTimes) Time64 = ((u_int64_t)ResetCounter << 31) | TimeStamp;	    
 	       else Time64 = ((u_int64_t)ResetCounter <<30 ) | TimeStamp;
-	       Event->set_time(Time64);
+	       int handle=-1;
+	       protorecorder->GetOutfile()->create_event(TimeStamp,handle);
 
-	       //
-	       kodiaq_data::Event_Module *Module = Event->add_module();
-	       Module->set_moduleid(iModule);
-	       
-	       kodiaq_data::Event_Module_Channel *Channel = Module->add_channel();
 	       if(m_koOptions->GetProcessingOptions().Mode!=3)
-		 Channel->set_channelid(-1);
+		 protorecorder->GetOutfile()->add_data(handle,-1,iModule,(char*)(*buffvec)[b],(size_t)(*sizevec)[b]);
 	       else
-		 Channel->set_channelid((*channels)[b]);
-
-	       //data
-	       if(m_koOptions->GetOutfileOptions().Compressed) { //zip using snappy
-		  char* compressed = new char[snappy::MaxCompressedLength((*sizevec)[b])];
-		  size_t compressedLength=0;
-		  snappy::RawCompress((const char*)(*buffvec)[b], (*sizevec)[b],
-				      compressed,&compressedLength);
-		  Channel->set_data((const void*)(compressed),compressedLength);
-		  delete[] compressed;
-	       }
-	       else		 		    
-		 Channel->set_data((const void*)((*buffvec)[b]),(size_t)((*sizevec)[b]));
+		 protorecorder->GetOutfile()->add_data(handle,(*channels)[b],iModule,
+						   (char*)(*buffvec)[b],(size_t)(*sizevec)[b],
+						   (*times)[b]);	       
+	       //close event (for now)
+	       protorecorder->GetOutfile()->close_event(handle,true);
 	       
-	       vInsert->push_back(Event);
-	       	       	       
 	       //delete data
-	       delete[] ((*buffvec)[b]);
+	       //delete[] ((*buffvec)[b]);
 	    }//end loop through buffers
-	    
-	    //insert data to recorder
-	    if(protorecorder->InsertThreaded(vInsert)==0)  {
-	       //ownership of vInsert has now been passed. The recorder must delete
-	       //it when it's finished. We will set vInsert to a new vector now.
-	       vInsert = new vector<kodiaq_data::Event*>();
-	    }
-	    
+	    	    
 	    if(channels!=NULL) delete channels;
 	    if(times!=NULL) delete times;
 	    if(buffvec!=NULL) delete buffvec;
@@ -604,9 +574,6 @@ void DataProcessor_protobuff::ProcessProtoBuff()
 	 }	 
       }      
    }      
-
-   if(vInsert!=NULL)
-     delete vInsert;
    
    return;
 }

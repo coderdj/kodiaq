@@ -220,7 +220,7 @@ koSlave_CPPFLAGS = -I$(top_srcdir)/src/common -Wall -g -DLINUX -fPIC \
 #if WITH_MONGODB
 #koSlave_LDADD = -L$(top_srcdir)/src/common/.libs -lkodiaq -lCAENVME -lmongoclient -lboost_thread -lboost_filesystem -lboost_program_options -lboost_system  -lsnappy -lrt -lprotobuf
 koSlave_LDADD = -L$(top_srcdir)/src/common/.libs -lkodiaq -lCAENVME \
-	-lprotobuf $(am__append_1) $(am__append_2)
+	-lprotobuf -lpbf $(am__append_1) $(am__append_2)
 koSlave_LDFLAGS = -static
 all: all-am
 

@@ -160,9 +160,7 @@ class DAQRecorder_mongodb : public DAQRecorder
 #endif
 
 
-#include "protBuffDef.pb.h"
-#include <google/protobuf/io/zero_copy_stream_impl.h>
-#include <fcntl.h>
+#include <pff_output.hh>
 
 
 /*! \brief Derived class for recording to file using google protocol buffers
@@ -196,7 +194,7 @@ class DAQRecorder_protobuff : public DAQRecorder
    //             Ownership of vInsert and its elements is passed to the 
    //             recorder.
    // 
-   int            InsertThreaded(vector<kodiaq_data::Event*> *vInsert);
+   int            InsertThreaded();
    //
    // Name      : int DAQRecorder_protobuff::Shutdown()
    // Purpose   : When the DAQ is done with the file it can be close 
@@ -204,25 +202,17 @@ class DAQRecorder_protobuff : public DAQRecorder
    //    
    void           Shutdown();
    //
+   pff_output*    GetOutfile()  {
+      return &m_outfile;
+   };
+   
    
  private:
-   u_int32_t           iEventNumber;
-   
-   int           WriteToFile();
-   int           OpenFile();
-   void          IncrementFileNumber();
-   
-   pthread_mutex_t     m_BuffMutex;
-   vector <kodiaq_data::Event*> m_vBuffer;
-
-   pthread_mutex_t     m_OutfileMutex;
-   ofstream            m_Outfile;
-   google::protobuf::io::ZeroCopyOutputStream *m_protOOut;
-   google::protobuf::io::CodedOutputStream    *m_protCOut;
+   //u_int32_t           iEventNumber;
+   pff_output           m_outfile;
+   map <u_int64_t, int> m_HandleMap;
    OutfileOptions_t    m_FileOptions;
-
    string              m_SWritePath;
-   string              m_SWriteNumber;
 };
 
 #endif

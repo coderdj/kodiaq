@@ -207,39 +207,25 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
    return 0;            
 }
 #endif
+
 //
 // DAQRecorder_protobuff
 // 
-#include "protBuffDef.pb.h"
 
 DAQRecorder_protobuff::DAQRecorder_protobuff()
                       :DAQRecorder()
 {
-   pthread_mutex_init(&m_BuffMutex,NULL);
-   pthread_mutex_init(&m_OutfileMutex,NULL);
-   iEventNumber = 0;
-   m_protOOut = NULL;
-   m_protCOut  = NULL;
    m_SWritePath="data.dat";
-   m_SWriteNumber="";
 }
 
 DAQRecorder_protobuff::~DAQRecorder_protobuff()                     
 {
-   pthread_mutex_destroy(&m_BuffMutex);
-   pthread_mutex_destroy(&m_OutfileMutex);
 }
 
 DAQRecorder_protobuff::DAQRecorder_protobuff(koLogger *koLog)
                       :DAQRecorder(koLog)
 {
-   pthread_mutex_init(&m_BuffMutex,NULL);
-   pthread_mutex_init(&m_OutfileMutex,NULL);
-   iEventNumber = 0;
-   m_protOOut = NULL;
-   m_protCOut  = NULL;
    m_SWritePath="data.dat";
-   m_SWriteNumber="";
 }
 
 int DAQRecorder_protobuff::Initialize(koOptions *options)
@@ -264,138 +250,35 @@ int DAQRecorder_protobuff::Initialize(koOptions *options)
    else
      m_SWritePath = m_FileOptions.Path;
    
-   if(m_FileOptions.EventsPerFile!=-1)
-     m_SWriteNumber = "0000";
-   iEventNumber = 0;
-   return OpenFile();
-}
-
-int DAQRecorder_protobuff::OpenFile()
-{
-   pthread_mutex_lock(&m_OutfileMutex);
+   stringstream sstream;
+   if(m_FileOptions.Compressed)
+      sstream<<"z:";
+   sstream<<"n"<<m_FileOptions.EventsPerFile;
+      
+   if(m_outfile.open_file(m_SWritePath,sstream.str())!=0) return -1;
    
-   if(m_protCOut!=NULL) delete m_protCOut;
-   if(m_protOOut!=NULL) delete m_protOOut;
-   if(m_Outfile.is_open()) m_Outfile.close();
+   //set header
+   m_outfile.header().identifier=koHelper::GetRunNumber();
+//   m_outfile.header().
    
-   string fileTot = m_SWritePath;
-   if(m_SWriteNumber!="") {
-      fileTot += ".";
-      fileTot += m_SWriteNumber;
-   }
-   fileTot += ".kodata";
-   
-   m_Outfile.open(fileTot.c_str(), ios::out | ios::trunc | ios::binary);
-   if(!m_Outfile.is_open())   {	
-      pthread_mutex_unlock(&m_OutfileMutex);
-      return -1;
-   }   
-   m_protOOut = new google::protobuf::io::OstreamOutputStream(&m_Outfile);
-   m_protCOut  = new google::protobuf::io::CodedOutputStream(m_protOOut);   
-   pthread_mutex_unlock(&m_OutfileMutex);
    return 0;
 }
-
 
 int DAQRecorder_protobuff::RegisterProcessor()
 {
    return 0;
 }
 
-int DAQRecorder_protobuff::InsertThreaded(vector<kodiaq_data::Event*> *vInsert)
+int DAQRecorder_protobuff::InsertThreaded()
 {
-   //should insert into m_vPChanBuffs[ID]
-   if(vInsert->size()==0) {
-      delete vInsert;
-      return 0;
-   }
-   
-   pthread_mutex_lock(&m_BuffMutex);
-   for(unsigned int x=0; x<vInsert->size(); x++)  {
-      m_vBuffer.push_back((*vInsert)[x]);
-   }
-   pthread_mutex_unlock(&m_BuffMutex);
-   delete vInsert;   
-   
-   return WriteToFile();   
-}
-
-void DAQRecorder_protobuff::IncrementFileNumber()
-{
-   if(m_SWriteNumber=="") return;
-   int num = koHelper::StringToInt(m_SWriteNumber);
-   num++;
-   if(num>=10000){	
-      LogError("Exceeded 10000 output files!");
-      m_SWriteNumber="rest";
-      m_FileOptions.EventsPerFile=-1;
-      return;
-   }   
-   stringstream ss;
-   ss << setfill('0') << setw(4) << num;
-   m_SWriteNumber = ss.str();       
 }
 
 void DAQRecorder_protobuff::Shutdown()
 {
-   WriteToFile(); //write data if possible
-   
-   //clear buffer if anything is left and put size to zero
-   pthread_mutex_lock(&m_BuffMutex);
-   for(unsigned int x=0; x<m_vBuffer.size(); x++)    {      
-      //delete any remaining data
-      delete m_vBuffer[x];
-   }
-   m_vBuffer.clear();
-   pthread_mutex_unlock(&m_BuffMutex);
-   
-   //Close file
-   pthread_mutex_lock(&m_OutfileMutex);
-   if( m_protCOut  != NULL) delete m_protCOut;   
-   if( m_protOOut != NULL) delete m_protOOut;
-   if(m_Outfile.is_open()) m_Outfile.close();   
-   m_protOOut=NULL;
-   m_protCOut=NULL;
-   pthread_mutex_unlock(&m_OutfileMutex);
-   
+   m_outfile.close_file();
+
    return;
 }
 
-int DAQRecorder_protobuff::WriteToFile()
-{
-   if(!m_Outfile.is_open()) return -1;
-   pthread_mutex_lock(&m_BuffMutex);
-   pthread_mutex_lock(&m_OutfileMutex);
-   for(unsigned int x=0; x<m_vBuffer.size(); x++)  {
-      
-      // Have to set a unique event number. This starts at zero for
-      // each file
-      m_vBuffer[x]->set_number(iEventNumber);
-      iEventNumber++;
-  
-      //create string with data
-      string s="";      
-      m_vBuffer[x]->SerializeToString(&s);
-      //write size
-      m_protCOut->WriteVarint32(s.size());
-      //write data
-      m_protCOut->WriteRaw(s.data(),s.size());
 
-      //check if a new file needs to be opened
-      if(iEventNumber>(m_FileOptions.EventsPerFile * 
-		      ((koHelper::StringToInt(m_SWriteNumber))+1)) &&
-	 m_FileOptions.EventsPerFile!=-1)	{
-	 IncrementFileNumber();
-	 pthread_mutex_unlock(&m_OutfileMutex);
-	 if(OpenFile()!=0) return -1;
-	 pthread_mutex_lock(&m_OutfileMutex);
-      }
-      
-      delete m_vBuffer[x];
-   }
-   pthread_mutex_unlock(&m_OutfileMutex);
-   m_vBuffer.clear();
-   pthread_mutex_unlock(&m_BuffMutex);
-   return 0;   
-}
 
