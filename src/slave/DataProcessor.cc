@@ -90,7 +90,7 @@ void DataProcessor::SplitData(vector<u_int32_t*> *&buffvec,
       while(idx<((*sizevec)[x]/sizeof(u_int32_t)) && 
 	    (*buffvec)[x][idx]!=0xFFFFFFFF)   {
 	 if(((*buffvec)[x][idx]>>20) == 0xA00) { //found a header	    
-	    u_int32_t size = (*buffvec)[x][idx]&0xFFFF;
+	    u_int32_t size = (*buffvec)[x][idx]&0xFFFF*4;
 	    u_int32_t *rb = new u_int32_t[size]; //return buffer created
 	    //copy trigger to new buffer
 	    copy((*buffvec)[x]+idx,(*buffvec)[x]+(idx+size),rb); 
@@ -169,13 +169,14 @@ void DataProcessor::SplitDataChannels(vector<u_int32_t*> *&buffvec, vector<u_int
 	       int GoodWords = (*buffvec)[x][idx]&0xFFFFFFF;
 	       idx++;                   //iterate past the control word
 	       wordCnt++;
-	       char *keep = new char[GoodWords*4];
-//	       memcpy(keep,((*buffvec)[x]+idx),4*GoodWords);
+	       //char *keep = new char[GoodWords*4];
+	       u_int32_t *keep = new u_int32_t[GoodWords];
+	       //	       memcpy(keep,((*buffvec)[x]+idx),4*GoodWords);
 	       copy((*buffvec)[x]+idx,(*buffvec)[x]+(idx+GoodWords),keep);
 	       
 	       idx+=GoodWords;
 	       wordCnt+=GoodWords;
-	       retbuff->push_back((u_int32_t*)keep);
+	       retbuff->push_back(keep);
 	       retsize->push_back(GoodWords*4);
 	       channels->push_back(channel);
 	       timeStamps->push_back(headerTime+sampleCnt);
@@ -242,10 +243,11 @@ void DataProcessor::SplitDataChannelsNewFW(vector<u_int32_t*> *&buffvec, vector<
 	     idx++; //iterate past the size word
 	     u_int32_t channelTime = ((*buffvec)[x][idx])&0x3FFFFFFF;
 	     idx++;
-	     char *keep = new char[(channelSize-2)*4];
-	     copy((*buffvec)[x]+idx,(*buffvec)[x]+(idx+channelSize),keep); //copy channel data
+	     //char *keep = new char[(channelSize-2)*4];	     
+	     u_int32_t *keep = new u_int32_t[channelSize-2];
+	     copy((*buffvec)[x]+idx,(*buffvec)[x]+(idx+channelSize-2),keep); //copy channel data
 	     idx+=channelSize-2;
-	     retbuff->push_back((u_int32_t*)keep);
+	     retbuff->push_back(keep);
 	     retsize->push_back((channelSize-2)*4);
 	     channels->push_back(channel);
 	     timeStamps->push_back(channelTime);
@@ -526,7 +528,7 @@ void DataProcessor_protobuff::ProcessProtoBuff()
 	    else{
 	       channels = new vector<u_int32_t>();
 	       times = new vector<u_int32_t>();
-	       SplitDataChannelsNewFW(buffvec,sizevec,channels,times);
+	       SplitDataChannelsNewFW(buffvec,sizevec,times,channels);
 	       b30BitTimes=true;
 	    }	    
 	    
@@ -551,13 +553,12 @@ void DataProcessor_protobuff::ProcessProtoBuff()
 	       else Time64 = ((u_int64_t)ResetCounter <<30 ) | TimeStamp;
 	       int handle=-1;
 	       protorecorder->GetOutfile()->create_event(TimeStamp,handle);
-
 	       if(m_koOptions->GetProcessingOptions().Mode!=3)
-		 protorecorder->GetOutfile()->add_data(handle,-1,iModule,(char*)(*buffvec)[b],(size_t)(*sizevec)[b]);
+		 protorecorder->GetOutfile()->add_data(handle,-1,iModule,(char*)(*buffvec)[b],(size_t)((*sizevec)[b]));
 	       else
-		 protorecorder->GetOutfile()->add_data(handle,(*channels)[b],iModule,
-						   (char*)(*buffvec)[b],(size_t)(*sizevec)[b],
-						   (*times)[b]);	       
+		 protorecorder->GetOutfile()->add_data(handle,(int)(*channels)[b],iModule,
+						       (char*)(*buffvec)[b],(size_t)((*sizevec)[b]),
+						       (*times)[b]);	       
 	       //close event (for now)
 	       protorecorder->GetOutfile()->close_event(handle,true);
 	       
