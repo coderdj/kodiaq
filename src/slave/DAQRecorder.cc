@@ -208,6 +208,7 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
 }
 #endif
 
+#ifdef HAVE_LIBPBF
 //
 // DAQRecorder_protobuff
 // 
@@ -280,5 +281,5 @@ void DAQRecorder_protobuff::Shutdown()
    return;
 }
 
-
+#endif
 

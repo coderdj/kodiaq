@@ -159,6 +159,7 @@ class DAQRecorder_mongodb : public DAQRecorder
 };
 #endif
 
+#ifdef HAVE_LIBPBF
 
 #include <pff_output.hh>
 
@@ -214,5 +215,7 @@ class DAQRecorder_protobuff : public DAQRecorder
    OutfileOptions_t    m_FileOptions;
    string              m_SWritePath;
 };
+
+#endif
 
 #endif

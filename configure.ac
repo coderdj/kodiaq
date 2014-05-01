@@ -26,8 +26,11 @@ AC_CHECK_LIB(mongoclient,main)
 AS_IF([test "$ac_cv_lib_mongoclient_main" = yes], [HAVE_LIBMONGOCLIENT=1],[HAVE_LIBMONGOCLIENT=0])
 AM_CONDITIONAL([WITH_MONGODB],[test "$ac_cv_lib_mongoclient_main" = yes])
 
-#AM_CONDITIONAL(WITH_MONGODB,false)
-#AC_CHECK_LIB(mongoclient,main,[],AM_CONDITIONAL(WITH_MONGODB,true))
+#Check for libpbf (output file format) support and compile with it if it's there
+AC_CHECK_LIB(pbf,main)
+AS_IF([test "$ac_cv_lib_pbf_main" = yes], [HAVE_LIBPBF=1],[HAVE_LIBPBF=0])
+AM_CONDITIONAL([WITH_LIBPBF],[test "$ac_cv_lib_pbf_main" = yes])
+
 
 
 ############################
@@ -72,8 +75,6 @@ AS_IF([test "x$enable_slave" = "xyes"], [
     AC_CHECK_LIB(pthread,pthread_mutex_init,[],AC_MSG_ERROR([libpthread missing.]))
     AC_CHECK_LIB(CAENVME,CAENVME_Init,[],AC_MSG_ERROR([libCAENVME missing.]))
     AC_CHECK_LIB(snappy,_ZN6snappy11RawCompressEPKcmPcPm,[],AC_MSG_ERROR([libsnappy missing.]))
-#    AC_CHECK_LIB(mongoclient,main,[],AC_DEFINE(HAS_MONGODB,[],[mongodb installed]))
-#    AC_CHECK_LIB(mongoclient,main,[],AM_CONDITIONAL(WITH_MONGODB,true))
     ], [
     AM_CONDITIONAL(WITH_SLAVE,false)
     ])
@@ -90,10 +91,8 @@ AS_IF([test "x$enable_lite" = "xyes"], [
     AC_CHECK_LIB(pthread,pthread_mutex_init,[],AC_MSG_ERROR([libpthread missing.]))
     AC_CHECK_LIB(CAENVME,CAENVME_Init,[],AC_MSG_ERROR([libCAENVME missing.]))
     AC_CHECK_LIB(snappy,_ZN6snappy11RawCompressEPKcmPcPm,[],AC_MSG_ERROR([libsnappymissing.]))
-#    AC_CHECK_LIB(mongoclient,main,[],AC_DEFINE(HAS_MONGODB,[],[Mongodb installed]))
-#    AC_CHECK_LIB(mongoclient,main,[],AM_CONDITIONAL(WITH_MONGODB,true))
     AC_CHECK_LIB([ncurses],initscr,[],AC_MSG_ERROR)   
-    AC_CHECK_LIB(protobuf,main,[],AC_MSG_ERROR([libprotobuf missing]))
+#    AC_CHECK_LIB(protobuf,main,[],AC_MSG_ERROR([libprotobuf missing]))
     ], [
     AM_CONDITIONAL(KODIAQ_LITE,false)
     ])
@@ -132,10 +131,12 @@ AS_IF([test "x$enable_all" = "xyes"], [
     AC_CHECK_LIB(pthread,pthread_mutex_init,[],AC_MSG_ERROR([libpthread missing.]))
     AC_CHECK_LIB(CAENVME,CAENVME_Init,[],AC_MSG_ERROR([libCAENVME missing.]))
     AC_CHECK_LIB(snappy,_ZN6snappy11RawCompressEPKcmPcPm,[],AC_MSG_ERROR([libsnappy missing.]))
-#    AC_CHECK_LIB(mongoclient,main,[],AM_CONDITIONAL(WITH_MONGODB,true))
-#    AC_CHECK_LIB(mongoclient,main,[],AC_DEFINE(HAS_MONGODB,[],[Mongodb installed]))
-    AC_CHECK_LIB(protobuf,main,[],AC_MSG_ERROR([libprotobuf missing]))    
+#    AC_CHECK_LIB(protobuf,main,[],AC_MSG_ERROR([libprotobuf missing]))    
     ], [
     ])
 #AC_CONFIG_FILES([Makefile])
 AC_OUTPUT(Makefile src/ddc10/Makefile src/common/Makefile src/master/Makefile src/slave/Makefile src/user/Makefile)
+
+AS_IF([test "$ac_cv_lib_mongoclient_main" = yes], [AC_MSG_NOTICE([Compiling WITH mongodb support])],[AC_MSG_NOTICE([Compiling WITHOUT mongodb support])])
+AS_IF([test "$ac_cv_lib_pbf_main" = yes], [AC_MSG_NOTICE([Compiling WITH file output support])],[AC_MSG_NOTICE([Compiling WITHOUT file output support])])
+

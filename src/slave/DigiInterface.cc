@@ -104,15 +104,19 @@ int DigiInterface::Initialize(koOptions *options)
    
    //Set up daq recorder
    m_DAQRecorder = NULL;
-   if(options->GetRunOptions().WriteMode==WRITEMODE_FILE)
+
+   if(options->GetRunOptions().WriteMode==WRITEMODE_FILE){
+#ifdef HAVE_LIBPBF
      m_DAQRecorder = new DAQRecorder_protobuff(m_koLog);
+#endif
+   }   
 #ifdef HAVE_LIBMONGOCLIENT
    else if(options->GetRunOptions().WriteMode==WRITEMODE_MONGODB)
      m_DAQRecorder = new DAQRecorder_mongodb(m_koLog);
 #endif
    if(m_DAQRecorder!=NULL)
      m_DAQRecorder->Initialize(options);
-   
+
    return 0;
 }
 
@@ -226,12 +230,19 @@ int DigiInterface::StartRun()
 	 m_vProcThreads[x].IsOpen = true;
       }      
       else if(m_koOptions->GetRunOptions().WriteMode == WRITEMODE_FILE){	   
+#ifdef HAVE_LIBPBF
 	 m_vProcThreads[x].Processor = new DataProcessor_protobuff(this,
 								   m_DAQRecorder,
 								   m_koOptions);
 	 pthread_create(&m_vProcThreads[x].Thread,NULL,DataProcessor_protobuff::WProcess,
 			static_cast<void*>(m_vProcThreads[x].Processor));
 	 m_vProcThreads[x].IsOpen = true;
+#else
+	 if(m_koLog!=NULL)
+	   m_koLog->Error("DigiInterface::StartRun - Asked for file output but don't have libpbf installed.");
+	 StopRun();
+	 return -1;
+#endif
       }      
       else if(m_koOptions->GetRunOptions().WriteMode == WRITEMODE_MONGODB){
 #ifdef HAVE_LIBMONGOCLIENT
