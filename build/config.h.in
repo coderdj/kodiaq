@@ -27,6 +27,9 @@
 /* Define to 1 if you have the `pbf' library (-lpbf). */
 #undef HAVE_LIBPBF
 
+/* Define to 1 if you have the `protobuf' library (-lprotobuf). */
+#undef HAVE_LIBPROTOBUF
+
 /* Define to 1 if you have the `pthread' library (-lpthread). */
 #undef HAVE_LIBPTHREAD
 

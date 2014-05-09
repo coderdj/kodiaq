@@ -18,21 +18,6 @@ AC_ENABLE_SHARED
 AC_DISABLE_STATIC
 LT_INIT
 
-#Add options for which modules to compile
-#default is just the UI
-
-#Check for mongodb support and compile with it if we have it
-AC_CHECK_LIB(mongoclient,main)
-AS_IF([test "$ac_cv_lib_mongoclient_main" = yes], [HAVE_LIBMONGOCLIENT=1],[HAVE_LIBMONGOCLIENT=0])
-AM_CONDITIONAL([WITH_MONGODB],[test "$ac_cv_lib_mongoclient_main" = yes])
-
-#Check for libpbf (output file format) support and compile with it if it's there
-AC_CHECK_LIB(pbf,main)
-AS_IF([test "$ac_cv_lib_pbf_main" = yes], [HAVE_LIBPBF=1],[HAVE_LIBPBF=0])
-AM_CONDITIONAL([WITH_LIBPBF],[test "$ac_cv_lib_pbf_main" = yes])
-
-
-
 ############################
 # Compile UI
 ############################
@@ -134,6 +119,21 @@ AS_IF([test "x$enable_all" = "xyes"], [
 #    AC_CHECK_LIB(protobuf,main,[],AC_MSG_ERROR([libprotobuf missing]))    
     ], [
     ])
+
+#Check for mongodb support and compile with it if we have it
+AC_CHECK_LIB(mongoclient,main)
+AS_IF([test "$ac_cv_lib_mongoclient_main" = yes], [HAVE_LIBMONGOCLIENT=1],[HAVE_LIBMONGOCLIENT=0]) 
+AM_CONDITIONAL([WITH_MONGODB],[test "$ac_cv_lib_mongoclient_main" = yes])
+
+#Check for libpbf (output file format) support and compile with it if it's there
+AC_CHECK_LIB(protobuf,main)
+AS_IF([test "$ac_cv_lib_protobuf_main" = yes], [
+     AC_CHECK_LIB(pbf,main)
+     AS_IF([test "$ac_cv_lib_pbf_main" = yes], [HAVE_LIBPBF=1],[HAVE_LIBPBF=0])
+     ], [
+     ])
+AM_CONDITIONAL([WITH_LIBPBF],[test "$ac_cv_lib_pbf_main" = yes])
+
 #AC_CONFIG_FILES([Makefile])
 AC_OUTPUT(Makefile src/ddc10/Makefile src/common/Makefile src/master/Makefile src/slave/Makefile src/user/Makefile)
 

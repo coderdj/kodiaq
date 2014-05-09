@@ -71,7 +71,8 @@ class DataProcessor
    void        SplitDataChannels(vector <u_int32_t*> *&buffvec,
 				 vector <u_int32_t>  *&sizevec,
 				 vector <u_int32_t>   *timestamps,
-				 vector <u_int32_t>   *channels);
+				 vector <u_int32_t>   *channels,
+				 vector <u_int32_t>  *eventIndices=NULL);
    //
    // Name      : void DataProcessor::SplitDataChannelsNewFW(vector <u_int32_t*> *&buffvec,
    //                                                        vector <u_int32_t> *&sizevec,

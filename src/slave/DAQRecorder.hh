@@ -161,7 +161,7 @@ class DAQRecorder_mongodb : public DAQRecorder
 
 #ifdef HAVE_LIBPBF
 
-#include <pff_output.hh>
+#include <pbf_output.hh>
 
 
 /*! \brief Derived class for recording to file using google protocol buffers
@@ -203,14 +203,14 @@ class DAQRecorder_protobuff : public DAQRecorder
    //    
    void           Shutdown();
    //
-   pff_output*    GetOutfile()  {
+   pbf_output*    GetOutfile()  {
       return &m_outfile;
    };
    
    
  private:
    //u_int32_t           iEventNumber;
-   pff_output           m_outfile;
+   pbf_output           m_outfile;
    map <u_int64_t, int> m_HandleMap;
    OutfileOptions_t    m_FileOptions;
    string              m_SWritePath;

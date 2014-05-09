@@ -111,13 +111,9 @@ void DataProcessor::SplitData(vector<u_int32_t*> *&buffvec,
 }
 
 void DataProcessor::SplitDataChannels(vector<u_int32_t*> *&buffvec, vector<u_int32_t> *&sizevec,
-				      vector<u_int32_t> *timeStamps, vector<u_int32_t> *channels)
+				      vector<u_int32_t> *timeStamps, vector<u_int32_t> *channels,
+				      vector<u_int32_t> *eventIndices)
 {
-//   if(m_DAQRecorder!=NULL)  {              
-      //this is the best this function can do for checking that ZLE is on
-//      if(!m_DAQRecorder->GetReadoutOptions().ZLE_on)
-//	return;
-//   }
    
    vector <u_int32_t*> *retbuff = new vector <u_int32_t*>();
    vector <u_int32_t>  *retsize = new vector <u_int32_t>();
@@ -131,7 +127,8 @@ void DataProcessor::SplitDataChannels(vector<u_int32_t*> *&buffvec, vector<u_int
    //retsize will be the returned sizes in words
    //timeStamps will be the timestamps of the returned buffers
    //channels will be the channels of the returned buffers
-	   
+   //eventIndices will be a list of indices where new BLTs start
+   
    for(unsigned int x=0; x<buffvec->size();x++)  {	
       //loop through main vector containing the raw data
       if((*sizevec)[x]==0)      { //sanity check
@@ -146,6 +143,8 @@ void DataProcessor::SplitDataChannels(vector<u_int32_t*> *&buffvec, vector<u_int
 	 if(((*buffvec)[x][idx])==0xFFFFFFFF){idx++; continue;}//empty data, iterate
 	 if(((*buffvec)[x][idx]>>20)!=0xA00){idx++; continue;} //found a header
 	 
+	 if(eventIndices!=NULL)
+	   eventIndices->push_back(retbuff->size());
 	 //Read information from header. Need channel mask and header time
 	 u_int32_t mask = ((*buffvec)[x][idx+1])&0xFF;
 	 headerTime = ((*buffvec)[x][idx+3])&0x7FFFFFFF;
@@ -218,7 +217,7 @@ void DataProcessor::SplitDataChannelsNewFW(vector<u_int32_t*> *&buffvec, vector<
        }	
        
        unsigned int idx=0;           //used to iterate through the buffer
-       u_int32_t headerTime=0;
+       //u_int32_t headerTime=0;
        
        while(idx<(((*sizevec)[x])/(sizeof(u_int32_t)))) {	    
 	  if(((*buffvec)[x][idx])==0xFFFFFFFF){
@@ -232,7 +231,7 @@ void DataProcessor::SplitDataChannelsNewFW(vector<u_int32_t*> *&buffvec, vector<
 	    
 	  //Read information from header. Need channel mask and header time
 	  u_int32_t mask = ((*buffvec)[x][idx+1])&0xFF;
-	  headerTime = ((*buffvec)[x][idx+3])&0x7FFFFFFF;
+	  //headerTime = ((*buffvec)[x][idx+3])&0x7FFFFFFF;
 	  idx+=4;    //skip header, we have what we need
 	  
 	  for(int channel=0; channel<8;channel++){
@@ -454,6 +453,7 @@ void DataProcessor_mongodb::ProcessMongoDB()
 
 #endif
 
+#ifdef HAVE_LIBPBF
 //
 // DataProcessor_protobuff
 // 
@@ -496,11 +496,12 @@ void DataProcessor_protobuff::ProcessProtoBuff()
      (DataProcessor::GetDAQRecorder());
    
    // Declare containers for data
-   vector<u_int32_t*> *buffvec  =NULL;
-   vector<u_int32_t > *sizevec  =NULL;
-   vector<u_int32_t > *channels =NULL;
-   vector<u_int32_t > *times    =NULL;
-
+   vector<u_int32_t*> *buffvec      = NULL;
+   vector<u_int32_t > *sizevec      = NULL;
+   vector<u_int32_t > *channels     = NULL;
+   vector<u_int32_t > *times        = NULL;
+   vector<u_int32_t > *eventIndices = NULL;
+   
    //This vector will hold the objects we will write
    
    while(!bExitCondition) {
@@ -523,11 +524,13 @@ void DataProcessor_protobuff::ProcessProtoBuff()
 	    // **********
       
 	    b30BitTimes=false;
-	    if(m_koOptions->GetProcessingOptions().Mode!=3)
-	      SplitData(buffvec,sizevec);
-	    else{
-	       channels = new vector<u_int32_t>();
-	       times = new vector<u_int32_t>();
+	    channels = new vector<u_int32_t>();
+	    times = new vector<u_int32_t>();
+	    if(m_koOptions->GetProcessingOptions().Mode!=3) {//old firmware
+	       eventIndices = new vector<u_int32_t>();	       
+	       SplitDataChannels(buffvec,sizevec,times,channels,eventIndices);
+	    }	    
+	    else{ //new firmware
 	       SplitDataChannelsNewFW(buffvec,sizevec,times,channels);
 	       b30BitTimes=true;
 	    }	    
@@ -538,47 +541,59 @@ void DataProcessor_protobuff::ProcessProtoBuff()
    
 	    //
 	    // Loop though vector of parsed buffers
+	    unsigned int currentEventIndex=0;	    
+	    int handle=-1;
 	    for(unsigned int b = 0; b < buffvec->size(); b++) {
-		 
-	       //right now no combining events from separate occurences
-	       
+		 	       	       	       
 	       //time
 	       u_int32_t TimeStamp = 0;
-	       if(m_koOptions->GetProcessingOptions().Mode!=3)
-		 TimeStamp = GetTimeStamp((*buffvec)[b]);
-	       else TimeStamp = (*times)[b];
+	       TimeStamp = (*times)[b];
 	       int ResetCounter = protorecorder->GetResetCounter(TimeStamp,b30BitTimes);
 	       u_int64_t Time64 = 0;
-	       if(!b30BitTimes) Time64 = ((u_int64_t)ResetCounter << 31) | TimeStamp;	    
+	       if(!b30BitTimes) Time64 = ((u_int64_t)ResetCounter << 31) | TimeStamp;
 	       else Time64 = ((u_int64_t)ResetCounter <<30 ) | TimeStamp;
-	       int handle=-1;
-	       protorecorder->GetOutfile()->create_event(TimeStamp,handle);
-	       if(m_koOptions->GetProcessingOptions().Mode!=3)
-		 protorecorder->GetOutfile()->add_data(handle,-1,iModule,(char*)(*buffvec)[b],(size_t)((*sizevec)[b]));
-	       else
+
+	       //check if we should open a new event or not
+	       if(eventIndices==NULL || (currentEventIndex<eventIndices->size()
+					 && (*eventIndices)[currentEventIndex]==b)){
+		  if(handle!=-1)		    		       
+		    protorecorder->GetOutfile()->close_event(handle,true);
+		  protorecorder->GetOutfile()->create_event(TimeStamp,handle);
+		  if(eventIndices!=NULL) currentEventIndex++;
+	       }
+	       
+//	       if(m_koOptions->GetProcessingOptions().Mode!=3)
+//		 protorecorder->GetOutfile()->add_data(handle,(int)(*channels)[b],iModule,
+//						       (char*)(*buffvec)[b],(size_t)((*sizevec)[b]),
+//						      (*times)[b]);
+//	       else
 		 protorecorder->GetOutfile()->add_data(handle,(int)(*channels)[b],iModule,
 						       (char*)(*buffvec)[b],(size_t)((*sizevec)[b]),
-						       (*times)[b]);	       
-	       //close event (for now)
-	       protorecorder->GetOutfile()->close_event(handle,true);
+						       Time64);
+	       //close event if at end of buffer vec
+	       if(b==buffvec->size()-1)    
+		  protorecorder->GetOutfile()->close_event(handle,true);
+
+		  
 	       
 	       //delete data
-	       //delete[] ((*buffvec)[b]);
+	       delete[] ((*buffvec)[b]);
 	    }//end loop through buffers
 	    	    
 	    if(channels!=NULL) delete channels;
 	    if(times!=NULL) delete times;
 	    if(buffvec!=NULL) delete buffvec;
 	    if(sizevec!=NULL) delete sizevec;
+	    if(eventIndices!=NULL) delete eventIndices;
 	    buffvec=NULL;
-	    sizevec=channels=times=NULL;
+	    eventIndices=sizevec=channels=times=NULL;
 	 }	 
       }      
    }      
    
    return;
 }
-
+#endif
 
 //
 //
