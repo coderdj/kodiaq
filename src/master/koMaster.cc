@@ -1,3 +1,4 @@
+
 // ****************************************************
 // 
 // kodiaq Data Acquisition Software
@@ -57,7 +58,9 @@ int main()
    time_t             fPrevTimeMain=koLogger::GetCurrentTime();
    time_t             fPrevTimeData=koLogger::GetCurrentTime();
    bool               update=false;
-
+   bool               remoteCommand=false;
+   string mode="", remotecommand="",remotesender="";
+   
    //Options object for reading veto and mongo options
    koOptions       fDAQOptions;
    //********************************************
@@ -89,6 +92,7 @@ int main()
 	 stringstream messagestream;
 	 messagestream<<"User "<<cName<<"("<<cID<<") has logged into the DAQ from "<<cIP<<".";
 	 fUserNetwork.BroadcastMessage(messagestream.str(),KOMESS_NORMAL);
+	 fMongodb.SendLogMessage(messagestream.str(),KOMESS_NORMAL);
 	 fLog.Message(messagestream.str());
 	 cout<<"Login successful for user "<<cName<<"("<<cID<<") at "<<cIP<<"."<<endl;
       }            
@@ -109,8 +113,35 @@ int main()
       vector <string> tempStringList;  //string vectors
       vector <string> tempStringList2; //used for menu choices
       stringstream errstring;
-      if(fUserNetwork.ListenForCommand(command,id,sender)==0){
-
+      if(remoteCommand || fUserNetwork.ListenForCommand(command,id,sender)==0){
+	 if(remoteCommand)  {
+	    id=0;
+	    if(remotecommand=="Arm")  {
+	       command="START";
+	       remotecommand=="";
+	       remoteCommand=false;
+	       sender=remotesender;
+	    }
+	    else if(remotecommand=="Start")  {
+	       remotecommand="Arm";
+	       command="ARM";
+	       sender=remotesender;
+	    }
+	    else if(remotecommand=="Sleep")  {
+	       command="SLEEP";
+	       remoteCommand=false;
+	       sender=remotesender;
+	    }	    
+	    else if(remotecommand=="Stop"){
+	       command="STOP";
+	       remotecommand="Sleep";
+	       sender=remotesender;
+	    }
+	    else
+	      remoteCommand=false;
+	 }
+	 
+	 
 	 //
 	 // Command     : BROADCAST
 	 // Description : A user has sent a message to be broadcast
@@ -120,9 +151,13 @@ int main()
 	    if(fUserNetwork.ReceiveBroadcast(id,message)!=0){	    
 	       errstring<<"Received broadcast header from "<<sender<<"("<<id<<")"<<"but no message."<<endl;
 	       fUserNetwork.BroadcastMessage(errstring.str(),KOMESS_BROADCAST);
+	       fMongodb.SendLogMessage(errstring.str(),KOMESS_ERROR);	       
 	    }
-	    else
-	      fUserNetwork.BroadcastMessage(message,KOMESS_BROADCAST);	       
+	    else		 {		 
+	       fUserNetwork.BroadcastMessage(message,KOMESS_BROADCAST);
+	       fMongodb.SendLogMessage(message,KOMESS_BROADCAST);
+	    }	    
+	       
 	 }
 	 //
 	 // Command     : CONNECT
@@ -132,8 +167,11 @@ int main()
 	 else if(command=="CONNECT")  {	 
 	    errstring<<"Received connect command from "<<sender<<"("<<id<<")";
 	    fUserNetwork.BroadcastMessage(errstring.str(),KOMESS_NORMAL);
-	    if(fDAQNetwork.PutUpNetwork()!=0)  
+	    fMongodb.SendLogMessage(errstring.str(),KOMESS_NORMAL);	    
+	    if(fDAQNetwork.PutUpNetwork()!=0) {	       
 	      fUserNetwork.BroadcastMessage("An attempt to put up the DAQ network has failed.",KOMESS_WARNING);
+	       fMongodb.SendLogMessage("An attempt to put up the DAQ network has failed",KOMESS_WARNING);
+	    }	    
 	    else  {
 	       double timer=0.;
 	       fNSlaves=0;
@@ -142,6 +180,7 @@ int main()
 		     errstring.str(std::string());
 		     errstring<<"Connected to slave "<<cName<<"("<<cID<<") at IP "<<cIP<<".";
 		     fUserNetwork.BroadcastMessage(errstring.str(),KOMESS_NORMAL);
+		     fMongodb.SendLogMessage(errstring.str(),KOMESS_NORMAL);		     
 		     fNSlaves++;
 		  }		  
 		  usleep(1000);
@@ -152,6 +191,8 @@ int main()
 	       fDAQNetwork.TakeDownNetwork();//takes down connection socket only 
 	                                     //keeps DAQ from listening for new connections
 	       fUserNetwork.BroadcastMessage(errstring.str(),KOMESS_STATE);
+	       fMongodb.SendLogMessage(errstring.str(),KOMESS_STATE);
+	       
 	    }	    	    
 	 }
 	 //
@@ -162,6 +203,7 @@ int main()
 	 else if(command=="RECONNECT")  {
 	    errstring<<"Received reconnect command from "<<sender<<"("<<id<<")";
 	    fUserNetwork.BroadcastMessage(errstring.str(),KOMESS_NORMAL);
+	    fMongodb.SendLogMessage(errstring.str(),KOMESS_NORMAL);	    
 	    fDAQNetwork.Disconnect();
 	    koHelper::InitializeStatus(fDAQStatus);	    
 	    command="CONNECT";
@@ -174,6 +216,7 @@ int main()
 	 else if(command=="DISCONNECT")  {
 	    errstring<<"Received disconnect command from "<<sender<<"("<<id<<")";
 	    fUserNetwork.BroadcastMessage(errstring.str(),KOMESS_NORMAL);
+	    fMongodb.SendLogMessage(errstring.str(),KOMESS_NORMAL);	    
 	    fDAQNetwork.Disconnect();
 	    koHelper::InitializeStatus(fDAQStatus);	    
 	    sleep(1);
@@ -201,59 +244,73 @@ int main()
 	 //               appropriate options file to the slaves and tell them to arm
 	 // 
 	 else if(command=="ARM")  {
+	    string modetoarm="";
 	    tempStringList.clear();
 	    tempStringList2.clear();
 	    GetRunModeList(tempStringList,tempStringList2);
 	    errstring<<"Received arm command from "<<sender<<"("<<id<<")";
 	    fDAQNetwork.SendCommand("SLEEP");//tell DAQ to reset
-	    if(fUserNetwork.ListenForCommand(command,id,sender)!=0) {
-	       fLog.Error("koMaster main - Timed out waiting for run mode after ARM command");
-	       errstring<<" but didn't receive mode.";
-	       fUserNetwork.BroadcastMessage(errstring.str(),KOMESS_WARNING);
+	    if(!remoteCommand){		 
+	       if(fUserNetwork.ListenForCommand(command,id,sender)!=0) {
+		  fLog.Error("koMaster main - Timed out waiting for run mode after ARM command");
+		  errstring<<" but didn't receive mode.";
+		  fUserNetwork.BroadcastMessage(errstring.str(),KOMESS_WARNING);
+		  fMongodb.SendLogMessage(errstring.str(),KOMESS_WARNING);	    
+		  continue;
+	       }
+	       modetoarm=command;
 	    }
-	    else {    		 
-	       errstring<<" for mode "<<command;
-	       fUserNetwork.BroadcastMessage(errstring.str(),KOMESS_NORMAL);
-	       tempint=-1;
-	       for(unsigned int x=0;x<tempStringList.size();x++)  {
-		  if(tempStringList[x]==command) tempint=(int)x;
-	       }
-	       if(tempint==-1)  {
-		  fLog.Error("koMaster - Got bad mode index from UI");
-		  fUserNetwork.BroadcastMessage("Warning - that run mode doesn't seem to exist.",KOMESS_WARNING);
-		  command='0';
-		  continue;
-	       }
-	       //now send ARM command to slave
-	       fDAQNetwork.SendCommand("ARM");
-	       if(fDAQNetwork.SendOptions(tempStringList2[tempint])!=0)  {
-		  fLog.Error("koMaster - Error sending options.");
-		  fUserNetwork.BroadcastMessage("DAQ arm attempt failed.",KOMESS_WARNING);
-		  command='0';
-		  continue;
-	       }
+	    else modetoarm=mode;
+	    errstring<<" for mode "<<modetoarm;
+	    fUserNetwork.BroadcastMessage(errstring.str(),KOMESS_NORMAL);
+	    fMongodb.SendLogMessage(errstring.str(),KOMESS_NORMAL);	       
+	    tempint=-1;
+	    for(unsigned int x=0;x<tempStringList.size();x++)  {
+	       if(tempStringList[x]==modetoarm) tempint=(int)x;
+	    }
+	    if(tempint==-1)  {
+	       fLog.Error("koMaster - Got bad mode index from UI");
+	       fUserNetwork.BroadcastMessage("Warning - that run mode doesn't seem to exist.",KOMESS_WARNING);
+	       command='0';
+	       continue;
+	    }
+	    
 	       
-	       if(fDAQOptions.ReadParameterFile(tempStringList2[tempint])!=0){		 
-		  fUserNetwork.BroadcastMessage("Error setting veto options. Bad file!",KOMESS_WARNING);
-		  continue;
-	       }
+	    //now send ARM command to slave
+	    fDAQNetwork.SendCommand("ARM");
+	    if(fDAQNetwork.SendOptions(tempStringList2[tempint])!=0)  {
+	       fLog.Error("koMaster - Error sending options.");
+	       fUserNetwork.BroadcastMessage("DAQ arm attempt failed.",KOMESS_WARNING);
+	       fMongodb.SendLogMessage("DAQ arm attempt failed.",KOMESS_WARNING);		  
+	       command='0';
+	       continue;
+	    }
+	    
+	    if(fDAQOptions.ReadParameterFile(tempStringList2[tempint])!=0){		 
+	       fUserNetwork.BroadcastMessage("Error setting veto options. Bad file!",KOMESS_WARNING);
+	       fMongodb.SendLogMessage("Error setting veto options. Bad file!",KOMESS_WARNING);		  
+	       continue;
+	    }
 #ifdef WITH_DDC10
-	       ddc_10 vetoModule;
-	       if(fDAQOptions.GetVetoOptions().Initialized) {		    
-		  if(vetoModule.Initialize(fDAQOptions.GetVetoOptions())==0)  		    
-		    vetoModule.LEDTestFlash(fDAQOptions.GetVetoOptions().IPAddress);
-		  else
-		    fUserNetwork.BroadcastMessage("Failed to contact ddc10",KOMESS_WARNING);
-	       }	       
+	    ddc_10 vetoModule;
+	    if(fDAQOptions.GetVetoOptions().Initialized) {		    
+	       if(vetoModule.Initialize(fDAQOptions.GetVetoOptions())==0)  		    
+		 vetoModule.LEDTestFlash(fDAQOptions.GetVetoOptions().IPAddress);
+	       else{		       
+		  fUserNetwork.BroadcastMessage("Failed to contact ddc10",KOMESS_WARNING);
+		  fMongodb.SendLogMessage("Failed to contact ddc10",KOMESS_WARNING);
+	       }		  
+	    }	       
 #endif
 	       
-	       fDAQStatus.RunMode=command;
-	       errstring.str(std::string());//flush();
-	       errstring<<"Armed DAQ in mode "<<command;
-	       fUserNetwork.BroadcastMessage(errstring.str(),KOMESS_STATE);
-	       command='0';
-	    }
+	    fDAQStatus.RunMode=modetoarm;
+	    errstring.str(std::string());//flush();
+	    errstring<<"Armed DAQ in mode "<<modetoarm;
+	    fUserNetwork.BroadcastMessage(errstring.str(),KOMESS_STATE);
+	    fMongodb.SendLogMessage(errstring.str(),KOMESS_STATE);	       
+	    command='0';
 	 }
+      
 	 //
 	 // Command     : START
 	 // Description : A user wants to start the DAQ
@@ -273,19 +330,26 @@ int main()
 		  stringstream ss;
 		  ss<<"Writing to collection "<<fDAQOptions.GetMongoOptions().Collection;
 		  fUserNetwork.BroadcastMessage(ss.str(),KOMESS_STATE);
+		  fMongodb.SendLogMessage(ss.str(),KOMESS_STATE);		  
 		  fDAQNetwork.SendCommand("DBUPDATE");
 		  fDAQNetwork.SendCommand(fDAQOptions.GetMongoOptions().Collection);
 	       }	       
 	       //send run info to event builder
-	       if(fMongodb.Initialize(sender,fDAQStatus.RunMode,&fDAQOptions)!=0)
-		 fUserNetwork.BroadcastMessage("Failed to send run info to event builder",KOMESS_WARNING);
+	       if(fMongodb.Initialize(sender,fDAQStatus.RunMode,fDAQStatus.RunInfo.RunNumber,
+				      &fDAQOptions)!=0){		    
+		  fUserNetwork.BroadcastMessage("Failed to send run info to event builder",KOMESS_WARNING);
+		  fMongodb.SendLogMessage("Failed to send run info to event builder",KOMESS_WARNING);		  
+	       }	       
 	    }
-	    
+	    else fMongodb.Initialize(sender,fDAQStatus.RunMode,fDAQStatus.RunInfo.RunNumber
+				     ,&fDAQOptions,true);
+	    //previous line to update online DB
 	    
 	    //send the actual start command
 	    fDAQNetwork.SendCommand("START");   
 	    errstring<<"DAQ started by "<<sender<<"("<<id<<")";
 	    fUserNetwork.BroadcastMessage(errstring.str(),KOMESS_STATE);
+	    fMongodb.SendLogMessage(errstring.str(),KOMESS_STATE);	    
 	 }
 	 //
 	 // Command     : USERS
@@ -329,11 +393,15 @@ int main()
 	 else if(command=="STOP")  {
 	    fDAQNetwork.SendCommand("STOP");
 	    if(fDAQOptions.GetRunOptions().WriteMode==2) {		 
-	       if(fMongodb.UpdateEndTime()!=0)
-		 fUserNetwork.BroadcastMessage("Failed to send stop time to event builder.",KOMESS_WARNING);
-	    }	    
+	       if(fMongodb.UpdateEndTime()!=0){		    
+		  fUserNetwork.BroadcastMessage("Failed to send stop time to event builder.",KOMESS_WARNING);
+		  fMongodb.SendLogMessage("Failed to send stop time to event builder.",KOMESS_WARNING);
+	       }	       
+	    }	  
+	    else fMongodb.UpdateEndTime(true);
 	    errstring<<"DAQ stopped by "<<sender<<"("<<id<<")";
 	    fUserNetwork.BroadcastMessage(errstring.str(),KOMESS_STATE);
+	    fMongodb.SendLogMessage(errstring.str(),KOMESS_STATE);	    
 	 }
 	 //
 	 // Command     : SLEEP
@@ -344,6 +412,7 @@ int main()
 	 else if(command=="SLEEP")  {
 	    errstring<<"DAQ put to sleep mode by "<<sender<<"("<<id<<")";
 	    fUserNetwork.BroadcastMessage(errstring.str(),KOMESS_STATE);
+	    fMongodb.SendLogMessage(errstring.str(),KOMESS_STATE);	    
 	    fDAQNetwork.SendCommand("SLEEP");
 	    fDAQStatus.RunMode="None";
 	    command='0';
@@ -364,13 +433,23 @@ int main()
       time_t fCurrentTime = koLogger::GetCurrentTime();
       //keep data socket alive
       double dtime = difftime(fCurrentTime,fPrevTimeMain);
-      if((dtime>=1.0 && update) || dtime>=10.) {	   
+      if((dtime>=1.0 && update) || dtime>=10.) {	   	 
 	 update=false;
 	 fPrevTimeMain=fCurrentTime;	 
 	 if(fUserNetwork.TransmitStatus(fDAQStatus)!=0)   {
 	    fLog.Error("Error transmitting status to user net.");
 	 }	 
 	 fDAQStatus.Messages.clear();
+	 fMongodb.AddRates(fDAQStatus);
+	 fMongodb.UpdateDAQStatus(fDAQStatus);
+	 string string2="",string3="";
+	 if(fMongodb.CheckForCommand(remotecommand,string2,string3)==0){
+	    mode=string2;
+	    remotesender=string3;
+	    remoteCommand=true;
+	    cout<<"Got remote command "<<remotecommand<<" "<<mode<<" "<<remotesender<<endl;
+	 }
+	 
       }	 
       //keep main socket alive
       dtime = difftime(fCurrentTime,fPrevTimeData);

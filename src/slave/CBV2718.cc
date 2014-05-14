@@ -53,6 +53,7 @@ int CBV2718::SendStartSignal()
    if(CAENVME_WriteRegister(fCrateHandle,cvOutRegSet,data)!=0)
      return -1;
    
+   usleep(1000);
    //now start the pulser 
    CAENVME_StartPulser(fCrateHandle,cvPulserB);    
    

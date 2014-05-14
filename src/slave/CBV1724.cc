@@ -312,7 +312,7 @@ int CBV1724::DetermineBaselines()
    ReadReg32(ZLEReg,ZLE);
    
    int iteration=0;
-   u_int32_t data=0xD0; //turn ZLE off, simple data format
+   u_int32_t data=0x310; //turn ZLE off, simple data format
    WriteReg32(ZLEReg,data);
    usleep(200000);
    while(iteration<=maxIterations)  {
@@ -345,7 +345,7 @@ int CBV1724::DetermineBaselines()
 				      ((unsigned char*)buff)+blt_bytes,
 				      fBLTSize,cvA32_U_BLT,cvD32,&nb);
 	 if(ret!=cvSuccess && ret!=cvBusError)  {
-//	    cout<<"CAENVME Read Error "<<ret<<endl;
+	    cout<<"CAENVME Read Error "<<ret<<endl;
 	    continue;
 	 }
 	 blt_bytes+=nb;
@@ -400,15 +400,12 @@ int CBV1724::DetermineBaselines()
 	    if(diff<=MaxDev && diff>=MaxDev*(-1.))  {   //Existing baseline is still OK
 	       channelFinished[channel]=true;
 	       newBaselines[channel]=data;
-//	       cout<<"Baseline of "<<hex<<data<<dec<<
-//		 " retained for channel "<<channel<<" on board "<<fBID.BoardID<<endl;	       
 	       continue;
 	    }
 	    else  {       //Baseline must be adjusted
-//	       if(channel==7) cout<<"diff "<<diff<<" maxdev "<<MaxDev<<" mean "<<mean<<" oldDAC "<<hex<<data<<endl;
-	       if(diff>MaxDev)	 { //if(channel==7) cout<<"DIFFGTMD"<<endl;
+	       if(diff>MaxDev)	 { 
 		  if(diff>8){
-		     if(diff>50) { //if(channel==7) cout<<"GT50 "<<newDAC<<" "<<diff/-0.265<<endl;
+		     if(diff>50) { 
 			newDAC=(data+(int)(diff/(-.264))); }//coarse adjust
 		     else newDAC=data-30;                     //a bit less coarse
 		  }
@@ -424,12 +421,10 @@ int CBV1724::DetermineBaselines()
 	       else newDAC=data;                               //no adjust
 	    }	    
 	    if(iteration==maxIterations){
-//	       cout<<" To do "<<channel<<endl;
 	       channelFinished[channel]=true;
 	       newBaselines[channel]=newDAC;//data;
 	       retval=1; //flag that at least one channel didn't finish
 	    }
-//	    cout<<"New DAC "<<hex<<newDAC<<endl;	    
 	    WriteReg32(V1724_DACReg+(0x100*channel),(newDAC&0xFFFF)); //write updated DAC
 	 }//end if baseline is flat	 
 	 else

@@ -11,7 +11,7 @@
 #define HAVE_LIBCAENVME 1
 
 /* Define to 1 if you have the `expect' library (-lexpect). */
-/* #undef HAVE_LIBEXPECT */
+#define HAVE_LIBEXPECT 1
 
 /* Define to 1 if you have the `form' library (-lform). */
 #define HAVE_LIBFORM 1
@@ -38,7 +38,7 @@
 #define HAVE_LIBSNAPPY 1
 
 /* Define to 1 if you have the `tcl8.5' library (-ltcl8.5). */
-/* #undef HAVE_LIBTCL8_5 */
+#define HAVE_LIBTCL8_5 1
 
 /* Define to 1 if you have the `tinfo' library (-ltinfo). */
 #define HAVE_LIBTINFO 1
@@ -68,7 +68,7 @@
 #define HAVE_UNISTD_H 1
 
 /* Compile standalone slave */
-#define KLITE 1
+/* #undef KLITE */
 
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */
@@ -102,13 +102,13 @@
 #define VERSION "0.9"
 
 /* Compile with DDC HE veto support */
-/* #undef WITH_DDC10 */
+#define WITH_DDC10 /**/
 
 /* Compile master module */
-/* #undef WITH_MASTER */
+#define WITH_MASTER /**/
 
 /* Compile slave module */
-/* #undef WITH_SLAVE */
+#define WITH_SLAVE /**/
 
 /* Compile user interface */
 #define WITH_USER /**/
