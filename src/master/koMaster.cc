@@ -57,6 +57,7 @@ int main()
    unsigned int       fNSlaves=0;
    time_t             fPrevTimeMain=koLogger::GetCurrentTime();
    time_t             fPrevTimeData=koLogger::GetCurrentTime();
+   time_t             fPrevTimeMongo = koLogger::GetCurrentTime();
    bool               update=false;
    bool               remoteCommand=false;
    string mode="", remotecommand="",remotesender="";
@@ -126,6 +127,11 @@ int main()
 	       remotecommand="Arm";
 	       command="ARM";
 	       sender=remotesender;
+	       if(fDAQStatus.DAQState==KODAQ_RUNNING)	 {
+		  command="nope";
+		  remoteCommand=false;
+		  remotecommand="";
+	       }	       
 	    }
 	    else if(remotecommand=="Sleep")  {
 	       command="SLEEP";
@@ -433,6 +439,7 @@ int main()
       time_t fCurrentTime = koLogger::GetCurrentTime();
       //keep data socket alive
       double dtime = difftime(fCurrentTime,fPrevTimeMain);
+      double dtimemongo = difftime(fCurrentTime,fPrevTimeMongo);
       if((dtime>=1.0 && update) || dtime>=10.) {	   	 
 	 update=false;
 	 fPrevTimeMain=fCurrentTime;	 
@@ -440,17 +447,22 @@ int main()
 	    fLog.Error("Error transmitting status to user net.");
 	 }	 
 	 fDAQStatus.Messages.clear();
-	 fMongodb.AddRates(fDAQStatus);
-	 fMongodb.UpdateDAQStatus(fDAQStatus);
+	 	 
+	 fMongodb.UpdateDAQStatus(fDAQStatus);	 
 	 string string2="",string3="";
 	 if(fMongodb.CheckForCommand(remotecommand,string2,string3)==0){
 	    mode=string2;
 	    remotesender=string3;
 	    remoteCommand=true;
-	    cout<<"Got remote command "<<remotecommand<<" "<<mode<<" "<<remotesender<<endl;
+	    cout<<"Got remote command "<<remotecommand<<" "<<mode<<" "<<remotesender<<endl;	    
 	 }
 	 
       }	 
+      if(dtimemongo>=10.){
+	 fMongodb.AddRates(fDAQStatus);
+	 fPrevTimeMongo=fCurrentTime;
+      }
+      
       //keep main socket alive
       dtime = difftime(fCurrentTime,fPrevTimeData);
       if(dtime>=100.){	   

@@ -175,7 +175,6 @@ void MasterMongodbConnection::AddRates(koStatusPacket_t DAQStatus)
       time_t currentTime;
       time(&currentTime);
       b.appendTimeT("createdAt",currentTime);
-      b.append("expireAfterSeconds",43200);
       b.append("node",DAQStatus.Slaves[x].name);
       b.append("bltrate",DAQStatus.Slaves[x].Freq);
       b.append("datarate",DAQStatus.Slaves[x].Rate);
@@ -195,7 +194,6 @@ void MasterMongodbConnection::UpdateDAQStatus(koStatusPacket_t DAQStatus)
    time_t currentTime;
    time(&currentTime);
    b.appendTimeT("createdAt",currentTime);
-   b.append("expireAfterSeconds",43200);
    b.append("timeseconds",(int)currentTime);
    b.append("mode",DAQStatus.RunMode);
    if(DAQStatus.DAQState==KODAQ_ARMED)
@@ -204,6 +202,8 @@ void MasterMongodbConnection::UpdateDAQStatus(koStatusPacket_t DAQStatus)
      b.append("state","Running");
    else if(DAQStatus.DAQState==KODAQ_IDLE)
      b.append("state","Idle");
+   else if(DAQStatus.DAQState==KODAQ_ERROR)
+     b.append("state","Error");
    else
      b.append("state","Undefined");
    b.append("network",DAQStatus.NetworkUp);

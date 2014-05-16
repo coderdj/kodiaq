@@ -55,7 +55,7 @@ int VMECrate::Define(LinkDefinition_t Link)
 	m_koLog->Error(message.str());
       return -1;
    }
-//   CAENVME_DeviceReset(temp);
+
    fCrateHandle=temp;
    
    stringstream ss;
@@ -108,11 +108,14 @@ int VMECrate::InitializeModules(koOptions *options)
 {
    stringstream ss;
    for(unsigned int x=0; x<fBoards.size();x++)    {
-      if(fBoards[x]->Initialize(options)!=0)	{
-	 ss<<"VMECrate::InitializeModules - Could not initialize module "<<fBoards[x]->GetID().BoardID;
+      if(int ret=fBoards[x]->Initialize(options)!=0)	{
+	 if(ret!=-2)
+	   ss<<"VMECrate::InitializeModules - Could not initialize module "<<fBoards[x]->GetID().BoardID;
+	 else
+	   ss<<"VMECrate::InitializeModules - Read error from digitizer "<<fBoards[x]->GetID().BoardID;	 
 	 if(m_koLog!=NULL)
 	   m_koLog->Error(ss.str());
-	 return -1;
+	 return ret;
       }      
    }   
    return 0;

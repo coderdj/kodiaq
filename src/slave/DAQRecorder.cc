@@ -83,14 +83,14 @@ int DAQRecorder::GetCurPrevNext(u_int32_t timestamp, bool b30BitTimes)
 	return -1;
       return 0;      
    }
-   //for 30 bit times maximum is 10 seconds. Time Over Ten is now time over 4
-   if(timestamp<2E8 && m_bTimeOverTen)  {
+   //for 32 bit times maximum is 40 seconds. Time Over Ten is now time over 4
+   if(timestamp<4E8 && m_bTimeOverTen)  {
       m_bTimeOverTen=false;
       return 1;
      }
-   else if(timestamp>4E8 && !m_bTimeOverTen) // after 4 seconds set ToT
+   else if(timestamp>2E9 && !m_bTimeOverTen) // after 4 seconds set ToT
      m_bTimeOverTen=true;
-   else if(timestamp>9E8 && !m_bTimeOverTen) //more than 9 seconds but ToT not set, belongs to last
+   else if(timestamp>35E8 && !m_bTimeOverTen) //more than 9 seconds but ToT not set, belongs to last
      return -1;
    return 0;   
 }

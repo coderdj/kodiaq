@@ -91,8 +91,9 @@ int DigiInterface::Initialize(koOptions *options)
    
    //Load options to individual modules
    for(unsigned int x=0;x<m_vCrates.size();x++){	
-      if(m_vCrates[x]->InitializeModules(options)!=0)
-	return -1;
+      if(int ret=m_vCrates[x]->InitializeModules(options)!=0){	   
+	 return ret;
+      }      
    }
 
    //Designate sum modules if any

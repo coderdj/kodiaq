@@ -84,6 +84,8 @@ int CBV1724::Initialize(koOptions *options)
       while(DetermineBaselines()!=0 && tries<5){
 	 cout<<" .";
 	 tries++;
+	 if(DetermineBaselines()==-2)
+	   return -2;
       }
       cout<<" . . . done!"<<endl;
    }
@@ -125,7 +127,6 @@ unsigned int CBV1724::ReadMBLT()
    if(blt_bytes>0){
       u_int32_t *writeBuff = new u_int32_t[blt_bytes/(sizeof(u_int32_t))]; //must be freed after writing
       memcpy(writeBuff,buff,blt_bytes);
-      //copy(buff,buff+(blt_bytes/(sizeof(u_int32_t))),writeBuff);
       LockDataBuffer();
       fBuffers->push_back(writeBuff);
       fSizes->push_back(blt_bytes);
@@ -224,7 +225,6 @@ int CBV1724::LoadBaselines()
       stringstream sstr;
       sstr<<"Loaded baseline "<<hex<<baselines[x]<<dec<<" to channel "<<x;
       LogMessage(sstr.str());
-//      cout<<sstr.str()<<endl;
    }
    return 0;
 }
@@ -308,18 +308,18 @@ int CBV1724::DetermineBaselines()
    
    u_int32_t ACR,ZLE;
    ReadReg32(AcquisitionControlReg,ACR);
-  // ReadReg32(SoftwareTriggerReg,STR);
    ReadReg32(ZLEReg,ZLE);
    
    int iteration=0;
    u_int32_t data=0x310; //turn ZLE off, simple data format
    WriteReg32(ZLEReg,data);
-   usleep(200000);
+   data =0x00; //turn boards to register-controlled mode
+   WriteReg32(AcquisitionControlReg,data);
+   
    while(iteration<=maxIterations)  {
       iteration++;
       
       //Enable board
-//      ReadReg32(AcquisitionControlReg,data);
       usleep(50000);
       data=0x4;
       WriteReg32(AcquisitionControlReg,data);
@@ -329,13 +329,9 @@ int CBV1724::DetermineBaselines()
       WriteReg32(SoftwareTriggerReg,data);
       
       //Disable board
-//      ReadReg32(AcquisitionControlReg,data);
-  //    data&=0xFFFFFFFB;
       data=0x0;
       WriteReg32(AcquisitionControlReg,data);
 
-//      data=0xD0; //turn ZLE off, simple data format
-//      WriteReg32(ZLEReg,data);
       
       //Read MBLT
       int ret,nb,pnt=0;
@@ -346,7 +342,8 @@ int CBV1724::DetermineBaselines()
 				      fBLTSize,cvA32_U_BLT,cvD32,&nb);
 	 if(ret!=cvSuccess && ret!=cvBusError)  {
 	    cout<<"CAENVME Read Error "<<ret<<endl;
-	    continue;
+	    return -2;
+	    //continue;
 	 }
 	 blt_bytes+=nb;
 	 if(blt_bytes>fBufferSize) {
@@ -354,7 +351,7 @@ int CBV1724::DetermineBaselines()
 	 }	 
       }while(ret!=cvBusError);      
       if(blt_bytes==0)	{
-	 LogMessage("Baseline calibration: read nothing from board.");
+	 //LogMessage("Baseline calibration: read nothing from board.");
 	 continue;
       }
       
@@ -362,10 +359,9 @@ int CBV1724::DetermineBaselines()
       int minval=0,maxval=0,mean=0;
       if((buff[0]>>20)!=0xA00)	{
 	 LogMessage("Baseline calibration: unexpected buffer format");      
-	 continue;
+	 return -1;
       }
       samples = (buff[0]&0xFFFFFF);
-//      cout<<"BUFFER SIZE "<<samples<<endl;
       samples-=4; //subtract header
       samples/=8; //get lines per channel
       samples*=2; //2 samples per line
@@ -385,10 +381,7 @@ int CBV1724::DetermineBaselines()
 	 pnt=pnt+(int)(samples/2);
 	 if(channelFinished[channel]) continue;
 	 
-//	 cout<<"Channel: "<<dec<<channel<<endl;
-//	 cout<<"Tot "<<dec<<mean<<" nsamples "<<samples;
 	 mean=mean/(double)samples;
-//	 cout<<" mean "<<dec<<mean<<" pnt "<<pnt<<endl;
 	 	 	 
 	 //Read DAC register. 
 	 ReadReg32(V1724_DACReg+(channel*0x100),data);
@@ -396,7 +389,6 @@ int CBV1724::DetermineBaselines()
 	 double diff=0;
 	 if((maxval-mean)<500 && (mean-minval)<500)  { //baseline is flat 
 	    diff=double(idealBaseline-mean);
-//	    cout<<"Diff "<<diff<<" DAQ "<<hex<<newDAC<<dec<<endl;
 	    if(diff<=MaxDev && diff>=MaxDev*(-1.))  {   //Existing baseline is still OK
 	       channelFinished[channel]=true;
 	       newBaselines[channel]=data;
@@ -448,7 +440,6 @@ int CBV1724::DetermineBaselines()
    outfile.close();
 
    WriteReg32(AcquisitionControlReg,ACR);
-//   WriteReg32(SoftwareTriggerReg,STR);
    usleep(1000);
    WriteReg32(ZLEReg,ZLE);
    usleep(2000);

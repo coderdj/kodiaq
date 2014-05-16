@@ -145,7 +145,7 @@ int main()
    
    string         fOptionsPath = "DAQConfig.ini";
    time_t         fPrevTime = koLogger::GetCurrentTime();
-   bool           bArmed=false,bRunning=false,bConnected=false;
+   bool           bArmed=false,bRunning=false,bConnected=false,bERROR=false;
    //
    koLog->Message("Started koSlave module.");
    
@@ -167,18 +167,22 @@ connection_loop:
       if(fNetworkInterface.ListenForCommand(command,id,sender)==0)	{
 	 if(command=="ARM")  {
 	    bArmed=false;
+	    bERROR=false;
 	    fElectronics->Close();
 	    if(fNetworkInterface.ReceiveOptions(fOptionsPath)==0)  {
 	       if(fDAQOptions.ReadParameterFile(fOptionsPath)!=0)	 {
 		  koLog->Error("koSlave - error loading options");
 		  fNetworkInterface.SlaveSendMessage("Error loading options!");
 		  continue;
-	       }	         		    	       
-	       if(fElectronics->Initialize(&fDAQOptions)==0){
+	       }
+	       int ret;
+	       if(ret=fElectronics->Initialize(&fDAQOptions)==0){
 		  fNetworkInterface.SlaveSendMessage("Boards armed successfully.");
 		  bArmed=true;
 	       }	       
-	       else{		    
+	       else{
+		  if(ret==-2)
+		    bERROR=true;
 		  fNetworkInterface.SlaveSendMessage("Error initializing electronics!");
 		  koLog->Error("koSlave - error initializing electronics.");		  
 		  continue;
@@ -235,6 +239,7 @@ connection_loop:
 	 int status=KODAQ_IDLE;
 	 if(bArmed && !bRunning) status=KODAQ_ARMED;
 	 if(bRunning) status=KODAQ_RUNNING;
+	 if(bERROR) status=KODAQ_ERROR;
 	 double rate=0.,freq=0.,nBoards=fElectronics->GetDigis();
 	 unsigned int iFreq=0;	 
 	 unsigned int iRate=fElectronics->GetRate(iFreq);
