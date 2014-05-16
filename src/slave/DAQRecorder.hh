@@ -77,7 +77,6 @@ class DAQRecorder
    koLogger     *m_koLogger;
    koOptions    *m_koOptions;
    bool          m_bInitialized;
-   
  private:
    
    // Name     : int DAQRecorder::GetCurPrevNext(u_int32_t timestamp,

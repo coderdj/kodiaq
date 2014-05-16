@@ -16,7 +16,8 @@
 
 #include <koLogger.hh>
 #include <pthread.h>
-#include "VMECrate.hh"
+#include "CBV1724.hh"
+#include "CBV2718.hh"
 #include "DataProcessor.hh"
 
 using namespace std;
@@ -111,18 +112,13 @@ class DigiInterface
    //
    //Access to crates and boards
    //
-   CBV1724*      operator()(unsigned int i, unsigned int j) {
-      return (CBV1724*)(m_vCrates[i]->GetDigitizer(j));
+   CBV1724*  GetDigi(int x) {
+      return m_vDigitizers[x];
    };
-   int           NumCrates()  {                    //Number of crates
-      return m_vCrates.size();
-   }; 
-   VMECrate*     GetCrate(int x)  {                 //Crate by index #
-      return m_vCrates[x];
-   };   
-   VMEBoard*     GetModuleByID(int moduleID);       //ID defined in .ini file
-   unsigned int  GetDigis();                        //Number of digitizers
-
+   unsigned int  GetDigis()  {
+      return m_vDigitizers.size();
+   };
+   
    //
    //For read thread - not for user use but public since threads need to access
    //
@@ -143,8 +139,11 @@ class DigiInterface
    PThreadType          m_WriteThread;
    
    //Electronics
-   vector <VMECrate*>   m_vCrates;  
-   VMEBoard*            m_RunStartModule; //NULL if no run start module defined
+//   vector <VMECrate*>   m_vCrates;
+
+   vector<CBV1724*>     m_vDigitizers;
+   vector<int>         m_vCrateHandles;
+   VMEBoard            *m_RunStartModule; //NULL if no run start module defined
    DAQRecorder         *m_DAQRecorder;
    
    unsigned int         m_iReadSize;

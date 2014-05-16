@@ -18,6 +18,9 @@
 
 #include "DAQRecorder.hh"
 
+#define REC_NONE 0
+#define REC_FILE 1
+#define REC_MONGO 2
 
 using namespace std;
 class DigiInterface;
@@ -38,6 +41,7 @@ class DataProcessor
    virtual   ~DataProcessor();
    explicit   DataProcessor(DigiInterface *digi, DAQRecorder *recorder,
 			   koOptions *options);
+   static void* WProcess(void* data);
    
    //
    // Name     : bool DataProcessor::QueryError(string &err)
@@ -45,7 +49,7 @@ class DataProcessor
    //            string err with the error and return true. 
    // 
    bool QueryError(string &err);
-
+   
  protected:
    //
    // Data formatting functions
@@ -108,8 +112,11 @@ class DataProcessor
    };
 
    koOptions        *m_koOptions;
+   int              itype;
+   virtual void Process()=0;
+   
  private:
-      
+   
    DigiInterface    *m_DigiInterface;
    DAQRecorder      *m_DAQRecorder;
    bool              m_bErrorSet;
@@ -146,16 +153,16 @@ class DataProcessor_mongodb : public DataProcessor {
    // Name      : virtual static void* DataProcessor_mongodb::WProcess(void* data);
    // Purpose   : Required pthread-compatible function to drive processing.
    // 
-   static void* WProcess(void* data);
+   //static void* WProcess(void* data);
    
- private:
+// protected:
    
    //
    // Name      : void DataProcessor_mongodb::ProcessMongoDB();
    // Purpose   : This is called by the thread-safe function to actually do the
    //             processing
    // 
-   void ProcessMongoDB();
+   void Process();
    
 };
 
@@ -181,16 +188,16 @@ class DataProcessor_protobuff : public DataProcessor {
    // Name      : virtual static void* koDataProcessor_protobuff::WProcess(void* data);
    // Purpose   : Required pthread-compatible function to drive processing
    // 
-   static void* WProcess(void* data);
+   //static void* WProcess(void* data);
    
- private:
+// protected:
    
    //
    // Name      : void DataProcessor_protobuff::ProcessProtoBuff();
    // Purpose   : This is the function called in WProcess which actually does
    //             the formatting and processing. 
    // 
-   void ProcessProtoBuff();
+   void Process();
 
 };
 
@@ -219,9 +226,9 @@ class DataProcessor_dump : public DataProcessor
    // Name      : virtual static void* koDataProcessor_dump::WProcess(void* data)
    // Purpose   : Required pthread-compatible function to drive processing
    //                                                                     
-   static void* WProcess(void* data);                                     
+   //static void* WProcess(void* data);                                     
    
- private:                                                                 
+// protected:                                                                 
    
    //                                                                     
    // Name      : void DataProcessor_dump::Process();

@@ -44,7 +44,6 @@ CBV1724::CBV1724(BoardDefinition_t BoardDef, koLogger *kLog)
 int CBV1724::Initialize(koOptions *options)
 {
    int retVal=0;
-//   cout<<"Initializing"<<endl;
    for(int x=0;x<options->GetVMEOptions();x++)  {
       if((options->GetVMEOption(x).BoardID==-1 || options->GetVMEOption(x).BoardID==fBID.BoardID)
 	 && (options->GetVMEOption(x).CrateID==-1 || options->GetVMEOption(x).CrateID==fBID.CrateID)
@@ -81,13 +80,19 @@ int CBV1724::Initialize(koOptions *options)
    if(options->GetRunOptions().BaselineMode==1)    {	
       cout<<"Determining baselines ";
       int tries = 0;
-      while(DetermineBaselines()!=0 && tries<5){
+      int ret=-1;
+      while((ret=DetermineBaselines())!=0 && tries<5){
 	 cout<<" .";
 	 tries++;
-	 if(DetermineBaselines()==-2)
-	   return -2;
+	 if(ret==-2){
+	    cout<<"Failed"<<endl;
+	    return -2;
+	 }	 
       }
-      cout<<" . . . done!"<<endl;
+      if(ret==0)
+	cout<<" . . . done!"<<endl;
+      else
+	cout<<" . . . failed!"<<endl;
    }
    else cout<<"Didn't determine baselines."<<endl;
    
@@ -118,7 +123,7 @@ unsigned int CBV1724::ReadMBLT()
       if(blt_bytes>fBufferSize)	{
 	 stringstream ss;
 	 ss<<"Board "<<fBID.BoardID<<" reports insufficient BLT buffer size."<<endl;	 
-	 LogError(ss.str());
+	 cout<<ss.str()<<endl;
 	 delete[] buff;
 	 return 0;
       }

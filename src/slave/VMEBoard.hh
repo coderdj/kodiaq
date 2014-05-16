@@ -30,7 +30,8 @@ class VMEBoard
    VMEBoard();
    explicit VMEBoard(BoardDefinition_t BID, koLogger *koLog);
    virtual ~VMEBoard();
-   
+
+       
    void SetID(BoardDefinition_t BID){
       fBID=BID;
    };
@@ -56,7 +57,7 @@ class VMEBoard
    int ReadReg16(u_int32_t address,u_int16_t &data);
    
    //Functions for board access
-   virtual int Initialize(koOptions *options);
+   virtual int Initialize(koOptions *options)=0;
 //   virtual int GetInfo();    //get info to some type of struct?
    
    //Can set if board is active

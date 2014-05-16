@@ -25,10 +25,41 @@ DataProcessor::DataProcessor()
    m_DAQRecorder   = NULL;
    m_koOptions     = NULL;
    m_bErrorSet     = false;   
+   itype=REC_NONE;
 }
 
 DataProcessor::~DataProcessor()
 {
+}
+
+void* DataProcessor::WProcess(void* data)
+{
+   
+      //This function is a bit weird, but blame pthreads for their odd syntax
+      //To use this in a pthread it has to be a virtual static void* that takes
+      //an argument of type void*. In either a stroke of brilliance or a sketchy
+      //move, we pass a DataProcessor_mongodb to the function as the void* data
+      //(calling function has to pay attention to this!) and use this object to 
+      //do the processing within the thread.
+   DataProcessor *DP = static_cast<DataProcessor_dump*>(data);
+   bool processed=false;
+#ifdef HAVE_LIBMONGOCLIENT   
+   if(DP->itype==REC_MONGO)  { 
+      DataProcessor_mongodb *dpm = dynamic_cast<DataProcessor_mongodb*>(DP);
+      dpm->Process();
+      processed=true;
+   }
+#endif
+#ifdef HAVE_LIBPBF
+   if(DP->itype==REC_FILE)  {
+      DataProcessor_protobuff *dpf = dynamic_cast<DataProcessor_protobuff*>(DP);
+      dpf->Process();
+      processed=true;
+   }
+#endif
+   if(!processed)
+     DP->Process();
+   return (void*)data;
 }
 
 DataProcessor::DataProcessor(DigiInterface *digi, DAQRecorder *recorder,
@@ -269,6 +300,7 @@ void DataProcessor::SplitDataChannelsNewFW(vector<u_int32_t*> *&buffvec, vector<
 // 
 DataProcessor_mongodb::DataProcessor_mongodb() : DataProcessor()
 {
+   itype=REC_MONGO;
 }
 
 DataProcessor_mongodb::~DataProcessor_mongodb()
@@ -280,9 +312,10 @@ DataProcessor_mongodb::DataProcessor_mongodb(DigiInterface *digi,
 					     koOptions *options)
                       :DataProcessor(digi,recorder,options)
 {
+   itype=REC_MONGO;
 }
 
-void* DataProcessor_mongodb::WProcess(void* data)
+/*void* DataProcessor_mongodb::WProcess(void* data)
 {
    //This function is a bit weird, but blame pthreads for their odd syntax
    //To use this in a pthread it has to be a virtual static void* that takes
@@ -293,9 +326,9 @@ void* DataProcessor_mongodb::WProcess(void* data)
    DataProcessor_mongodb *DP = static_cast<DataProcessor_mongodb*>(data);
    DP->ProcessMongoDB();
    return (void*)data;
-}
+}*/
 //
-void DataProcessor_mongodb::ProcessMongoDB()
+void DataProcessor_mongodb::Process()
 {
    // Creates BSON objects out of a data buffer according to the .ini options
    // Designed to run within a pthread. Will run until ExitCondition is reached
@@ -329,11 +362,10 @@ void DataProcessor_mongodb::ProcessMongoDB()
    
    while(!bExitCondition) {
       bExitCondition = true;
-      for(int x=0; x<fDigiInterface->NumCrates();x++)  {	   
-	 for(unsigned int y=0;y<fDigiInterface->GetCrate(x)->GetDigitizers();y++)  {		
-	    CBV1724 *digi = (*fDigiInterface)(x,y);
+      for(unsigned int x=0; x<fDigiInterface->GetDigis();x++)  {	   
+	 CBV1724 *digi = fDigiInterface->GetDigi(x);
 	    if(digi->Activated())         bExitCondition=false;
-	    
+	 
 	    //Data buffer of "filled" digi is only locked for long enough to 
 	    //get the data out. Then it can go back to taking data.
 	    if(digi->RequestDataLock()!=0) continue;
@@ -436,16 +468,15 @@ void DataProcessor_mongodb::ProcessMongoDB()
 		  }		  
 	       }	       		  	    	       
 	    }//end for through nBuff
-	    if(channels!=NULL) delete channels;
-	    if(times!=NULL) delete times;
-	    if(buffvec!=NULL) delete buffvec;
-	    if(sizevec!=NULL) delete sizevec;	    
-	    buffvec=NULL;
-	    sizevec=channels=times=NULL;
-	    if(vInsertVec==NULL) break;	    
-	 }//end loop through digis
-	 if(vInsertVec==NULL) break; //get out if mongo is failing
-      }//end loop through crates      	 
+	 if(channels!=NULL) delete channels;
+	 if(times!=NULL) delete times;
+	 if(buffvec!=NULL) delete buffvec;
+	 if(sizevec!=NULL) delete sizevec;	    
+	 buffvec=NULL;
+	 sizevec=channels=times=NULL;
+	 if(vInsertVec==NULL) break;	    
+      }//end loop through digis
+      if(vInsertVec==NULL) break; //get out if mongo is failing      
    }//end while(!ExitCondition)
    if(vInsertVec!=NULL) delete vInsertVec; //should this ever happen?
    return;
@@ -459,6 +490,7 @@ void DataProcessor_mongodb::ProcessMongoDB()
 // 
 DataProcessor_protobuff::DataProcessor_protobuff() : DataProcessor()
 {
+   itype=REC_FILE;
 }
 
 DataProcessor_protobuff::~DataProcessor_protobuff()
@@ -470,18 +502,19 @@ DataProcessor_protobuff::DataProcessor_protobuff(DigiInterface *digi,
 						 koOptions *options)
                         :DataProcessor(digi,recorder,options)
 {
+   itype=REC_FILE;
 }
 
-
+/*
 void* DataProcessor_protobuff::WProcess(void* data)
 {
    //pthread compatible function, same as for koDataProcessor_mongodb::WProcess
    DataProcessor_protobuff *DP = static_cast<DataProcessor_protobuff*>(data);
    DP->ProcessProtoBuff();
    return (void*)data;
-}
+}*/
 
-void DataProcessor_protobuff::ProcessProtoBuff()
+void DataProcessor_protobuff::Process()
 {		 
    bool      bExitCondition     = false;
    int       iModule            = -1;
@@ -506,9 +539,8 @@ void DataProcessor_protobuff::ProcessProtoBuff()
    
    while(!bExitCondition) {
       bExitCondition = true;
-      for(int x=0; x<fDigiInterface->NumCrates();x++)  {
-	 for(unsigned int y=0;y<fDigiInterface->GetCrate(x)->GetDigitizers();y++)  {
-	    CBV1724 *digi = (*fDigiInterface)(x,y);
+      for(unsigned int x=0; x<fDigiInterface->GetDigis();x++)  {
+	 CBV1724 *digi = fDigiInterface->GetDigi(x);
 	    //keep exit condition false as long as at least one board is active
 	    if(digi->Activated())         bExitCondition=false;
       
@@ -587,7 +619,6 @@ void DataProcessor_protobuff::ProcessProtoBuff()
 	    if(eventIndices!=NULL) delete eventIndices;
 	    buffvec=NULL;
 	    eventIndices=sizevec=channels=times=NULL;
-	 }	 
       }      
    }      
    
@@ -617,13 +648,13 @@ DataProcessor_dump::DataProcessor_dump(DigiInterface *digi,
 {
 }
 
-
+/*
 void* DataProcessor_dump::WProcess(void* data)
 {
    DataProcessor_dump *DP = static_cast<DataProcessor_dump*>(data);
    DP->Process();
    return (void*)data;
-}
+}*/
 
 void DataProcessor_dump::Process()
 {
@@ -643,9 +674,8 @@ void DataProcessor_dump::Process()
    
    while(!bExitCondition) {
       bExitCondition = true;
-      for(int x=0; x<fDigiInterface->NumCrates();x++)  {
-         for(unsigned int y=0;y<fDigiInterface->GetCrate(x)->GetDigitizers();y++)  {
-            CBV1724 *digi = (*fDigiInterface)(x,y);
+      for(unsigned int x=0; x<fDigiInterface->GetDigis();x++)  {
+	 CBV1724 *digi = fDigiInterface->GetDigi(x);
 	    //keep exit condition false as long as at least one board is active
             if(digi->Activated())         bExitCondition=false;
 
@@ -679,8 +709,7 @@ void DataProcessor_dump::Process()
 	    if(buffvec!=NULL) delete buffvec;
 	    if(sizevec!=NULL) delete sizevec;
 	    buffvec=NULL;
-	    sizevec=channels=times=NULL;	    	    	    
-	 }
+	    sizevec=channels=times=NULL;	    	    	    	 
       }
    }
    return;
