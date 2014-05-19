@@ -104,6 +104,8 @@ html_theme_options = {
 'navbar_title' : "kodiaq",
 'navbar_site_name' : "kodiaq",
 'globaltoc_depth':2,
+'navbar_class': "navbar navbar-inverse",
+'navbar_fixed_top': "true",
 }
 
 # Add any paths that contain custom themes here, relative to this directory.
