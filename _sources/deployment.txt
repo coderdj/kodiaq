@@ -11,8 +11,8 @@ kodiaq consists of three parts:
 All of these modules are required for running. Installation and
 configuration of the modules will be described in this section.
 
-All three modules require the libXeDAQ, which is compiled
-automatically no matter which modules are added. The libXeDAQ contains
+All three modules require the libkodiaq, which is compiled
+automatically no matter which modules are added. The libkodiaq library contains
 shared code for the network protocols, options file handling, logging,
 and other assorted helper functions. The source for this library is
 found in src/common.
