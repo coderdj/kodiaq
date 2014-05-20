@@ -34,6 +34,7 @@ Contents
    deployment 
    options 
    protocols
+   monitoringdatabase
    jargon
    help
 

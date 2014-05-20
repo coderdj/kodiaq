@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 
 
@@ -5,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Search &mdash; kodiaq 0.9 documentation</title>
+    <title>Monitoring DB &mdash; kodiaq 0.9 documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -25,23 +26,17 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="_static/searchtools.js"></script>
     <script type="text/javascript" src="_static/js/jquery-1.11.0.min.js"></script>
     <script type="text/javascript" src="_static/js/jquery-fix.js"></script>
     <script type="text/javascript" src="_static/bootstrap-3.1.0/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <link rel="top" title="kodiaq 0.9 documentation" href="index.html" />
-  <script type="text/javascript">
-    jQuery(function() { Search.loadIndex("searchindex.js"); });
-  </script>
-  
-  <script type="text/javascript" id="searchindexloader"></script>
-  
+    <link rel="next" title="Jargon Glossary" href="jargon.html" />
+    <link rel="prev" title="Data Formats" href="protocols.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
 <meta name="apple-mobile-web-app-capable" content="yes">
-
 
   </head>
   <body>
@@ -69,6 +64,15 @@
         
          
             
+
+<li>
+    <a href="protocols.html" title="Previous Chapter: Data Formats"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm">&laquo; Data Formats</span>
+    </a>
+  </li>
+  <li>
+    <a href="jargon.html" title="Next Chapter: Jargon Glossary"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm">Jargon Glossary &raquo;</span>
+    </a>
+  </li>
           
         
         
@@ -78,6 +82,13 @@
       
       <!--          
 		    
+<form class="navbar-form navbar-right" action="search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
 		     -->
     </div>
   </div>
@@ -86,7 +97,7 @@
 <div class="container">
   <div class="row">
       <div class="col-md-3">
-        <div id="sidebar" class="bs-sidenav" role="complementary"><ul>
+        <div id="sidebar" class="bs-sidenav" role="complementary"><ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="intro.html">Welcome</a></li>
 <li class="toctree-l1"><a class="reference internal" href="webinterface.html">A Tour of the Web Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation of the client UI</a></li>
@@ -94,7 +105,10 @@
 <li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment of the Full System</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options.html">DAQ Options</a></li>
 <li class="toctree-l1"><a class="reference internal" href="protocols.html">Data Formats</a></li>
-<li class="toctree-l1"><a class="reference internal" href="monitoringdatabase.html">Monitoring DB</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Monitoring DB</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#run-modes">Run Modes</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="jargon.html">Jargon Glossary</a></li>
 <li class="toctree-l1"><a class="reference internal" href="help.html">Help</a></li>
 </ul>
@@ -107,7 +121,7 @@
      href="index.html">contents <b class="caret"></b></a>
   <ul class="dropdown-menu globaltoc"
       role="menu"
-      aria-labelledby="dLabelGlobalToc"><ul>
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="intro.html">Welcome</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#scope-of-the-program">Scope of the program</a></li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#use-guidelines">Use Guidelines</a></li>
@@ -158,8 +172,8 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="monitoringdatabase.html">Monitoring DB</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="monitoringdatabase.html#run-modes">Run Modes</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Monitoring DB</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#run-modes">Run Modes</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="jargon.html">Jargon Glossary</a></li>
@@ -167,39 +181,59 @@
 </ul>
 </ul>
 </li> -->
+<form action="search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
         </div>
       </div>
     <div class="col-md-9">
       
-  <h1 id="search-documentation">Search</h1>
-  <div id="fallback" class="admonition warning">
-  <script type="text/javascript">$('#fallback').hide();</script>
-  <p>
-    Please activate JavaScript to enable the search
-    functionality.
-  </p>
-  </div>
-  <p>
-    From here you can search these documents. Enter your search
-    words into the box below and click "search". Note that the search
-    function will automatically search for all of the words. Pages
-    containing fewer words won't appear in the result list.
-  </p>
+  <div class="section" id="monitoring-db">
+<h1>Monitoring DB<a class="headerlink" href="#monitoring-db" title="Permalink to this headline">¶</a></h1>
+<p>A mongodb exists exclusively for the storage of monitoring and backend
+operational data. The data will be described in this section. This
+database is shared by the event builder, data processor, and file
+builder (all separate packages) and the databases corresponding to
+these elements can be found in their documentation.</p>
+<div class="section" id="run-modes">
+<h2>Run Modes<a class="headerlink" href="#run-modes" title="Permalink to this headline">¶</a></h2>
+<p>The run mode database contains all DAQ run modes that have been
+defined. Each run mode is a mongodb document. The following fields are
+defined:</p>
+<table border="1" class="table-hover docutils">
+<colgroup>
+<col width="6%" />
+<col width="9%" />
+<col width="14%" />
+<col width="71%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Field</th>
+<th class="head">Type</th>
+<th class="head">Option</th>
+<th class="head">Notes</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>Registers</td>
+<td>vector&lt;int64&gt;</td>
+<td>Set register values</td>
+<td><div class="first last line-block">
+<div class="line">Format is 0xFFFFFFFF FFFFFFFF (64-bits). The lower 2 bytes define the module (0 for all modules.</div>
+<div class="line">The next 2 bytes define the register to be set. The upper 8 bytes give the register value.</div>
+<div class="line">This looks like 0x VVVVVVVV RRRRMMMM (where V-value, R-register, M-module).</div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 
-  
-  <form class="form-inline" action="" method="get">
-    <div class="form-group">
-      <input type="text" class="form-control" name="q" value="" />
-    </div>
-    <input type="submit" class="btn btn-default" value="search" />
-    <span id="search-progress" style="padding-left: 10px"></span>
-  </form>  
-  
-  
-  
-  <div id="search-results">
-  
-  </div>
 
     </div>
       
