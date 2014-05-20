@@ -102,10 +102,11 @@ html_theme = 'bootstrap'
 #html_theme_options = {}
 html_theme_options = {
 'navbar_title' : "kodiaq",
-'navbar_site_name' : "kodiaq",
+'navbar_site_name' : "contents",
 'globaltoc_depth':2,
 'navbar_class': "navbar navbar-inverse",
 'navbar_fixed_top': "true",
+'source_link_position': "",
 }
 
 # Add any paths that contain custom themes here, relative to this directory.
