@@ -103,7 +103,7 @@ html_theme = 'bootstrap'
 html_theme_options = {
 'navbar_title' : "kodiaq",
 'navbar_site_name' : "contents",
-'globaltoc_depth':2,
+'globaltoc_depth':3,
 'navbar_class': "navbar navbar-inverse",
 'navbar_fixed_top': "true",
 'source_link_position': "",
@@ -145,7 +145,7 @@ html_static_path = ['_static']
 # Custom sidebar templates, maps document names to template names.
 #html_sidebars = {}
 html_sidebars = {
-   '**': ['globaltoc.html','localtoc.html', 'searchbox.html'],
+   '**': ['globaltoc.html','searchbox.html'],
    }
 
 # Additional templates that should be rendered to pages, maps page names to

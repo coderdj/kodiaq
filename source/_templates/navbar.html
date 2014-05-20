@@ -16,8 +16,8 @@
       <span class="navbar-text navbar-version pull-left"><b>{{ version|e }}</b></span>
     </div>
     
-    <div class="collapse navbar-collapse nav-collapse">
-      <ul class="nav navbar-nav">
+    <div class="collapse navbar-collapse"><!-- nav-collapse">-->
+      <ul class="nav navbar-nav pull-right">
         <!--<li class="divider-vertical"></li>  -->
         {% if theme_navbar_links %}
         {%- for link in theme_navbar_links %}
@@ -25,13 +25,9 @@
         {%- endfor %}
         {% endif %}
         {% block navbartoc %}
-	<!--              {% include "globaltoc.html" %} -->
-<!--          {% if theme_navbar_pagenav %}
-            {% include "navbartoc.html" %}
-	  {% endif %}-->
         {% endblock %}
         {% if theme_navbar_sidebarrel %}
-          {% block sidebarrel %}
+         {% block sidebarrel %}
             {% include "relations.html" %}
           {% endblock %}
         {% endif %}
