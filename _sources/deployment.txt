@@ -4,9 +4,9 @@ Deployment of the Full System
 
 kodiaq consists of three parts:
 
-  * The master module runs on one computer and manages the entire system
-  * Slave modules run on each readout PC and drive the boards
-  * User modules are used to log into the master and steer the DAQ
+* The master module runs on one computer and manages the entire system
+* Slave modules run on each readout PC and drive the boards
+* User modules are used to log into the master and steer the DAQ
 
 All of these modules are required for running. Installation and
 configuration of the modules will be described in this section.
@@ -30,6 +30,7 @@ while the user does not. End users may not want to install mongodb
 just to use the DAQ UI. Therefore the configure script has several
 flags that tell kodiaq which modules to include.
 
+.. cssclass:: table-hover
 +--------------------+----------------------------------------+
 | Argument           |  Description                           |
 +====================+========================================+
@@ -54,6 +55,7 @@ compiles only the activated modules.
 Summary of Dependencies per Module
 ----------------------------------
 
+.. cssclass:: table-hover
 +--------------------+----------------------------------------+
 | Module             |  Dependencies                          |
 +====================+========================================+
@@ -84,20 +86,20 @@ Deployment, Step by Step
 Here is a general outline of the steps needed to deploy a system. More
 specific information on each step will be found in later sections.
 
-   1. Hook up the hardware. A readout PC (from now on called a slave)
-      needs a CAEN A2818 or A3818 PCI(e) card. Up to 8 digitizers can
-      be hooked up via optical link. You also need one V2718 crate
-      controller with output '0' fanned to the s-in of all digitizers.
-   2. Install the koSlave module on each slave PC. Start the daemon in
-      a detached screen.
-   3. Find a spot for the master module to live. It is suggested to
-      use an independent PC as dispatcher but also possible to install
-      it alongside a slave. Install the master here. Make sure the
-      linkage between master and slave is defined correctly. Start the
-      master daemon in a detached screen.
-   4. Write your options file. Use the default as a base. You will
-      need to define the physical electronics setup exactly.
-   5. Log into the UI and start the DAQ!
+1. Hook up the hardware. A readout PC (from now on called a slave)
+   needs a CAEN A2818 or A3818 PCI(e) card. Up to 8 digitizers can
+   be hooked up via optical link. You also need one V2718 crate
+   controller with output '0' fanned to the s-in of all digitizers.
+2. Install the koSlave module on each slave PC. Start the daemon in
+   a detached screen.
+3. Find a spot for the master module to live. It is suggested to
+   use an independent PC as dispatcher but also possible to install
+   it alongside a slave. Install the master here. Make sure the
+   linkage between master and slave is defined correctly. Start the
+   master daemon in a detached screen.
+4. Write your options file. Use the default as a base. You will
+   need to define the physical electronics setup exactly.
+5. Log into the UI and start the DAQ!
 
 The specifics on installing the slave and master, as well as how to
 write an options file are given in the next sections.
@@ -114,20 +116,23 @@ that runs all the time and listens for connections to the master.
 There are several dependencies that must be met for the slave module
 to work.
   
-   * You need a PC with a CAEN A2818 or A3818 PCI(-e) card installed
-     and also the proper drivers.
-   * There are several library dependencies
-      * CAENVMElib (available from CAEN, this is a closed-source
-        library)
-      * mongodb greater than version 2.55 (earlier versions can work with
-        a slight modification to the source code). Specifically
-	libmongoclient is needed. 
-      * libsnappy for on-the-fly compression
-      * libpthread for parallel processing
-      * Google protocol buffers libraries (called libprotobuf-dev on
-        ubuntu)
-      * Normal build libraries (build-essential package on ubuntu)
-     
+* You need a PC with a CAEN A2818 or A3818 PCI(-e) card installed
+   and also the proper drivers.
+* There are several library dependencies
+   * CAENVMElib (available from CAEN, this is a closed-source
+     library)
+   * mongodb greater than version 2.55 (earlier versions can work with
+     a slight modification to the source code). Specifically
+     lbmongoclient is needed. 
+   * libsnappy for on-the-fly compression
+   * libpthread for parallel processing
+   * Google protocol buffers libraries (called libprotobuf-dev on
+     ubuntu)
+   * libpbf for file output
+   * Normal build libraries (build-essential package on ubuntu)
+   
+.. note:: It is possible to compile without libmongoclient and/or libprotobuf/libpbf. If you compile without libmongoclient you will not be able to output to a mongodb. If you compile without libprotobuf or libpbf you will not be able to write to file. Depending on your installation one of these may be fine. You will be notified at the end of the configure script which output forms are available on your system.
+
 Checkout the code from github. To compile use the following steps: ::
     
       cd kodiaq (top-level directory)
@@ -185,7 +190,7 @@ edited while the master is running. For an exampe .ini file take a
 look in src/master/data/RunModes/DAQOptionsMaster.ini. 
 
 
-Deployment of the Standalone Slave Module
+Deployment of the Standalone Reader Module
 -----------------------------------------
 
 It is also possible to deploy a standalone module for running small
@@ -199,6 +204,8 @@ following commands: ::
     cd kodiaq
     ./configure --enable-lite
     make
+
+.. note:: As with the slave module, the lite module will automatically detect if you have libmongoclient (for mongodb output) and libpbf/libprotobuf (for file output). If you are missing these libraries certain output modes will be unavailable. You will be informed at the end of the configure script which output modes have been found on your system.
 
 Assuming you are successful, the koSlave executable should be
 installed with a special flag that allows local operation. To operate
@@ -216,9 +223,5 @@ The lite program has only two options. The DAQ is started with the 's'
 key. Pressing the 'q' key at any time will shut down the DAQ and stop
 the program.
 
-Currently the standalone module requires a mongodb database and the
-mongo C++ driver. It is anticipated that the ability to write directly
-to files (which would allow the mongodb driver dependency to be
-removed) will be added in a future update.
 
 

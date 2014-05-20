@@ -74,6 +74,10 @@
 <li class="toctree-l2"><a class="reference internal" href="intro.html#use-guidelines">Use Guidelines</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="webinterface.html">A Tour of the Web Interface</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="webinterface.html#introduction">Introduction</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation of the client UI</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#fetching-the-source-code">Fetching the source code</a></li>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#compiling-the-ui-module">Compiling the UI module</a></li>
@@ -81,6 +85,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="usage.html">Using the Client Program</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#logging-in">Logging In</a></li>
 <li class="toctree-l2"><a class="reference internal" href="usage.html#daq-status-window">DAQ Status window</a></li>
 <li class="toctree-l2"><a class="reference internal" href="usage.html#control-window">Control Window</a></li>
 <li class="toctree-l2"><a class="reference internal" href="usage.html#messages-window">Messages Window</a></li>
@@ -91,7 +96,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#deployment-step-by-step">Deployment, Step by Step</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#koslave">koSlave</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#komaster">koMaster</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#deployment-of-the-standalone-slave-module">Deployment of the Standalone Slave Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#deployment-of-the-standalone-reader-module">Deployment of the Standalone Reader Module</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="options.html">DAQ Options</a><ul>
@@ -129,7 +134,7 @@
 <li><a class="reference internal" href="#run-modes">Run Modes</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#deployment-of-the-standalone-slave-module">Deployment of the Standalone Slave Module</a></li>
+<li><a class="reference internal" href="#deployment-of-the-standalone-reader-module">Deployment of the Standalone Reader Module</a></li>
 </ul>
 </li>
 </ul>
@@ -186,6 +191,10 @@
 <li class="toctree-l2"><a class="reference internal" href="intro.html#use-guidelines">Use Guidelines</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="webinterface.html">A Tour of the Web Interface</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="webinterface.html#introduction">Introduction</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation of the client UI</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#fetching-the-source-code">Fetching the source code</a></li>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#compiling-the-ui-module">Compiling the UI module</a></li>
@@ -193,6 +202,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="usage.html">Using the Client Program</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#logging-in">Logging In</a></li>
 <li class="toctree-l2"><a class="reference internal" href="usage.html#daq-status-window">DAQ Status window</a></li>
 <li class="toctree-l2"><a class="reference internal" href="usage.html#control-window">Control Window</a></li>
 <li class="toctree-l2"><a class="reference internal" href="usage.html#messages-window">Messages Window</a></li>
@@ -203,7 +213,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#deployment-step-by-step">Deployment, Step by Step</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#koslave">koSlave</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#komaster">koMaster</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#deployment-of-the-standalone-slave-module">Deployment of the Standalone Slave Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#deployment-of-the-standalone-reader-module">Deployment of the Standalone Reader Module</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="options.html">DAQ Options</a><ul>
@@ -231,7 +241,7 @@
 <li><a class="reference internal" href="#run-modes">Run Modes</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#deployment-of-the-standalone-slave-module">Deployment of the Standalone Slave Module</a></li>
+<li><a class="reference internal" href="#deployment-of-the-standalone-reader-module">Deployment of the Standalone Reader Module</a></li>
 </ul>
 </li>
 </ul>
@@ -250,13 +260,11 @@
   <div class="section" id="deployment-of-the-full-system">
 <h1>Deployment of the Full System<a class="headerlink" href="#deployment-of-the-full-system" title="Permalink to this headline">¶</a></h1>
 <p>kodiaq consists of three parts:</p>
-<blockquote>
-<div><ul class="simple">
+<ul class="simple">
 <li>The master module runs on one computer and manages the entire system</li>
 <li>Slave modules run on each readout PC and drive the boards</li>
 <li>User modules are used to log into the master and steer the DAQ</li>
 </ul>
-</div></blockquote>
 <p>All of these modules are required for running. Installation and
 configuration of the modules will be described in this section.</p>
 <p>All three modules require the libkodiaq, which is compiled
@@ -275,7 +283,7 @@ For example the master and slave modules require the mongodb driver
 while the user does not. End users may not want to install mongodb
 just to use the DAQ UI. Therefore the configure script has several
 flags that tell kodiaq which modules to include.</p>
-<table border="1" class="docutils">
+<table border="1" class="table-hover docutils">
 <colgroup>
 <col width="33%" />
 <col width="67%" />
@@ -312,7 +320,7 @@ dependencies for each module are installed. The make script then
 compiles only the activated modules.</p>
 <div class="section" id="summary-of-dependencies-per-module">
 <h2>Summary of Dependencies per Module<a class="headerlink" href="#summary-of-dependencies-per-module" title="Permalink to this headline">¶</a></h2>
-<table border="1" class="docutils">
+<table border="1" class="table-hover docutils">
 <colgroup>
 <col width="33%" />
 <col width="67%" />
@@ -375,8 +383,7 @@ compiles only the activated modules.</p>
 <h2>Deployment, Step by Step<a class="headerlink" href="#deployment-step-by-step" title="Permalink to this headline">¶</a></h2>
 <p>Here is a general outline of the steps needed to deploy a system. More
 specific information on each step will be found in later sections.</p>
-<blockquote>
-<div><ol class="arabic simple">
+<ol class="arabic simple">
 <li>Hook up the hardware. A readout PC (from now on called a slave)
 needs a CAEN A2818 or A3818 PCI(e) card. Up to 8 digitizers can
 be hooked up via optical link. You also need one V2718 crate
@@ -392,7 +399,6 @@ master daemon in a detached screen.</li>
 need to define the physical electronics setup exactly.</li>
 <li>Log into the UI and start the DAQ!</li>
 </ol>
-</div></blockquote>
 <p>The specifics on installing the slave and master, as well as how to
 write an options file are given in the next sections.</p>
 </div>
@@ -404,10 +410,12 @@ as pushing the data stream to mongodb. The koSlave module is a daemon
 that runs all the time and listens for connections to the master.</p>
 <p>There are several dependencies that must be met for the slave module
 to work.</p>
-<blockquote>
-<div><ul>
-<li><p class="first">You need a PC with a CAEN A2818 or A3818 PCI(-e) card installed
-and also the proper drivers.</p>
+<ul>
+<li><dl class="first docutils">
+<dt>You need a PC with a CAEN A2818 or A3818 PCI(-e) card installed</dt>
+<dd><p class="first last">and also the proper drivers.</p>
+</dd>
+</dl>
 </li>
 <li><dl class="first docutils">
 <dt>There are several library dependencies</dt>
@@ -416,18 +424,22 @@ and also the proper drivers.</p>
 library)</li>
 <li>mongodb greater than version 2.55 (earlier versions can work with
 a slight modification to the source code). Specifically
-libmongoclient is needed.</li>
+lbmongoclient is needed.</li>
 <li>libsnappy for on-the-fly compression</li>
 <li>libpthread for parallel processing</li>
 <li>Google protocol buffers libraries (called libprotobuf-dev on
 ubuntu)</li>
+<li>libpbf for file output</li>
 <li>Normal build libraries (build-essential package on ubuntu)</li>
 </ul>
 </dd>
 </dl>
 </li>
 </ul>
-</div></blockquote>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">It is possible to compile without libmongoclient and/or libprotobuf/libpbf. If you compile without libmongoclient you will not be able to output to a mongodb. If you compile without libprotobuf or libpbf you will not be able to write to file. Depending on your installation one of these may be fine. You will be notified at the end of the configure script which output forms are available on your system.</p>
+</div>
 <p>Checkout the code from github. To compile use the following steps:</p>
 <div class="highlight-python"><pre>cd kodiaq (top-level directory)
 ./configure --enable-slave (optionally --disable-user if the UI is not needed)
@@ -475,8 +487,8 @@ edited while the master is running. For an exampe .ini file take a
 look in src/master/data/RunModes/DAQOptionsMaster.ini.</p>
 </div>
 </div>
-<div class="section" id="deployment-of-the-standalone-slave-module">
-<h2>Deployment of the Standalone Slave Module<a class="headerlink" href="#deployment-of-the-standalone-slave-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="deployment-of-the-standalone-reader-module">
+<h2>Deployment of the Standalone Reader Module<a class="headerlink" href="#deployment-of-the-standalone-reader-module" title="Permalink to this headline">¶</a></h2>
 <p>It is also possible to deploy a standalone module for running small
 DAQ systems. This consists of the slave module which is steered via a
 text-based interface on the console.</p>
@@ -486,6 +498,10 @@ following commands:</p>
 <div class="highlight-python"><pre>cd kodiaq
 ./configure --enable-lite
 make</pre>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">As with the slave module, the lite module will automatically detect if you have libmongoclient (for mongodb output) and libpbf/libprotobuf (for file output). If you are missing these libraries certain output modes will be unavailable. You will be informed at the end of the configure script which output modes have been found on your system.</p>
 </div>
 <p>Assuming you are successful, the koSlave executable should be
 installed with a special flag that allows local operation. To operate
@@ -500,10 +516,6 @@ this file are described later in this documentation.</p>
 <p>The lite program has only two options. The DAQ is started with the &#8216;s&#8217;
 key. Pressing the &#8216;q&#8217; key at any time will shut down the DAQ and stop
 the program.</p>
-<p>Currently the standalone module requires a mongodb database and the
-mongo C++ driver. It is anticipated that the ability to write directly
-to files (which would allow the mongodb driver dependency to be
-removed) will be added in a future update.</p>
 </div>
 </div>
 
