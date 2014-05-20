@@ -27,10 +27,7 @@ default setup. The top line is the address of the computer running the
 koMaster program (dispatcher). The next two lines define the ports
 over which internal communication will take place.
 
-.. note:: You have to have the ability to actually connect to the
-dispatcher in order for this to work. If the dispatcher is sitting
-behind a firewall, for example, you will need to get inside or forward
-the ports before connecting.
+.. note:: You have to have the ability to actually connect to the dispatcher in order for this to work. If the dispatcher is sitting behind a firewall, for example, you will need to get inside or forward the ports before connecting.
 
 DAQ Status window
 ------------------
@@ -81,6 +78,8 @@ The control window is on the top left and allows the user to control
 the DAQ. The options provided are dependent on the current state of
 the DAQ. The following table describes what each option does and under
 what states the option is available.
+
+.. cssclass:: table-hover
 
 +------------------+--------------------+-----------------------------------------+
 | Command          | States             | Action                                  |
