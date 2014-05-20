@@ -22,7 +22,10 @@ arbitrarily fast throughput speeds. A central dispatcher (the master)
 controls several client modules for readout (the slaves). The master
 and slave daemons are always running and require no intervention from
 the user. Users control the DAQ by logging into the master using a
-control interface. 
+control interface. Additionally a web interface exists which ties the
+kodiaq (reader), cito (event builder), and wax (data processor)
+together. The web interface provides basic end user control and
+monitoring.
 
 This guide covers how to install and log into the DAQ.
 

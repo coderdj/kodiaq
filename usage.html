@@ -74,6 +74,10 @@
 <li class="toctree-l2"><a class="reference internal" href="intro.html#use-guidelines">Use Guidelines</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="webinterface.html">A Tour of the Web Interface</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="webinterface.html#introduction">Introduction</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation of the client UI</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#fetching-the-source-code">Fetching the source code</a></li>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#compiling-the-ui-module">Compiling the UI module</a></li>
@@ -81,6 +85,7 @@
 </ul>
 </li>
 <li class="toctree-l1 current"><a class="current reference internal" href="">Using the Client Program</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#logging-in">Logging In</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#daq-status-window">DAQ Status window</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#control-window">Control Window</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#messages-window">Messages Window</a></li>
@@ -122,6 +127,7 @@
       role="menu"
       aria-labelledby="dLabelLocalToc"><ul>
 <li><a class="reference internal" href="#">Using the Client Program</a><ul>
+<li><a class="reference internal" href="#logging-in">Logging In</a></li>
 <li><a class="reference internal" href="#daq-status-window">DAQ Status window</a></li>
 <li><a class="reference internal" href="#control-window">Control Window</a></li>
 <li><a class="reference internal" href="#messages-window">Messages Window</a></li>
@@ -181,6 +187,10 @@
 <li class="toctree-l2"><a class="reference internal" href="intro.html#use-guidelines">Use Guidelines</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="webinterface.html">A Tour of the Web Interface</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="webinterface.html#introduction">Introduction</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation of the client UI</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#fetching-the-source-code">Fetching the source code</a></li>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#compiling-the-ui-module">Compiling the UI module</a></li>
@@ -188,6 +198,7 @@
 </ul>
 </li>
 <li class="toctree-l1 current"><a class="current reference internal" href="">Using the Client Program</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#logging-in">Logging In</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#daq-status-window">DAQ Status window</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#control-window">Control Window</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#messages-window">Messages Window</a></li>
@@ -219,6 +230,7 @@
 </ul>
 </li><ul>
 <li><a class="reference internal" href="#">Using the Client Program</a><ul>
+<li><a class="reference internal" href="#logging-in">Logging In</a></li>
 <li><a class="reference internal" href="#daq-status-window">DAQ Status window</a></li>
 <li><a class="reference internal" href="#control-window">Control Window</a></li>
 <li><a class="reference internal" href="#messages-window">Messages Window</a></li>
@@ -239,14 +251,31 @@
       
   <div class="section" id="using-the-client-program">
 <h1>Using the Client Program<a class="headerlink" href="#using-the-client-program" title="Permalink to this headline">¶</a></h1>
+<p>Users wanting slightly more control than provided by the web interface
+can login via the client program. The client program is also more
+responsive (updates from the slaves are processed more often) so it
+may be better for testing usage.</p>
 <p>The DAQ client program is written in ncurses and is designed to be run
-in a terminal over a remote connection. Though the ncurses library is
-not exactly cutting edge, it was chosen for its broad compatibility
-with most terminal emulators and the ability to run it over an ssh
-connection without X forwarding.</p>
+in a terminal over a remote connection. The ncurses library was chosen
+for its broad compatibility with most terminal emulators and the
+ability to run it over an ssh connection without X forwarding. This
+eliminates the need for us to handle the security.</p>
 <p>There are 3 sub-windows in the DAQ UI: control, monitoring, and
 history. The following is a basic explanation of the information
 provided and interactions possible with each.</p>
+<div class="section" id="logging-in">
+<h2>Logging In<a class="headerlink" href="#logging-in" title="Permalink to this headline">¶</a></h2>
+<p>After starting the client program you will be presented with a login
+screen. You should enter your name in the bottom line. The other three
+lines probably don&#8217;t need to be changed unless you are not running the
+default setup. The top line is the address of the computer running the
+koMaster program (dispatcher). The next two lines define the ports
+over which internal communication will take place.</p>
+<p>. note:: You have to have the ability to actually connect to the
+dispatcher in order for this to work. If the dispatcher is sitting
+behind a firewall, for example, you will need to get inside or forward
+the ports before connecting.</p>
+</div>
 <div class="section" id="daq-status-window">
 <h2>DAQ Status window<a class="headerlink" href="#daq-status-window" title="Permalink to this headline">¶</a></h2>
 <p>The DAQ status window is on the right side of the screen and is split

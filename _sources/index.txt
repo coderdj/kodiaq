@@ -28,6 +28,7 @@ Contents
    :maxdepth: 2
    
    intro
+   webinterface
    installation
    usage         
    deployment 

@@ -31,7 +31,7 @@
     <script type="text/javascript" src="_static/bootstrap-3.1.0/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <link rel="top" title="kodiaq 0.9 documentation" href="index.html" />
-    <link rel="next" title="Installation of the client UI" href="installation.html" />
+    <link rel="next" title="A Tour of the Web Interface" href="webinterface.html" />
     <link rel="prev" title="Welcome to kodiaq - The networked parallel data reader" href="index.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
@@ -74,6 +74,10 @@
 <li class="toctree-l2"><a class="reference internal" href="#use-guidelines">Use Guidelines</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="webinterface.html">A Tour of the Web Interface</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="webinterface.html#introduction">Introduction</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation of the client UI</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#fetching-the-source-code">Fetching the source code</a></li>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#compiling-the-ui-module">Compiling the UI module</a></li>
@@ -81,6 +85,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="usage.html">Using the Client Program</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#logging-in">Logging In</a></li>
 <li class="toctree-l2"><a class="reference internal" href="usage.html#daq-status-window">DAQ Status window</a></li>
 <li class="toctree-l2"><a class="reference internal" href="usage.html#control-window">Control Window</a></li>
 <li class="toctree-l2"><a class="reference internal" href="usage.html#messages-window">Messages Window</a></li>
@@ -139,7 +144,7 @@
     </a>
   </li>
   <li>
-    <a href="installation.html" title="Next Chapter: Installation of the client UI"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm">Installation of ... &raquo;</span>
+    <a href="webinterface.html" title="Next Chapter: A Tour of the Web Interface"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm">A Tour of the We... &raquo;</span>
     </a>
   </li>
               
@@ -180,6 +185,10 @@
 <li class="toctree-l2"><a class="reference internal" href="#use-guidelines">Use Guidelines</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="webinterface.html">A Tour of the Web Interface</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="webinterface.html#introduction">Introduction</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation of the client UI</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#fetching-the-source-code">Fetching the source code</a></li>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#compiling-the-ui-module">Compiling the UI module</a></li>
@@ -187,6 +196,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="usage.html">Using the Client Program</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#logging-in">Logging In</a></li>
 <li class="toctree-l2"><a class="reference internal" href="usage.html#daq-status-window">DAQ Status window</a></li>
 <li class="toctree-l2"><a class="reference internal" href="usage.html#control-window">Control Window</a></li>
 <li class="toctree-l2"><a class="reference internal" href="usage.html#messages-window">Messages Window</a></li>
@@ -253,7 +263,10 @@ arbitrarily fast throughput speeds. A central dispatcher (the master)
 controls several client modules for readout (the slaves). The master
 and slave daemons are always running and require no intervention from
 the user. Users control the DAQ by logging into the master using a
-control interface.</p>
+control interface. Additionally a web interface exists which ties the
+kodiaq (reader), cito (event builder), and wax (data processor)
+together. The web interface provides basic end user control and
+monitoring.</p>
 <p>This guide covers how to install and log into the DAQ.</p>
 </div>
 <div class="section" id="use-guidelines">

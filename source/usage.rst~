@@ -2,11 +2,16 @@
 Using the Client Program
 ========================
 
+Users wanting slightly more control than provided by the web interface
+can login via the client program. The client program is also more
+responsive (updates from the slaves are processed more often) so it
+may be better for testing usage.
+
 The DAQ client program is written in ncurses and is designed to be run
-in a terminal over a remote connection. Though the ncurses library is
-not exactly cutting edge, it was chosen for its broad compatibility
-with most terminal emulators and the ability to run it over an ssh
-connection without X forwarding. 
+in a terminal over a remote connection. The ncurses library was chosen
+for its broad compatibility with most terminal emulators and the
+ability to run it over an ssh connection without X forwarding. This
+eliminates the need for us to handle the security.
 
 There are 3 sub-windows in the DAQ UI: control, monitoring, and
 history. The following is a basic explanation of the information
@@ -99,7 +104,8 @@ Messages Window
 ------------------
 
 The messages window displays the last 1000 lines of the DAQ log file
-as well as any messages for the user. Scrolling is done with the arrow
+as well as any messages for the user (certain messages are not
+recorder in the log). Scrolling is done with the arrow
 keys or the mouse wheel. In order to place a message in the log file
 use the "Broadcast Message" command. If you want to see something
 older than 1000 lines you have to look up the actual DAQ log files. 

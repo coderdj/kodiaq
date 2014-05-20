@@ -2,15 +2,35 @@
 Using the Client Program
 ========================
 
+Users wanting slightly more control than provided by the web interface
+can login via the client program. The client program is also more
+responsive (updates from the slaves are processed more often) so it
+may be better for testing usage.
+
 The DAQ client program is written in ncurses and is designed to be run
-in a terminal over a remote connection. Though the ncurses library is
-not exactly cutting edge, it was chosen for its broad compatibility
-with most terminal emulators and the ability to run it over an ssh
-connection without X forwarding. 
+in a terminal over a remote connection. The ncurses library was chosen
+for its broad compatibility with most terminal emulators and the
+ability to run it over an ssh connection without X forwarding. This
+eliminates the need for us to handle the security.
 
 There are 3 sub-windows in the DAQ UI: control, monitoring, and
 history. The following is a basic explanation of the information
 provided and interactions possible with each.
+
+Logging In
+-----------
+
+After starting the client program you will be presented with a login
+screen. You should enter your name in the bottom line. The other three
+lines probably don't need to be changed unless you are not running the
+default setup. The top line is the address of the computer running the
+koMaster program (dispatcher). The next two lines define the ports
+over which internal communication will take place.
+
+. note:: You have to have the ability to actually connect to the
+dispatcher in order for this to work. If the dispatcher is sitting
+behind a firewall, for example, you will need to get inside or forward
+the ports before connecting.
 
 DAQ Status window
 ------------------
