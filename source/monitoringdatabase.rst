@@ -17,7 +17,7 @@ defined. Each run mode is a mongodb document. The following fields are
 defined:
 
 Registers
-=========
+---------
 
 * Type: array<int64>
 * Function: Set register values of V1724
