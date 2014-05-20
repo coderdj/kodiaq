@@ -105,8 +105,9 @@
 <li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment of the Full System</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options.html">DAQ Options</a></li>
 <li class="toctree-l1"><a class="reference internal" href="protocols.html">Data Formats</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="">Monitoring DB</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#run-modes">Run Modes</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Monitoring DB</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#run-modes">Run Modes</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#registers">Registers</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="jargon.html">Jargon Glossary</a></li>
@@ -172,8 +173,9 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l1 current"><a class="current reference internal" href="">Monitoring DB</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#run-modes">Run Modes</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Monitoring DB</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#run-modes">Run Modes</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#registers">Registers</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="jargon.html">Jargon Glossary</a></li>
@@ -199,38 +201,23 @@ operational data. The data will be described in this section. This
 database is shared by the event builder, data processor, and file
 builder (all separate packages) and the databases corresponding to
 these elements can be found in their documentation.</p>
+</div>
 <div class="section" id="run-modes">
-<h2>Run Modes<a class="headerlink" href="#run-modes" title="Permalink to this headline">¶</a></h2>
+<h1>Run Modes<a class="headerlink" href="#run-modes" title="Permalink to this headline">¶</a></h1>
 <p>The run mode database contains all DAQ run modes that have been
 defined. Each run mode is a mongodb document. The following fields are
 defined:</p>
-<table border="1" class="table-hover docutils">
-<colgroup>
-<col width="6%" />
-<col width="9%" />
-<col width="14%" />
-<col width="71%" />
-</colgroup>
-<thead valign="bottom">
-<tr class="row-odd"><th class="head">Field</th>
-<th class="head">Type</th>
-<th class="head">Option</th>
-<th class="head">Notes</th>
-</tr>
-</thead>
-<tbody valign="top">
-<tr class="row-even"><td>Registers</td>
-<td>vector&lt;int64&gt;</td>
-<td>Set register values</td>
-<td><div class="first last line-block">
-<div class="line">Format is 0xFFFFFFFF FFFFFFFF (64-bits). The lower 2 bytes define the module (0 for all modules.</div>
-<div class="line">The next 2 bytes define the register to be set. The upper 8 bytes give the register value.</div>
-<div class="line">This looks like 0x VVVVVVVV RRRRMMMM (where V-value, R-register, M-module).</div>
+<div class="section" id="registers">
+<h2>Registers<a class="headerlink" href="#registers" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Type: array&lt;int64&gt;</li>
+<li>Function: Set register values of V1724</li>
+<li>Format: 64 bit numbers. Lower 2 bytes define the module (0 for all modules). The next 2 bytes define the register to be set. The upper 8 bytes give the register value. This looks like 0x VVVVVVVV RRRRMMMM (where V-value, R-register, M-module).</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">See the CAEN manual for a description of register settings.</p>
 </div>
-</td>
-</tr>
-</tbody>
-</table>
 </div>
 </div>
 
