@@ -79,8 +79,10 @@ int MasterMongodbConnection::Initialize(string user, string runMode, string name
    //insert into collection
    mongo::BSONObj bObj = b.obj();
    try   {	
-      if(!onlineOnly)
-	fMongoDB.insert(fMongoOptions.Collection.c_str(),bObj);
+     if(!onlineOnly) {
+       fMongoDB.insert(fMongoOptions.Collection.c_str(),bObj);
+       fMongoDB.createCollection(fMongoOptions.Collection,1073741824,true);
+     }
       fMongoDB.insert("online.runs",bObj);
    }
    catch (const mongo::DBException &e) {
@@ -228,5 +230,24 @@ int MasterMongodbConnection::CheckForCommand(string &command, string &second, st
    third=b.getStringField("name");
    fMongoDB.remove("online.daqcommands",QUERY("command"<<"Start"));
    fMongoDB.remove("online.daqcommands",QUERY("command"<<"Stop")); 
+   return 0;
+}
+
+int MasterMongodbConnection::PullDataFile(string id, string &path)
+{
+   if(fMongoDB.count("online.readermodes") ==0)
+     return -1;
+return -1;
+   //Find doc corresponding to this run mode
+   mongo::BSONObjBuilder query; 
+   query.append( "mode_id" , id ); 
+//   mongo::BSONObj res = c.findOne("online.readermodes" , query.obj() ); 
+   
+   
+   ofstream outfile;
+   path=".runMode.ini";
+   outfile.open(path.c_str());
+     
+   outfile.close();
    return 0;
 }

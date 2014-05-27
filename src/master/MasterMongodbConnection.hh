@@ -22,43 +22,59 @@
 class MasterMongodbConnection
 {
 
- public: 
+public: 
    
-                MasterMongodbConnection();
-   explicit     MasterMongodbConnection(koLogger *Log);
-   virtual     ~MasterMongodbConnection();
+               MasterMongodbConnection();
+  explicit     MasterMongodbConnection(koLogger *Log);
+  virtual     ~MasterMongodbConnection();
    
-   // 
-   // Name    : Initialize
-   // Purpose : Initialize the mongodb connection according to the 
-   //           information in the koOptions object
-   // 
-   int          Initialize(string user, string runMode, string name,
+  // 
+  // Name    : Initialize
+  // Purpose : Initialize the mongodb connection according to the 
+  //           information in the koOptions object
+  // 
+  int          Initialize(string user, string runMode, string name,
 			   koOptions *options, bool onlineOnly=false);
-   //
-   // Name    : UpdateEndTime
-   // Purpose : Updates run control document with the time the run ended.
-   //           Since this field is created by this function this can also be 
-   //           seen as confirmation from the DAQ that the user stopped the run.
-   //           Also updates end time in mongodb
-   // 
-   int          UpdateEndTime(bool OnlineOnly=false);
-   //
+  //
+  // Name    : UpdateEndTime
+  // Purpose : Updates run control document with the time the run ended.
+  //           Since this field is created by this function this can also be 
+  //           seen as confirmation from the DAQ that the user stopped the run.
+  //           Also updates end time in mongodb
+  // 
+  int          UpdateEndTime(bool OnlineOnly=false);
+  
    
-   //
-   // Name    : SendLogMessage
-   // Purpose : Puts a log message into the mongodb log server for backup and
-   //           remote viewing
-   // 
-   void         SendLogMessage(string message, int priority);
-   void         AddRates(koStatusPacket_t DAQStatus);   
-   void         UpdateDAQStatus(koStatusPacket_t DAQStatus);
-   int         CheckForCommand(string &command, string &second,string &third);
+  //
+  // Name    : SendLogMessage
+  // Purpose : Puts a log message into the mongodb log server for backup and
+  //           remote viewing
+  // 
+  void         SendLogMessage(string message, int priority);
+  
+  //
+  // Names    : AddRates
+  //            UpdateDAQStatus
+  // Purpose  : Update rate and status information in online DB. 
+  //
+  void         AddRates(koStatusPacket_t DAQStatus);   
+  void         UpdateDAQStatus(koStatusPacket_t DAQStatus);
+
+  //
+  // Name    : CheckForCommand
+  // Purpose : Checks the mongodb command db for remote commands (from web)
+  int          CheckForCommand(string &command, string &second,string &third);
+  
+  //
+  // Name    : PullDataFile
+  // Purpose : Pulls a run mode file from the mongodb modes DB and saves it 
+  //           locally to the given path.
+  int          PullDataFile(string id, string &path);
  private:
-   MongodbOptions_t           fMongoOptions;
-   mongo::DBClientConnection  fMongoDB;
-   mongo::OID                 fLastDocOID;
-   koLogger                  *fLog;
+  MongodbOptions_t           fMongoOptions;
+  mongo::DBClientConnection  fMongoDB;
+  mongo::OID                 fLastDocOID;
+  koLogger                  *fLog;
 };
 
 #endif
