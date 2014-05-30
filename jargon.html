@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 
 
@@ -13,10 +12,11 @@
     <link rel="stylesheet" href="_static/bootstrap-3.1.0/css/bootstrap.min.css" type="text/css" />
     <link rel="stylesheet" href="_static/bootstrap-3.1.0/css/bootstrap-theme.min.css" type="text/css" />
     <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="_static/bstheme.css" type="text/css" />
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
+        URL_ROOT:    './',
         VERSION:     '0.9',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
@@ -30,9 +30,10 @@
     <script type="text/javascript" src="_static/js/jquery-fix.js"></script>
     <script type="text/javascript" src="_static/bootstrap-3.1.0/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
+    <script type="text/javascript" src="_static/theme.js"></script>
     <link rel="top" title="kodiaq 0.9 documentation" href="index.html" />
     <link rel="next" title="Help" href="help.html" />
-    <link rel="prev" title="Data Formats" href="protocols.html" />
+    <link rel="prev" title="Monitoring DB" href="monitoringdatabase.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
@@ -66,7 +67,7 @@
             
 
 <li>
-    <a href="protocols.html" title="Previous Chapter: Data Formats"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm">&laquo; Data Formats</span>
+    <a href="monitoringdatabase.html" title="Previous Chapter: Monitoring DB"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm">&laquo; Monitoring DB</span>
     </a>
   </li>
   <li>
@@ -96,8 +97,10 @@
 
 <div class="container">
   <div class="row">
-      <div class="col-md-3">
-        <div id="sidebar" class="bs-sidenav" role="complementary"><ul class="current">
+      <div class="col-md-3" id="leftCol">
+        <!--<div id="sidebar" class="bs-sidenav" role="complementary"> -->
+	<br><br>
+	<ul id="sidebar" class="nav nav-stacked"><ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="intro.html">Welcome</a></li>
 <li class="toctree-l1"><a class="reference internal" href="webinterface.html">A Tour of the Web Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation of the client UI</a></li>
@@ -105,6 +108,8 @@
 <li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment of the Full System</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options.html">DAQ Options</a></li>
 <li class="toctree-l1"><a class="reference internal" href="protocols.html">Data Formats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="monitoringdatabase.html">Monitoring DB</a></li>
+<li class="toctree-l1"><a class="reference internal" href="monitoringdatabase.html#run-modes">Run Modes</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="">Jargon Glossary</a></li>
 <li class="toctree-l1"><a class="reference internal" href="help.html">Help</a></li>
 </ul>
@@ -168,6 +173,11 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="monitoringdatabase.html">Monitoring DB</a></li>
+<li class="toctree-l1"><a class="reference internal" href="monitoringdatabase.html#run-modes">Run Modes</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="monitoringdatabase.html#registers">Registers</a></li>
+</ul>
+</li>
 <li class="toctree-l1 current"><a class="current reference internal" href="">Jargon Glossary</a></li>
 <li class="toctree-l1"><a class="reference internal" href="help.html">Help</a></li>
 </ul>
@@ -180,7 +190,7 @@
   <input type="hidden" name="check_keywords" value="yes" />
   <input type="hidden" name="area" value="default" />
 </form>
-        </div>
+        </ul>
       </div>
     <div class="col-md-9">
       
@@ -298,7 +308,7 @@ document</td>
     </p>
     <p>
         &copy; Copyright 2014, Daniel Coderre.<br/>
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.<br/>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.2.<br/>
     </p>
   </div>
 </footer>

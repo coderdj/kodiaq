@@ -2,11 +2,11 @@
 
 {% set theme_css_files = [] %}
 {% if theme_bootstrap_version == "3" %}
-  {% set bootstrap_version, bootstrap_additional_css, navbar_version = "3.1.0", "theme", "" %}
-  {% set bs_span_prefix = "col-md-" %}
+{% set bootstrap_version, bootstrap_additional_css, navbar_version = "3.1.0", "theme", "" %}
+{% set bs_span_prefix = "col-md-" %}
 {% else %}
-  {% set bootstrap_version, bootstrap_additional_css, navbar_version = "2.3.2", "responsive", "-2" %}
-  {% set bs_span_prefix = "span" %}
+{% set bootstrap_version, bootstrap_additional_css, navbar_version = "2.3.2", "responsive", "-2" %}
+{% set bs_span_prefix = "span" %}
 {% endif %}
 
 {% if theme_bootswatch_theme %}
@@ -37,13 +37,13 @@
 {% if not bootswatch_css_custom %}
   {% set bootswatch_css_custom = [] %}
 {% endif %}
-{% set css_files = css_files + theme_css_files + bootswatch_css_custom %}
+{% set css_files = css_files + theme_css_files + bootswatch_css_custom + ['_static/bstheme.css'] %}      
 
 {% set script_files = script_files + [
     '_static/js/jquery-1.11.0.min.js',
     '_static/js/jquery-fix.js',
     '_static/bootstrap-' + bootstrap_version + '/js/bootstrap.min.js',
-    '_static/bootstrap-sphinx.js'
+    '_static/bootstrap-sphinx.js', '_static/theme.js'
   ]
 %}
 
@@ -62,13 +62,15 @@
 
 {% if theme_bootstrap_version == "3" %}
   {%- macro bsidebar() %}
-      {%- if render_sidebar %}
-      <div class="{{ bs_span_prefix }}3">
-        <div id="sidebar" class="bs-sidenav" role="complementary">
+   {%- if render_sidebar %}
+      <div class="{{ bs_span_prefix }}3" id="leftCol">
+        <!--<div id="sidebar" class="bs-sidenav" role="complementary"> -->
+	<br><br>
+	<ul id="sidebar" class="nav nav-stacked">
           {%- for sidebartemplate in sidebars %}
             {%- include sidebartemplate %}
           {%- endfor %}
-        </div>
+        </ul>
       </div>
       {%- endif %}
   {%- endmacro %}
@@ -103,7 +105,7 @@
 {{ navBar() }}
 <div class="container">
   <div class="row">
-    {%- block sidebar1 %}{{ bsidebar() }}{% endblock %}
+      {%- block sidebar1 %}{{ bsidebar() }}{% endblock %}
     <div class="{{ bs_span_prefix }}{{ bs_content_width }}">
       {% block body %}{% endblock %}
     </div>
