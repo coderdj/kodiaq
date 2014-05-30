@@ -300,24 +300,10 @@ related to your chosen write mode.
     The second int defines the block splitting mode. This is a
     reformatting of the data before it is put into the database. The
     options are:     
-       * 0 - No block splitting. Each mongodb document will contain an
-         entire block transfer which could contain one or many event headers.
-       * 1 - coarse block splitting. Splits the block into separate
-         events. This is for the default board firmware where each
-         event is a trigger. One mongodb document contains data from
-	 all the channels for this trigger.
-       * 2 - fine block splitting. Splits the block
-         into separate events. Then further splits the events into occurrences (only
-	 works if zero length encoding is set on via VME option). This means each
-	 zero-length-encoded chunk of data is its own doc. This mode
-         only works with the default firmware and is meant to emulate
-	 the custom firmware.
-       * 3 - header extraction for custom firmware. Not yet implemented.
-    The third int is the readout threshold. This defines a minimum
-    number of documents that must be read before being inserted into
-    mongodb. Can be tuned to achieve maximum write speeds in cases
-    where rates fluctuate. At the end of a run the entire buffer will
-    be written out regardless of whether this threshold was reached or not.
+    * 0 - No block splitting. Each mongodb document will contain an entire block transfer which could contain one or many event headers.
+    * 1 - coarse block splitting. Splits the block into separate events. This is for the default board firmware where each event is a trigger. One mongodb document contains data from all the channels for this trigger.
+    * 2 - fine block splitting. Splits the block into separate events. Then further splits the events into occurrences (only works if zero length encoding is set on via VME option). This means each zero-length-encoded chunk of data is its own doc. This mode only works with the default firmware and is meant to emulate the custom firmware.
+    * 3 - header extraction for custom firmware. Not yet implemented. The third int is the readout threshold. This defines a minimum number of documents that must be read before being inserted into mongodb. Can be tuned to achieve maximum write speeds in cases where rates fluctuate. At the end of a run the entire buffer will be written out regardless of whether this threshold was reached or not.
 
   * **OUTFILE_OPTIONS {string} {int} {int}**
     This defines options for file output. The string argument defines

@@ -211,7 +211,7 @@ look in src/master/data/RunModes/DAQOptionsMaster.ini.
 
 
 Deployment of the Standalone Reader Module
------------------------------------------
+------------------------------------------
 
 It is also possible to deploy a standalone module for running small
 DAQ systems. This consists of the slave module which is steered via a
