@@ -146,6 +146,7 @@ Now make a directory for the code and install libpbf::
       cd ..
 
 We also want a newer version of mongodb so we can install that as well.::
+
       git clone https://github.com/mongodb/mongo-cxx-driver.git mongodb
       cd mongodb
       git checkout 26compat    #currently for 2.6 compatible driver
@@ -155,6 +156,7 @@ We also want a newer version of mongodb so we can install that as well.::
 Since mongo seems to change how to do this with nearly every release you may prefer to check their most recent documentation.
 
 Checkout the DAQ code from github as follows.::
+
      git clone https://github.com/XENON1T/kodiaq.git kodiaq
 
 Now compile the CAEN software. There is a copy of this bundled with kodiaq or you can get the most recent versions from http://www.caen.it. The CAEN software is in kodiaq/caen. You need to install CAENVMElib and the driver for your PCI card (A2818 or A3818). The instructions for installation are given in the README files within these directories. 
