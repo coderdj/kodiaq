@@ -105,6 +105,9 @@ static struct proc_dir_entry *a3818_procdir;
 
 static struct file_operations a3818_fops =
 {
+#if LINUX_VERSION_CODE >= VERSION(3,10,00)
+ read:       a3818_procinfo,
+#endif
 #if LINUX_VERSION_CODE >= VERSION(2,6,11)
         unlocked_ioctl: 	a3818_ioctl_unlocked,
 #else
@@ -605,8 +608,10 @@ static int a3818_procinfo(char *buf, char **start, off_t fpos, int lenght,
         ----------------------------------------------------------------------
 */
 static void a3818_register_proc(void) {
-	a3818_procdir = create_proc_entry("a3818", S_IFREG | S_IRUGO, 0);
-	a3818_procdir->read_proc = a3818_procinfo;
+  a3818_procdir = proc_create_data("a2818",0,NULL,&a3818_fops,a3818_procinfo);
+
+  //  a3818_procdir = create_proc_entry("a3818", S_IFREG | S_IRUGO, 0);
+  //	a3818_procdir->read_proc = a3818_procinfo;
 }
 
 /*      ----------------------------------------------------------------------

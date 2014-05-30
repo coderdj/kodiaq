@@ -60,6 +60,11 @@ AS_IF([test "x$enable_slave" = "xyes"], [
     AC_CHECK_LIB(pthread,pthread_mutex_init,[],AC_MSG_ERROR([libpthread missing.]))
     AC_CHECK_LIB(CAENVME,CAENVME_Init,[],AC_MSG_ERROR([libCAENVME missing.]))
     AC_CHECK_LIB(snappy,_ZN6snappy11RawCompressEPKcmPcPm,[],AC_MSG_ERROR([libsnappy missing.]))
+    AC_CHECK_LIB(boost_system,main,[],AC_MSG_ERROR([libboost_system missing.]))
+    AC_CHECK_LIB(boost_program_options,main,[],AC_MSG_ERROR([libboost_program_options missing.]))
+    AC_CHECK_LIB(boost_filesystem,main,[],AC_MSG_ERROR([libboost_filesystem missing.]))
+    AC_CHECK_LIB(boost_thread,main,[],AC_MSG_ERROR([libboost_thread missing.]))
+
     ], [
     AM_CONDITIONAL(WITH_SLAVE,false)
     ])

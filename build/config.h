@@ -7,11 +7,25 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #define HAVE_INTTYPES_H 1
 
+/* Define to 1 if you have the `boost_filesystem' library
+   (-lboost_filesystem). */
+#define HAVE_LIBBOOST_FILESYSTEM 1
+
+/* Define to 1 if you have the `boost_program_options' library
+   (-lboost_program_options). */
+#define HAVE_LIBBOOST_PROGRAM_OPTIONS 1
+
+/* Define to 1 if you have the `boost_system' library (-lboost_system). */
+#define HAVE_LIBBOOST_SYSTEM 1
+
+/* Define to 1 if you have the `boost_thread' library (-lboost_thread). */
+#define HAVE_LIBBOOST_THREAD 1
+
 /* Define to 1 if you have the `CAENVME' library (-lCAENVME). */
 #define HAVE_LIBCAENVME 1
 
 /* Define to 1 if you have the `expect' library (-lexpect). */
-#define HAVE_LIBEXPECT 1
+/* #undef HAVE_LIBEXPECT */
 
 /* Define to 1 if you have the `form' library (-lform). */
 #define HAVE_LIBFORM 1
@@ -38,7 +52,7 @@
 #define HAVE_LIBSNAPPY 1
 
 /* Define to 1 if you have the `tcl8.5' library (-ltcl8.5). */
-#define HAVE_LIBTCL8_5 1
+/* #undef HAVE_LIBTCL8_5 */
 
 /* Define to 1 if you have the `tinfo' library (-ltinfo). */
 #define HAVE_LIBTINFO 1
@@ -102,10 +116,10 @@
 #define VERSION "0.9"
 
 /* Compile with DDC HE veto support */
-#define WITH_DDC10 /**/
+/* #undef WITH_DDC10 */
 
 /* Compile master module */
-#define WITH_MASTER /**/
+/* #undef WITH_MASTER */
 
 /* Compile slave module */
 #define WITH_SLAVE /**/

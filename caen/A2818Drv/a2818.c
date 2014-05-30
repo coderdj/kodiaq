@@ -265,6 +265,7 @@ typedef struct wait_queue *wait_queue_head_t;
 
         ----------------------------------------------------------------------
 */
+
 static int a2818_open(struct inode *, struct file *);
 static int a2818_release(struct inode *, struct file *);
 static unsigned int a2818_poll(struct file *, poll_table *);
@@ -276,7 +277,11 @@ static long a2818_ioctl_unlocked(struct file *, unsigned int, unsigned long);
 #endif
 // static void a2818_mmiowb( void);
 
+#if LINUX_VERSION_CODE >= VERSION(3,10,0)
+static ssize_t a2818_procinfo(struct file* filp, char* buf, size_t count, loff_t* pos);
+#else
 static int a2818_procinfo(char *, char **, off_t, int, int *,void *);
+#endif
 
 static void a2818_handle_rx_pkt(struct a2818_state *s, int pp);
 static void a2818_dispatch_pkt(struct a2818_state *s);
@@ -310,6 +315,12 @@ static int a2818_major = 0;
 static struct a2818_state *devs;
 
 static struct proc_dir_entry *a2818_procdir;
+
+#if LINUX_VERSION_CODE >= VERSION(3,10,0)
+static struct file_operations a2818_procdir_fops = {
+ read: a2818_procinfo
+};
+#endif
 
 static struct file_operations a2818_fops =
 {
@@ -575,8 +586,12 @@ err_recv:
 
         ----------------------------------------------------------------------
 */
+#if LINUX_VERSION_CODE >= VERSION(3,10,0)
+static ssize_t a2818_procinfo(struct file* filp, char* buf, size_t count, loff_t* pos)
+#else
 static int a2818_procinfo(char *buf, char **start, off_t fpos, int lenght,
                           int *eof, void *data)
+#endif
 {
         char *p;
         struct a2818_state* s = devs;
@@ -625,8 +640,9 @@ static int a2818_procinfo(char *buf, char **start, off_t fpos, int lenght,
         }
 
         p += sprintf(p,"%d CAEN A2818 board(s) found.\n", i);
-
+#if LINUX_VERSION_CODE < VERSION(3,10,0)
         *eof = 1;
+#endif
         return p - buf;
 }
 
@@ -639,10 +655,14 @@ static int a2818_procinfo(char *buf, char **start, off_t fpos, int lenght,
 */
 static void a2818_register_proc(void)
 {
-        a2818_procdir = create_proc_entry("a2818", S_IFREG | S_IRUGO, 0);
-        a2818_procdir->read_proc = a2818_procinfo;
-}
 
+#if LINUX_VERSION_CODE >= VERSION(3,10,0)
+a2818_procdir = proc_create("a2818", 0, NULL, &a2818_procdir_fops);
+#else
+a2818_procdir = create_proc_entry("a2818", S_IFREG | S_IRUGO, 0);
+a2818_procdir->read_proc = a2818_procinfo;
+#endif 
+}
 /*
         ----------------------------------------------------------------------
 
