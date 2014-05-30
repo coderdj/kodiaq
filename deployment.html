@@ -370,13 +370,11 @@ to work.</p>
 <dd><ul class="first last simple">
 <li>CAENVMElib (available from CAEN, this is a closed-source
 library)</li>
-<li>mongodb greater than version 2.55 (earlier versions can work with
+<li>mongodb greater than version 2.4 (earlier versions can work with
 a slight modification to the source code). Specifically
 lbmongoclient is needed.</li>
 <li>libsnappy for on-the-fly compression</li>
 <li>libpthread for parallel processing</li>
-<li>Google protocol buffers libraries (called libprotobuf-dev on
-ubuntu)</li>
 <li>libpbf for file output</li>
 <li>Normal build libraries (build-essential package on ubuntu)</li>
 </ul>
@@ -388,11 +386,44 @@ ubuntu)</li>
 <p class="first admonition-title">Note</p>
 <p class="last">It is possible to compile without libmongoclient and/or libprotobuf/libpbf. If you compile without libmongoclient you will not be able to output to a mongodb. If you compile without libprotobuf or libpbf you will not be able to write to file. Depending on your installation one of these may be fine. You will be notified at the end of the configure script which output forms are available on your system.</p>
 </div>
-<p>Checkout the code from github. To compile use the following steps:</p>
+<p>Assuming you want to install everything, do it as follows.:</p>
+<div class="highlight-python"><div class="highlight"><pre>apt-get install libsnappy-dev build-essential git-core scons libprotobuf-dev protobuf-compiler libboost-all-dev
+</pre></div>
+</div>
+<p>Now make a directory for the code and install libpbf:</p>
+<div class="highlight-python"><div class="highlight"><pre>mkdir kodiaq
+cd kodiaq
+git clone https://github.com/coderdj/libpbf.git libpbf
+cd libpbf
+make
+make install
+cd ..
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>We also want a newer version of mongodb so we can install that as well.::</dt>
+<dd>git clone <a class="reference external" href="https://github.com/mongodb/mongo-cxx-driver.git">https://github.com/mongodb/mongo-cxx-driver.git</a> mongodb
+cd mongodb
+git checkout 26compat    #currently for 2.6 compatible driver
+scons &#8211;use-system-boost &#8211;all install-mongoclient
+cd ..</dd>
+</dl>
+<p>Since mongo seems to change how to do this with nearly every release you may prefer to check their most recent documentation.</p>
+<dl class="docutils">
+<dt>Checkout the DAQ code from github as follows.::</dt>
+<dd>git clone <a class="reference external" href="https://github.com/XENON1T/kodiaq.git">https://github.com/XENON1T/kodiaq.git</a> kodiaq</dd>
+</dl>
+<p>Now compile the CAEN software. There is a copy of this bundled with kodiaq or you can get the most recent versions from <a class="reference external" href="http://www.caen.it">http://www.caen.it</a>. The CAEN software is in kodiaq/caen. You need to install CAENVMElib and the driver for your PCI card (A2818 or A3818). The instructions for installation are given in the README files within these directories.
+.. note:: As of 30.05.2014 the CAEN A2818 driver is not compatible with linux kernel &gt;=3.10. A modified version of this driver (A2818Drv-dc) is included with kodiaq and should be used in this case. It might be prudent to check for an update from CAEN and if there is one remove the modified version from kodiaq and replace with the new one.</p>
+<p>Everything should be in place so you can now compile the kodiaq package itself.:</p>
 <div class="highlight-python"><div class="highlight"><pre>cd kodiaq (top-level directory)
-./configure --enable-slave (optionally --disable-user if the UI is not needed)
+./configure --enable-slave --disable-user
 make
 </pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">If you get an error that the compiler can&#8217;t find libncurses you probably forgot or intentionally omitted &#8211;disable-user. If you want the user module you need libncurses-5-dev.</p>
 </div>
 <p>The connection to the master must also be defined. Right now this is
 hard-coded in the koSlave.cc file. The line
@@ -403,20 +434,12 @@ The program will automatically scan the master and check to see if
 it puts the network up. If so the slave will connect automatically.</p>
 <p>In case that the slave loses connection it will stop the DAQ and
 return to this idle state, waiting for another connection to the
-master. It should be fine just to leave it on indefinitely if there
-are no crashes.</p>
+master. It is designed to be left running indefinitely regardless of whether the DAQ is used or not.</p>
 </div>
 <div class="section" id="komaster">
 <h2>koMaster<a class="headerlink" href="#komaster" title="Permalink to this headline">¶</a></h2>
-<p>The master should be installed somewhere with a reliable network
-connection to the slaves. It can also run on a slave PC if necessary
-since it uses very few resources. Two open ports are required for
-communication with slaves and two more for communication with clients.
-These can be any ports but they must be defined in koSlave and in the
-UI.</p>
-<p>To install the master, mongodb must be installed (libmongoclient).
-Additionally, if support for configuring the DDC-10 high energy veto
-module is required then libddc is also needed.</p>
+<p>The master should be installed somewhere with a reliable network connection to the slaves. It can also run on a slave PC if necessary. Two open ports are required for communication with slaves and two more for communication with clients. These can be any ports but they must be defined in koSlave and in the UI.</p>
+<p>To install the master, the mongodb C++ driver (version &gt;=2.6) must be installed (libmongoclient). You can follow the directions in the appropriate section of the koSlave installation instructions.</p>
 <p>To build use the following:</p>
 <div class="highlight-python"><div class="highlight"><pre>cd kodiaq
 ./configure --enable-master (--enable-ddc10 for ddc10 support)
@@ -443,8 +466,7 @@ look in src/master/data/RunModes/DAQOptionsMaster.ini.</p>
 DAQ systems. This consists of the slave module which is steered via a
 text-based interface on the console.</p>
 <p>To deploy the standalone module, make sure all the same dependencies are met as
-for the slave module described previously. Then build using the
-following commands:</p>
+for the slave module described previously. The standalone module additionally requires libncurses5-dev. Build using the following commands:</p>
 <div class="highlight-python"><div class="highlight"><pre>cd kodiaq
 ./configure --enable-lite
 make
