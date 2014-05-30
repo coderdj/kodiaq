@@ -557,7 +557,11 @@ int NCursesUI::SidebarRefresh()
       mvwprintw(status_win,4,18,"Idle   ");
       wattroff(status_win,COLOR_PAIR(2));
    }
-   
+   else if(fDAQStatus->DAQState==KODAQ_ERROR){
+     wattron(status_win,COLOR_PAIR(2));
+     mvwprintw(status_win,4,18,"ERROR   ");
+     wattroff(status_win,COLOR_PAIR(2));
+   }
    wattroff(status_win,A_BOLD);
    
    wattron(status_win,A_BOLD);   

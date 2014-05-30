@@ -39,6 +39,11 @@ CBV1724::~CBV1724()
 CBV1724::CBV1724(BoardDefinition_t BoardDef, koLogger *kLog)
         :VMEBoard(BoardDef,kLog)
 {
+  fBLTSize=fBufferSize=0;
+  bActivated=false;
+  fBuffers=NULL;
+  fSizes=NULL;
+  fReadoutThresh=10;
 }
 
 int CBV1724::Initialize(koOptions *options)

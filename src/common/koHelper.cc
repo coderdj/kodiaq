@@ -166,6 +166,10 @@ void koHelper::ProcessStatus(koStatusPacket_t &Status)
       if(Status.Slaves[x].status==KODAQ_ARMED) nArmed++;
       if(Status.Slaves[x].status==KODAQ_RUNNING) nRunning++;
       if(Status.Slaves[x].status==KODAQ_IDLE) nIdle++;
+      if(Status.Slaves[x].status==KODAQ_ERROR) {
+	Status.DAQState=KODAQ_ERROR;
+	return;
+      }
    }
    if(nRunning==Status.Slaves.size() && Status.Slaves.size()!=0) Status.DAQState=KODAQ_RUNNING;
    if(nArmed==Status.Slaves.size() && Status.Slaves.size()!=0) Status.DAQState=KODAQ_ARMED;
