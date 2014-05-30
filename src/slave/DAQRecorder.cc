@@ -141,10 +141,10 @@ int DAQRecorder_mongodb::RegisterProcessor()
    int retval=-1;
    mongo::ScopedDbConnection *conn;
    try  {
-      conn = mongo::ScopedDbConnection::
-	getScopedDbConnection(m_koMongoOptions.DBAddress,10000.);
+     //      conn = mongo::ScopedDbConnection::
+     //	getScopedDbConnection(m_koMongoOptions.DBAddress,10000.);
       //or
-      //conn = new mongo::ScopedDbConnection(m_koMongoOptions.DBAddress,10000.);
+      conn = new mongo::ScopedDbConnection(m_koMongoOptions.DBAddress,10000.);
    }
    catch(const mongo::DBException &e)  {
 //      stringstream err;
