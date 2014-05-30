@@ -9,20 +9,20 @@
 
 /* Define to 1 if you have the `boost_filesystem' library
    (-lboost_filesystem). */
-#define HAVE_LIBBOOST_FILESYSTEM 1
+/* #undef HAVE_LIBBOOST_FILESYSTEM */
 
 /* Define to 1 if you have the `boost_program_options' library
    (-lboost_program_options). */
-#define HAVE_LIBBOOST_PROGRAM_OPTIONS 1
+/* #undef HAVE_LIBBOOST_PROGRAM_OPTIONS */
 
 /* Define to 1 if you have the `boost_system' library (-lboost_system). */
-#define HAVE_LIBBOOST_SYSTEM 1
+/* #undef HAVE_LIBBOOST_SYSTEM */
 
 /* Define to 1 if you have the `boost_thread' library (-lboost_thread). */
-#define HAVE_LIBBOOST_THREAD 1
+/* #undef HAVE_LIBBOOST_THREAD */
 
 /* Define to 1 if you have the `CAENVME' library (-lCAENVME). */
-#define HAVE_LIBCAENVME 1
+/* #undef HAVE_LIBCAENVME */
 
 /* Define to 1 if you have the `expect' library (-lexpect). */
 /* #undef HAVE_LIBEXPECT */
@@ -46,10 +46,10 @@
 #define HAVE_LIBPROTOBUF 1
 
 /* Define to 1 if you have the `pthread' library (-lpthread). */
-#define HAVE_LIBPTHREAD 1
+/* #undef HAVE_LIBPTHREAD */
 
 /* Define to 1 if you have the `snappy' library (-lsnappy). */
-#define HAVE_LIBSNAPPY 1
+/* #undef HAVE_LIBSNAPPY */
 
 /* Define to 1 if you have the `tcl8.5' library (-ltcl8.5). */
 /* #undef HAVE_LIBTCL8_5 */
@@ -122,7 +122,7 @@
 /* #undef WITH_MASTER */
 
 /* Compile slave module */
-#define WITH_SLAVE /**/
+/* #undef WITH_SLAVE */
 
 /* Compile user interface */
 #define WITH_USER /**/

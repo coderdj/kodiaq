@@ -15491,6 +15491,170 @@ else
   as_fn_error $? "libpthread missing." "$LINENO" 5
 fi
 
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lboost_system" >&5
+$as_echo_n "checking for main in -lboost_system... " >&6; }
+if ${ac_cv_lib_boost_system_main+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lboost_system  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+return main ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  ac_cv_lib_boost_system_main=yes
+else
+  ac_cv_lib_boost_system_main=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_boost_system_main" >&5
+$as_echo "$ac_cv_lib_boost_system_main" >&6; }
+if test "x$ac_cv_lib_boost_system_main" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBBOOST_SYSTEM 1
+_ACEOF
+
+  LIBS="-lboost_system $LIBS"
+
+else
+  as_fn_error $? "libboost_system missing." "$LINENO" 5
+fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lboost_program_options" >&5
+$as_echo_n "checking for main in -lboost_program_options... " >&6; }
+if ${ac_cv_lib_boost_program_options_main+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lboost_program_options  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+return main ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  ac_cv_lib_boost_program_options_main=yes
+else
+  ac_cv_lib_boost_program_options_main=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_boost_program_options_main" >&5
+$as_echo "$ac_cv_lib_boost_program_options_main" >&6; }
+if test "x$ac_cv_lib_boost_program_options_main" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBBOOST_PROGRAM_OPTIONS 1
+_ACEOF
+
+  LIBS="-lboost_program_options $LIBS"
+
+else
+  as_fn_error $? "libboost_program_options missing." "$LINENO" 5
+fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lboost_filesystem" >&5
+$as_echo_n "checking for main in -lboost_filesystem... " >&6; }
+if ${ac_cv_lib_boost_filesystem_main+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lboost_filesystem  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+return main ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  ac_cv_lib_boost_filesystem_main=yes
+else
+  ac_cv_lib_boost_filesystem_main=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_boost_filesystem_main" >&5
+$as_echo "$ac_cv_lib_boost_filesystem_main" >&6; }
+if test "x$ac_cv_lib_boost_filesystem_main" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBBOOST_FILESYSTEM 1
+_ACEOF
+
+  LIBS="-lboost_filesystem $LIBS"
+
+else
+  as_fn_error $? "libboost_filesystem missing." "$LINENO" 5
+fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lboost_thread" >&5
+$as_echo_n "checking for main in -lboost_thread... " >&6; }
+if ${ac_cv_lib_boost_thread_main+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lboost_thread  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+return main ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  ac_cv_lib_boost_thread_main=yes
+else
+  ac_cv_lib_boost_thread_main=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_boost_thread_main" >&5
+$as_echo "$ac_cv_lib_boost_thread_main" >&6; }
+if test "x$ac_cv_lib_boost_thread_main" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBBOOST_THREAD 1
+_ACEOF
+
+  LIBS="-lboost_thread $LIBS"
+
+else
+  as_fn_error $? "libboost_thread missing." "$LINENO" 5
+fi
+
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lmongoclient" >&5
 $as_echo_n "checking for main in -lmongoclient... " >&6; }
 if ${ac_cv_lib_mongoclient_main+:} false; then :

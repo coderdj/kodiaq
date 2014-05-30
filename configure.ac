@@ -43,6 +43,10 @@ AS_IF([test "x$enable_master" = "xyes"], [
     AM_CONDITIONAL(WITH_MASTER,true)
     AC_DEFINE(WITH_MASTER,[],[Compile master module])    
     AC_CHECK_LIB(pthread,pthread_mutex_init,[],AC_MSG_ERROR([libpthread missing.]))
+    AC_CHECK_LIB(boost_system,main,[],AC_MSG_ERROR([libboost_system missing.]))
+    AC_CHECK_LIB(boost_program_options,main,[],AC_MSG_ERROR([libboost_program_options missing.]))
+    AC_CHECK_LIB(boost_filesystem,main,[],AC_MSG_ERROR([libboost_filesystem missing.]))
+    AC_CHECK_LIB(boost_thread,main,[],AC_MSG_ERROR([libboost_thread missing.]))
     AC_CHECK_LIB(mongoclient,main,[],AC_MSG_ERROR([libmongoclient missing.]))
     ], [
     AM_CONDITIONAL(WITH_MASTER,false)
