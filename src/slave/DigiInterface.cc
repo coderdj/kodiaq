@@ -119,10 +119,10 @@ int DigiInterface::Initialize(koOptions *options)
    }
             
    //Make sure run start is defined
-   if(options->GetRunOptions().RunStart==1 && m_RunStartModule==NULL){
-      if(m_koLog!=NULL)
-	m_koLog->Error("DigiInterface::Initialize - You asked for s-in start but didn't provide a crate controller");
-   }
+   //if(options->GetRunOptions().RunStart==1 && m_RunStartModule==NULL){
+   //   if(m_koLog!=NULL)
+   //	m_koLog->Error("DigiInterface::Initialize - You asked for s-in start but didn't provide a crate controller");
+   //}
       
    //Set up daq recorder
    m_DAQRecorder = NULL;
