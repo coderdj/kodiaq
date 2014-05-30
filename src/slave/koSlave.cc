@@ -176,7 +176,7 @@ connection_loop:
 		  continue;
 	       }
 	       int ret;
-	       if(ret=fElectronics->Initialize(&fDAQOptions)==0){
+	       if((ret=fElectronics->Initialize(&fDAQOptions))==0){
 		  fNetworkInterface.SlaveSendMessage("Boards armed successfully.");
 		  bArmed=true;
 	       }	       
