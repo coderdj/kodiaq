@@ -136,8 +136,8 @@ AS_IF([test "x$enable_all" = "xyes"], [
     ])
 
 #Check for mongodb support and compile with it if we have it
-AC_CHECK_LIB(boost_system,main,[],[]))
-AC_CHECK_LIB(boost_program_options,main,[],[]))
+AC_CHECK_LIB(boost_system,main,[],[])
+AC_CHECK_LIB(boost_program_options,main,[],[])
 AC_CHECK_LIB(boost_filesystem,main,[],[])
 AC_CHECK_LIB(boost_thread,main,[],[])
 
