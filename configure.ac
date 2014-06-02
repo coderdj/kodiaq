@@ -125,11 +125,22 @@ AS_IF([test "x$enable_all" = "xyes"], [
     AC_CHECK_LIB(pthread,pthread_mutex_init,[],AC_MSG_ERROR([libpthread missing.]))
     AC_CHECK_LIB(CAENVME,CAENVME_Init,[],AC_MSG_ERROR([libCAENVME missing.]))
     AC_CHECK_LIB(snappy,_ZN6snappy11RawCompressEPKcmPcPm,[],AC_MSG_ERROR([libsnappy missing.]))
+    AC_CHECK_LIB(boost_system,main,[],AC_MSG_ERROR([libboost_system missing.]))
+    AC_CHECK_LIB(boost_program_options,main,[],AC_MSG_ERROR([libboost_program_options missing.]))
+    AC_CHECK_LIB(boost_filesystem,main,[],AC_MSG_ERROR([libboost_filesystem missing.]))
+    AC_CHECK_LIB(boost_thread,main,[],AC_MSG_ERROR([libboost_thread missing.]))
+    AC_CHECK_LIB(mongoclient,main,[],AC_MSG_ERROR([libmongoclient missing.]))
+
 #    AC_CHECK_LIB(protobuf,main,[],AC_MSG_ERROR([libprotobuf missing]))    
     ], [
     ])
 
 #Check for mongodb support and compile with it if we have it
+AC_CHECK_LIB(boost_system,main,[],[]))
+AC_CHECK_LIB(boost_program_options,main,[],[]))
+AC_CHECK_LIB(boost_filesystem,main,[],[])
+AC_CHECK_LIB(boost_thread,main,[],[])
+
 AC_CHECK_LIB(mongoclient,main)
 AS_IF([test "$ac_cv_lib_mongoclient_main" = yes], [HAVE_LIBMONGOCLIENT=1],[HAVE_LIBMONGOCLIENT=0]) 
 AM_CONDITIONAL([WITH_MONGODB],[test "$ac_cv_lib_mongoclient_main" = yes])
