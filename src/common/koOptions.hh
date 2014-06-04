@@ -83,7 +83,6 @@ struct ProcessingOptions_t {
 struct OutfileOptions_t{
    string Path;
    bool DynamicRunNames;
-   bool Compressed;
    int EventsPerFile;
 };
 
@@ -91,7 +90,6 @@ struct OutfileOptions_t{
 /*! \brief Configuration options for mongodb.
  */
 struct MongodbOptions_t {
-   bool ZipOutput;
    bool DynamicRunNames;
    int  MinInsertSize;
    bool WriteConcern;
@@ -153,7 +151,9 @@ class koOptions
    int GetSumModule(int x)  {
       return vSumModules[x];
    };
-   
+   int Compression(){
+     return bCompression;
+   };
    void UpdateMongodbCollection(string collection)  {
       fMongoOptions.Collection=collection;
    };
@@ -179,7 +179,7 @@ class koOptions
      
    string                    fRunModeID;
    void                      Reset();   
-   
+   bool                      bCompression;
 // put any dependency-specific private members here   
 #ifdef WITH_DDC10
    ddc10_par_t               fDDC10Options;

@@ -259,45 +259,18 @@ int DigiInterface::StartRun()
    
    //Spawn read, write, and processing threads
    for(unsigned int x=0; x<m_vProcThreads.size();x++)  {
-      if(m_vProcThreads[x].IsOpen) {
-	 StopRun();
-	 return -1;
-      }
-      if(m_vProcThreads[x].Processor!=NULL) delete m_vProcThreads[x].Processor;
-      
-      // Spawning of processing threads. depends on readout options.
-      if(m_koOptions->GetRunOptions().WriteMode == WRITEMODE_NONE) {	   
-	 m_vProcThreads[x].Processor = new DataProcessor_dump(this,m_DAQRecorder,
-							     m_koOptions);
-//	 pthread_create(&m_vProcThreads[x].Thread,NULL,DataProcessor_dump::WProcess,
-//			static_cast<void*>(m_vProcThreads[x].Processor));
-//	 m_vProcThreads[x].IsOpen = true;
-      }      
-      else if(m_koOptions->GetRunOptions().WriteMode == WRITEMODE_FILE){	   
-	 m_vProcThreads[x].Processor = new DataProcessor_protobuff(this,
-								   m_DAQRecorder,
-								   m_koOptions);
-//	 pthread_create(&m_vProcThreads[x].Thread,NULL,DataProcessor_protobuff::WProcess,
-//			static_cast<void*>(m_vProcThreads[x].Processor));
-//	 m_vProcThreads[x].IsOpen = true;
-      }      
-      else if(m_koOptions->GetRunOptions().WriteMode == WRITEMODE_MONGODB){
-	 m_vProcThreads[x].Processor = new DataProcessor_mongodb(this,
-								 m_DAQRecorder,
-								 m_koOptions);
-//	 pthread_create(&m_vProcThreads[x].Thread,NULL,DataProcessor_mongodb::WProcess,
-//			static_cast<void*>(m_vProcThreads[x].Processor));
-//	 m_vProcThreads[x].IsOpen=true;
-      }
-      else	{
-	 if(m_koLog!=NULL) 
-	   m_koLog->Error("DigiInterface::StartRun - Undefined write mode.");
-	 StopRun();
-	 return -1;
-      }
-      pthread_create(&m_vProcThreads[x].Thread,NULL,DataProcessor::WProcess,
-		     static_cast<void*>(m_vProcThreads[x].Processor));
-      m_vProcThreads[x].IsOpen=true;
+     if(m_vProcThreads[x].IsOpen) {
+       StopRun();
+       return -1;
+     }
+     if(m_vProcThreads[x].Processor!=NULL) delete m_vProcThreads[x].Processor;
+     
+     // Spawning of processing threads. depends on readout options.
+     m_vProcThreads[x].Processor = new DataProcessor(this,m_DAQRecorder,
+						     m_koOptions);
+     pthread_create(&m_vProcThreads[x].Thread,NULL,DataProcessor::WProcess,
+		    static_cast<void*>(m_vProcThreads[x].Processor));
+     m_vProcThreads[x].IsOpen=true;
    }
    
    if(m_ReadThread.IsOpen)  {

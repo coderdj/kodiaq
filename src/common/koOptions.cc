@@ -36,8 +36,7 @@ void koOptions::Reset()
      fRunOptions.RunStartModule=-1;
    
    //Reset mongodb options
-   fMongoOptions.ZipOutput=fMongoOptions.WriteConcern=
-     fMongoOptions.DynamicRunNames=false;
+   fMongoOptions.WriteConcern=fMongoOptions.DynamicRunNames=false;
    fMongoOptions.MinInsertSize=1;
    fMongoOptions.Collection="data.test";
    
@@ -48,11 +47,13 @@ void koOptions::Reset()
    
    //Reset file options
    fOutfileOptions.Path="./data.out";
-   fOutfileOptions.DynamicRunNames=fOutfileOptions.Compressed=false;
+   fOutfileOptions.DynamicRunNames=false;
    
    fRunModeID="";
    vSumModules.clear();
    
+   bCompression=false;
+
 #ifdef HAS_DDC
    //Reset ddc10 options
    fDDC10Options.Initialized=false;
@@ -153,14 +154,17 @@ int koOptions::ReadParameterFile(string filename)
 	 fRunOptions.RunStartModule=koHelper::StringToInt(words[2]);
       }      
       if(words[0]=="MONGO_OPTIONS")	{
-	 if(words.size()<6) continue;
+	 if(words.size()<5) continue;
 	 fMongoOptions.DBAddress=words[1];
 	 if(words[2][words[2].size()-1]=='*') fMongoOptions.DynamicRunNames=true;
 	 else fMongoOptions.DynamicRunNames=false;
 	 fMongoOptions.Collection=words[2];
-	 (words[3]=="1")?fMongoOptions.ZipOutput=true:fMongoOptions.ZipOutput=false;
-	 fMongoOptions.MinInsertSize = koHelper::StringToInt(words[4]);
-	 (words[5]=="1")?fMongoOptions.WriteConcern=true:fMongoOptions.WriteConcern=false;
+	 fMongoOptions.MinInsertSize = koHelper::StringToInt(words[3]);
+	 (words[4]=="1")?fMongoOptions.WriteConcern=true:fMongoOptions.WriteConcern=false;
+      }
+      if(words[0]=="COMPRESSION"){
+	if(words.size()<2) continue;
+	(words[1]=="1")?bCompression=true:bCompression=false;
       }
       if(words[0]=="PROCESSING_OPTIONS")	{
 	 if(words.size()<4) continue;
@@ -170,12 +174,11 @@ int koOptions::ReadParameterFile(string filename)
 	 fProcessingOptions.ReadoutThreshold = koHelper::StringToInt(words[3]);
       }
       if(words[0]=="OUTFILE_OPTIONS")	{
-	 if(words.size()<4) continue;
+	 if(words.size()<3) continue;
 	 fOutfileOptions.Path=words[1];
 	 if(words[1][words[1].size()-1]=='*') fOutfileOptions.DynamicRunNames=true;
 	 else fOutfileOptions.DynamicRunNames=false;
-	 (words[2]=="1")?fOutfileOptions.Compressed=true:fOutfileOptions.Compressed=false;
-	 fOutfileOptions.EventsPerFile = koHelper::StringToInt(words[3]);
+	 fOutfileOptions.EventsPerFile = koHelper::StringToInt(words[2]);
       }      
       if(words[0]=="BASELINE_MODE")	{ //0 - off  1 - auto
 	 if(words.size()<2) continue;

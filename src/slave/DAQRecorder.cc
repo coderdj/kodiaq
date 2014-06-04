@@ -35,9 +35,9 @@ DAQRecorder::~DAQRecorder()
 {
 }
 
-int DAQRecorder::GetResetCounter(u_int32_t currentTime, bool b30BitTimes)
+int DAQRecorder::GetResetCounter(u_int32_t currentTime)
 {
-   int a=GetCurPrevNext(currentTime,b30BitTimes);
+   int a=GetCurPrevNext(currentTime);
    if(a==1) m_iResetCounter++;
    if(a==-1) return m_iResetCounter-1;
    return m_iResetCounter;
@@ -234,8 +234,8 @@ int DAQRecorder_protobuff::Initialize(koOptions *options)
      m_SWritePath = m_FileOptions.Path;
    
    stringstream sstream;
-   if(m_FileOptions.Compressed)
-     sstream<<"z:";
+   if(m_koOptions->Compression())
+     sstream<<"pz:";
    sstream<<"n"<<m_FileOptions.EventsPerFile;
    
    if(m_outfile.open_file(m_SWritePath,sstream.str())!=0) return -1;

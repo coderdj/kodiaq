@@ -84,7 +84,7 @@ class DAQRecorder
    // Purpose  : Checks to see if this timestamp is in the current, previous,
    //            or next clock cycle (0,-1,1 return value)
    // 
-   int           GetCurPrevNext(u_int32_t timestamp,bool b30BitTimes);
+   int           GetCurPrevNext(u_int32_t timestamp);
    int           m_iResetCounter; 
    bool          m_bTimeOverTen;
    

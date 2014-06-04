@@ -9,20 +9,20 @@
 
 /* Define to 1 if you have the `boost_filesystem' library
    (-lboost_filesystem). */
-/* #undef HAVE_LIBBOOST_FILESYSTEM */
+#define HAVE_LIBBOOST_FILESYSTEM 1
 
 /* Define to 1 if you have the `boost_program_options' library
    (-lboost_program_options). */
-/* #undef HAVE_LIBBOOST_PROGRAM_OPTIONS */
+#define HAVE_LIBBOOST_PROGRAM_OPTIONS 1
 
 /* Define to 1 if you have the `boost_system' library (-lboost_system). */
-/* #undef HAVE_LIBBOOST_SYSTEM */
+#define HAVE_LIBBOOST_SYSTEM 1
 
 /* Define to 1 if you have the `boost_thread' library (-lboost_thread). */
-/* #undef HAVE_LIBBOOST_THREAD */
+#define HAVE_LIBBOOST_THREAD 1
 
 /* Define to 1 if you have the `CAENVME' library (-lCAENVME). */
-/* #undef HAVE_LIBCAENVME */
+#define HAVE_LIBCAENVME 1
 
 /* Define to 1 if you have the `expect' library (-lexpect). */
 /* #undef HAVE_LIBEXPECT */
@@ -46,10 +46,10 @@
 #define HAVE_LIBPROTOBUF 1
 
 /* Define to 1 if you have the `pthread' library (-lpthread). */
-/* #undef HAVE_LIBPTHREAD */
+#define HAVE_LIBPTHREAD 1
 
 /* Define to 1 if you have the `snappy' library (-lsnappy). */
-/* #undef HAVE_LIBSNAPPY */
+#define HAVE_LIBSNAPPY 1
 
 /* Define to 1 if you have the `tcl8.5' library (-ltcl8.5). */
 /* #undef HAVE_LIBTCL8_5 */
@@ -82,7 +82,7 @@
 #define HAVE_UNISTD_H 1
 
 /* Compile standalone slave */
-/* #undef KLITE */
+#define KLITE 1
 
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */
