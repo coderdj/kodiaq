@@ -70,29 +70,17 @@ void DAQRecorder::ResetError()
    m_bErrorSet  = false;
 }
 
-int DAQRecorder::GetCurPrevNext(u_int32_t timestamp, bool b30BitTimes)
+int DAQRecorder::GetCurPrevNext(u_int32_t timestamp)
 {
-   if(!b30BitTimes) {	
-      if(timestamp<3E8 && m_bTimeOverTen)  { //within first 3 seconds, reset ToT
-	 m_bTimeOverTen = false;
-	 return 1;
-      }
-      else if(timestamp>1E9 && !m_bTimeOverTen)  //after 10 sec and ToT not set yet
-	m_bTimeOverTen = true;
-      else if(timestamp>2E9 && !m_bTimeOverTen)
-	return -1;
-      return 0;      
-   }
-   //for 32 bit times maximum is 40 seconds. Time Over Ten is now time over 4
-   if(timestamp<4E8 && m_bTimeOverTen)  {
-      m_bTimeOverTen=false;
-      return 1;
-     }
-   else if(timestamp>2E9 && !m_bTimeOverTen) // after 4 seconds set ToT
-     m_bTimeOverTen=true;
-   else if(timestamp>35E8 && !m_bTimeOverTen) //more than 9 seconds but ToT not set, belongs to last
-     return -1;
-   return 0;   
+  if(timestamp<3E8 && m_bTimeOverTen)  { //within first 3 seconds, reset ToT
+    m_bTimeOverTen = false;
+    return 1;
+  }
+  else if(timestamp>1E9 && !m_bTimeOverTen)  //after 10 sec and ToT not set yet
+    m_bTimeOverTen = true;
+  else if(timestamp>2E9 && !m_bTimeOverTen)
+    return -1;
+  return 0;      
 }
 
 #ifdef HAVE_LIBMONGOCLIENT
@@ -141,16 +129,12 @@ int DAQRecorder_mongodb::RegisterProcessor()
    int retval=-1;
    mongo::ScopedDbConnection *conn;
    try  {
-     //      conn = mongo::ScopedDbConnection::
-     //	getScopedDbConnection(m_koMongoOptions.DBAddress,10000.);
-      //or
       conn = new mongo::ScopedDbConnection(m_koMongoOptions.DBAddress,10000.);
    }
    catch(const mongo::DBException &e)  {
-//      stringstream err;
-//      err<<"DAQRecorder_mongodb::RegisterProcessor - Error connecting to mongodb "<<
-//	e.toString();
-//      LogError(err.str());
+     stringstream err;
+      err<<"DAQRecorder_mongodb::RegisterProcessor - Error connecting to mongodb "<<e.toString();
+      LogError(err.str());
       return -1;
    }
    int lock = pthread_mutex_lock(&m_ConnectionMutex);
@@ -160,9 +144,8 @@ int DAQRecorder_mongodb::RegisterProcessor()
    }
    m_vScopedConnections.push_back(conn);
    retval = m_vScopedConnections.size()-1;
-   lock = pthread_mutex_unlock(&m_ConnectionMutex);
-   //but what to do if lock!=0? I guess just ignore?
-   
+   pthread_mutex_unlock(&m_ConnectionMutex);
+      
    return retval;
 }
 
@@ -174,7 +157,6 @@ void DAQRecorder_mongodb::UpdateCollection(koOptions *options)
 void DAQRecorder_mongodb::Shutdown()
 {
    CloseConnections();
-   pthread_mutex_destroy(&m_ConnectionMutex);
    return;
 }
 
@@ -231,37 +213,36 @@ DAQRecorder_protobuff::DAQRecorder_protobuff(koLogger *koLog)
 
 int DAQRecorder_protobuff::Initialize(koOptions *options)
 {
-   Shutdown();
-   
+  Shutdown();
+  
    m_FileOptions = options->GetOutfileOptions();
-
+   
    // get a file name
    if(m_FileOptions.DynamicRunNames == 1)  { //if we have time-based filenames
-      std::size_t pos;
-      pos = m_FileOptions.Path.find_first_of("*",0);   
-      if(pos>0 && pos<=m_FileOptions.Path.size())
-	m_SWritePath = m_FileOptions.Path.substr(0,pos);
-      else
-	m_SWritePath = m_FileOptions.Path;
-      if(m_SWritePath[m_SWritePath.size()]!='/' && 
-	 m_SWritePath[m_SWritePath.size()]!='_')
-	m_SWritePath+="_";
-      m_SWritePath+=koHelper::GetRunNumber();
+     std::size_t pos;
+     pos = m_FileOptions.Path.find_first_of("*",0);   
+     if(pos>0 && pos<=m_FileOptions.Path.size())
+       m_SWritePath = m_FileOptions.Path.substr(0,pos);
+     else
+       m_SWritePath = m_FileOptions.Path;
+     if(m_SWritePath[m_SWritePath.size()]!='/' && 
+	m_SWritePath[m_SWritePath.size()]!='_')
+       m_SWritePath+="_";
+     m_SWritePath+=koHelper::GetRunNumber();
    }
    else
      m_SWritePath = m_FileOptions.Path;
    
    stringstream sstream;
    if(m_FileOptions.Compressed)
-      sstream<<"z:";
+     sstream<<"z:";
    sstream<<"n"<<m_FileOptions.EventsPerFile;
-      
+   
    if(m_outfile.open_file(m_SWritePath,sstream.str())!=0) return -1;
    
    //set header
    m_outfile.header().identifier=koHelper::GetRunNumber();
-//   m_outfile.header().
-   
+      
    return 0;
 }
 
