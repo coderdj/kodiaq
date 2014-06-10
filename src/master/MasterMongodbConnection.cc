@@ -61,7 +61,7 @@ int MasterMongodbConnection::Initialize(string user, string runMode, string name
    b.append("runtype","bern_test_daq");
    b.append("starttime",0);
    b.append("user",user);
-   b.append("compressed",fMongoOptions.ZipOutput);
+   b.append("compressed",options->Compression());
    b.append("data_taking_ended",false);
    b.append("name",name);
    
