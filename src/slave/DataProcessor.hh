@@ -45,7 +45,6 @@ public:
   // 
   bool QueryError(string &err);
   
-private:
   //
   // Data formatting functions
   //
@@ -54,7 +53,7 @@ private:
   // Purpose  : Splits block transfers into individual triggers for non-custom
   //            CAEN V1724 firmware
   // 
-  void         SplitBlocks(vector <u_int32_t*> *&buffvec, 
+  static void         SplitBlocks(vector <u_int32_t*> *&buffvec, 
 			   vector<u_int32_t> *&sizevec);
   //
   // Name     : void DataProcessor::SplitChannels(vector<u_int32_t*> *&buffvec,
@@ -67,7 +66,7 @@ private:
   //            to a size, a timestamp, and a channel. Run SplitData on the data
   //            first if there should be multiple events per BLT
   // 
-  void        SplitChannels(vector <u_int32_t*> *&buffvec,
+  static void        SplitChannels(vector <u_int32_t*> *&buffvec,
 			    vector <u_int32_t>  *&sizevec,
 			    vector <u_int32_t>   *timestamps,
 			    vector <u_int32_t>   *channels,
@@ -79,11 +78,12 @@ private:
   //                                                        vector <u_int32_t> *channels)
   // Purpose   : Split data blocks into channels without any channel parsing
   //
-  void           SplitChannelsNewFW(vector <u_int32_t*> *&buffvec,
+  static void           SplitChannelsNewFW(vector <u_int32_t*> *&buffvec,
 				    vector <u_int32_t> *&sizevec,
 				    vector <u_int32_t> *timestamps,
 				    vector <u_int32_t> *channels);
-  
+
+private:  
   //
   // Name      : void DataProcessor::LogError(string err)
   // Purpose   : The data processor routines can report errors using this
@@ -99,12 +99,12 @@ private:
   
   
   // Access to private members
-  DAQRecorder*   GetDAQRecorder(){
-    return m_DAQRecorder;
-   };
-  DigiInterface* GetDigiInterface(){
-                  return m_DigiInterface;
-  };
+  //DAQRecorder*   GetDAQRecorder(){
+  //return m_DAQRecorder;
+  //};
+  //DigiInterface* GetDigiInterface(){
+  //return m_DigiInterface;
+  //};
   
   koOptions        *m_koOptions;
   DigiInterface    *m_DigiInterface;

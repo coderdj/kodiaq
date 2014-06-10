@@ -250,9 +250,9 @@ int DigiInterface::StartRun()
    else   {	//start by write to software register
       for(unsigned int x=0;x<m_vDigitizers.size();x++){
 	 u_int32_t data;
-	 m_vDigitizers[x]->ReadReg32(V1724_AcquisitionControlReg,data);
+	 m_vDigitizers[x]->ReadReg32(CBV1724_AcquisitionControlReg,data);
 	 data |= 0x4;
-	 m_vDigitizers[x]->WriteReg32(V1724_AcquisitionControlReg,data);
+	 m_vDigitizers[x]->WriteReg32(CBV1724_AcquisitionControlReg,data);
 	 m_vDigitizers[x]->SetActivated(true);
       }
    }
@@ -298,9 +298,9 @@ int DigiInterface::StopRun()
    else   {
       for(unsigned int x=0;x<m_vDigitizers.size();x++)	{
 	 u_int32_t data;
-	 m_vDigitizers[x]->ReadReg32(V1724_AcquisitionControlReg,data);
+	 m_vDigitizers[x]->ReadReg32(CBV1724_AcquisitionControlReg,data);
 	 data &= 0xFFFFFFFB;
-	 m_vDigitizers[x]->WriteReg32(V1724_AcquisitionControlReg,data);
+	 m_vDigitizers[x]->WriteReg32(CBV1724_AcquisitionControlReg,data);
 	 m_vDigitizers[x]->SetActivated(false);
       }      
    }   

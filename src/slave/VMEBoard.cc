@@ -60,8 +60,9 @@ int VMEBoard::WriteReg32(u_int32_t address, u_int32_t data)
 int VMEBoard::ReadReg32(u_int32_t address, u_int32_t &data)
 {
    u_int32_t temp;
-   if(CAENVME_ReadCycle(fCrateHandle,fBID.VMEAddress+address,
-			&temp,cvA32_U_DATA,cvD32)!=cvSuccess)      	
+   int ret=0;
+   if((ret=CAENVME_ReadCycle(fCrateHandle,fBID.VMEAddress+address,
+			     &temp,cvA32_U_DATA,cvD32))!=cvSuccess)
      return -1;      
    data=temp;
    return 0;

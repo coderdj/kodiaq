@@ -17,11 +17,16 @@
 #include <pthread.h>
 
 //Register definitions
-#define V1724_BoardInfoReg                0x8140
-#define V1724_BlockOrganizationReg        0x800C
-#define V1724_BltEvNumReg                 0xEF1C
-#define V1724_AcquisitionControlReg       0x8100
-#define V1724_DACReg                      0x1098
+#define CBV1724_BoardInfoReg              0x8140
+#define CBV1724_BltEvNumReg               0xEF1C
+#define CBV1724_DACReg                    0x1098
+#define CBV1724_ChannelConfReg            0x8000
+#define CBV1724_AcquisitionControlReg     0x8100
+#define CBV1724_TriggerSourceReg          0x810C
+#define CBV1724_DPPReg                    0x8080
+#define CBV1724_BuffOrg                   0x800C
+#define CBV1724_CustomSize                0x8020
+#define CBV1724_SoftwareTriggerReg        0x8108
 
 /*! \brief Control class for CAEN V1724 digitizers.
  */ 
@@ -53,7 +58,8 @@ class CBV1724 : public VMEBoard {
    void SetActivated(bool active);                                 /*!<  Set if this board is active (taking data).*/
    
  private:
-   int                  LoadBaselines();                       //Load baselines to boards
+  int                  LoadDAC(vector <int> baselines);
+  int                  LoadBaselines();                       //Load baselines to boards
    int                  GetBaselines(vector <int> &baselines, bool bQuiet=false);  //Get baselines from file 
 
    unsigned int         fReadoutThresh;

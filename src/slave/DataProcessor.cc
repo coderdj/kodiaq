@@ -297,7 +297,7 @@ void DataProcessor::Process()
   vector<u_int32_t > *times        = NULL;
   vector<u_int32_t > *eventIndices = NULL;
   int                 iModule      = 0;
-  int                 protocHandle = -1;
+
   while(!bExitCondition){
     bExitCondition = true;
     for(unsigned int x=0; x<m_DigiInterface->GetDigis();x++)  {
@@ -327,14 +327,14 @@ void DataProcessor::Process()
 	  SplitChannels(buffvec,sizevec,times,channels,eventIndices);
 	}
 	else if(m_koOptions->GetProcessingOptions().Mode == 3) { //channel parsing new fw
-	  SplitChannels(buffvec,sizevec,times,channels);
+	  SplitChannelsNewFW(buffvec,sizevec,times,channels);
 	}
       }
       
       unsigned int currentEventIndex = 0;
+      int                 protocHandle = -1;
       //Loop through the parsed buffers
       for(unsigned int b = 0; b < buffvec->size(); b++) {
-	
 	u_int32_t TimeStamp = 0;
 	int       Channel    = -1;
 	// Get time stamp if required
@@ -398,9 +398,8 @@ void DataProcessor::Process()
 	    if(eventIndices!=NULL) currentEventIndex++;
 	  }
 	  DAQRecorder_pb->GetOutfile()->add_data(protocHandle,Channel,iModule,buff,eventSize,Time64);
-	  
 	  //special case for last event
-	  if(b==buffvec->size()-1)
+	  if(b==buffvec->size()-1 && protocHandle!=-1)
 	    DAQRecorder_pb->GetOutfile()->close_event(protocHandle,true);
 	}
 #endif
@@ -415,6 +414,7 @@ void DataProcessor::Process()
       eventIndices=sizevec=channels=times=NULL;      
     }//end loop through digis
   }//end while loop
+  delete vMongoInsertVec;
   return;
 }
 

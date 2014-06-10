@@ -15,10 +15,7 @@
 #include <cstring>
 #include <time.h>
 #include "CBV1724.hh"
-
-#define AcquisitionControlReg 0x8100
-#define SoftwareTriggerReg    0x8108
-#define ZLEReg                0x8000
+#include "DataProcessor.hh"
 
 CBV1724::CBV1724()
 {   
@@ -68,12 +65,12 @@ int CBV1724::Initialize(koOptions *options)
    
    //Get size of BLT read using board data and options
    u_int32_t data;
-   ReadReg32(V1724_BoardInfoReg,data);
+   ReadReg32(CBV1724_BoardInfoReg,data);
    u_int32_t memorySize = (u_int32_t)((data>>8)&0xFF);
-   ReadReg32(V1724_BlockOrganizationReg,data);
+   ReadReg32(CBV1724_BuffOrg,data);
    u_int32_t eventSize = (u_int32_t)((((memorySize*pow(2,20))/
 					  (u_int32_t)pow(2,data))*8+16)/4);
-   ReadReg32(V1724_BltEvNumReg,data);
+   ReadReg32(CBV1724_BltEvNumReg,data);
    fBLTSize=options->GetRunOptions().BLTBytes;
    fBufferSize = data*eventSize*(u_int32_t)4+(fBLTSize);
    fBufferSize = eventSize*data + fBLTSize;
@@ -227,16 +224,7 @@ int CBV1724::LoadBaselines()
    }   
    if(baselines.size()==0)
      return -1;
-   for(unsigned int x=0;x<baselines.size();x++)  {
-      if(WriteReg32((0x1098)+(0x100*x),baselines[x])!=0){	   
-	 LogMessage("Error loading baselines");
-	 return -1;
-      } 
-      stringstream sstr;
-      sstr<<"Loaded baseline "<<hex<<baselines[x]<<dec<<" to channel "<<x;
-      LogMessage(sstr.str());
-   }
-   return 0;
+   return LoadDAC(baselines);
 }
 
 int CBV1724::GetBaselines(vector <int> &baselines, bool bQuiet)
@@ -283,177 +271,191 @@ int CBV1724::GetBaselines(vector <int> &baselines, bool bQuiet)
 }
 
 int CBV1724::DetermineBaselines()
-//Port of Marc S. routine to C++
-//Automatically determines baselines. 
+//Rewrite of baseline routine from Marc S
+//Updates to C++, makes compatible with new FW
 {
-   vector <int> oldBaselines;
-   vector <u_int32_t> newBaselines(8,0);
-   if(GetBaselines(oldBaselines,true)!=0) {
-      //there are no baselines. start with some defaults
-      for(unsigned int x=0;x<8;x++)
-	oldBaselines.push_back(0x1300); //seems like a good middle value
-   }   
-   if(oldBaselines.size()!=8) return -1;
- 
-   //load the old baselines
-   for(unsigned int x=0;x<oldBaselines.size();x++)    {	
-      if(WriteReg32((0x1098)+(0x100*x),oldBaselines[x])!=0){	     
-	 LogSendMessage("Error loading baselines");
-	 return -1;
-      }
-   }            
-   
-   u_int32_t blt_bytes;
-   u_int32_t *buff;
-   int maxIterations=35;
-   int samples = 8192;
-   u_int32_t newDAC=0.;
-   double MaxDev = 2.0;
-   double idealBaseline = 16000.;
-   int retval=0;
-   
-   vector<double> channelMeans(8,0.);
-   buff=new u_int32_t[fBufferSize];
-   vector<bool> channelFinished(8,false);
-   
-   u_int32_t ACR,ZLE;
-   ReadReg32(AcquisitionControlReg,ACR);
-   ReadReg32(ZLEReg,ZLE);
-   
-   int iteration=0;
-   u_int32_t data=0x310; //turn ZLE off, simple data format
-   WriteReg32(ZLEReg,data);
-   data =0x00; //turn boards to register-controlled mode
-   WriteReg32(AcquisitionControlReg,data);
-   
-   while(iteration<=maxIterations)  {
-      iteration++;
-      
-      //Enable board
-      usleep(50000);
-      data=0x4;
-      WriteReg32(AcquisitionControlReg,data);
-      usleep(1000);
-      //Set software trigger
-      data=0x1;
-      WriteReg32(SoftwareTriggerReg,data);
-      
-      //Disable board
-      data=0x0;
-      WriteReg32(AcquisitionControlReg,data);
+  // If there are old baselines we can use them as a starting point
 
-      
-      //Read MBLT
-      int ret,nb,pnt=0;
-      blt_bytes=0;
-      do {
-	 ret=CAENVME_FIFOBLTReadCycle(fCrateHandle,fBID.VMEAddress,
-				      ((unsigned char*)buff)+blt_bytes,
-				      fBLTSize,cvA32_U_BLT,cvD32,&nb);
-	 if(ret!=cvSuccess && ret!=cvBusError)  {
-	    cout<<"CAENVME Read Error "<<ret<<endl;
-	    return -2;
-	    //continue;
-	 }
-	 blt_bytes+=nb;
-	 if(blt_bytes>fBufferSize) {
-	    continue;
-	 }	 
-      }while(ret!=cvBusError);      
-      if(blt_bytes==0)	{
-	 //LogMessage("Baseline calibration: read nothing from board.");
-	 continue;
-      }
-      
-      //Process what you just read
-      int minval=0,maxval=0,mean=0;
-      if((buff[0]>>20)!=0xA00)	{
-	 LogMessage("Baseline calibration: unexpected buffer format");      
-	 return -1;
-      }
-      samples = (buff[0]&0xFFFFFF);
-      samples-=4; //subtract header
-      samples/=8; //get lines per channel
-      samples*=2; //2 samples per line
-      pnt=4;
-      int val;
-      for(int channel=0;channel<8;channel++)	{
-	 minval=16384; maxval=0; mean=0;
-	 for(int j=0;j<(int)(samples/2);j++)  {
-	    for(int k=0;k<2;k++)  {
-	       if(k==0) val=buff[pnt+j]&0xFFFF;
-	       else val=(buff[pnt+j]>>16)&0xFFFF;
-	       if(val>maxval) maxval=val;
-	       if(val<minval) minval=val;
-	       mean+=(double)val;
-	    }	    
-	 }
-	 pnt=pnt+(int)(samples/2);
-	 if(channelFinished[channel]) continue;
-	 
-	 mean=mean/(double)samples;
-	 	 	 
-	 //Read DAC register. 
-	 ReadReg32(V1724_DACReg+(channel*0x100),data);
-	 newDAC=data;
-	 double diff=0;
-	 if((maxval-mean)<500 && (mean-minval)<500)  { //baseline is flat 
-	    diff=double(idealBaseline-mean);
-	    if(diff<=MaxDev && diff>=MaxDev*(-1.))  {   //Existing baseline is still OK
-	       channelFinished[channel]=true;
-	       newBaselines[channel]=data;
-	       continue;
-	    }
-	    else  {       //Baseline must be adjusted
-	       if(diff>MaxDev)	 { 
-		  if(diff>8){
-		     if(diff>50) { 
-			newDAC=(data+(int)(diff/(-.264))); }//coarse adjust
-		     else newDAC=data-30;                     //a bit less coarse
-		  }
-		  else newDAC=data-15;                        //fine adjust		  
-	       }//end if diff>MaxDev
-	       else  if(diff<MaxDev*(-1.)){ 
-		  if(diff<-8)  {
-		     if(diff<-50) newDAC=(data+(int)(diff/(-.264))); //coarse adjust
-		     else newDAC=data+30;                      //a bit finer
-		  }		  
-		  else newDAC=data+15;                         //fine adjust
-	       }	       	       
-	       else newDAC=data;                               //no adjust
-	    }	    
-	    if(iteration==maxIterations){
-	       channelFinished[channel]=true;
-	       newBaselines[channel]=newDAC;//data;
-	       retval=1; //flag that at least one channel didn't finish
-	    }
-	    WriteReg32(V1724_DACReg+(0x100*channel),(newDAC&0xFFFF)); //write updated DAC
-	 }//end if baseline is flat	 
-	 else
-	   {
-	      //	      cout<<"Signal in baseline?"<<endl;	      
-	      LogSendMessage("Problem during baseline determination. Is it not flat?");
-	   }
-	 
-      }//end for through channels            
-   }//end while
+  vector <int> DACValues;  
+  if(GetBaselines(DACValues,true)!=0) {
+    DACValues.resize(8,0x1000);
+  }
 
-   //write baselines to file
-   ofstream outfile; 
-   stringstream filename;
-   filename<<"baselines/XeBaselines_"<<fBID.BoardID<<".ini";
-   outfile.open(filename.str().c_str());
-   outfile<<koHelper::CurrentTimeInt()<<endl;
-   for(unsigned int x=0;x<newBaselines.size();x++)  {
-      outfile<<x+1<<"  "<<hex<<setw(4)<<setfill('0')<<((newBaselines[x])&0xFFFF)<<endl;
-   }
-   outfile.close();
+  //Load the old baselines into the board
+  if(LoadDAC(DACValues)!=0) return -1;
 
-   WriteReg32(AcquisitionControlReg,ACR);
-   usleep(1000);
-   WriteReg32(ZLEReg,ZLE);
-   usleep(2000);
-   
-   delete buff;
-   return retval;
+  // Record all register values before overwriting (will put back later)
+  u_int32_t reg_DPP,reg_ACR,reg_SWTRIG,reg_CConf,reg_BuffOrg,reg_CustomSize,
+    reg_PT;
+  
+  //Channel configuration 0x8000 - turn off ZLE/VETO
+  ReadReg32(CBV1724_ChannelConfReg,reg_CConf);
+  WriteReg32(CBV1724_ChannelConfReg,0x310);  
+  //Acquisition control register 0x8100 - turn off S-IN
+  ReadReg32(CBV1724_AcquisitionControlReg,reg_ACR);
+  WriteReg32(CBV1724_AcquisitionControlReg,0x0);
+  //Trigger source reg - turn off TRIN, turn on SWTRIG
+  ReadReg32(CBV1724_TriggerSourceReg,reg_SWTRIG);
+  WriteReg32(CBV1724_TriggerSourceReg,0xC0000000);
+  //Turn off DPP (for old FW should do nothing [no harm either])
+  ReadReg32(0x1080,reg_DPP);
+  WriteReg32(CBV1724_DPPReg,0x1310000);  
+  //Change buffer organization so that custom size works 
+  ReadReg32(CBV1724_BuffOrg,reg_BuffOrg);
+  WriteReg32(CBV1724_BuffOrg,0xA);
+  //Make the acquisition window a reasonable size (400 samples == 4 mus)
+  ReadReg32(CBV1724_CustomSize,reg_CustomSize);
+  WriteReg32(CBV1724_CustomSize,0xC8);
+  //PTWindow can be little
+  ReadReg32(0x1038,reg_PT);
+  WriteReg32(0x8038,0x10);
+  
+  //Get the firmware revision (for data formats)
+  u_int32_t fwRev=0;
+  ReadReg32(0x8124,fwRev);
+  int fwVERSION = ((fwRev>>8)&0xFF); //4 for new FW
+
+  //Do the magic
+  double idealBaseline = 16000.;
+  double maxDev = 2.;
+  vector<bool> channelFinished(8,false);
+  
+  int maxIterations = 35;
+  int currentIteration = 0;
+
+  while(currentIteration<=maxIterations){    
+    currentIteration++;
+
+    //get out if all channels done
+    bool getOut=true;
+    for(unsigned int x=0;x<channelFinished.size();x++){
+      if(channelFinished[x]==false) getOut=false;
+    }
+    if(getOut) break;
+
+    // Enable to board
+    WriteReg32(CBV1724_AcquisitionControlReg,0x4);
+    usleep(1000); //
+    //Set Software Trigger
+    WriteReg32(CBV1724_SoftwareTriggerReg,0x1);
+    usleep(1000); //
+    //Disable the board
+    WriteReg32(CBV1724_AcquisitionControlReg,0x0);
+    
+    //Read the data in 
+    int ret=0,nb=0;
+    u_int32_t blt_bytes=0;
+    vector<u_int32_t*> *buff=new vector<u_int32_t*>;
+    u_int32_t *tempBuff = new u_int32_t[fBufferSize];
+    buff->push_back(tempBuff);
+
+    do{
+      ret = CAENVME_FIFOBLTReadCycle(fCrateHandle,fBID.VMEAddress,((unsigned char*)(*buff)[0])+blt_bytes,fBLTSize,cvA32_U_BLT,cvD32,&nb);
+      if(ret!=cvSuccess && ret!=cvBusError) {
+	cout<<"CAENVME Read error, baselines, "<<ret<<endl;
+	delete[] buff;
+	return -2;
+      }
+      blt_bytes+=nb;
+      if(blt_bytes>fBufferSize) 
+	continue;
+    }while(ret!=cvBusError);
+    if(blt_bytes==0)
+      continue;
+    
+    //Use dataprocessor methods to parse data
+    vector <u_int32_t> *dsizes = new vector<u_int32_t>;
+    dsizes->push_back(blt_bytes);
+    vector <u_int32_t> *dchannels = new vector<u_int32_t>;
+    vector <u_int32_t> *dtimes = new vector<u_int32_t>;
+    if(fwVERSION==4) DataProcessor::SplitChannelsNewFW(buff,dsizes,dtimes,dchannels);
+    else DataProcessor::SplitChannels(buff,dsizes,dtimes,dchannels);
+        //loop through channels
+    for(unsigned int x=0;x<dchannels->size();x++){
+      if(channelFinished[(*dchannels)[x]] || (*dsizes)[x]==0) {
+	delete[] (*buff)[x];
+	continue;
+      }
+          //compute baseline
+      double baseline=0.,bdiv=0.;
+      unsigned int maxval=0.,minval=17000.;
+      for(unsigned int y=0;y<(*dsizes)[x]/4;y++){
+	for(int z=0;z<2;z++){
+	  u_int32_t dbase=0;
+	  if(z==0) dbase=(((*buff)[x][y])&0xFFFF);
+	  else dbase=(((*buff)[x][y]>>16)&0xFFFF);
+	  baseline+=dbase;
+	  bdiv+=1.;
+	  if(dbase>maxval) maxval=dbase;
+	  if(dbase<minval) minval=dbase;
+	}      
+      }
+      baseline/=bdiv;
+      if(maxval-minval > 500) {
+	cout<<"Channel "<<(*dchannels)[x]<<" signal in baseline?"<<endl;
+	continue; //signal in baseline?
+      }
+      //shooting for 16000. best is if we UNDERshoot and then can more accurately adjust DAC
+      double discrepancy = baseline-idealBaseline;      
+      //cout<<"Discrepancy "<<discrepancy<<" old BL: "<<DACValues[(*dchannels)[x]]<<endl;
+      if(abs(discrepancy)<=maxDev) { 
+	channelFinished[(*dchannels)[x]]=true;
+	continue;
+      }
+      if(discrepancy<0) //baseline is BELOW ideal
+	DACValues[(*dchannels)[x]] = (int)DACValues[(*dchannels)[x]]-((0xFFFF/2)*((-1*discrepancy)/(16383.)));
+      else if(discrepancy<300) // find adj
+	DACValues[(*dchannels)[x]] = (int)DACValues[(*dchannels)[x]]+((0xFFFF/2)*((discrepancy/(16383.))));
+      else //coarse adj
+	DACValues[(*dchannels)[x]] = (int)DACValues[(*dchannels)[x]]+300;
+      if(DACValues[(*dchannels)[x]]>0xFFFF) DACValues[(*dchannels)[x]]=0xFFFF;
+      if(DACValues[(*dchannels)[x]]<0) DACValues[(*dchannels)[x]]=0;
+      delete[] (*buff)[x];
+    } //end loop through channels
+    LoadDAC(DACValues);
+    
+    delete buff;
+    delete dsizes;
+    delete dchannels;
+    delete dtimes;
+    
+  }//end while through iterations
+  
+  //write baselines to file                                                         
+  ofstream outfile;                                                                 
+  stringstream filename;                                                            
+  filename<<"baselines/XeBaselines_"<<fBID.BoardID<<".ini";                         
+  outfile.open(filename.str().c_str());                                             
+  outfile<<koHelper::CurrentTimeInt()<<endl;                                        
+  for(unsigned int x=0;x<DACValues.size();x++)  {                                
+    outfile<<x+1<<"  "<<hex<<setw(4)<<setfill('0')<<((DACValues[x])&0xFFFF)<<endl;                                                                                  
+  }                                                                                 
+  outfile.close();  
+  //Put everyhting back to how it was
+  WriteReg32(CBV1724_ChannelConfReg,reg_CConf);
+  WriteReg32(CBV1724_AcquisitionControlReg,reg_ACR);
+  WriteReg32(CBV1724_TriggerSourceReg,reg_SWTRIG);
+  WriteReg32(CBV1724_DPPReg,reg_DPP);
+  WriteReg32(CBV1724_BuffOrg,reg_BuffOrg);
+  WriteReg32(CBV1724_CustomSize,reg_CustomSize);
+  WriteReg32(0x8038,reg_PT);
+  int retval=0;
+  for(unsigned int x=0;x<channelFinished.size();x++){
+    if(channelFinished[x]=false) retval=-1;
+  }
+
+  return retval;
+
 }
+
+int CBV1724::LoadDAC(vector<int> baselines){
+  if(baselines.size()!=8) return -1;
+  for(unsigned int x=0;x<baselines.size();x++){
+    if(WriteReg32((0x1098)+(0x100*x),baselines[x])!=0){
+      LogSendMessage("Error loading old baselines");
+      return -1;
+    }
+  }
+  return 0;
+}
+

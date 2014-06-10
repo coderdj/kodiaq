@@ -215,6 +215,7 @@ int DAQRecorder_protobuff::Initialize(koOptions *options)
 {
   Shutdown();
   
+  m_koOptions=options;
    m_FileOptions = options->GetOutfileOptions();
    
    // get a file name
