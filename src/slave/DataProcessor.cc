@@ -371,7 +371,7 @@ void DataProcessor::Process()
 	  mongo::BSONObjBuilder bson;
 	  
 	  //remove this later!
-	  if(m_koOptions->GetMongoOptions().DBAddress=="online.scope"){
+	  if(m_koOptions->GetMongoOptions().Collection=="online.scope"){
 	    time_t currentTime;
 	    struct tm *starttime;
 	    time(&currentTime);
