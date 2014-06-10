@@ -82,9 +82,11 @@ bin_PROGRAMS = koSlave$(EXEEXT)
 @WITH_LIBPBF_TRUE@am__append_1 = -lpbf -lprotobuf -lsnappy
 
 #options flags
-@WITH_MONGODB_TRUE@am__append_2 = -lmongoclient -lboost_thread -lboost_filesystem -lboost_program_options -lboost_system -lsnappy
-@WITH_DDC10_TRUE@am__append_3 = -L$(top_srcdir)/src/ddc10/.libs -lddc
-@WITH_DDC10_TRUE@am__append_4 = -I$(top_srcdir)/src/ddc10
+#if WITH_MONGODB
+#koSlave_LDADD += -lmongoclient -lboost_thread -lboost_filesystem -lboost_program_options -lboost_system -lsnappy
+#endif
+@WITH_DDC10_TRUE@am__append_2 = -L$(top_srcdir)/src/ddc10/.libs -lddc
+@WITH_DDC10_TRUE@am__append_3 = -I$(top_srcdir)/src/ddc10
 subdir = src/slave
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/build/build-aux/depcomp
@@ -109,8 +111,7 @@ am_koSlave_OBJECTS = koSlave-koSlave.$(OBJEXT) \
 	koSlave-DAQRecorder.$(OBJEXT) koSlave-DataProcessor.$(OBJEXT)
 koSlave_OBJECTS = $(am_koSlave_OBJECTS)
 am__DEPENDENCIES_1 =
-koSlave_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
+koSlave_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
@@ -318,9 +319,9 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 koSlave_SOURCES = koSlave.cc CBV1724.cc CBV1724.hh CBV2718.cc CBV2718.hh DigiInterface.cc DigiInterface.hh VMEBoard.cc VMEBoard.hh DAQRecorder.cc DAQRecorder.hh DataProcessor.cc DataProcessor.hh
 koSlave_CPPFLAGS = -I$(top_srcdir)/src/common -Wall -g -DLINUX -fPIC \
-	$(am__append_4)
+	$(am__append_3)
 koSlave_LDADD = -L$(top_srcdir)/src/common/.libs -lkodiaq -lCAENVME \
-	$(am__append_1) $(am__append_2) $(am__append_3)
+	$(am__append_1) $(am__append_2)
 koSlave_LDFLAGS = -static
 all: all-am
 

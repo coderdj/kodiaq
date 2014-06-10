@@ -10,9 +10,9 @@ koSlave_LDADD += -lpbf -lprotobuf -lsnappy
 endif
 
 #options flags
-if WITH_MONGODB
-koSlave_LDADD += -lmongoclient -lboost_thread -lboost_filesystem -lboost_program_options -lboost_system -lsnappy
-endif
+#if WITH_MONGODB
+#koSlave_LDADD += -lmongoclient -lboost_thread -lboost_filesystem -lboost_program_options -lboost_system -lsnappy
+#endif
 if WITH_DDC10
 koSlave_LDADD += -L$(top_srcdir)/src/ddc10/.libs -lddc
 koSlave_CPPFLAGS += -I$(top_srcdir)/src/ddc10

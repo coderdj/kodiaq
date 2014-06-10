@@ -79,6 +79,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 bin_PROGRAMS = koMaster$(EXEEXT)
+#koMaster_LDADD = -L$(top_srcdir)/src/common/.libs -lkodiaq -lmongoclient -lboost_thread -lboost_filesystem -lboost_program_options -lboost_system -lrt
 @WITH_DDC10_TRUE@am__append_1 = -L$(top_srcdir)/src/ddc10/.libs -lddc
 @WITH_DDC10_TRUE@am__append_2 = -I$(top_srcdir)/src/ddc10
 subdir = src/master
@@ -313,8 +314,7 @@ koMaster_SOURCES = koMaster.cc MasterMongodbConnection.cc MasterMongodbConnectio
 koMaster_CPPFLAGS = -I$(top_srcdir)/src/common -Wall -g -DLINUX -fPIC \
 	$(am__append_2)
 koMaster_LDADD = -L$(top_srcdir)/src/common/.libs -lkodiaq \
-	-lmongoclient -lboost_thread -lboost_filesystem \
-	-lboost_program_options -lboost_system -lrt $(am__append_1)
+	$(am__append_1)
 koMaster_LDFLAGS = -static
 all: all-am
 

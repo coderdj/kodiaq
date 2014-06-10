@@ -24,6 +24,8 @@ CBV1724::CBV1724()
    fBuffers=NULL;
    fSizes=NULL;
    fReadoutThresh=10;
+   pthread_mutex_init(&fDataLock,NULL);
+   pthread_cond_init(&fReadyCondition,NULL);
 }
 
 CBV1724::~CBV1724()
@@ -41,6 +43,8 @@ CBV1724::CBV1724(BoardDefinition_t BoardDef, koLogger *kLog)
   fBuffers=NULL;
   fSizes=NULL;
   fReadoutThresh=10;
+  pthread_mutex_init(&fDataLock,NULL);
+  pthread_cond_init(&fReadyCondition,NULL);
 }
 
 int CBV1724::Initialize(koOptions *options)
@@ -57,10 +61,6 @@ int CBV1724::Initialize(koOptions *options)
    
    //Reset all values
    bActivated=false;
-   int a = pthread_mutex_init(&fDataLock,NULL);   
-   if(a<0) return -1;
-   a = pthread_cond_init(&fReadyCondition,NULL);
-   if(a<0) return -1;
    UnlockDataBuffer();
    
    //Get size of BLT read using board data and options

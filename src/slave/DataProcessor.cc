@@ -370,6 +370,16 @@ void DataProcessor::Process()
 	if(m_koOptions->GetRunOptions().WriteMode == WRITEMODE_MONGODB){
 	  mongo::BSONObjBuilder bson;
 	  
+	  //remove this later!
+	  if(m_koOptions->GetMongoOptions().DBAddress=="online.scope"){
+	    time_t currentTime;
+	    struct tm *starttime;
+	    time(&currentTime);
+	    starttime = localtime(&currentTime);
+	    bson.appendTimeT("starttimestamp",mktime(starttime));
+	  }
+	  //end remove later
+
 	  bson.append("module",iModule);
 	  bson.append("channel",Channel);
 	  bson.append("time",Time64);
