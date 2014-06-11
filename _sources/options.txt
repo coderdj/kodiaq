@@ -253,7 +253,7 @@ related to your chosen write mode.
      Define what is done with the data. 0 - no writing (test mode). 1
      - write to file (not yet supported). 2 - write to mongodb. If you
      choose mode '2', make sure the MONGO_OPTIONS are defined.
-   * **MONGO_OPTIONS {string1} {string2} {int1} {int2} {int3} {int4}**
+   * **MONGO_OPTIONS {string1} {string2} {int1} {int2}**
      Define the mongo linkage. This one is a bit more complicated and
      will be explained in detail.
      
@@ -269,19 +269,11 @@ related to your chosen write mode.
        collection 'pmtdata' while 'data.*' puts the data in database
        'data' but creates a new collection every run with form
        data_YYMMDD_HHMM.
-     * {int1} defines the compression mode. All data will be
-       transferred to mongodb over the network so it is usually
-       advantageous to compress it first. kodiaq uses snappy, which
-       compresses the data by about 50% at a few hundres MB/s. Setting
-       this value to 0 means no compression while 1 turns on
-       compression. Whether or not the data is compressed is communicated to
-       the event builder via the run attributes document (see the protocols
-       section).
-     * {int2} gives the min insert size. kodiaq uses bulk inserts to
+     * {int1} gives the min insert size. kodiaq uses bulk inserts to
        put data into mongodb. This means each insert is actually a vector of
        BSON documents. An insert must exceed this size before being
        put in the database. Size is in bytes.
-     * {int3} defines the write concern for mongo. Putting this to
+     * {int2} defines the write concern for mongo. Putting this to
        normal mode (set 0) turns write concern on. This means the client will
        wait for a reply from the mongo database after writing. On the
        one hand, this is very good since it confirms an insert made it to
@@ -310,12 +302,14 @@ related to your chosen write mode.
     the path. Using a wildcard (*) at the end of the string only will
     cause the end of the filename to be dynamically generated based on
     time and date. Please don't put a wildcard anywhere except the end
-    of the string. The first integer defines the compression (0-off
-    1-snappy). The second int defines the number of events per file.
+    of the string. The int defines the number of events per file.
     The software only supports up to 10,000 files per run so don't
     make this too huge (the last file will just get all the data if
     this number is overrun). Writing -1 means all data in one file.
     
+  * **COMPRESSION** {int}
+    Turn compression on (1) or off (0). Applies to mongodb and file output. Compression done with the google snappy package.
+
 An example of how these options appear in the .ini file is shown
 below. ::
 
