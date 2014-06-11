@@ -36,7 +36,27 @@ to the master, provided the appropriate ports are open.
 
 Please see the full documentation at http://xenon1t.github.io/kodiaq/
 
-2. Installation - User Client
+2. Installation - Lite Version
+-----------------------------------------
+
+Prerequisites:
+   * CAEN A2818 or A3818 installed and configured
+   * CAENVMElib installed, included in kodiaq/caen. Follow instructions in the readme
+   * libncurses5-dev, also libmongoclient (for mongodb support) or libpbf (for file support)
+  
+Steps to build and run:
+   1. ./configure --enable-lite --disable-user
+   2. make
+   3. cd src/slave
+   4. ./koSlave
+   
+Note that the file DAQConfig.ini must be present in src/slave/DAQConfig.ini. If you haven't done this yet you can use the following line::
+   
+    cp src/master/data/RunModes/DAQOptionsMaster.ini src/slave/DAQConfig.ini
+
+Then edit this file with your settings.
+
+3. Installation - User Client
 -----------------------------------------
 
 Follow these instructions if you just want the user client
@@ -57,7 +77,7 @@ Steps to build the code:
     4. ./kodiaq_client
     5. Login and have fun!
 
-3. Installation - Full version
+4. Installation - Full version
 ---------------------------------------------
 
 Prerequisites:
