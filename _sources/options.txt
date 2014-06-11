@@ -241,6 +241,9 @@ An example of how these options appears in the .ini file is shown below. ::
      ##                boards are armed
      BASELINE_MODE 1
 
+     ## COMPRESSION {int}
+     ##     Usage: 0 - no compression 1 - compression with snappy
+     COMPRESSION 1
 
 Output Options
 ---------------
@@ -317,13 +320,12 @@ below. ::
      ##     Usage: define write mode. 0-no writing 1-to file 2-mongodb
      WRITE_MODE 2
      
-     ## MONGO_OPTIONS {string} {string} {int} {int} {int}
+     ## MONGO_OPTIONS {string} {string} {int} {int} 
      ##     Usage: first string mongodb address
      ##            second string collection name
-     ##            first int 0-do not zip output 1-zip output
-     ##            second int {int} max insert size
-     ##            third int {int} write concern (0-normal 1-off)
-     MONGO_OPTIONS lheppc42 data.test 1 5000 1 
+     ##            first int {int} max insert size
+     ##            second int {int} write concern (0-normal 1-off)
+     MONGO_OPTIONS lheppc42 data.test 5000 1 
      
      ## PROCESSING_OPTIONSS {int} {int} {int}
      ##     Usage: define the number of processing threads. program will
@@ -334,14 +336,13 @@ below. ::
      ##            board says it is ready to be read)
      PROCESSING_OPTIONS 6 2 1
      
-     ## OUTFILE_OPTIONS {string} {int} {int}
+     ## OUTFILE_OPTIONS {string} {int} 
      ##     Usage: define options for file output. The first string argument
      ##            is the path. A wildcard means to end the file name with
      ##            a number determined by the current date/time.
-     ##            The first int is used to define the compression. 1-on 0-off
-     ##            The second int defines the number of events per file. -1
+     ##            The int defines the number of events per file. -1
      ##            means unlimited.
-     OUTFILE_OPTIONS koData* 1 5000
+     OUTFILE_OPTIONS koData* 5000
      
 
 VME Options

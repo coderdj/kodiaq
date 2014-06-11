@@ -150,7 +150,7 @@ We also want a newer version of mongodb so we can install that as well.::
       git clone https://github.com/mongodb/mongo-cxx-driver.git mongodb
       cd mongodb
       git checkout 26compat    #currently for 2.6 compatible driver
-      scons --use-system-boost --all install-mongoclient
+      scons --use-system-boost --full install-mongoclient
       cd ..
 
 Since mongo seems to change how to do this with nearly every release you may prefer to check their most recent documentation.
