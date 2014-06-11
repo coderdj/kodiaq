@@ -241,9 +241,6 @@ An example of how these options appears in the .ini file is shown below. ::
      ##                boards are armed
      BASELINE_MODE 1
 
-     ## COMPRESSION {int}
-     ##     Usage: 0 - no compression 1 - compression with snappy
-     COMPRESSION 1
 
 Output Options
 ---------------
@@ -343,7 +340,10 @@ below. ::
      ##            The int defines the number of events per file. -1
      ##            means unlimited.
      OUTFILE_OPTIONS koData* 5000
-     
+
+     ## COMPRESSION {int}                                                      
+     ##     Usage: 0 - no compression 1 - compression with snappy              
+     COMPRESSION 1 
 
 VME Options
 ------------------
