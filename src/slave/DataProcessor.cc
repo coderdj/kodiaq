@@ -119,7 +119,7 @@ void DataProcessor::SplitBlocks(vector<u_int32_t*> *&buffvec,
 
 void DataProcessor::SplitChannels(vector<u_int32_t*> *&buffvec, vector<u_int32_t> *&sizevec,
 				      vector<u_int32_t> *timeStamps, vector<u_int32_t> *channels,
-				      vector<u_int32_t> *eventIndices)
+				  vector<u_int32_t> *eventIndices, bool ZLE)
 {
    
   vector <u_int32_t*> *retbuff = new vector <u_int32_t*>();
@@ -145,11 +145,11 @@ void DataProcessor::SplitChannels(vector<u_int32_t*> *&buffvec, vector<u_int32_t
     
     unsigned int idx=0;           //used to iterate through the buffer
     u_int32_t headerTime=0;
-    
+    u_int32_t channelSize=0;
     while(idx<(((*sizevec)[x])/(sizeof(u_int32_t)))) {	   
       if(((*buffvec)[x][idx])==0xFFFFFFFF){idx++; continue;}//empty data, iterate
       if(((*buffvec)[x][idx]>>20)!=0xA00){idx++; continue;} //found a header
-      
+      if(!ZLE) channelSize = (((*buffvec)[x][idx]&0xFFFFFF)-4)/8;
       if(eventIndices!=NULL)
 	eventIndices->push_back(retbuff->size());
       //Read information from header. Need channel mask and header time
@@ -160,21 +160,29 @@ void DataProcessor::SplitChannels(vector<u_int32_t*> *&buffvec, vector<u_int32_t
       for(int channel=0; channel<8;channel++){   //loop through channels
 	if(!((mask>>channel)&1))      //Do we have this channel in the event?
 	  continue;
-	u_int32_t channelSize = ((*buffvec)[x][idx]);
-	idx++; //iterate past the size word
+	if(ZLE){
+	  channelSize = ((*buffvec)[x][idx]);
+	  idx++; //iterate past the size word
+	}
 	
 	int sampleCnt=0;        //this counts the samples for timing purposes
-	unsigned int wordCnt=1; //this counts the words so we know when we get to the end of size
+	unsigned int wordCnt=0; //this counts the words so we know when we get to the end of size
+	if(ZLE) wordCnt++;
+
 	while(wordCnt<channelSize) { //until we get to the end of this channel data                
-	  if(((*buffvec)[x][idx]>>28)!=0x8) { //data is no good
+	  if(ZLE && ((*buffvec)[x][idx]>>28)!=0x8) { //data is no good
 	    sampleCnt+=((2*(*buffvec)[x][idx]));
 	    idx++;
 	    wordCnt++;
 	    continue;
 	  }
-	  int GoodWords = (*buffvec)[x][idx]&0xFFFFFFF;
-	  idx++;                   //iterate past the control word
-	  wordCnt++;
+	  int GoodWords=0;
+	  if(ZLE){
+	    GoodWords = (*buffvec)[x][idx]&0xFFFFFFF;
+	    idx++;                   //iterate past the control word
+	    wordCnt++;
+	  }
+	  else  GoodWords=channelSize;
 	  //char *keep = new char[GoodWords*4];
 	  u_int32_t *keep = new u_int32_t[GoodWords];
 	  //	       memcpy(keep,((*buffvec)[x]+idx),4*GoodWords);
@@ -324,7 +332,10 @@ void DataProcessor::Process()
 
 	if(m_koOptions->GetProcessingOptions().Mode == 2 ) { //channel parsing old fw
 	  eventIndices = new vector<u_int32_t>();
-	  SplitChannels(buffvec,sizevec,times,channels,eventIndices);
+	  if(m_koOptions->ZLE())
+	    SplitChannels(buffvec,sizevec,times,channels,eventIndices);
+	  
+	  else SplitChannels(buffvec,sizevec,times,channels,eventIndices,false);
 	}
 	else if(m_koOptions->GetProcessingOptions().Mode == 3) { //channel parsing new fw
 	  SplitChannelsNewFW(buffvec,sizevec,times,channels);

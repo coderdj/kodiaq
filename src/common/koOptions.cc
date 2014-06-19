@@ -29,7 +29,8 @@ void koOptions::Reset()
    fLinks.clear();
    fBoards.clear();
    fVMEOptions.clear();
-   
+   bZLE=false;
+
    //Reset run options
    fRunOptions.BLTPerBulkInsert=fRunOptions.BaselineMode=0;
    fRunOptions.BLTBytes=fRunOptions.WriteMode=fRunOptions.RunStart=
@@ -117,6 +118,10 @@ int koOptions::ReadParameterFile(string filename)
 	 temp.CrateID=koHelper::StringToInt(words[4]);
 	 temp.LinkID=koHelper::StringToInt(words[5]);
 	 fVMEOptions.push_back(temp);
+	 if(temp.Address==0x8000 && ((temp.Value>>17)&1)){
+	   cout<<"HAS ZLE"<<endl;
+	   bZLE=true;
+	 }
 	 continue;
       }      
       if(words[0]=="LINK")	{
