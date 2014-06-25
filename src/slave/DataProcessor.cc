@@ -271,9 +271,11 @@ void DataProcessor::Process()
   // General processing class. Parses data then passes on to the appropriate recorder object
   bool bExitCondition = false; //set to true if no boards are active
   
-  if(m_DAQRecorder == NULL || m_DigiInterface == NULL || m_koOptions == NULL) 
+  if(m_DigiInterface == NULL || m_koOptions == NULL) 
     return;
-  
+  if(m_DAQRecorder==NULL && m_koOptions->GetRunOptions().WriteMode!=WRITEMODE_NONE)
+    return;
+
 #ifdef HAVE_LIBMONGOCLIENT
   int mongoID = -1;
   DAQRecorder_mongodb *DAQRecorder_mdb = NULL;
@@ -349,7 +351,8 @@ void DataProcessor::Process()
 	}
 	
 	//Convert the time to 64-bit
-	int ResetCounter = m_DAQRecorder->GetResetCounter(TimeStamp);
+	int ResetCounter = 0;
+	if(m_DAQRecorder!=NULL) m_DAQRecorder->GetResetCounter(TimeStamp);
 	long long Time64 = ((unsigned long)ResetCounter << 31) | TimeStamp;
 
 	//zip data if required
