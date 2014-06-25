@@ -70,7 +70,8 @@ public:
 			    vector <u_int32_t>  *&sizevec,
 			    vector <u_int32_t>   *timestamps,
 			    vector <u_int32_t>   *channels,
-			    vector <u_int32_t>  *eventIndices=NULL);
+				   vector <u_int32_t>  *eventIndices=NULL,
+				   bool ZLE=true);
   //
   // Name      : void DataProcessor::SplitChannelsNewFW(vector <u_int32_t*> *&buffvec,
   //                                                        vector <u_int32_t> *&sizevec,

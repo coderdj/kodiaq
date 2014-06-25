@@ -157,7 +157,9 @@ class koOptions
    void UpdateMongodbCollection(string collection)  {
       fMongoOptions.Collection=collection;
    };
-   
+  bool ZLE(){
+    return bZLE;
+  };
    //Put any dependency-specific public members here
 #ifdef WITH_DDC10
    ddc10_par_t GetVetoOptions()  {	
@@ -179,7 +181,7 @@ class koOptions
      
    string                    fRunModeID;
    void                      Reset();   
-   bool                      bCompression;
+  bool                      bCompression,bZLE;
 // put any dependency-specific private members here   
 #ifdef WITH_DDC10
    ddc10_par_t               fDDC10Options;

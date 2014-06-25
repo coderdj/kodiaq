@@ -287,33 +287,45 @@ int CBV1724::DetermineBaselines()
   // Record all register values before overwriting (will put back later)
   u_int32_t reg_DPP,reg_ACR,reg_SWTRIG,reg_CConf,reg_BuffOrg,reg_CustomSize,
     reg_PT;
-  
+
+  //Get the firmware revision (for data formats)                                     
+  u_int32_t fwRev=0;
+  //ReadReg32(0x8124,fwRev);
+  ReadReg32(0x118C,fwRev);
+  int fwVERSION = ((fwRev>>8)&0xFF); //0 for old FW, 137 for new FW
+  int fwVERSIONOTHER = (fwRev)&0xFF;
+  cout<<fwVERSION<<" VERSION "<<fwVERSIONOTHER<<endl;
   //Channel configuration 0x8000 - turn off ZLE/VETO
   ReadReg32(CBV1724_ChannelConfReg,reg_CConf);
-  WriteReg32(CBV1724_ChannelConfReg,0x310);  
+  if(fwVERSION!=0)
+    WriteReg32(CBV1724_ChannelConfReg,0x310);  
+  else 
+    WriteReg32(CBV1724_ChannelConfReg,0x10);
   //Acquisition control register 0x8100 - turn off S-IN
   ReadReg32(CBV1724_AcquisitionControlReg,reg_ACR);
   WriteReg32(CBV1724_AcquisitionControlReg,0x0);
   //Trigger source reg - turn off TRIN, turn on SWTRIG
   ReadReg32(CBV1724_TriggerSourceReg,reg_SWTRIG);
-  WriteReg32(CBV1724_TriggerSourceReg,0xC0000000);
+  WriteReg32(CBV1724_TriggerSourceReg,0x80000000);
   //Turn off DPP (for old FW should do nothing [no harm either])
   ReadReg32(0x1080,reg_DPP);
-  WriteReg32(CBV1724_DPPReg,0x1310000);  
+  if(fwVERSION!=0)
+    WriteReg32(CBV1724_DPPReg,0x1310000);  
+  else 
+    WriteReg32(CBV1724_DPPReg,0x800000);
   //Change buffer organization so that custom size works 
   ReadReg32(CBV1724_BuffOrg,reg_BuffOrg);
-  WriteReg32(CBV1724_BuffOrg,0xA);
+  if(fwVERSION!=0)
+    WriteReg32(CBV1724_BuffOrg,0xA);
   //Make the acquisition window a reasonable size (400 samples == 4 mus)
   ReadReg32(CBV1724_CustomSize,reg_CustomSize);
-  WriteReg32(CBV1724_CustomSize,0xC8);
+  if(fwVERSION!=0)
+    WriteReg32(CBV1724_CustomSize,0xC8);
   //PTWindow can be little
   ReadReg32(0x1038,reg_PT);
-  WriteReg32(0x8038,0x10);
+  if(fwVERSION!=0)
+    WriteReg32(0x8038,0x10);
   
-  //Get the firmware revision (for data formats)
-  u_int32_t fwRev=0;
-  ReadReg32(0x8124,fwRev);
-  int fwVERSION = ((fwRev>>8)&0xFF); //4 for new FW
 
   //Do the magic
   double idealBaseline = 16000.;
@@ -335,10 +347,10 @@ int CBV1724::DetermineBaselines()
 
     // Enable to board
     WriteReg32(CBV1724_AcquisitionControlReg,0x4);
-    usleep(1000); //
+    usleep(5000); //
     //Set Software Trigger
     WriteReg32(CBV1724_SoftwareTriggerReg,0x1);
-    usleep(1000); //
+    usleep(5000); //
     //Disable the board
     WriteReg32(CBV1724_AcquisitionControlReg,0x0);
     
@@ -362,28 +374,29 @@ int CBV1724::DetermineBaselines()
     }while(ret!=cvBusError);
     if(blt_bytes==0)
       continue;
-    
     //Use dataprocessor methods to parse data
     vector <u_int32_t> *dsizes = new vector<u_int32_t>;
     dsizes->push_back(blt_bytes);
     vector <u_int32_t> *dchannels = new vector<u_int32_t>;
     vector <u_int32_t> *dtimes = new vector<u_int32_t>;
-    if(fwVERSION==4) DataProcessor::SplitChannelsNewFW(buff,dsizes,dtimes,dchannels);
-    else DataProcessor::SplitChannels(buff,dsizes,dtimes,dchannels);
+    if(fwVERSION!=0) DataProcessor::SplitChannelsNewFW(buff,dsizes,dtimes,dchannels);
+    else DataProcessor::SplitChannels(buff,dsizes,dtimes,dchannels,NULL,false);
         //loop through channels
     for(unsigned int x=0;x<dchannels->size();x++){
       if(channelFinished[(*dchannels)[x]] || (*dsizes)[x]==0) {
 	delete[] (*buff)[x];
 	continue;
       }
-          //compute baseline
+      //compute baseline
       double baseline=0.,bdiv=0.;
       unsigned int maxval=0.,minval=17000.;
+      //cout<<"Channel: "<<(*dchannels)[x]<<endl;
       for(unsigned int y=0;y<(*dsizes)[x]/4;y++){
 	for(int z=0;z<2;z++){
 	  u_int32_t dbase=0;
 	  if(z==0) dbase=(((*buff)[x][y])&0xFFFF);
 	  else dbase=(((*buff)[x][y]>>16)&0xFFFF);
+	  //	  cout<<hex<<dbase<<endl;
 	  baseline+=dbase;
 	  bdiv+=1.;
 	  if(dbase>maxval) maxval=dbase;
