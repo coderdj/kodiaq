@@ -203,7 +203,7 @@ int koOptions::ReadParameterFile(string filename)
       //dependency-specific options. ddc10 support must be compiled in
 #ifdef WITH_DDC10
       if(words[0] == "DDC10_OPTIONS")   {	   
-	 if(words.size()<9) continue;
+	 if(words.size()<17) continue;
 	 fDDC10Options.IPAddress = words[1];
 	 fDDC10Options.Sign = koHelper::StringToInt(words[2]);
 	 fDDC10Options.IntWindow = koHelper::StringToInt(words[3]);
