@@ -63,8 +63,12 @@ int MasterMongodbConnection::Initialize(string user, string runMode, string name
    b.append("user",user);
    b.append("compressed",options->Compression());
    b.append("data_taking_ended",false);
+   b.append("error",false);
+   b.append("trigger_ended",false);
+   b.append("processing_ended",false);
+   b.append("saved_to_file",false);
    b.append("name",name);
-   
+
    //put in start time
    time_t currentTime;
    struct tm *starttime;
