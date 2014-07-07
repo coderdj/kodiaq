@@ -111,7 +111,7 @@ int MasterMongodbConnection::UpdateEndTime(bool onlineOnly)
       struct tm *currenttime;
       time(&nowTime);
       currenttime = localtime(&nowTime);
-      
+
       std::size_t pos;
       pos=fMongoOptions.Collection.find_first_of(".",0);
       
@@ -122,13 +122,13 @@ int MasterMongodbConnection::UpdateEndTime(bool onlineOnly)
       mongo::BSONObj res;
       b << "findandmodify" << secondString.c_str() <<
 	"query" << BSON("_id" << fLastDocOID) << 
-	"update" << BSON("$set" << BSON("endtimestamp" << mongo::Date_t(mktime(currenttime)) << "data_taking_ended" << true));
+	"update" << BSON("$set" << BSON("endtimestamp" <<mongo::Date_t(1000*mktime(currenttime)) << "data_taking_ended" << true));
 
       string onlinesubstr = "runs";
       mongo::BSONObjBuilder bo;
       bo << "findandmodify" << onlinesubstr.c_str() << 
 	"query" << BSON("_id" << fLastDocOID) << 
-	"update" << BSON("$set" << BSON("endtimestamp" << mongo::Date_t(mktime(currenttime)) << "data_taking_ended" << true)); 
+	"update" << BSON("$set" << BSON("endtimestamp" <<mongo::Date_t(1000*mktime(currenttime)) << "data_taking_ended" << true)); 
       
       if(!onlineOnly)
 	assert(fMongoDB.runCommand(firstString.c_str(),b.obj(),res));      
