@@ -208,9 +208,11 @@ connection_loop:
 	       continue;
 	    }	    
 	    //change the write collection
-	    cout<<"Updating db to "<<dbname<<endl;
-	    fDAQOptions.UpdateMongodbCollection(dbname);
-	    fElectronics->UpdateRecorderCollection(&fDAQOptions);	    	 
+	    if(fDAQOptions.GetRunOptions().WriteMode==WRITEMODE_MONGODB) {
+	      cout<<"Updating db to "<<dbname<<endl;
+	      fDAQOptions.UpdateMongodbCollection(dbname);
+	      fElectronics->UpdateRecorderCollection(&fDAQOptions);	    
+	    }	      
 	 }	 
 	 if(command=="SLEEP")  {
 	    if(bRunning) continue;
