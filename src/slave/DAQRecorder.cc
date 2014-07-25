@@ -44,9 +44,12 @@ int DAQRecorder::GetResetCounter(u_int32_t currentTime)
 {
    pthread_mutex_lock(&m_resetMutex);
    int a=GetCurPrevNext(currentTime);
-   if(a==1) m_iResetCounter++;
+   if(a==1) {
+     m_iResetCounter++;
+     a=0;
+   }
    pthread_mutex_unlock(&m_resetMutex);
-   return m_iResetCounter-a;   
+   return m_iResetCounter+a;   
    
 }
 
