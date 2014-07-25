@@ -20,6 +20,7 @@ DAQRecorder::DAQRecorder()
    m_iResetCounter = 0;
    m_bTimeOverTen  = false;
    m_bInitialized  = false;
+   pthread_mutex_init(&m_logMutex,NULL);
 }
 
 DAQRecorder::DAQRecorder(koLogger *kLog)
@@ -29,17 +30,19 @@ DAQRecorder::DAQRecorder(koLogger *kLog)
    m_iResetCounter = 0;
    m_bTimeOverTen  = false;
    m_bInitialized  = false;
+   pthread_mutex_init(&m_logMutex,NULL);
 }
 
 DAQRecorder::~DAQRecorder()
 {
+  pthread_mutex_destroy(&m_logMutex);
 }
 
 int DAQRecorder::GetResetCounter(u_int32_t currentTime)
 {
    int a=GetCurPrevNext(currentTime);
    if(a==1) m_iResetCounter++;
-   if(a==-1) return m_iResetCounter-1;
+   if(a==-1) return m_iResetCounter-1;   
    return m_iResetCounter;
 }
 
@@ -60,14 +63,18 @@ bool DAQRecorder::QueryError(string &err)
 
 void DAQRecorder::LogError(string err)
 {
-   m_sErrorText = err;
-   m_bErrorSet  = true;   
+  pthread_mutex_lock(&m_logMutex);
+  m_sErrorText = err;
+  m_bErrorSet  = true;   
+  pthread_mutex_unlock(&m_logMutex);
 }
 
 void DAQRecorder::ResetError()
 {
-   m_sErrorText = "";
-   m_bErrorSet  = false;
+  pthread_mutex_lock(&m_logMutex);
+  m_sErrorText = "";
+  m_bErrorSet  = false;
+  pthread_mutex_unlock(&m_logMutex);
 }
 
 int DAQRecorder::GetCurPrevNext(u_int32_t timestamp)
@@ -76,10 +83,10 @@ int DAQRecorder::GetCurPrevNext(u_int32_t timestamp)
     m_bTimeOverTen = false;
     return 1;
   }
-  else if(timestamp>1E9 && !m_bTimeOverTen)  //after 10 sec and ToT not set yet
-    m_bTimeOverTen = true;
-  else if(timestamp>2E9 && !m_bTimeOverTen)
+  else if(timestamp>2E9 && !m_bTimeOverTen)  //after 10 sec and ToT not set yet
     return -1;
+  else if(timestamp>1E9 && !m_bTimeOverTen)
+    m_bTimeOverTen = true;
   return 0;      
 }
 
@@ -135,6 +142,7 @@ int DAQRecorder_mongodb::RegisterProcessor()
      stringstream err;
       err<<"DAQRecorder_mongodb::RegisterProcessor - Error connecting to mongodb "<<e.toString();
       LogError(err.str());
+      cout<<err<<endl;
       return -1;
    }
    int lock = pthread_mutex_lock(&m_ConnectionMutex);
@@ -254,6 +262,7 @@ int DAQRecorder_protobuff::RegisterProcessor()
 
 int DAQRecorder_protobuff::InsertThreaded()
 {
+  return 0;
 }
 
 void DAQRecorder_protobuff::Shutdown()

@@ -365,9 +365,9 @@ void DataProcessor::Process()
 	
 	//Convert the time to 64-bit
 	int ResetCounter = 0;
-	if(m_DAQRecorder!=NULL) m_DAQRecorder->GetResetCounter(TimeStamp);
+	if(m_DAQRecorder!=NULL) ResetCounter = m_DAQRecorder->GetResetCounter(TimeStamp);
 	long long Time64 = ((unsigned long)ResetCounter << 31) | TimeStamp;
-
+	
 	//zip data if required
 	char* buff=NULL;
 	size_t eventSize=0;

@@ -124,7 +124,7 @@ unsigned int CBV1724::ReadMBLT()
       blt_bytes+=nb;
       if(blt_bytes>fBufferSize)	{
 	 stringstream ss;
-	 ss<<"Board "<<fBID.BoardID<<" reports insufficient BLT buffer size."<<endl;	 
+	 ss<<"Board "<<fBID.BoardID<<" reports insufficient BLT buffer size. ("<<blt_bytes<<" > "<<fBufferSize<<")"<<endl;	 
 	 cout<<ss.str()<<endl;
 	 delete[] buff;
 	 return 0;
