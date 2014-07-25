@@ -253,11 +253,12 @@ void DataProcessor::SplitChannelsNewFW(vector<u_int32_t*> *&buffvec, vector<u_in
 	  continue;	     
 	u_int32_t channelSize = ((*buffvec)[x][idx]);
 	idx++; //iterate past the size word
-	u_int32_t channelTime = ((*buffvec)[x][idx])&0x3FFFFFFF;
+	u_int32_t channelTime = ((*buffvec)[x][idx])&0x7FFFFFFF;
 	idx++;
 	//char *keep = new char[(channelSize-2)*4];	     
 	u_int32_t *keep = new u_int32_t[channelSize-2];
-	copy((*buffvec)[x]+idx,(*buffvec)[x]+(idx+channelSize-2),keep); //copy channel data
+	//	copy((*buffvec)[x]+idx,(*buffvec)[x]+(idx+channelSize-2),keep); //copy channel data
+	copy(&((*buffvec)[x][idx]),&((*buffvec)[x][idx+channelSize-2]),keep);
 	idx+=channelSize-2;
 	retbuff->push_back(keep);
 	retsize->push_back((channelSize-2)*4);
@@ -290,7 +291,8 @@ void DataProcessor::Process()
   vector <mongo::BSONObj> *vMongoInsertVec = new vector<mongo::BSONObj>();
   if(m_koOptions->GetRunOptions().WriteMode == WRITEMODE_MONGODB){
     DAQRecorder_mdb = dynamic_cast<DAQRecorder_mongodb*>(m_DAQRecorder);
-    mongoID = m_DAQRecorder->RegisterProcessor();        
+    if((mongoID = m_DAQRecorder->RegisterProcessor())==-1)       
+      return;
   }
 #endif
 #ifdef HAVE_LIBPBF
