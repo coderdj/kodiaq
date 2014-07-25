@@ -90,7 +90,7 @@ class DAQRecorder
    
    bool          m_bErrorSet;
    string        m_sErrorText;
-   pthread_mutex_t m_logMutex;
+   pthread_mutex_t m_logMutex, m_resetMutex;
 };
 
 #ifdef HAVE_LIBMONGOCLIENT

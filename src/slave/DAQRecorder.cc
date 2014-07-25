@@ -31,19 +31,23 @@ DAQRecorder::DAQRecorder(koLogger *kLog)
    m_bTimeOverTen  = false;
    m_bInitialized  = false;
    pthread_mutex_init(&m_logMutex,NULL);
+   pthread_mutex_init(&m_resetMutex,NULL);
 }
 
 DAQRecorder::~DAQRecorder()
 {
   pthread_mutex_destroy(&m_logMutex);
+  pthread_mutex_destroy(&m_resetMutex);
 }
 
 int DAQRecorder::GetResetCounter(u_int32_t currentTime)
 {
    int a=GetCurPrevNext(currentTime);
+   pthread_mutex_lock(&m_resetMutex);
    if(a==1) m_iResetCounter++;
-   if(a==-1) return m_iResetCounter-1;   
-   return m_iResetCounter;
+   pthread_mutex_unlock(&m_resetMutex);
+   return m_iResetCounter-a;   
+   
 }
 
 void DAQRecorder::ResetTimer()
