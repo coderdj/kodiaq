@@ -6,7 +6,7 @@ koSlave_CPPFLAGS = -I$(top_srcdir)/src/common -Wall -g -DLINUX -fPIC
 koSlave_LDADD = -L$(top_srcdir)/src/common/.libs -lkodiaq -lCAENVME
 
 if WITH_LIBPBF
-koSlave_LDADD += -lpbf -lprotobuf -lsnappy
+koSlave_LDADD += -lpbf -lprotobuf -lsnappy -lpthread
 endif
 
 #options flags
