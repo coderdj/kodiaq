@@ -189,7 +189,12 @@ class koHelper
    //               the koRunInfo_t object
    // 
    static string    MakeDBName(koRunInfo_t RunInfo,string CollectionName);
-   
+  
+   // Function    : GetTimeStamp
+   // Purpose     : Returns the time stamp out the the header of a CAEN block
+   //
+   static u_int32_t GetTimeStamp(u_int32_t *buffer);
+
  private:
 };
 #endif

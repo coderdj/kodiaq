@@ -26,6 +26,8 @@ CBV1724::CBV1724()
    fReadoutThresh=10;
    pthread_mutex_init(&fDataLock,NULL);
    pthread_cond_init(&fReadyCondition,NULL);
+   i_clockResetCounter = 0;
+   i64_blt_first_time = i64_blt_second_time = i64_blt_last_time = 0;
 }
 
 CBV1724::~CBV1724()
@@ -45,11 +47,13 @@ CBV1724::CBV1724(BoardDefinition_t BoardDef, koLogger *kLog)
   fReadoutThresh=10;
   pthread_mutex_init(&fDataLock,NULL);
   pthread_cond_init(&fReadyCondition,NULL);
+  i64_blt_first_time = i64_blt_second_time = i64_blt_last_time = 0;
 }
 
 int CBV1724::Initialize(koOptions *options)
 {
    int retVal=0;
+   i_clockResetCounter=0;
    for(int x=0;x<options->GetVMEOptions();x++)  {
       if((options->GetVMEOption(x).BoardID==-1 || options->GetVMEOption(x).BoardID==fBID.BoardID)
 	 && (options->GetVMEOption(x).CrateID==-1 || options->GetVMEOption(x).CrateID==fBID.CrateID)
@@ -108,8 +112,9 @@ unsigned int CBV1724::ReadMBLT()
 {
    unsigned int blt_bytes=0;
    int nb=0,ret=-5;   
-  
-   u_int32_t *buff = new u_int32_t[fBufferSize];       //should not survive this function
+   
+   // The buffer must be freed in this function (fBufferSize can be large!)
+   u_int32_t *buff = new u_int32_t[fBufferSize];       
    do{
       ret = CAENVME_FIFOBLTReadCycle(fCrateHandle,fBID.VMEAddress,
 				     ((unsigned char*)buff)+blt_bytes,
@@ -123,7 +128,11 @@ unsigned int CBV1724::ReadMBLT()
       }
       blt_bytes+=nb;
       if(blt_bytes>fBufferSize)	{
-	 stringstream ss;
+	// For Custom V1724 firmware max event size is ~10mus, corresponding to a 
+	// buffer of several MB. Events which are this large are probably non
+	// physical. Events going over the 10mus limit are simply ignored by the
+	// board (!). 
+	 stringstream ss;	 
 	 ss<<"Board "<<fBID.BoardID<<" reports insufficient BLT buffer size. ("<<blt_bytes<<" > "<<fBufferSize<<")"<<endl;	 
 	 cout<<ss.str()<<endl;
 	 delete[] buff;
@@ -132,11 +141,24 @@ unsigned int CBV1724::ReadMBLT()
    }while(ret!=cvBusError);
    
    if(blt_bytes>0){
-      u_int32_t *writeBuff = new u_int32_t[blt_bytes/(sizeof(u_int32_t))]; //must be freed after writing
+     // We reserve too much space for the buffer (block transfers can get long). 
+     // In order to avoid shipping huge amounts of empty space around we copy
+     // the buffer here to a new buffer that is just large enough for the data.
+     // This memory is reserved here but it's ownership will be passed to the
+     // processing function that drains it (that function must free it!)
+      u_int32_t *writeBuff = new u_int32_t[blt_bytes/(sizeof(u_int32_t))]; 
       memcpy(writeBuff,buff,blt_bytes);
       LockDataBuffer();
       fBuffers->push_back(writeBuff);
       fSizes->push_back(blt_bytes);
+      
+      // Get beginning and end timestamp for buffer
+      u_int32_t buffTime = koHelper::GetTimeStamp(buff);
+      //u_int64_t time64 = ((unsigned long) i_clockResetCounter << 31) | buffTime;
+      if(fBuffers->size()==1) i64_blt_first_time = buffTime;
+      i64_blt_second_time = buffTime;
+
+      // If we have enough BLTs (user option) signal that board can be read out
       if(fBuffers->size()>fReadoutThresh)
 	pthread_cond_signal(&fReadyCondition);
       UnlockDataBuffer();
@@ -156,6 +178,7 @@ void CBV1724::SetActivated(bool active)
 	 pthread_mutex_unlock(&fDataLock);
       }
    }      
+   i_clockResetCounter=0;
 }
 
 void CBV1724::ResetBuff()
@@ -204,14 +227,33 @@ int CBV1724::RequestDataLock()
    return -1;
 }
 
-vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes)
-//Note this PASSES OWNERSHIP of the returned vectors to the 
-//calling function!
+vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes, 
+					   int &resetCounter)
+// Note this PASSES OWNERSHIP of the returned vectors to the 
+// calling function! They must be cleared by the caller!
+// The reset counter is computed (did the clock reset during this buffer?) and
+// updated if needed. The value of this counter at the BEGINNING of the buffer
+// is passed by reference to the caller
 {
+  resetCounter = i_clockResetCounter;
+  //Q1: Did the counter reset between the last BLT and now?
+  if(i64_blt_last_time>i64_blt_first_time){
+    i_clockResetCounter++;
+    resetCounter = i_clockResetCounter;
+    //    i64_blt_second_time += ((unsigned long) 1 << 31);
+  }
+  //Q2: Did the counter reset during this BLT?
+  else if(i64_blt_first_time>i64_blt_second_time){
+    i_clockResetCounter++;
+    //    i64_blt_second_time += ((unsigned long) 1 << 31);
+  }
+ 
    vector<u_int32_t*> *retVec = fBuffers;
    fBuffers = new vector<u_int32_t*>();
    sizes = fSizes;
    fSizes = new vector<u_int32_t>();
+   i64_blt_last_time = i64_blt_first_time = i64_blt_second_time;
+
    return retVec;
 }
 

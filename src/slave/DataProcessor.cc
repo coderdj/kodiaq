@@ -318,9 +318,10 @@ void DataProcessor::Process()
       
       usleep(10);
       
-      // Get the data if there is some
+      // Get the data if there is some      
       if(digi->RequestDataLock()!=0) continue;
-      buffvec = digi->ReadoutBuffer(sizevec);
+      int resetCounterStart = 0;
+      buffvec = digi->ReadoutBuffer(sizevec, resetCounterStart);
       iModule = digi->GetID().BoardID;
       digi->UnlockDataBuffer();
       
@@ -346,8 +347,9 @@ void DataProcessor::Process()
 	}
       }
       
-      unsigned int currentEventIndex = 0;
+      unsigned int        currentEventIndex = 0;
       int                 protocHandle = -1;
+      long long           latestTime64 =0;
       //Loop through the parsed buffers
       for(unsigned int b = 0; b < buffvec->size(); b++) {
 	u_int32_t TimeStamp = 0;
@@ -364,9 +366,16 @@ void DataProcessor::Process()
 	}
 	
 	//Convert the time to 64-bit
-	int ResetCounter = 0;
-	if(m_DAQRecorder!=NULL) ResetCounter = m_DAQRecorder->GetResetCounter(TimeStamp);
-	long long Time64 = ((unsigned long)ResetCounter << 31) | TimeStamp;
+	// We assume this data is in temporal order
+	//	int ResetCounter = 0;
+	//	if(m_DAQRecorder!=NULL) ResetCounter = m_DAQRecorder->GetResetCounter(TimeStamp);
+	long long Time64 = ((unsigned long)resetCounterStart << 31) | TimeStamp;
+	if(Time64-latestTime64 < -1E9){
+	  resetCounterStart++;
+	  Time64 += ((unsigned long) 1 << 31);
+	}
+	latestTime64 = Time64;
+	  
 	
 	//zip data if required
 	char* buff=NULL;

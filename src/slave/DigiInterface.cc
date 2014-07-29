@@ -236,11 +236,6 @@ void DigiInterface::ReadThread()
  
 int DigiInterface::StartRun()
 {   
-   //Reset timer on DAQ recorder (counts clock resets)
-   if(m_DAQRecorder!=NULL)
-     m_DAQRecorder->ResetTimer();
-
-   
    //Tell Boards to start acquisition
    if(m_RunStartModule!=NULL)    {	
       for(unsigned int x=0;x<m_vDigitizers.size();x++)

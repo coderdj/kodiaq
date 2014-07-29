@@ -19,68 +19,6 @@ koHelper::koHelper()
 koHelper::~koHelper()
 {}
 
-//bool koHelper::ParseMessageFull(const int pipe,vector<string> &data, 
-//					  char &command)    
-//{
-//   char temp;
-//   if(read(pipe,&temp,1)<0) return false;
-//   command=temp;
-//   if(!ParseMessage(pipe,data)) return false;
-//   return true;
-//}
-
-/*bool XeDAQHelper::ParseMessage(const int pipe,vector<string> &data)
-{
-   char chin;
-   if(read(pipe,&chin,1)<0 || chin!='!') 
-     return false;
-   string tempString;
-   do  {
-      if(read(pipe,&chin,1)<0)	
-	return false;
-      if(chin=='!' || chin=='@')	{
-	 if(tempString.size()==0)  
-	   return false;	 
-	 data.push_back(tempString);
-	 tempString.erase();	 
-      }
-      else 
-	tempString.push_back(chin);      
-   }while(chin!='@');
-   
-   return true;   
-}*/
-/*
-bool XeDAQHelper::ComposeMessage(string &message,vector <string> data,
-					char type)
-{
-   message=type;
-   char delimiter='!';
-   char ender='@';
-   for(unsigned int x=0;x<data.size();x++)  {
-      message+=delimiter;
-      message+=data[x];
-   }
-   message+=ender;
-   return true;   
-}*/
-
-/*
-bool XeDAQHelper::MessageOnPipe(int pipe)
-{
-   struct timeval timeout; //we will define how long to listen
-   fd_set readfds;
-   timeout.tv_sec=0;
-   timeout.tv_usec=0;
-   FD_ZERO(&readfds);
-   FD_SET(pipe,&readfds);
-   select(FD_SETSIZE,&readfds,NULL,NULL,&timeout);
-   if(FD_ISSET(pipe,&readfds)==1) return true;
-   else return false;
-//   return (FD_ISSET(pipe,&readfds));   
-}
-*/
-
 u_int32_t koHelper::StringToInt(const string &str)
 {
    stringstream ss(str);
@@ -219,6 +157,20 @@ int koHelper::UpdateRunInfo(koRunInfo_t &fRunInfo, string startedby)
    outfile.close();
    return 0;
 }
+
+u_int32_t koHelper::GetTimeStamp(u_int32_t *buffer)
+//Pull a time stamp out of a CAEN header                                           
+{
+  int pnt = 0;
+  while((buffer[pnt])==0xFFFFFFFF) //filler between events                          
+    pnt++;
+  if((buffer[pnt]>>20)==0xA00)   { //look for a header                              
+    pnt+=3;
+    return (buffer[pnt] & 0x7FFFFFFF);
+  }
+  return 0;
+}
+
 
 int koHelper::EasyPassHash(string pass)
 {

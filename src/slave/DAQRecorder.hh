@@ -40,26 +40,7 @@ class DAQRecorder
    virtual int   Initialize(koOptions *options) = 0;
    virtual int   RegisterProcessor()            = 0;
    virtual void  Shutdown()                     = 0;
-   
-   // The recorder is responsible for global timing (since data processors
-   // are spammed in several threads). The following functions are used
-   // to count how many times the 31-bit TTT in the digitizer resets.
-   //
-   // Name     : DAQRecorder::GetResetCounter(u_int32_t currentTime)
-   // Purpose  : Gets the total number of times the digitizer clock has 
-   //            reset and increments this number if required (based on 
-   //            the value of currentTime). For best results this should 
-   //            be called at least once per few seconds (no problem under 
-   //            any type of normal circumstances).
-   // 
-   int           GetResetCounter(u_int32_t currentTime);
-   //
-   // Name     : DAQRecorder::ResetTimer()
-   // Purpose  : Resets the digitizer clock reset counter. Use then when the
-   //            boards are stopped and started again.
-   // 
-   void          ResetTimer();
-   
+      
    // Name     : bool DAQRecorder::QueryError(string err)
    // Purpose  : Returns true if an error was logged in recording with the 
    //            error string passed by reference.
@@ -84,10 +65,6 @@ class DAQRecorder
    // Purpose  : Checks to see if this timestamp is in the current, previous,
    //            or next clock cycle (0,-1,1 return value)
    // 
-   int           GetCurPrevNext(u_int32_t timestamp);
-   int           m_iResetCounter; 
-   bool          m_bTimeOverTen;
-   
    bool          m_bErrorSet;
    string        m_sErrorText;
    pthread_mutex_t m_logMutex, m_resetMutex;

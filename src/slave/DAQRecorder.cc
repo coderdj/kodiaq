@@ -17,8 +17,6 @@ DAQRecorder::DAQRecorder()
 {
    m_koLogger      = NULL;
    m_bErrorSet     = false;
-   m_iResetCounter = 0;
-   m_bTimeOverTen  = false;
    m_bInitialized  = false;
    pthread_mutex_init(&m_logMutex,NULL);
 }
@@ -27,36 +25,13 @@ DAQRecorder::DAQRecorder(koLogger *kLog)
 {
    m_koLogger      = kLog;
    m_bErrorSet     = false;
-   m_iResetCounter = 0;
-   m_bTimeOverTen  = false;
    m_bInitialized  = false;
    pthread_mutex_init(&m_logMutex,NULL);
-   pthread_mutex_init(&m_resetMutex,NULL);
 }
 
 DAQRecorder::~DAQRecorder()
 {
   pthread_mutex_destroy(&m_logMutex);
-  pthread_mutex_destroy(&m_resetMutex);
-}
-
-int DAQRecorder::GetResetCounter(u_int32_t currentTime)
-{
-   pthread_mutex_lock(&m_resetMutex);
-   int a=GetCurPrevNext(currentTime);
-   if(a==1) {
-     m_iResetCounter++;
-     a=0;
-   }
-   pthread_mutex_unlock(&m_resetMutex);
-   return m_iResetCounter+a;   
-   
-}
-
-void DAQRecorder::ResetTimer()
-{
-   m_iResetCounter=0;
-   m_bTimeOverTen=false;
 }
 
 bool DAQRecorder::QueryError(string &err)
@@ -82,19 +57,6 @@ void DAQRecorder::ResetError()
   m_sErrorText = "";
   m_bErrorSet  = false;
   pthread_mutex_unlock(&m_logMutex);
-}
-
-int DAQRecorder::GetCurPrevNext(u_int32_t timestamp)
-{
-  if(timestamp<3E8 && m_bTimeOverTen)  { //within first 3 seconds, reset ToT
-    m_bTimeOverTen = false;
-    return 1;
-  }
-  else if(timestamp>2E9 && !m_bTimeOverTen)  //after 10 sec and ToT not set yet
-    return -1;
-  else if(timestamp>1E9 && !m_bTimeOverTen)
-    m_bTimeOverTen = true;
-  return 0;      
 }
 
 #ifdef HAVE_LIBMONGOCLIENT

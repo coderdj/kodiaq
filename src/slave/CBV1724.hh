@@ -43,7 +43,8 @@ class CBV1724 : public VMEBoard {
       return fBID;
    };  
    
-   vector<u_int32_t*>* ReadoutBuffer(vector <u_int32_t> *&sizes);  /*!<  Passes a pointer to a vector of raw data that has been read from the board. Please note: this passes ownership of the raw data vector to the caller! That means the calling function is responsible for freeing this memory again later. A new buffer is created that will act as the board buffer until the next ReadoutBuffer call. The vector sizes contains the size in bytes of each element in the returned buffer. Ownership of sizes also passes to the caller.*/
+  vector<u_int32_t*>* ReadoutBuffer(vector <u_int32_t> *&sizes,
+				     int &resetCounter);           /*!<  Passes a pointer to a vector of raw data that has been read from the board. Please note: this passes ownership of the raw data vector to the caller! That means the calling function is responsible for freeing this memory again later. A new buffer is created that will act as the board buffer until the next ReadoutBuffer call. The vector sizes contains the size in bytes of each element in the returned buffer. Ownership of sizes also passes to the caller.*/
    
    void ResetBuff();                                               /*!<  Clears and resets the object buffer.*/
    u_int32_t GetBLTSize()  {                                       /*!   Returns the block transfer size. */
@@ -56,10 +57,10 @@ class CBV1724 : public VMEBoard {
    
    int DetermineBaselines();                                       /*!<  Simple baseline determination is performed. Basically this just takes data for some time and averages the value on the wire. The DAC register is adjusted iteratively until the baseline minimizes around 16000 (ADC units). There will be problems if there is a lot of activity on the channels, since obviously the baselines are not flat in this case. Do not try to call this function if there is a high rate on the channels or if a strong source is in. At best it will fail and revert back to the old baselines anyway while at worst it will determine poor baselines which can cause undefined behavior.*/
    void SetActivated(bool active);                                 /*!<  Set if this board is active (taking data).*/
-   
+  
  private:
-  int                  LoadDAC(vector <int> baselines);
-  int                  LoadBaselines();                       //Load baselines to boards
+   int                  LoadDAC(vector <int> baselines);
+   int                  LoadBaselines();                       //Load baselines to boards
    int                  GetBaselines(vector <int> &baselines, bool bQuiet=false);  //Get baselines from file 
 
    unsigned int         fReadoutThresh;
@@ -69,6 +70,8 @@ class CBV1724 : public VMEBoard {
    u_int32_t            fBLTSize;
    vector <u_int32_t>  *fSizes;
    vector <u_int32_t*> *fBuffers;
+   int                  i_clockResetCounter;
+   u_int64_t            i64_blt_first_time,i64_blt_second_time,i64_blt_last_time;
 };
 
 #endif
