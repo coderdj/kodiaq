@@ -70,6 +70,7 @@ int main()
 //Main loop
 //
 //Commands
+   cout<<"Starting main loop."<<endl;
    while(cCommand!='q')  {
       //Check for new UI connections
       usleep(100);

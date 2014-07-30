@@ -94,6 +94,7 @@ struct MongodbOptions_t {
    int  MinInsertSize;
    bool WriteConcern;
    string DBAddress;
+   string DB;
    string Collection;
 };
 

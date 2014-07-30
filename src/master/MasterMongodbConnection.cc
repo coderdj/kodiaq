@@ -25,7 +25,7 @@ MasterMongodbConnection::MasterMongodbConnection(koLogger *Log)
    fLog=Log;
    fLastDocOID.clear();
    try     {	
-      fMongoDB.connect("xedaq00");
+      fMongoDB.connect("xedaq01");
    }   
    catch(const mongo::DBException &e)    {	
       stringstream ss;
@@ -84,8 +84,11 @@ int MasterMongodbConnection::Initialize(string user, string runMode, string name
    mongo::BSONObj bObj = b.obj();
    try   {	
      if(!onlineOnly) {
-       fMongoDB.insert(fMongoOptions.Collection.c_str(),bObj);
-       fMongoDB.createCollection(fMongoOptions.Collection,1073741824,true);
+       stringstream collName;
+       collName<<fMongoOptions.DB<<"."<<fMongoOptions.Collection;
+       //       fMongoDB.insert(fMongoOptions.Collection.c_str(),bObj);
+       fMongoDB.insert(collName.str(),bObj);
+       //       fMongoDB.createCollection(fMongoOptions.Collection,1073741824,true);
      }
       fMongoDB.insert("online.runs",bObj);
    }
@@ -112,15 +115,15 @@ int MasterMongodbConnection::UpdateEndTime(bool onlineOnly)
       time(&nowTime);
       currenttime = localtime(&nowTime);
 
-      std::size_t pos;
-      pos=fMongoOptions.Collection.find_first_of(".",0);
+      //      std::size_t pos;
+      //      pos=fMongoOptions.Collection.find_first_of(".",0);
       
-      string firstString = fMongoOptions.Collection.substr(0,pos);
-      string secondString = fMongoOptions.Collection.substr(pos+1,fMongoOptions.Collection.size()-pos);
+      //      string firstString = fMongoOptions.Collection.substr(0,pos);
+      //string secondString = fMongoOptions.Collection.substr(pos+1,fMongoOptions.Collection.size()-pos);
 //      cout<<firstString<<" "<<secondString<<endl;
       mongo::BSONObjBuilder b; 
       mongo::BSONObj res;
-      b << "findandmodify" << secondString.c_str() <<
+      b << "findandmodify" << /*secondString.c_str()*/fMongoOptions.Collection.c_str() <<
 	"query" << BSON("_id" << fLastDocOID) << 
 	"update" << BSON("$set" << BSON("endtimestamp" <<mongo::Date_t(1000*mktime(currenttime)) << "data_taking_ended" << true));
 
@@ -131,7 +134,7 @@ int MasterMongodbConnection::UpdateEndTime(bool onlineOnly)
 	"update" << BSON("$set" << BSON("endtimestamp" <<mongo::Date_t(1000*mktime(currenttime)) << "data_taking_ended" << true)); 
       
       if(!onlineOnly)
-	assert(fMongoDB.runCommand(firstString.c_str(),b.obj(),res));      
+	assert(fMongoDB.runCommand(fMongoOptions.DB.c_str()/*firstString.c_str()*/,b.obj(),res));      
       assert(fMongoDB.runCommand("online",bo.obj(),res));
    }
    catch (const mongo::DBException &e) {

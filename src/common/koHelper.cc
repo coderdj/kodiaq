@@ -136,10 +136,11 @@ int koHelper::InitializeRunInfo(koRunInfo_t &fRunInfo)
 
 string koHelper::MakeDBName(koRunInfo_t RunInfo, string CollectionName)
 {
-   std::size_t pos;
-   pos=CollectionName.find_first_of(".",0);
-   string retstring = CollectionName.substr(0,pos);
-   retstring+=".";
+   //std::size_t pos;
+   //pos=CollectionName.find_first_of(".",0);
+   //string retstring = CollectionName.substr(0,pos);
+   //retstring+=".";
+   string retstring = CollectionName;
    retstring+=RunInfo.RunNumber;
    return retstring;
 }

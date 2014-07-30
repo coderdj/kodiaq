@@ -15,13 +15,15 @@
 
 koLogger::koLogger()
 {
+  pthread_mutex_init(&fLogMutex,NULL);
 }
 
 koLogger::~koLogger()
 {
-   //close file if open!
+   //close file if open!  
    if(fLogfile.is_open())
      fLogfile.close();
+   pthread_mutex_destroy(&fLogMutex);
 }
 
 koLogger::koLogger(string logpath)
@@ -42,7 +44,9 @@ void koLogger::Message(string message)
    if(!fLogfile.is_open()) return;
    string logmessage = GetTimeString();
    logmessage+=message;
+   pthread_mutex_lock(&fLogMutex);
    fLogfile<<logmessage<<endl;   
+   pthread_mutex_unlock(&fLogMutex);
 }
 
 void koLogger::Error(string message)

@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 #include <time.h>
+#include <pthread.h>
 
 using namespace std;
 
@@ -88,6 +89,7 @@ class koLogger
  private: 
    ofstream fLogfile;   
    std::vector <string> fMessageBuffer;
+   pthread_mutex_t fLogMutex;
 };
 
 #endif

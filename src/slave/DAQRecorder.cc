@@ -97,6 +97,7 @@ int DAQRecorder_mongodb::Initialize(koOptions *options)
    ResetError();
    m_bInitialized = true;
    pthread_mutex_init(&m_ConnectionMutex,NULL);
+      
    return 0;
 }
 
@@ -105,7 +106,7 @@ int DAQRecorder_mongodb::RegisterProcessor()
    int retval=-1;
    mongo::ScopedDbConnection *conn;
    try  {
-      conn = new mongo::ScopedDbConnection(m_koMongoOptions.DBAddress,10000.);
+     conn = new mongo::ScopedDbConnection(m_koMongoOptions.DBAddress,10000.);
    }
    catch(const mongo::DBException &e)  {
      stringstream err;
@@ -122,6 +123,10 @@ int DAQRecorder_mongodb::RegisterProcessor()
    m_vScopedConnections.push_back(conn);
    retval = m_vScopedConnections.size()-1;
    pthread_mutex_unlock(&m_ConnectionMutex);
+   
+   //create capped collection
+   //   conn->conn().createCollection(m_koMongoOptions.Collection, 
+   //			 5000000000, true);//5GB capped collection
       
    return retval;
 }
@@ -153,9 +158,12 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
    }
    
    try  {
-     (*m_vScopedConnections[ID])->ensureIndex(m_koMongoOptions.Collection.c_str(), mongo::fromjson("{time:-1}"));
-      (*m_vScopedConnections[ID])->insert(m_koMongoOptions.Collection.c_str(),
-					  (*insvec));
+     stringstream cS;
+     cS<<m_koMongoOptions.DB<<"_"<<ID<<"."<<m_koMongoOptions.Collection;
+     //(*m_vScopedConnections[ID])->ensureIndex(m_koMongoOptions.Collection.c_str(), mongo::fromjson("{time:-1}"));
+     //(*m_vScopedConnections[ID])->insert(m_koMongoOptions.Collection.c_str(),
+     //(*insvec));
+     (*m_vScopedConnections[ID])->insert(cS.str(),(*insvec));
    }
    catch(const mongo::DBException &e)  {
       LogError("DAQRecorder_mongodb - Caught mongodb exception");

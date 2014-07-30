@@ -152,11 +152,7 @@ unsigned int CBV1724::ReadMBLT()
       fBuffers->push_back(writeBuff);
       fSizes->push_back(blt_bytes);
       
-      // Get beginning and end timestamp for buffer
-      u_int32_t buffTime = koHelper::GetTimeStamp(buff);
-      //u_int64_t time64 = ((unsigned long) i_clockResetCounter << 31) | buffTime;
-      if(fBuffers->size()==1) i64_blt_first_time = buffTime;
-      i64_blt_second_time = buffTime;
+      if(fBuffers->size()==1) i64_blt_first_time = koHelper::GetTimeStamp(buff);
 
       // If we have enough BLTs (user option) signal that board can be read out
       if(fBuffers->size()>fReadoutThresh)
@@ -235,6 +231,10 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
 // updated if needed. The value of this counter at the BEGINNING of the buffer
 // is passed by reference to the caller
 {
+  if(fBuffers->size()!=0)
+    i64_blt_second_time = koHelper::GetTimeStamp((*fBuffers)[fBuffers->size()-1]);
+  else i64_blt_second_time = i64_blt_first_time;
+
   resetCounter = i_clockResetCounter;
   //Q1: Did the counter reset between the last BLT and now?
   if(i64_blt_last_time>i64_blt_first_time){

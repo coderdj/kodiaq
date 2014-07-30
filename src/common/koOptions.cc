@@ -39,7 +39,8 @@ void koOptions::Reset()
    //Reset mongodb options
    fMongoOptions.WriteConcern=fMongoOptions.DynamicRunNames=false;
    fMongoOptions.MinInsertSize=1;
-   fMongoOptions.Collection="data.test";
+   fMongoOptions.DB="data";
+   fMongoOptions.Collection="test";
    
    //Reset processing options
    fProcessingOptions.NumThreads=1;
@@ -159,13 +160,14 @@ int koOptions::ReadParameterFile(string filename)
 	 fRunOptions.RunStartModule=koHelper::StringToInt(words[2]);
       }      
       if(words[0]=="MONGO_OPTIONS")	{
-	 if(words.size()<5) continue;
+	 if(words.size()<6) continue;
 	 fMongoOptions.DBAddress=words[1];
-	 if(words[2][words[2].size()-1]=='*') fMongoOptions.DynamicRunNames=true;
+	 fMongoOptions.DB=words[2];
+	 if(words[3][words[3].size()-1]=='*') fMongoOptions.DynamicRunNames=true;
 	 else fMongoOptions.DynamicRunNames=false;
-	 fMongoOptions.Collection=words[2];
-	 fMongoOptions.MinInsertSize = koHelper::StringToInt(words[3]);
-	 (words[4]=="1")?fMongoOptions.WriteConcern=true:fMongoOptions.WriteConcern=false;
+	 fMongoOptions.Collection=words[3];
+	 fMongoOptions.MinInsertSize = koHelper::StringToInt(words[4]);
+	 (words[5]=="1")?fMongoOptions.WriteConcern=true:fMongoOptions.WriteConcern=false;
       }
       if(words[0]=="COMPRESSION"){
 	if(words.size()<2) continue;
