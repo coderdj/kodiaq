@@ -123,10 +123,12 @@ int DAQRecorder_mongodb::RegisterProcessor()
    m_vScopedConnections.push_back(conn);
    retval = m_vScopedConnections.size()-1;
    pthread_mutex_unlock(&m_ConnectionMutex);
-   
+
+   stringstream cS;
+   int ID = m_vScopedConnections.size()-1;
+   cS<<m_koMongoOptions.DB<<"_"<<ID<<"."<<m_koMongoOptions.Collection;
    //create capped collection
-   //   conn->conn().createCollection(m_koMongoOptions.Collection, 
-   //			 5000000000, true);//5GB capped collection
+   conn->conn().createCollection(cS.str(),1000000000,true); //1GB capped collection 
       
    return retval;
 }
