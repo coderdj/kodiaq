@@ -328,18 +328,18 @@ int main()
 	    
 	    koHelper::UpdateRunInfo(fDAQStatus.RunInfo,sender);
 	    fUserNetwork.SendRunInfoUI(-1,fDAQStatus.RunInfo);
-	    if(fDAQOptions.GetRunOptions().WriteMode==2) {
+	    if(fDAQOptions.write_mode==2) {
 	       //if we have dynamic run names, tell mongo the new collection name
-	       if(fDAQOptions.GetMongoOptions().DynamicRunNames){		    
-		  fDAQOptions.UpdateMongodbCollection(koHelper::MakeDBName
-						      (fDAQStatus.RunInfo,
-						       fDAQOptions.GetMongoOptions().Collection));
+	       if(fDAQOptions.dynamic_run_names){		    
+		  fDAQOptions.mongo_collection=(koHelper::MakeDBName
+						(fDAQStatus.RunInfo,
+						 fDAQOptions.mongo_collection));
 		  stringstream ss;
-		  ss<<"Writing to collection "<<fDAQOptions.GetMongoOptions().Collection;
+		  ss<<"Writing to collection "<<fDAQOptions.mongo_collection;
 		  fUserNetwork.BroadcastMessage(ss.str(),KOMESS_STATE);
 		  fMongodb.SendLogMessage(ss.str(),KOMESS_STATE);		  
 		  fDAQNetwork.SendCommand("DBUPDATE");
-		  fDAQNetwork.SendCommand(fDAQOptions.GetMongoOptions().Collection);
+		  fDAQNetwork.SendCommand(fDAQOptions.mongo_collection);
 	       }	       
 	       //send run info to event builder
 	       if(fMongodb.Initialize(sender,fDAQStatus.RunMode,fDAQStatus.RunInfo.RunNumber,
@@ -399,7 +399,7 @@ int main()
 	 // 
 	 else if(command=="STOP")  {
 	    fDAQNetwork.SendCommand("STOP");
-	    if(fDAQOptions.GetRunOptions().WriteMode==2) {		 
+	    if(fDAQOptions.write_mode==2) {		 
 	       if(fMongodb.UpdateEndTime()!=0){		    
 		  fUserNetwork.BroadcastMessage("Failed to send stop time to event builder.",KOMESS_WARNING);
 		  fMongodb.SendLogMessage("Failed to send stop time to event builder.",KOMESS_WARNING);

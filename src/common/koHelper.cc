@@ -173,12 +173,16 @@ u_int32_t koHelper::GetTimeStamp(u_int32_t *buffer)
 }
 
 
-int koHelper::EasyPassHash(string pass)
+int koHelper::ProcessLineHex(string line,string option, int &ret)
 {
-   int retVal=0;
-   for(unsigned int x=0;x<pass.size();x++){
-      retVal+=(int)pass[x];
-   }
-   return retVal;
+  istringstream iss(line);
+  vector<string> words;
+  copy(istream_iterator<string>(iss),
+       istream_iterator<string>(),
+       back_inserter<vector<string> >(words));
+  if(words.size()<2 || words[0]!=option) return -1;
+  ret=koHelper::StringToHex(words[1]);
+
+  return 0;
 }
 

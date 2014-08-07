@@ -21,7 +21,7 @@ CBV2718::~CBV2718()
 {
 }
 
-CBV2718::CBV2718(BoardDefinition_t BID, koLogger *kLog)
+CBV2718::CBV2718(board_definition_t BID, koLogger *kLog)
         :VMEBoard(BID,kLog)
 {
 }

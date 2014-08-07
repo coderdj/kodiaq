@@ -37,7 +37,7 @@ CBV1724::~CBV1724()
    pthread_cond_destroy(&fReadyCondition);
 }
 
-CBV1724::CBV1724(BoardDefinition_t BoardDef, koLogger *kLog)
+CBV1724::CBV1724(board_definition_t BoardDef, koLogger *kLog)
         :VMEBoard(BoardDef,kLog)
 {
   fBLTSize=fBufferSize=0;
@@ -55,12 +55,12 @@ int CBV1724::Initialize(koOptions *options)
    int retVal=0;
    i_clockResetCounter=0;
    for(int x=0;x<options->GetVMEOptions();x++)  {
-      if((options->GetVMEOption(x).BoardID==-1 || options->GetVMEOption(x).BoardID==fBID.BoardID)
-	 && (options->GetVMEOption(x).CrateID==-1 || options->GetVMEOption(x).CrateID==fBID.CrateID)
-	 && (options->GetVMEOption(x).LinkID==-1 || options->GetVMEOption(x).LinkID==fBID.LinkID)){
-	 int success = WriteReg32(options->GetVMEOption(x).Address,options->GetVMEOption(x).Value);    
-	 retVal=success;	 
-      }      
+     if((options->GetVMEOption(x).board==-1 || 
+	 options->GetVMEOption(x).board==fBID.id)){
+       int success = WriteReg32(options->GetVMEOption(x).address,
+				options->GetVMEOption(x).value);    
+       retVal=success;	 
+     }      
    }
    
    //Reset all values
@@ -75,15 +75,15 @@ int CBV1724::Initialize(koOptions *options)
    u_int32_t eventSize = (u_int32_t)((((memorySize*pow(2,20))/
 					  (u_int32_t)pow(2,data))*8+16)/4);
    ReadReg32(CBV1724_BltEvNumReg,data);
-   fBLTSize=options->GetRunOptions().BLTBytes;
+   fBLTSize=options->blt_size;
    fBufferSize = data*eventSize*(u_int32_t)4+(fBLTSize);
    fBufferSize = eventSize*data + fBLTSize;
-   fReadoutThresh = options->GetProcessingOptions().ReadoutThreshold;
+   fReadoutThresh = options->processing_readout_threshold;
    
    fBuffers = new vector<u_int32_t*>();
    fSizes   = new vector<u_int32_t>();
 
-   if(options->GetRunOptions().BaselineMode==1)    {	
+   if(options->baseline_mode==1)    {	
       cout<<"Determining baselines ";
       int tries = 0;
       int ret=-1;
@@ -116,12 +116,12 @@ unsigned int CBV1724::ReadMBLT()
    // The buffer must be freed in this function (fBufferSize can be large!)
    u_int32_t *buff = new u_int32_t[fBufferSize];       
    do{
-      ret = CAENVME_FIFOBLTReadCycle(fCrateHandle,fBID.VMEAddress,
+      ret = CAENVME_FIFOBLTReadCycle(fCrateHandle,fBID.vme_address,
 				     ((unsigned char*)buff)+blt_bytes,
 				     fBLTSize,cvA32_U_BLT,cvD32,&nb);
       if((ret!=cvSuccess) && (ret!=cvBusError)){
 	 stringstream ss;
-	 ss<<"Board "<<fBID.BoardID<<" reports read error "<<dec<<ret<<endl;
+	 ss<<"Board "<<fBID.id<<" reports read error "<<dec<<ret<<endl;
 	 LogError(ss.str());
 	 delete[] buff;
 	 return 0;
@@ -133,7 +133,7 @@ unsigned int CBV1724::ReadMBLT()
 	// physical. Events going over the 10mus limit are simply ignored by the
 	// board (!). 
 	 stringstream ss;	 
-	 ss<<"Board "<<fBID.BoardID<<" reports insufficient BLT buffer size. ("<<blt_bytes<<" > "<<fBufferSize<<")"<<endl;	 
+	 ss<<"Board "<<fBID.id<<" reports insufficient BLT buffer size. ("<<blt_bytes<<" > "<<fBufferSize<<")"<<endl;	 
 	 cout<<ss.str()<<endl;
 	 delete[] buff;
 	 return 0;
@@ -272,12 +272,12 @@ int CBV1724::LoadBaselines()
 int CBV1724::GetBaselines(vector <int> &baselines, bool bQuiet)
 {
    stringstream filename; 
-   filename<<"baselines/XeBaselines_"<<fBID.BoardID<<".ini";
+   filename<<"baselines/XeBaselines_"<<fBID.id<<".ini";
    ifstream infile;
    infile.open(filename.str().c_str());
    if(!infile)  {
       stringstream error;
-      error<<"No baselines found for board "<<fBID.BoardID;
+      error<<"No baselines found for board "<<fBID.id;
       LogError(error.str());
       LogSendMessage(error.str());
       return -1;
@@ -290,19 +290,19 @@ int CBV1724::GetBaselines(vector <int> &baselines, bool bQuiet)
    //filetime of form YYMMDDHH
    if(koHelper::CurrentTimeInt()-filetime > 100 && !bQuiet)  {
       stringstream warning;   	   
-      warning<<"Warning: Module "<<fBID.BoardID<<" is using baselines that are more than a day old.";
+      warning<<"Warning: Module "<<fBID.id<<" is using baselines that are more than a day old.";
       LogSendMessage(warning.str());
    }
    while(getline(infile,line)){
       int value=0;
-      if(koOptions::ProcessLineHex(line,koHelper::IntToString(baselines.size()+1),
-				   value)!=0)
+      if(koHelper::ProcessLineHex(line,koHelper::IntToString(baselines.size()+1),
+				  value)!=0)
 	break;
       baselines.push_back(value);
    }
    if(baselines.size()!=8)   {
       stringstream error;
-      error<<"Warning from module "<<fBID.BoardID<<". Error loading baselines.";
+      error<<"Warning from module "<<fBID.id<<". Error loading baselines.";
       LogSendMessage(error.str());
       LogError(error.str());
       infile.close();
@@ -404,7 +404,7 @@ int CBV1724::DetermineBaselines()
     buff->push_back(tempBuff);
 
     do{
-      ret = CAENVME_FIFOBLTReadCycle(fCrateHandle,fBID.VMEAddress,((unsigned char*)(*buff)[0])+blt_bytes,fBLTSize,cvA32_U_BLT,cvD32,&nb);
+      ret = CAENVME_FIFOBLTReadCycle(fCrateHandle,fBID.vme_address,((unsigned char*)(*buff)[0])+blt_bytes,fBLTSize,cvA32_U_BLT,cvD32,&nb);
       if(ret!=cvSuccess && ret!=cvBusError) {
 	cout<<"CAENVME Read error, baselines, "<<ret<<endl;
 	delete[] buff;
@@ -479,7 +479,7 @@ int CBV1724::DetermineBaselines()
   //write baselines to file                                                         
   ofstream outfile;                                                                 
   stringstream filename;                                                            
-  filename<<"baselines/XeBaselines_"<<fBID.BoardID<<".ini";                         
+  filename<<"baselines/XeBaselines_"<<fBID.id<<".ini";                         
   outfile.open(filename.str().c_str());                                             
   outfile<<koHelper::CurrentTimeInt()<<endl;                                        
   for(unsigned int x=0;x<DACValues.size();x++)  {                                

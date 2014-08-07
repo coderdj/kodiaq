@@ -56,7 +56,7 @@ class DAQRecorder
    void          ResetError();
    
    koLogger     *m_koLogger;
-   koOptions    *m_koOptions;
+   koOptions    *m_options;
    bool          m_bInitialized;
  private:
    
@@ -130,7 +130,6 @@ class DAQRecorder_mongodb : public DAQRecorder
 
    pthread_mutex_t m_ConnectionMutex;
    vector <mongo::ScopedDbConnection*> m_vScopedConnections;   
-   MongodbOptions_t m_koMongoOptions;
    
 };
 #endif
@@ -188,7 +187,6 @@ class DAQRecorder_protobuff : public DAQRecorder
    //u_int32_t           iEventNumber;
    pbf_output           m_outfile;
    map <u_int64_t, int> m_HandleMap;
-   OutfileOptions_t    m_FileOptions;
    string              m_SWritePath;
 };
 

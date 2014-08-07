@@ -8,7 +8,7 @@
 // File     :  koOptions.hh
 // Author   :  Daniel Coderre, LHEP, Universitaet Bern
 // Date     :  27.06.2013
-// Update   :  27.03.2014
+// Update   :  27.03.2014, 6.08.2014
 // 
 // Brief    :  Options handler for Xenon-1t DAQ software
 // 
@@ -33,71 +33,29 @@ using namespace std;
 
 /*! \brief Stores configuration information for an optical link.
  */ 
-struct LinkDefinition_t{
-   string LinkType;
-   int LinkID;
-   int CrateID;
+struct link_definition_t{
+   string type;
+   int id;
+   int crate;
 };
 
 /*! \brief Stores configuration information for one VME module.
  */
-struct BoardDefinition_t{
-   string BoardType;
-   int VMEAddress;
-   int BoardID;
-   int CrateID;
-   int LinkID;
+struct board_definition_t{
+  string type;
+  int vme_address;
+  int id;
+  int crate;
+  int link;
 };
 
 /*! \brief Generic storage container for a VME option.
  */
-struct VMEOption_t{
-   u_int32_t Address;
-   u_int32_t Value;
-   int BoardID;
-   int CrateID;
-   int LinkID;
+struct vme_option_t{
+   u_int32_t address;
+   u_int32_t value;
+   int board;
 };
-
-/*! \brief Various options related to the run.
- */
-struct RunOptions_t {
-   u_int32_t BLTBytes; //size of block transfer
-   int WriteMode; //0-don't write 1-to file 2-to network
-   int RunStart; //0-board internal 1-sin controlled
-   int RunStartModule; //must be set if RunStart==1
-   unsigned int BLTPerBulkInsert;
-   int BaselineMode;
-};
-
-/*! \brief Options for intermediate data processing
- */
-struct ProcessingOptions_t {
-   int NumThreads;
-   int Mode;
-   int ReadoutThreshold;
-};
-
-/*! \brief Options for file output
- */
-struct OutfileOptions_t{
-   string Path;
-   bool DynamicRunNames;
-   int EventsPerFile;
-};
-
-
-/*! \brief Configuration options for mongodb.
- */
-struct MongodbOptions_t {
-   bool DynamicRunNames;
-   int  MinInsertSize;
-   bool WriteConcern;
-   string DBAddress;
-   string DB;
-   string Collection;
-};
-
 
 /*! \brief Reads and processes an options file.
  
@@ -105,84 +63,83 @@ struct MongodbOptions_t {
  */
 class koOptions
 {
- public:
-   koOptions();
-   virtual ~koOptions();
-   
-   int ReadParameterFile(string filename);                         /*!< Read options for slave modules. */
-   static int ProcessLine(string line,string option,int &ret);   
-   static int ProcessLineHex(string line,string option, int &ret);
-   
-   int GetLinks()  {
-      return fLinks.size();
-   };
-   LinkDefinition_t GetLink(int x)  {
-      return fLinks[x];
-   };
-   
-   int GetBoards()  {
-      return fBoards.size();      
-   };
-   BoardDefinition_t GetBoard(int x)  {
-      return fBoards[x];
-   };
-   
-   int GetVMEOptions()  {
-      return fVMEOptions.size();
-   };
-   VMEOption_t GetVMEOption(int x)  {
-      return fVMEOptions[x];
-   };            
-   
-   RunOptions_t GetRunOptions()  {
-      return fRunOptions;
-   };
-   MongodbOptions_t GetMongoOptions(){
-      return fMongoOptions;
-   };         
-   ProcessingOptions_t GetProcessingOptions()  {
-      return fProcessingOptions;
-   };
-   OutfileOptions_t GetOutfileOptions()  {
-      return fOutfileOptions;
-   };      
-   int SumModules()  {
-      return vSumModules.size();
-   };
-   int GetSumModule(int x)  {
-      return vSumModules[x];
-   };
-   int Compression(){
-     return bCompression;
-   };
-   void UpdateMongodbCollection(string collection)  {
-      fMongoOptions.Collection=collection;
-   };
-  bool ZLE(){
-    return bZLE;
+public:
+  koOptions();
+  virtual ~koOptions();
+  
+  int ReadParameterFile(string filename);    
+  string SaveToString(){return "";};
+  int WriteToFile(string filename){return 0;};
+  
+  int GetLinks()  {
+    return m_links.size();
   };
-   //Put any dependency-specific public members here
+  link_definition_t GetLink(int x)  {
+    return m_links[x];
+  };
+  
+  int GetBoards()  {
+    return m_boards.size();      
+  };
+  board_definition_t GetBoard(int x)  {
+    return m_boards[x];
+  };
+  
+  int GetVMEOptions()  {
+    return m_registers.size();
+  };
+  vme_option_t GetVMEOption(int x)  {
+    return m_registers[x];
+  };            
+  //Put any dependency-specific public members here
 #ifdef WITH_DDC10
    ddc10_par_t GetVetoOptions()  {	
       return fDDC10Options;
    };
 #endif
    
-   
- private:
-   vector<LinkDefinition_t>  fLinks;   
-   vector<BoardDefinition_t> fBoards;
-   vector<VMEOption_t>       fVMEOptions;
-   vector<int>               vSumModules;
-   
-   RunOptions_t              fRunOptions;
-   MongodbOptions_t          fMongoOptions;   
-   ProcessingOptions_t       fProcessingOptions;
-   OutfileOptions_t          fOutfileOptions;
-     
-   string                    fRunModeID;
-   void                      Reset();   
-  bool                      bCompression,bZLE;
+  
+private:
+  vector<link_definition_t>  m_links;   
+  vector<board_definition_t> m_boards;
+  vector<vme_option_t>       m_registers;
+  
+  int ProcessLine(string line,string option,int &ret);
+
+public:
+  // General info
+  string                     name;
+  string                     creator;
+  string                     creation_date;
+  
+  // Run options
+  int                        write_mode;
+  int                        baseline_mode;
+  int                        run_start;
+  int                        run_start_module;
+  int                        blt_size;
+  int                        compression;
+  bool                       dynamic_run_names;
+
+  // Processing options
+  int                        processing_mode;
+  int                        processing_num_threads;
+  int                        processing_readout_threshold;
+
+  // Mongodb options
+  string                     mongo_address;
+  string                     mongo_database;
+  string                     mongo_collection;
+  int                        mongo_write_concern;
+  int                        mongo_min_insert_size;
+
+  // File output options
+  string                     file_path;
+  int                        file_events_per_file;
+
+  void                      Reset();   
+
+private:  
 // put any dependency-specific private members here   
 #ifdef WITH_DDC10
    ddc10_par_t               fDDC10Options;

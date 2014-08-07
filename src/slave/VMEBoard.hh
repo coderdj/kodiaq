@@ -28,17 +28,17 @@ class VMEBoard
 {
  public:
    VMEBoard();
-   explicit VMEBoard(BoardDefinition_t BID, koLogger *koLog);
+   explicit VMEBoard(board_definition_t BID, koLogger *koLog);
    virtual ~VMEBoard();
 
        
-   void SetID(BoardDefinition_t BID){
+   void SetID(board_definition_t BID){
       fBID=BID;
    };
    void SetCrateHandle(int CrateHandle){
       fCrateHandle=CrateHandle;
    };
-   BoardDefinition_t GetID()  {
+   board_definition_t GetID()  {
       return fBID;
    };
    virtual int SendStartSignal()  {
@@ -77,7 +77,7 @@ class VMEBoard
    
    
  protected:
-   BoardDefinition_t fBID;   
+   board_definition_t fBID;   
    int fCrateHandle;
    bool bActivated;
    bool bIsSumModule;                           //Designating a digitizer a sum module means it always gets saved and the event builder does not use it for peak finding

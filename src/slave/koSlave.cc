@@ -195,9 +195,9 @@ connection_loop:
 	    }	    
 	 }	 
 	 if(command=="DBUPDATE") { //Change the write database. Done in case of dynamic write modes
-	    string dbname="none";	    
+	    string newCollection="none";	    
 	    int count=0;
-	    while(fNetworkInterface.ListenForCommand(dbname,id,sender)!=0)  {
+	    while(fNetworkInterface.ListenForCommand(newCollection,id,sender)!=0)  {
 	       usleep(500);
 	       count++;
 	       if(count==20)
@@ -208,9 +208,8 @@ connection_loop:
 	       continue;
 	    }	    
 	    //change the write collection
-	    if(fDAQOptions.GetRunOptions().WriteMode==WRITEMODE_MONGODB) {
-	      cout<<"Updating db to "<<dbname<<endl;
-	      fDAQOptions.UpdateMongodbCollection(dbname);
+	    if(fDAQOptions.write_mode==WRITEMODE_MONGODB) {
+	      fDAQOptions.mongo_collection = newCollection;
 	      fElectronics->UpdateRecorderCollection(&fDAQOptions);	    
 	    }	      
 	 }	 

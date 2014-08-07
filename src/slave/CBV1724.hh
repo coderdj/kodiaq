@@ -34,12 +34,12 @@ class CBV1724 : public VMEBoard {
  public: 
    CBV1724();
    virtual ~CBV1724();
-   explicit CBV1724(BoardDefinition_t BoardDef, koLogger *kLog);   /*!   The preferred constructor. If you use the default constructor you have an empty board.*/
+   explicit CBV1724(board_definition_t BoardDef, koLogger *kLog);   /*!   The preferred constructor. If you use the default constructor you have an empty board.*/
 
 
    int Initialize(koOptions *options);                             /*!<  Initialize all VME options using a XeDAQOptions object. Other run parameters are also set.*/
    unsigned int ReadMBLT();                                        /*!<  Performs a read cycle (reads from the buffer until buffer is exhausted or BERR is read) and puts the data into the CBV1724 object buffer. It is assumed that another process is clearing this object's buffer using the ReadoutBuffer function.*/
-   BoardDefinition_t GetBoardDef()  {                              /*!   Return the board definition object, which holds the board's parameters as defined from the XeDAQOptions .ini file.*/
+  board_definition_t GetBoardDef()  {                              /*!   Return the board definition object, which holds the board's parameters as defined from the XeDAQOptions .ini file.*/
       return fBID;
    };  
    

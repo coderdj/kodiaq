@@ -66,12 +66,13 @@ public:
   int          CheckForCommand(string &command, string &second,string &third);
   
   //
-  // Name    : PullDataFile
+  // Name    : PullRunMode
   // Purpose : Pulls a run mode file from the mongodb modes DB and saves it 
-  //           locally to the given path.
-  int          PullDataFile(string id, string &path);
+  //           to the XeDAQOptions object. Returns 0 on success.
+  int          PullRunMode(string name, koOptions &options);
+
  private:
-  MongodbOptions_t           fMongoOptions;
+  koOptions                 *fOptions;
   mongo::DBClientConnection  fMongoDB;
   mongo::OID                 fLastDocOID;
   koLogger                  *fLog;

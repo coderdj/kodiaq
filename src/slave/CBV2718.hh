@@ -21,7 +21,7 @@ class CBV2718 : public VMEBoard {
  public:
    CBV2718();
    virtual ~CBV2718();
-   explicit CBV2718(BoardDefinition_t BID, koLogger *kLog);
+   explicit CBV2718(board_definition_t BID, koLogger *kLog);
    
    int Initialize(koOptions *options);
    int SendStartSignal();

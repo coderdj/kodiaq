@@ -36,47 +36,18 @@ MasterDAQMonitor::~MasterDAQMonitor()
 {
 }
 
-void MasterDAQMonitor::ProcessCommand(string command, string second)
-{
-   m_DAQStatus.DAQState = KODAQ_PROCESSING;
-       
-   switch(command)  {
-    case "CONNECT":
-      ReconnectDAQNetwork();
-      break;
-    case "DISCONNECT":
-      DisconnectDAQNetwork();
-      break;
-    case "ARM":
-      ArmDAQ();
-      break;
-    case "START":
-      StartDAQ();
-      break;
-    case "STOP":
-      StopDAQ();
-      break;
-    default:
-      if(m_Log!=NULL){	   
-	 stringstream message;
-	 message<<"MasterDAQMonitor::ProcessCommand - received command I don't know: "<<command;
-	 m_Log->Message(message.str());
-      }      
-      break;
-   }   
-}
-
-void MasterDAQMonitor::ProcessWebCommand(string command, string second)
+void MasterDAQMonitor::ProcessWebCommand(string command, string user, string mode, string comment)
 {
    m_DAQStatus.DAQState = KODAQ_PROCESSING;
    
    switch(command)  {
     case "Start":
-      if(ArmDAQ(second)==0)
-	StartDAQ();
+      if(ArmDAQ(mode)==0)
+	StartDAQ(user,comment);
+      else ShutdownDAQ();
       break;
     case "Stop":
-      StopDAQ();
+      StopDAQ(user,comment);
       break;
     default:
       if(m_Log!=NULL)	{
@@ -88,7 +59,7 @@ void MasterDAQMonitor::ProcessWebCommand(string command, string second)
    }   
 }
 
-void StartDAQ(string user)
+void MasterDAQMonitor::StartDAQ(string user, string comment)
 {
    //Check current state. DAQ must be armed
    if(m_DAQStatus.DAQState!=KODAQ_ARMED){
@@ -99,5 +70,6 @@ void StartDAQ(string user)
    }
    
    // Get the next run number 
-   koHelper::UpdateRunInfo(m_RunInfo
+   koHelper::UpdateRunInfo(m_RunInfo,user);
+   
 }

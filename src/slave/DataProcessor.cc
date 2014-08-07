@@ -282,14 +282,14 @@ void DataProcessor::Process()
   
   if(m_DigiInterface == NULL || m_koOptions == NULL) 
     return;
-  if(m_DAQRecorder==NULL && m_koOptions->GetRunOptions().WriteMode!=WRITEMODE_NONE)
+  if(m_DAQRecorder==NULL && m_koOptions->write_mode!=WRITEMODE_NONE)
     return;
 
 #ifdef HAVE_LIBMONGOCLIENT
   int mongoID = -1;
   DAQRecorder_mongodb *DAQRecorder_mdb = NULL;
   vector <mongo::BSONObj> *vMongoInsertVec = new vector<mongo::BSONObj>();
-  if(m_koOptions->GetRunOptions().WriteMode == WRITEMODE_MONGODB){
+  if(m_koOptions->write_mode == WRITEMODE_MONGODB){
     DAQRecorder_mdb = dynamic_cast<DAQRecorder_mongodb*>(m_DAQRecorder);
     if((mongoID = m_DAQRecorder->RegisterProcessor())==-1)       
       return;
@@ -297,7 +297,7 @@ void DataProcessor::Process()
 #endif
 #ifdef HAVE_LIBPBF
   DAQRecorder_protobuff *DAQRecorder_pb = NULL;
-  if(m_koOptions->GetRunOptions().WriteMode == WRITEMODE_FILE){
+  if(m_koOptions->write_mode == WRITEMODE_FILE){
     DAQRecorder_pb = dynamic_cast<DAQRecorder_protobuff*>(m_DAQRecorder);
   }
 #endif
@@ -322,27 +322,25 @@ void DataProcessor::Process()
       if(digi->RequestDataLock()!=0) continue;
       int resetCounterStart = 0;
       buffvec = digi->ReadoutBuffer(sizevec, resetCounterStart);
-      iModule = digi->GetID().BoardID;
+      iModule = digi->GetID().id;
       digi->UnlockDataBuffer();
-      
-      iModule = digi->GetID().BoardID;
-
+     
       // Parse the data if requested
-      if(m_koOptions->GetProcessingOptions().Mode == 1) { //simple block parsing
+      if(m_koOptions->processing_mode == 1) { //simple block parsing
 	SplitBlocks(buffvec,sizevec);
       }
-      else if(m_koOptions->GetProcessingOptions().Mode !=0 ){
+      else if(m_koOptions->processing_mode !=0 ){
 	channels = new vector<u_int32_t>();
 	times = new vector<u_int32_t>();
 
-	if(m_koOptions->GetProcessingOptions().Mode == 2 ) { //channel parsing old fw
+	if(m_koOptions->processing_mode == 2 || m_koOptions->processing_mode == 3) { //channel parsing old fw
 	  eventIndices = new vector<u_int32_t>();
-	  if(m_koOptions->ZLE())
+	  if(m_koOptions->processing_mode == 2)
 	    SplitChannels(buffvec,sizevec,times,channels,eventIndices);
 	  
 	  else SplitChannels(buffvec,sizevec,times,channels,eventIndices,false);
 	}
-	else if(m_koOptions->GetProcessingOptions().Mode == 3) { //channel parsing new fw
+	else if(m_koOptions->processing_mode == 4) { //channel parsing new fw
 	  SplitChannelsNewFW(buffvec,sizevec,times,channels);
 	}
       }
@@ -355,8 +353,8 @@ void DataProcessor::Process()
 	u_int32_t TimeStamp = 0;
 	int       Channel    = -1;
 	// Get time stamp if required
-	if(m_koOptions->GetProcessingOptions().Mode==0 || 
-	   m_koOptions->GetProcessingOptions().Mode==1) {
+	if(m_koOptions->processing_mode==0 || 
+	   m_koOptions->processing_mode==1) {
 	  TimeStamp = GetTimeStamp((*buffvec)[b]);
 	  Channel   = -1;
 	}
@@ -380,7 +378,7 @@ void DataProcessor::Process()
 	//zip data if required
 	char* buff=NULL;
 	size_t eventSize=0;
-	if(m_koOptions->Compression()){
+	if(m_koOptions->compression == 1){
 	  buff = new char[snappy::MaxCompressedLength((*sizevec)[b])];
 	  snappy::RawCompress((const char*)(*buffvec)[b], (*sizevec)[b], buff, &eventSize);
 	  delete[] (*buffvec)[b];
@@ -392,11 +390,12 @@ void DataProcessor::Process()
 
 	//Now fill the actual data depending on write mode
 #ifdef HAVE_LIBMONGOCLIENT
-	if(m_koOptions->GetRunOptions().WriteMode == WRITEMODE_MONGODB){
+	if(m_koOptions->write_mode == WRITEMODE_MONGODB){
 	  mongo::BSONObjBuilder bson;
 	  
 	  //remove this later!
-	  if(m_koOptions->GetMongoOptions().Collection=="online.scope"){
+	  if(m_koOptions->mongo_database == "online" &&
+	     m_koOptions->mongo_collection == "scope"){
 	    time_t currentTime;
 	    struct tm *starttime;
 	    time(&currentTime);
@@ -410,7 +409,7 @@ void DataProcessor::Process()
 	  bson.append("time",Time64);
 	  bson.appendBinData("data",(int)eventSize,mongo::BinDataGeneral,(const void*)buff);
 	  vMongoInsertVec->push_back(bson.obj());
-	  if((int)vMongoInsertVec->size()>m_koOptions->GetMongoOptions().MinInsertSize){
+	  if((int)vMongoInsertVec->size()>m_koOptions->mongo_min_insert_size){
 	    if(DAQRecorder_mdb->InsertThreaded(vMongoInsertVec,mongoID)==0){ //success
 	      vMongoInsertVec = new vector<mongo::BSONObj>();
 	    }
@@ -424,7 +423,7 @@ void DataProcessor::Process()
 	}
 #endif
 #ifdef HAVE_LIBPBF
-	if(m_koOptions->GetRunOptions().WriteMode == WRITEMODE_FILE){
+	if(m_koOptions->write_mode == WRITEMODE_FILE){
 	  if(eventIndices == NULL || ( currentEventIndex<eventIndices->size()
 				       && (*eventIndices)[currentEventIndex]==b) ){
 	    if(protocHandle!=-1)

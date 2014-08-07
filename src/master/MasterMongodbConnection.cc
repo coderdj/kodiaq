@@ -17,12 +17,14 @@
 MasterMongodbConnection::MasterMongodbConnection()
 {
    fLog=NULL;
+   fOptions=NULL;
    fLastDocOID.clear();
 }
 
 MasterMongodbConnection::MasterMongodbConnection(koLogger *Log)
 {
    fLog=Log;
+   fOptions=NULL;
    fLastDocOID.clear();
    try     {	
       fMongoDB.connect("xedaq01");
@@ -41,7 +43,7 @@ MasterMongodbConnection::~MasterMongodbConnection()
 int MasterMongodbConnection::Initialize(string user, string runMode, string name,
 					koOptions *options, bool onlineOnly)
 {
-   fMongoOptions = options->GetMongoOptions();
+  fOptions = options;
       
    //connect to mongodb
 /*   try {
@@ -61,7 +63,7 @@ int MasterMongodbConnection::Initialize(string user, string runMode, string name
    b.append("runtype","bern_test_daq");
    b.append("starttime",0);
    b.append("user",user);
-   b.append("compressed",options->Compression());
+   b.append("compressed",options->compression);
    b.append("data_taking_ended",false);
    b.append("error",false);
    b.append("trigger_ended",false);
@@ -85,7 +87,7 @@ int MasterMongodbConnection::Initialize(string user, string runMode, string name
    try   {	
      if(!onlineOnly) {
        stringstream collName;
-       collName<<fMongoOptions.DB<<"."<<fMongoOptions.Collection;
+       collName<<fOptions->mongo_database<<"."<<fOptions->mongo_collection;
        //       fMongoDB.insert(fMongoOptions.Collection.c_str(),bObj);
        fMongoDB.insert(collName.str(),bObj);
        //       fMongoDB.createCollection(fMongoOptions.Collection,1073741824,true);
@@ -123,7 +125,7 @@ int MasterMongodbConnection::UpdateEndTime(bool onlineOnly)
 //      cout<<firstString<<" "<<secondString<<endl;
       mongo::BSONObjBuilder b; 
       mongo::BSONObj res;
-      b << "findandmodify" << /*secondString.c_str()*/fMongoOptions.Collection.c_str() <<
+      b << "findandmodify" << /*secondString.c_str()*/fOptions->mongo_collection.c_str() <<
 	"query" << BSON("_id" << fLastDocOID) << 
 	"update" << BSON("$set" << BSON("endtimestamp" <<mongo::Date_t(1000*mktime(currenttime)) << "data_taking_ended" << true));
 
@@ -134,7 +136,7 @@ int MasterMongodbConnection::UpdateEndTime(bool onlineOnly)
 	"update" << BSON("$set" << BSON("endtimestamp" <<mongo::Date_t(1000*mktime(currenttime)) << "data_taking_ended" << true)); 
       
       if(!onlineOnly)
-	assert(fMongoDB.runCommand(fMongoOptions.DB.c_str()/*firstString.c_str()*/,b.obj(),res));      
+	assert(fMongoDB.runCommand(fOptions->mongo_database.c_str()/*firstString.c_str()*/,b.obj(),res));      
       assert(fMongoDB.runCommand("online",bo.obj(),res));
    }
    catch (const mongo::DBException &e) {
@@ -240,21 +242,35 @@ int MasterMongodbConnection::CheckForCommand(string &command, string &second, st
    return 0;
 }
 
-int MasterMongodbConnection::PullDataFile(string id, string &path)
+int MasterMongodbConnection::PullRunMode(string name, koOptions &options)
 {
-   if(fMongoDB.count("online.readermodes") ==0)
+   if(fMongoDB.count("online.run_modes") ==0)
      return -1;
-return -1;
+
    //Find doc corresponding to this run mode
    mongo::BSONObjBuilder query; 
-   query.append( "mode_id" , id ); 
-//   mongo::BSONObj res = c.findOne("online.readermodes" , query.obj() ); 
-   
-   
-   ofstream outfile;
-   path=".runMode.ini";
-   outfile.open(path.c_str());
-     
-   outfile.close();
+   query.append( "name" , name ); 
+   mongo::BSONObj res = fMongoDB.findOne("online.readermodes" , query.obj() ); 
+   if(res.nFields()==0) return -1; //empty object
+
+   //Set Options From Mongo
+   options.name=(res.getStringField("name"));
+   options.creator=(res.getStringField("creator"));
+   options.creation_date=(res.getStringField("creation_date"));
+   options.write_mode=(res.getIntField("write_mode"));
+   options.baseline_mode=(res.getIntField("baseline_mode"));
+   options.run_start=(res.getIntField("run_start"));
+   options.run_start_module=(res.getIntField("run_start_module"));
+   options.blt_size=(res.getIntField("blt_size"));
+   options.compression=(res.getIntField("compression"));
+   options.processing_mode=(res.getIntField("processing_mode"));
+   options.processing_num_threads=(res.getIntField("processing_num_threads"));
+   options.processing_readout_threshold=(res.getIntField("processing_readout_threshold"));
+   options.mongo_address=(res.getStringField("mongo_address"));
+   options.mongo_database=(res.getStringField("mongo_database"));
+   options.mongo_collection=(res.getStringField("mongo_collection"));
+   options.mongo_write_concern=(res.getIntField("mongo_write_concern"));
+
+   // registers, boards, and crates
    return 0;
 }

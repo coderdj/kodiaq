@@ -166,12 +166,6 @@ class koHelper
    // 
    static int       UpdateRunInfo(koRunInfo_t &fRunInfo,string startedby);
    //
-   // Function    : EasyPassHash(string pass)
-   // Purpose     : A very simple hash for passwords. Nothing fancy, just makes
-   //               it :slightly: more difficult to guess. Note that with the current
-   //               hash, multiple solutions are possible.
-   // 
-   static int       EasyPassHash(string pass);    
    //
    // Function    : InitializeNode(XeNode_t&)
    // Purpose     : Sets all values in this XeNode_t to their defaults
@@ -194,6 +188,10 @@ class koHelper
    // Purpose     : Returns the time stamp out the the header of a CAEN block
    //
    static u_int32_t GetTimeStamp(u_int32_t *buffer);
+  
+  // Function      : ProcessLineHex
+  // Purpose       : Parse a line containing hex integers
+  static int ProcessLineHex(string line,string option, int &ret);
 
  private:
 };

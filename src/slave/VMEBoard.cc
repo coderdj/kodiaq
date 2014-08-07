@@ -26,7 +26,7 @@ VMEBoard::~VMEBoard()
 {   
 }
 
-VMEBoard::VMEBoard(BoardDefinition_t BID, koLogger *koLog)
+VMEBoard::VMEBoard(board_definition_t BID, koLogger *koLog)
 {
    fBID=BID;   
    fCrateHandle=-1;
@@ -51,7 +51,7 @@ void VMEBoard::LogSendMessage(string mess)
 
 int VMEBoard::WriteReg32(u_int32_t address, u_int32_t data)
 {
-   if(CAENVME_WriteCycle(fCrateHandle,fBID.VMEAddress+address,
+   if(CAENVME_WriteCycle(fCrateHandle,fBID.vme_address+address,
 			  &data,cvA32_U_DATA,cvD32)!=cvSuccess)        
      return -1;
    return 0;   
@@ -61,7 +61,7 @@ int VMEBoard::ReadReg32(u_int32_t address, u_int32_t &data)
 {
    u_int32_t temp;
    int ret=0;
-   if((ret=CAENVME_ReadCycle(fCrateHandle,fBID.VMEAddress+address,
+   if((ret=CAENVME_ReadCycle(fCrateHandle,fBID.vme_address+address,
 			     &temp,cvA32_U_DATA,cvD32))!=cvSuccess)
      return -1;      
    data=temp;
@@ -70,7 +70,7 @@ int VMEBoard::ReadReg32(u_int32_t address, u_int32_t &data)
 
 int VMEBoard::WriteReg16(u_int32_t address,u_int16_t data)
 {
-   if(CAENVME_WriteCycle(fCrateHandle,fBID.VMEAddress+address,
+   if(CAENVME_WriteCycle(fCrateHandle,fBID.vme_address+address,
 			 &data,cvA32_U_DATA,cvD16)!=cvSuccess)         		    
      return -1;
    return 0;
@@ -79,7 +79,7 @@ int VMEBoard::WriteReg16(u_int32_t address,u_int16_t data)
 int VMEBoard::ReadReg16(u_int32_t address,u_int16_t &data)
 {
    u_int16_t temp;
-   if(CAENVME_ReadCycle(fCrateHandle,fBID.VMEAddress+address,
+   if(CAENVME_ReadCycle(fCrateHandle,fBID.vme_address+address,
 			&temp,cvA32_U_DATA,cvD16)!=cvSuccess)
      return -1;
    data=temp;

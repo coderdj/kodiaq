@@ -92,7 +92,7 @@ void DAQRecorder_mongodb::CloseConnections()
 int DAQRecorder_mongodb::Initialize(koOptions *options)
 {
    if(options == NULL) return -1;
-   m_koMongoOptions = options->GetMongoOptions();
+   m_options = options;
    CloseConnections();
    ResetError();
    m_bInitialized = true;
@@ -106,7 +106,7 @@ int DAQRecorder_mongodb::RegisterProcessor()
    int retval=-1;
    mongo::ScopedDbConnection *conn;
    try  {
-     conn = new mongo::ScopedDbConnection(m_koMongoOptions.DBAddress,10000.);
+     conn = new mongo::ScopedDbConnection(m_options->mongo_address,10000.);
    }
    catch(const mongo::DBException &e)  {
      stringstream err;
@@ -126,7 +126,7 @@ int DAQRecorder_mongodb::RegisterProcessor()
 
    stringstream cS;
    int ID = m_vScopedConnections.size()-1;
-   cS<<m_koMongoOptions.DB<<"_"<<ID<<"."<<m_koMongoOptions.Collection;
+   cS<<m_options->mongo_database<<"_"<<ID<<"."<<m_options->mongo_collection;
    //create capped collection
    conn->conn().createCollection(cS.str(),1000000000,true); //1GB capped collection 
       
@@ -135,7 +135,7 @@ int DAQRecorder_mongodb::RegisterProcessor()
 
 void DAQRecorder_mongodb::UpdateCollection(koOptions *options)
 {
-   m_koMongoOptions = options->GetMongoOptions();
+   m_options = options;
 }
 
 void DAQRecorder_mongodb::Shutdown()
@@ -161,7 +161,7 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
    
    try  {
      stringstream cS;
-     cS<<m_koMongoOptions.DB<<"_"<<ID<<"."<<m_koMongoOptions.Collection;
+     cS<<m_options->mongo_database<<"_"<<ID<<"."<<m_options->mongo_collection;
      //(*m_vScopedConnections[ID])->ensureIndex(m_koMongoOptions.Collection.c_str(), mongo::fromjson("{time:-1}"));
      //(*m_vScopedConnections[ID])->insert(m_koMongoOptions.Collection.c_str(),
      //(*insvec));
@@ -203,29 +203,28 @@ int DAQRecorder_protobuff::Initialize(koOptions *options)
 {
   Shutdown();
   
-  m_koOptions=options;
-   m_FileOptions = options->GetOutfileOptions();
+  m_options=options;
    
    // get a file name
-   if(m_FileOptions.DynamicRunNames == 1)  { //if we have time-based filenames
+   if(m_options->dynamic_run_names == 1)  { //if we have time-based filenames
      std::size_t pos;
-     pos = m_FileOptions.Path.find_first_of("*",0);   
-     if(pos>0 && pos<=m_FileOptions.Path.size())
-       m_SWritePath = m_FileOptions.Path.substr(0,pos);
+     pos = m_options->file_path.find_first_of("*",0);   
+     if(pos>0 && pos<=m_options->file_path.size())
+       m_SWritePath = m_options->file_path.substr(0,pos);
      else
-       m_SWritePath = m_FileOptions.Path;
+       m_SWritePath = m_options->file_path;
      if(m_SWritePath[m_SWritePath.size()]!='/' && 
 	m_SWritePath[m_SWritePath.size()]!='_')
        m_SWritePath+="_";
      m_SWritePath+=koHelper::GetRunNumber();
    }
    else
-     m_SWritePath = m_FileOptions.Path;
+     m_SWritePath = m_options->file_path;
    
    stringstream sstream;
-   if(m_koOptions->Compression())
+   if(m_options->compression==1)
      sstream<<"pz:";
-   sstream<<"n"<<m_FileOptions.EventsPerFile;
+   sstream<<"n"<<m_options->file_events_per_file;
    
    if(m_outfile.open_file(m_SWritePath,sstream.str())!=0) return -1;
    
