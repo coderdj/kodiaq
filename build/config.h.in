@@ -26,12 +26,6 @@
 /* Define to 1 if you have the `expect' library (-lexpect). */
 #undef HAVE_LIBEXPECT
 
-/* Define to 1 if you have the `form' library (-lform). */
-#undef HAVE_LIBFORM
-
-/* Define to 1 if you have the `menu' library (-lmenu). */
-#undef HAVE_LIBMENU
-
 /* Define to 1 if you have the `mongoclient' library (-lmongoclient). */
 #undef HAVE_LIBMONGOCLIENT
 
@@ -52,9 +46,6 @@
 
 /* Define to 1 if you have the `tcl8.5' library (-ltcl8.5). */
 #undef HAVE_LIBTCL8_5
-
-/* Define to 1 if you have the `tinfo' library (-ltinfo). */
-#undef HAVE_LIBTINFO
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
@@ -122,6 +113,3 @@
 
 /* Compile slave module */
 #undef WITH_SLAVE
-
-/* Compile user interface */
-#undef WITH_USER

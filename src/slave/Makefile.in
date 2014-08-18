@@ -79,7 +79,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 bin_PROGRAMS = koSlave$(EXEEXT)
-@WITH_LIBPBF_TRUE@am__append_1 = -lpbf -lprotobuf -lsnappy
+@WITH_LIBPBF_TRUE@am__append_1 = -lpbf -lprotobuf -lsnappy -lpthread
 
 #options flags
 #if WITH_MONGODB

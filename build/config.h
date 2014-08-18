@@ -25,19 +25,13 @@
 #define HAVE_LIBCAENVME 1
 
 /* Define to 1 if you have the `expect' library (-lexpect). */
-/* #undef HAVE_LIBEXPECT */
-
-/* Define to 1 if you have the `form' library (-lform). */
-/* #undef HAVE_LIBFORM */
-
-/* Define to 1 if you have the `menu' library (-lmenu). */
-/* #undef HAVE_LIBMENU */
+#define HAVE_LIBEXPECT 1
 
 /* Define to 1 if you have the `mongoclient' library (-lmongoclient). */
 #define HAVE_LIBMONGOCLIENT 1
 
 /* Define to 1 if you have the `ncurses' library (-lncurses). */
-#define HAVE_LIBNCURSES 1
+/* #undef HAVE_LIBNCURSES */
 
 /* Define to 1 if you have the `pbf' library (-lpbf). */
 #define HAVE_LIBPBF 1
@@ -52,10 +46,7 @@
 #define HAVE_LIBSNAPPY 1
 
 /* Define to 1 if you have the `tcl8.5' library (-ltcl8.5). */
-/* #undef HAVE_LIBTCL8_5 */
-
-/* Define to 1 if you have the `tinfo' library (-ltinfo). */
-/* #undef HAVE_LIBTINFO */
+#define HAVE_LIBTCL8_5 1
 
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
@@ -82,7 +73,7 @@
 #define HAVE_UNISTD_H 1
 
 /* Compile standalone slave */
-#define KLITE 1
+/* #undef KLITE */
 
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */
@@ -116,13 +107,10 @@
 #define VERSION "0.9"
 
 /* Compile with DDC HE veto support */
-/* #undef WITH_DDC10 */
+#define WITH_DDC10 /**/
 
 /* Compile master module */
-/* #undef WITH_MASTER */
+#define WITH_MASTER /**/
 
 /* Compile slave module */
-/* #undef WITH_SLAVE */
-
-/* Compile user interface */
-/* #undef WITH_USER */
+#define WITH_SLAVE /**/

@@ -78,9 +78,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 @WITH_DDC10_TRUE@am__append_1 = src/ddc10
-@WITH_USER_TRUE@am__append_2 = src/user
-@WITH_MASTER_TRUE@am__append_3 = src/master
-@WITH_SLAVE_TRUE@am__append_4 = src/slave
+@WITH_MASTER_TRUE@am__append_2 = src/master
+@WITH_SLAVE_TRUE@am__append_3 = src/slave
 subdir = .
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/configure $(am__configure_deps) \
@@ -164,7 +163,7 @@ am__define_uniq_tagged_files = \
 ETAGS = etags
 CTAGS = ctags
 CSCOPE = cscope
-DIST_SUBDIRS = src/ddc10 src/common src/user src/master src/slave
+DIST_SUBDIRS = src/ddc10 src/common src/master src/slave
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -331,8 +330,7 @@ ACLOCAL_AMFLAGS = -I build/m4
 #else
 #SUBDIRS = 
 #endif
-SUBDIRS = $(am__append_1) src/common $(am__append_2) $(am__append_3) \
-	$(am__append_4)
+SUBDIRS = $(am__append_1) src/common $(am__append_2) $(am__append_3)
 EXTRA_DIST = autogen.sh
 all: all-recursive
 

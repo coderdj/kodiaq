@@ -648,8 +648,6 @@ WITH_SLAVE_FALSE
 WITH_SLAVE_TRUE
 WITH_MASTER_FALSE
 WITH_MASTER_TRUE
-WITH_USER_FALSE
-WITH_USER_TRUE
 CXXCPP
 am__fastdepCXX_FALSE
 am__fastdepCXX_TRUE
@@ -781,7 +779,6 @@ enable_dependency_tracking
 with_gnu_ld
 with_sysroot
 enable_libtool_lock
-enable_user
 enable_master
 enable_slave
 enable_lite
@@ -1430,7 +1427,6 @@ Optional Features:
   --disable-dependency-tracking
                           speeds up one-time build
   --disable-libtool-lock  avoid locking (might break parallel builds)
-  --disable-user          Disable compilation of UI
   --enable-master         Enable compilation of master executable
   --enable-slave          Enable slave module
   --enable-lite           Compile standalone slave
@@ -15206,223 +15202,6 @@ fi
 
 
 
-############################
-# Compile UI
-############################
-# Check whether --enable-user was given.
-if test "${enable_user+set}" = set; then :
-  enableval=$enable_user;
-fi
-
-if test "x$enable_user" != "xno"; then :
-
-     if true; then
-  WITH_USER_TRUE=
-  WITH_USER_FALSE='#'
-else
-  WITH_USER_TRUE='#'
-  WITH_USER_FALSE=
-fi
-
-
-$as_echo "#define WITH_USER /**/" >>confdefs.h
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for initscr in -lncurses" >&5
-$as_echo_n "checking for initscr in -lncurses... " >&6; }
-if ${ac_cv_lib_ncurses_initscr+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lncurses  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char initscr ();
-int
-main ()
-{
-return initscr ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_link "$LINENO"; then :
-  ac_cv_lib_ncurses_initscr=yes
-else
-  ac_cv_lib_ncurses_initscr=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ncurses_initscr" >&5
-$as_echo "$ac_cv_lib_ncurses_initscr" >&6; }
-if test "x$ac_cv_lib_ncurses_initscr" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBNCURSES 1
-_ACEOF
-
-  LIBS="-lncurses $LIBS"
-
-else
-  as_fn_error $? "" "$LINENO" 5
-fi
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for menu_init in -lmenu" >&5
-$as_echo_n "checking for menu_init in -lmenu... " >&6; }
-if ${ac_cv_lib_menu_menu_init+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lmenu  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char menu_init ();
-int
-main ()
-{
-return menu_init ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_link "$LINENO"; then :
-  ac_cv_lib_menu_menu_init=yes
-else
-  ac_cv_lib_menu_menu_init=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_menu_menu_init" >&5
-$as_echo "$ac_cv_lib_menu_menu_init" >&6; }
-if test "x$ac_cv_lib_menu_menu_init" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBMENU 1
-_ACEOF
-
-  LIBS="-lmenu $LIBS"
-
-else
-  as_fn_error $? "" "$LINENO" 5
-fi
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lform" >&5
-$as_echo_n "checking for main in -lform... " >&6; }
-if ${ac_cv_lib_form_main+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lform  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-int
-main ()
-{
-return main ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_link "$LINENO"; then :
-  ac_cv_lib_form_main=yes
-else
-  ac_cv_lib_form_main=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_form_main" >&5
-$as_echo "$ac_cv_lib_form_main" >&6; }
-if test "x$ac_cv_lib_form_main" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBFORM 1
-_ACEOF
-
-  LIBS="-lform $LIBS"
-
-else
-  as_fn_error $? "" "$LINENO" 5
-fi
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for setupterm in -ltinfo" >&5
-$as_echo_n "checking for setupterm in -ltinfo... " >&6; }
-if ${ac_cv_lib_tinfo_setupterm+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-ltinfo  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char setupterm ();
-int
-main ()
-{
-return setupterm ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_link "$LINENO"; then :
-  ac_cv_lib_tinfo_setupterm=yes
-else
-  ac_cv_lib_tinfo_setupterm=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_tinfo_setupterm" >&5
-$as_echo "$ac_cv_lib_tinfo_setupterm" >&6; }
-if test "x$ac_cv_lib_tinfo_setupterm" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBTINFO 1
-_ACEOF
-
-  LIBS="-ltinfo $LIBS"
-
-else
-  as_fn_error $? "" "$LINENO" 5
-fi
-
-
-else
-
-     if false; then
-  WITH_USER_TRUE=
-  WITH_USER_FALSE='#'
-else
-  WITH_USER_TRUE='#'
-  WITH_USER_FALSE=
-fi
-
-
-fi
-
 ###########################
 # Compile Master Module
 ###########################
@@ -16435,14 +16214,6 @@ else
 fi
 
      if true; then
-  WITH_USER_TRUE=
-  WITH_USER_FALSE='#'
-else
-  WITH_USER_TRUE='#'
-  WITH_USER_FALSE=
-fi
-
-     if true; then
   WITH_DDC10_TRUE=
   WITH_DDC10_FALSE='#'
 else
@@ -16458,9 +16229,6 @@ $as_echo "#define WITH_SLAVE /**/" >>confdefs.h
 
 
 $as_echo "#define WITH_DDC10 /**/" >>confdefs.h
-
-
-$as_echo "#define WITH_USER /**/" >>confdefs.h
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -ltcl8.5" >&5
 $as_echo_n "checking for main in -ltcl8.5... " >&6; }
@@ -17210,7 +16978,7 @@ fi
 
 
 #AC_CONFIG_FILES([Makefile])
-ac_config_files="$ac_config_files Makefile src/ddc10/Makefile src/common/Makefile src/master/Makefile src/slave/Makefile src/user/Makefile"
+ac_config_files="$ac_config_files Makefile src/ddc10/Makefile src/common/Makefile src/master/Makefile src/slave/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -17349,14 +17117,6 @@ if test -z "${am__fastdepCXX_TRUE}" && test -z "${am__fastdepCXX_FALSE}"; then
   as_fn_error $? "conditional \"am__fastdepCXX\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${WITH_USER_TRUE}" && test -z "${WITH_USER_FALSE}"; then
-  as_fn_error $? "conditional \"WITH_USER\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${WITH_USER_TRUE}" && test -z "${WITH_USER_FALSE}"; then
-  as_fn_error $? "conditional \"WITH_USER\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
 if test -z "${WITH_MASTER_TRUE}" && test -z "${WITH_MASTER_FALSE}"; then
   as_fn_error $? "conditional \"WITH_MASTER\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
@@ -17399,10 +17159,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${WITH_MASTER_TRUE}" && test -z "${WITH_MASTER_FALSE}"; then
   as_fn_error $? "conditional \"WITH_MASTER\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${WITH_USER_TRUE}" && test -z "${WITH_USER_FALSE}"; then
-  as_fn_error $? "conditional \"WITH_USER\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${WITH_DDC10_TRUE}" && test -z "${WITH_DDC10_FALSE}"; then
@@ -18392,7 +18148,6 @@ do
     "src/common/Makefile") CONFIG_FILES="$CONFIG_FILES src/common/Makefile" ;;
     "src/master/Makefile") CONFIG_FILES="$CONFIG_FILES src/master/Makefile" ;;
     "src/slave/Makefile") CONFIG_FILES="$CONFIG_FILES src/slave/Makefile" ;;
-    "src/user/Makefile") CONFIG_FILES="$CONFIG_FILES src/user/Makefile" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac

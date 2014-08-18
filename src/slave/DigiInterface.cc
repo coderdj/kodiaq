@@ -49,11 +49,11 @@ int DigiInterface::Initialize(koOptions *options)
    //Define electronics and initialize
    for(int ilink=0;ilink<options->GetLinks();ilink++)  {
       int tempHandle=-1;
-      LinkDefinition_t Link = options->GetLink(ilink);
+      link_definition_t Link = options->GetLink(ilink);
       CVBoardTypes BType;
-      if(Link.LinkType=="V1718")
+      if(Link.type=="V1718")
 	BType = cvV1718;
-      else if(Link.LinkType=="V2718")
+      else if(Link.type=="V2718")
 	BType = cvV2718;
       else  	{	   
 	 if(m_koLog!=NULL)
@@ -62,7 +62,7 @@ int DigiInterface::Initialize(koOptions *options)
       }
       
       int cerr=-1;
-      if((cerr=CAENVME_Init(BType,Link.LinkID,Link.CrateID,
+      if((cerr=CAENVME_Init(BType,Link.id,Link.crate,
 				&tempHandle))!=cvSuccess){
 	 //throw exception
 	 return -1;
@@ -72,16 +72,16 @@ int DigiInterface::Initialize(koOptions *options)
       //define modules corresponding to this crate (inefficient
       //double for loops, but small crate/module vector size)
       for(int imodule=0; imodule<options->GetBoards(); imodule++)	{
-	 BoardDefinition_t Board = options->GetBoard(imodule);
-	 if(Board.LinkID!=Link.LinkID || Board.CrateID!=Link.CrateID)
+	 board_definition_t Board = options->GetBoard(imodule);
+	 if(Board.link!=Link.id || Board.crate!=Link.crate)
 	   continue;
-	     
-	 if(Board.BoardType=="V1724"){	      
+	 cout<<"Found a board with link "<<Board.link<<" and crate "<<Board.crate<<endl;
+	 if(Board.type=="V1724"){	      
 	    CBV1724 *digitizer = new CBV1724(Board,m_koLog);
 	    m_vDigitizers.push_back(digitizer);
 	    digitizer->SetCrateHandle(tempHandle);
 	 }	 
-	 else if(Board.BoardType=="V2718"){	      
+	 else if(Board.type=="V2718"){	      
 	    CBV2718 *digitizer = new CBV2718(Board, m_koLog);
 	    m_RunStartModule=digitizer;
 	    digitizer->SetCrateHandle(tempHandle);
@@ -109,8 +109,8 @@ int DigiInterface::Initialize(koOptions *options)
    pthread_mutex_init(&m_RateMutex,NULL);
    m_iReadSize=0;
    m_iReadFreq=0;
-   if(options->GetProcessingOptions().NumThreads>0)
-     m_vProcThreads.resize(options->GetProcessingOptions().NumThreads);
+   if(options->processing_num_threads>0)
+     m_vProcThreads.resize(options->processing_num_threads);
    else m_vProcThreads.resize(1);
    
    for(unsigned int x=0;x<m_vProcThreads.size();x++)  {
@@ -118,29 +118,23 @@ int DigiInterface::Initialize(koOptions *options)
       m_vProcThreads[x].Processor=NULL;
    }
             
-   //Make sure run start is defined
-   //if(options->GetRunOptions().RunStart==1 && m_RunStartModule==NULL){
-   //   if(m_koLog!=NULL)
-   //	m_koLog->Error("DigiInterface::Initialize - You asked for s-in start but didn't provide a crate controller");
-   //}
-      
    //Set up daq recorder
    m_DAQRecorder = NULL;
 
-   if(options->GetRunOptions().WriteMode==WRITEMODE_FILE){
+   if(options->write_mode==WRITEMODE_FILE){
 #ifdef HAVE_LIBPBF
      m_DAQRecorder = new DAQRecorder_protobuff(m_koLog);
 #else
       //throw exception
-      m_koOptions->GetRunOptions().WriteMode = WRITEMODE_NONE;
+      m_koOptions->write_mode = WRITEMODE_NONE;
 #endif
    }   
 #ifdef HAVE_LIBMONGOCLIENT
-   else if(options->GetRunOptions().WriteMode==WRITEMODE_MONGODB)
+   else if(options->write_mode==WRITEMODE_MONGODB)
      m_DAQRecorder = new DAQRecorder_mongodb(m_koLog);
 #else
    //throw exception
-   m_koOptions->GetRunOptions().WriteMode = WRITEMODE_NONE;
+   m_koOptions->write_mode = WRITEMODE_NONE;
 #endif
    if(m_DAQRecorder!=NULL)
      m_DAQRecorder->Initialize(options);
@@ -156,17 +150,6 @@ void DigiInterface::UpdateRecorderCollection(koOptions *options)
 #endif
 }
 
-
-/*VMEBoard* DigiInterface::GetModuleByID(int ID)
-{
-   for(unsigned int x=0;x<m_vCrates.size();x++)  {
-      for(int y=0;y<m_vCrates[x]->GetModules();y++)	{
-	 if(m_vCrates[x]->GetModule(y)->GetID().BoardID==ID)
-	   return m_vCrates[x]->GetModule(y);
-      }      
-   }   
-   return NULL;
-}*/
 
 void DigiInterface::Close()
 {
