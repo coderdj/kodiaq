@@ -84,6 +84,36 @@ int koNet::ReceiveString(int socket,string &buff)
    return 0;
 }
 
+int koNet::SendStream(int socket, int id, stringstream *stream)
+{
+  string line;
+  while(!stream->eof()){
+    getline((*stream),line);
+    if(line[0]=='%'){
+      if((int)(line[1]-'0')==id){
+	line.erase(0,2);
+      }
+      else
+	continue;
+    }
+    if(SendString(socket,line)<0){
+      LogError("koNet::SendStream - error sending stream line");
+      return -1;
+    }
+  }
+  string end = "@";
+  if(SendString(socket,end)!=0)  {
+    LogError("koNet::SendStream - error sending file ender. Data probably mangled.");
+    return -1;
+  }    
+  //Remote connection will return if he got the file              
+  if(ReceiveAck(socket)!=0)  {
+    LogError("koNet::SendStream - file sent but no acknowledgement received.");
+    return -1;
+  }
+  return 0;
+  
+}
 int koNet::SendFile(int socket, int id, string filepath)
 {
    ifstream infile;

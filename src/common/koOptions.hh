@@ -37,6 +37,7 @@ struct link_definition_t{
    string type;
    int id;
    int crate;
+   char node;
 };
 
 /*! \brief Stores configuration information for one VME module.
@@ -47,14 +48,16 @@ struct board_definition_t{
   int id;
   int crate;
   int link;
+  char node;
 };
 
 /*! \brief Generic storage container for a VME option.
  */
 struct vme_option_t{
-   u_int32_t address;
-   u_int32_t value;
-   int board;
+  u_int32_t address;
+  u_int32_t value;
+  int board;
+  char node;
 };
 
 /*! \brief Reads and processes an options file.
@@ -77,12 +80,18 @@ public:
   link_definition_t GetLink(int x)  {
     return m_links[x];
   };
-  
+  void AddLink(link_definition_t link){
+    m_links.push_back(link);
+  };
+
   int GetBoards()  {
     return m_boards.size();      
   };
   board_definition_t GetBoard(int x)  {
     return m_boards[x];
+  };
+  void AddBoard(board_definition_t board){
+    m_boards.push_back(board);
   };
   
   int GetVMEOptions()  {
@@ -90,7 +99,12 @@ public:
   };
   vme_option_t GetVMEOption(int x)  {
     return m_registers[x];
-  };            
+  };
+  void AddVMEOption(vme_option_t vme){
+    m_registers.push_back(vme);
+  };
+            
+  void ToStream(stringstream *retstream);
   //Put any dependency-specific public members here
 #ifdef WITH_DDC10
    ddc10_par_t GetVetoOptions()  {	

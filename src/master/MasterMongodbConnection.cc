@@ -224,7 +224,8 @@ void MasterMongodbConnection::UpdateDAQStatus(koStatusPacket_t DAQStatus)
    fMongoDB.insert("online.daqstatus",b.obj());
 }
 
-int MasterMongodbConnection::CheckForCommand(string &command, string &second, string &third)
+int MasterMongodbConnection::CheckForCommand(string &command, string &user, 
+					     string &comment, koOptions &options)
 {
    if(fMongoDB.count("online.daqcommands") ==0)
      return -1;
@@ -235,10 +236,13 @@ int MasterMongodbConnection::CheckForCommand(string &command, string &second, st
    else
      return -1;
    command=b.getStringField("command");
-   second=b.getStringField("mode");
-   third=b.getStringField("name");
+   string mode=b.getStringField("mode");
+   comment = b.getStringField("comment");
+   user=b.getStringField("name");
    fMongoDB.remove("online.daqcommands",QUERY("command"<<"Start"));
    fMongoDB.remove("online.daqcommands",QUERY("command"<<"Stop")); 
+   if(command=="Start")
+     PullRunMode(mode,options);
    return 0;
 }
 
@@ -250,10 +254,14 @@ int MasterMongodbConnection::PullRunMode(string name, koOptions &options)
    //Find doc corresponding to this run mode
    mongo::BSONObjBuilder query; 
    query.append( "name" , name ); 
-   mongo::BSONObj res = fMongoDB.findOne("online.readermodes" , query.obj() ); 
-   if(res.nFields()==0) return -1; //empty object
+   cout<<"Looking for run mode "<<name<<endl;
+   mongo::BSONObj res = fMongoDB.findOne("online.run_modes" , query.obj() ); 
+   if(res.nFields()==0) 
+     return -1; //empty object
+
 
    //Set Options From Mongo
+   cout<<"Retrieved mongo run mode "<<name<<endl;
    options.name=(res.getStringField("name"));
    options.creator=(res.getStringField("creator"));
    options.creation_date=(res.getStringField("creation_date"));
@@ -270,7 +278,43 @@ int MasterMongodbConnection::PullRunMode(string name, koOptions &options)
    options.mongo_database=(res.getStringField("mongo_database"));
    options.mongo_collection=(res.getStringField("mongo_collection"));
    options.mongo_write_concern=(res.getIntField("mongo_write_concern"));
-
+   options.mongo_min_insert_size=(res.getIntField("mongo_min_insert_size"));
+   options.file_path=(res.getIntField("file_path"));
+   options.file_events_per_file=(res.getIntField("file_events_per_file"));
    // registers, boards, and crates
+   
+   //registers
+   vector<mongo::BSONElement> regs = res.getField("registers").Array();
+   for(unsigned int x=0;x<regs.size();x++){
+     vme_option_t reg;
+     reg.address=koHelper::StringToHex(regs[x]["reg"].String());
+     reg.value=koHelper::StringToHex(regs[x]["val"].String());
+     reg.board=(regs[x]["board"].Int());
+     reg.node='x';
+     options.AddVMEOption(reg);
+   }
+   //links
+   vector<mongo::BSONElement> links = res.getField("links").Array();
+   for(unsigned int x=0;x<links.size();x++){
+     link_definition_t link;
+     link.type="V2718"; //only one supported a.t.m... CAEN thing.
+     link.id = links[x]["link"].Int();
+     link.crate = links[x]["crate"].Int();
+     link.node = koHelper::IntToString(links[x]["reader"].Int())[0];
+     options.AddLink(link);
+   }  
+   //boards
+   vector<mongo::BSONElement> boards = res.getField("boards").Array();
+   for(unsigned int x=0;x<boards.size();x++){
+     board_definition_t board;
+     cout<<"Found board "<<boards[x]["serial"].Int()<<endl;
+     board.type = boards[x]["boardtype"].String();
+     board.vme_address = koHelper::StringToHex(boards[x]["vme"].String());
+     board.id = boards[x]["serial"].Int();
+     board.crate = boards[x]["crate"].Int();
+     board.link = boards[x]["link"].Int();
+     board.node = koHelper::IntToString(boards[x]["reader"].Int())[0];
+     options.AddBoard(board);
+   }
    return 0;
 }

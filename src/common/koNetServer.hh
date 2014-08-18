@@ -37,7 +37,7 @@ class koNetServer : public koNet
    
                 koNetServer();
    virtual     ~koNetServer();
-   explicit     koNetServer(koLogger *logger, koLogger *broadcastlogger);
+   explicit     koNetServer(koLogger *logger, koLogger *broadcastlogger=NULL);
    
    //
    // Name    : Initialize 
@@ -149,6 +149,7 @@ class koNetServer : public koNet
    // Purpose : Send an options file located at filepath
    // 
    int          SendOptions(string filepath);
+   int          SendOptionsStream(stringstream *stream);
    //
    
  private:

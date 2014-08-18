@@ -1,5 +1,5 @@
-#ifndef MASTERDAQMONITOR_HH_
-#define MASTERDAQMONITOR_HH_
+#ifndef DAQMONITOR_HH_
+#define DAQMONITOR_HH_
 
 // ****************************************************
 // 
@@ -7,7 +7,7 @@
 // 
 // Author  : Daniel Coderre, LHEP, Universitaet Bern
 // Date    : 16.05.2014
-// File    : MasterDAQMonitor.hh
+// File    : DAQMonitor.hh
 // 
 // Brief   : Class for managing DAQ for dispatcher
 // 
@@ -15,6 +15,8 @@
 
 #include <koLogger.hh>
 #include <koNetServer.hh>
+#include <koOptions.hh>
+#include <pthread.h>
 #include "MasterMongodbConnection.hh"
 
 // Classification for error messages from slaves 
@@ -23,31 +25,37 @@
 #define DAQMASTER_ERR_CRITICAL      2      // Stop the DAQ, notify someone
 #define DAQMASTER_ERR_WORLDENDING   3      // Stop the DAQ, notify someone, panic
 
-class MasterDAQMonitor
+class DAQMonitor
 {
 public:
-  MasterDAQMonitor();
-  virtual ~MasterDAQMonitor();
-  MasterDAQMonitor(koNetServer *DAQNetwork, koLogger *logger, 
+  DAQMonitor();
+  virtual ~DAQMonitor();
+  DAQMonitor(koNetServer *DAQNetwork, koLogger *logger, 
 		   MasterMongodbConnection *mongodb);
   
-  void ProcessWebCommand(string command);
+  void ProcessCommand(string command,string user, 
+		      string comment="", koOptions *options=NULL);
   
-  bool UpdateReady();
+  bool UpdateReady(){
+    return m_bReady;
+  };
   bool CheckError(int ERRNO, string ERRTXT);
-  const koStatusPacket_t GetStatus(){
+  const koStatusPacket_t GetStatus(){    
+    m_bReady=false;
     return m_DAQStatus;
   };
-  
-  void Connect();          //Bring up DAQ network 
-  void Disconnect();       //Put down DAQ network
-  void Stop(string user, string comment="");
-  void Start(string  mode, string user, string comment="");
-  
+
+  void PollNetwork();
+  static void* UpdateThreadWrapper(void* monitor);
+    
 private:
   
-  int                      ArmDAQ(string mode);
-  int                      ShutdownDAQ();
+  int                      Connect();
+  int                      Disconnect();
+  int                      Arm(koOptions* mode);
+  int                      Start(string user, string comment,koOptions *options);
+  int                      Stop(string user, string comment);
+  int                      Shutdown();
 
   koStatusPacket_t         m_DAQStatus;
   koRunInfo_t              m_RunInfo;
@@ -58,6 +66,10 @@ private:
   
   int                      m_iErrorFlag;
   string                   m_sErrorText;
+
+  pthread_t                m_NetworkUpdateThread;
+  pthread_mutex_t          m_DAQStatusMutex;
+  bool                     m_bReady;
 };
 
 #endif

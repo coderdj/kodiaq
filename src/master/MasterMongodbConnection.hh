@@ -63,7 +63,8 @@ public:
   //
   // Name    : CheckForCommand
   // Purpose : Checks the mongodb command db for remote commands (from web)
-  int          CheckForCommand(string &command, string &second,string &third);
+  int          CheckForCommand(string &command, string &user,
+			       string &comment,koOptions &options);
   
   //
   // Name    : PullRunMode
@@ -71,6 +72,8 @@ public:
   //           to the XeDAQOptions object. Returns 0 on success.
   int          PullRunMode(string name, koOptions &options);
 
+  void Start(koOptions *options,string user,string comment=""){return;};
+  void EndRun(string user,string comment=""){return;};
  private:
   koOptions                 *fOptions;
   mongo::DBClientConnection  fMongoDB;

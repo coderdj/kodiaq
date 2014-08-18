@@ -81,7 +81,11 @@ int koOptions::ReadParameterFile(string filename)
    while(!initFile.eof())  {
       getline(initFile,line);
       if(line[0]=='#') continue; //ignore comments
-      
+      char node='x';
+      if(line[0]=='%') {
+	node=line[1];
+	line.erase(0,2);
+      }
       //parse
       istringstream iss(line);
       vector<string> words;
@@ -138,6 +142,7 @@ int koOptions::ReadParameterFile(string filename)
 	if(words.size()>=4 && words[3][0]!='#')
 	  reg.board = koHelper::StringToInt(words[3]);
 	else reg.board=-1;
+	reg.node=node;
 	m_registers.push_back(reg);
       }
       else if(words[0] == "link"){
@@ -146,6 +151,7 @@ int koOptions::ReadParameterFile(string filename)
 	link.type = words[1];
 	link.id   = koHelper::StringToInt(words[2]);
 	link.crate= koHelper::StringToInt(words[3]);
+	link.node=node;
 	m_links.push_back(link);
       }
       else if(words[0] == "board"){
@@ -156,6 +162,7 @@ int koOptions::ReadParameterFile(string filename)
 	board.id = koHelper::StringToInt(words[3]);
 	board.link = koHelper::StringToInt(words[4]);
 	board.crate = koHelper::StringToInt(words[5]);	
+	board.node=node;
 	m_boards.push_back(board);
       }
 
@@ -190,4 +197,44 @@ int koOptions::ReadParameterFile(string filename)
    return 0;   
 } 
 
-
+void koOptions::ToStream(stringstream *retstream)
+{
+  (*retstream)<<"name "<<name<<endl;
+  (*retstream)<<"creator "<<creator<<endl;
+  (*retstream)<<"creation_date "<<creation_date<<endl;
+  (*retstream)<<"write_mode "<<write_mode<<endl;
+  (*retstream)<<"baseline_mode "<<baseline_mode<<endl;
+  (*retstream)<<"run_start "<<run_start<<endl;
+  (*retstream)<<"run_start_module "<<run_start_module<<endl;
+  (*retstream)<<"blt_size "<<blt_size<<endl;
+  (*retstream)<<"compression "<<compression<<endl;
+  (*retstream)<<"processing_mode "<<processing_mode<<endl;
+  (*retstream)<<"processing_num_threads "<<processing_num_threads<<endl;
+  (*retstream)<<"processing_readout_threshold "<<processing_readout_threshold<<endl;
+  (*retstream)<<"mongo_address "<<mongo_address<<endl;
+  (*retstream)<<"mongo_collection "<<mongo_collection<<endl;
+  (*retstream)<<"mongo_database "<<mongo_database<<endl;
+  (*retstream)<<"mongo_write_concern "<<mongo_write_concern<<endl;
+  (*retstream)<<"mongo_min_insert_size "<<mongo_min_insert_size<<endl;
+  (*retstream)<<"file_path "<<file_path<<endl;
+  (*retstream)<<"file_events_per_file "<<file_events_per_file<<endl;
+  for(unsigned int x=0;x<m_registers.size();x++){
+    if(m_registers[x].node!='x')
+      (*retstream)<<"%"<<m_registers[x].node;
+    (*retstream)<<"register "<<hex<<m_registers[x].address<<" "
+		<<m_registers[x].value<<dec<<" "<<m_registers[x].board<<endl;
+  }
+  for(unsigned int x=0;x<m_links.size();x++){
+    if(m_links[x].node!='x')
+      (*retstream)<<"%"<<m_links[x].node;  
+    (*retstream)<<"link "<<m_links[x].type<<" "<<m_links[x].id<<" "<<
+      m_links[x].crate<<endl;
+  }
+  for(unsigned int x=0;x<m_boards.size();x++){
+    if(m_boards[x].node!='x')
+      (*retstream)<<"%"<<m_boards[x].node;
+    (*retstream)<<"board "<<m_boards[x].type<<" "<<hex<<m_boards[x].vme_address<<
+      dec<<" "<<m_boards[x].id<<" "<<m_boards[x].link<<" "<<
+      m_boards[x].crate<<" "<<endl;
+  }
+}

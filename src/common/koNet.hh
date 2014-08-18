@@ -76,6 +76,8 @@ class koNet
    //            the sender.
    // 
    int           SendFile(int pipe, int id, string path);
+   //             SendStream same as send file but for stringstream
+   int           SendStream(int pipe,int id, stringstream *stream);
    //
    // Name     : ReceiveFile
    // Function : Receives a file over the network and writes it to path.

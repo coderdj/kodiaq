@@ -494,3 +494,13 @@ int koNetServer::SendOptions(string filepath)
    }
    return retval;
 }
+
+int koNetServer::SendOptionsStream(stringstream *stream)
+{
+  int retval=0;
+  for(unsigned int x=0;x<fSockets.size();x++){
+    if(SendStream(fSockets[x].socket,fSockets[x].id,stream)!=0)
+      retval=-1;
+  }
+  return retval;
+}
