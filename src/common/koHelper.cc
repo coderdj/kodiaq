@@ -118,19 +118,19 @@ void koHelper::ProcessStatus(koStatusPacket_t &Status)
 
 int koHelper::InitializeRunInfo(koRunInfo_t &fRunInfo)
 {
-   ifstream infile;
-   infile.open(fRunInfo.RunInfoPath.c_str());
-   if(!infile) {
+  //   ifstream infile;
+  //infile.open(fRunInfo.RunInfoPath.c_str());
+  //if(!infile) {
       fRunInfo.RunNumber=" ";
       fRunInfo.StartedBy=" ";
       fRunInfo.StartDate=" ";
-      return -1;
-   }   
-   string temp;
-   getline(infile,fRunInfo.RunNumber);
-   getline(infile,fRunInfo.StartedBy);
-   getline(infile,fRunInfo.StartDate);
-   infile.close();
+      //      return -1;
+      //}   
+      //   string temp;
+      //   getline(infile,fRunInfo.RunNumber);
+      //   getline(infile,fRunInfo.StartedBy);
+      //   getline(infile,fRunInfo.StartDate);
+      //   infile.close();
    return 0;
 }
 
@@ -147,15 +147,15 @@ string koHelper::MakeDBName(koRunInfo_t RunInfo, string CollectionName)
 
 int koHelper::UpdateRunInfo(koRunInfo_t &fRunInfo, string startedby)
 {
-   ofstream outfile;
-   outfile.open(fRunInfo.RunInfoPath.c_str());
-   if(!outfile) return -1;
+  //   ofstream outfile;
+  //outfile.open(fRunInfo.RunInfoPath.c_str());
+  //if(!outfile) return -1;
    fRunInfo.RunNumber=koHelper::GetRunNumber();
    fRunInfo.StartedBy=startedby;
    fRunInfo.StartDate=koLogger::GetTimeString();
    fRunInfo.StartDate.resize(fRunInfo.StartDate.size()-2);
-   outfile<<fRunInfo.RunNumber<<endl<<fRunInfo.StartedBy<<endl<<fRunInfo.StartDate<<endl;
-   outfile.close();
+   //outfile<<fRunInfo.RunNumber<<endl<<fRunInfo.StartedBy<<endl<<fRunInfo.StartDate<<endl;
+   //outfile.close();
    return 0;
 }
 

@@ -152,8 +152,9 @@ int DAQMonitor::Start(string user, string comment, koOptions *options)
     if(timer==5)
       return -1;
   }
+  
+  koHelper::UpdateRunInfo(m_DAQStatus.RunInfo,user);
   if(options->dynamic_run_names && options->write_mode == WRITEMODE_MONGODB){
-    koHelper::UpdateRunInfo(m_DAQStatus.RunInfo,user);
     options->mongo_collection = koHelper::MakeDBName(m_DAQStatus.RunInfo,
 						     options->mongo_collection);
     m_DAQNetwork->SendCommand("DBUPDATE");
@@ -191,7 +192,7 @@ int DAQMonitor::Arm(koOptions *mode)
 {
   if(m_DAQStatus.DAQState!=KODAQ_IDLE)
     return -1;
-      
+  m_DAQStatus.RunMode = m_DAQStatus.RunModeLabel = mode->name;
   m_DAQNetwork->SendCommand("ARM");
   stringstream *optionsStream = new stringstream();
   mode->ToStream(optionsStream);
