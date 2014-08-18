@@ -18,22 +18,6 @@ AC_ENABLE_SHARED
 AC_DISABLE_STATIC
 LT_INIT
 
-############################
-# Compile UI
-############################
-AC_ARG_ENABLE( [user],
-    AS_HELP_STRING([--disable-user], [Disable compilation of UI]))
-AS_IF([test "x$enable_user" != "xno"], [
-    AM_CONDITIONAL(WITH_USER, true)
-    AC_DEFINE(WITH_USER,[],[Compile user interface])
-    AC_CHECK_LIB([ncurses],initscr,[],AC_MSG_ERROR)
-    AC_CHECK_LIB([menu],menu_init,[],AC_MSG_ERROR)
-    AC_CHECK_LIB([form],main,[],AC_MSG_ERROR)
-    AC_CHECK_LIB([tinfo],setupterm,[],AC_MSG_ERROR)
-    ], [
-    AM_CONDITIONAL(WITH_USER,false)
-    ])
-
 ###########################
 # Compile Master Module
 ###########################
@@ -114,12 +98,10 @@ AC_ARG_ENABLE( [all],
 AS_IF([test "x$enable_all" = "xyes"], [
     AM_CONDITIONAL(WITH_SLAVE,true)
     AM_CONDITIONAL(WITH_MASTER,true)
-    AM_CONDITIONAL(WITH_USER,true)
     AM_CONDITIONAL(WITH_DDC10,true)
     AC_DEFINE(WITH_MASTER,[],[Compile master module])
     AC_DEFINE(WITH_SLAVE,[],[Compile slave module])
     AC_DEFINE(WITH_DDC10,[],[Compile with DDC HE veto support])
-    AC_DEFINE(WITH_USER,[],[Compile user interface])   
     AC_CHECK_LIB([tcl8.5],main,[],AC_MSG_ERROR([libtcl8.5 not found]))
     AC_CHECK_LIB([expect],exp_popen,[],AC_MSG_ERROR([libexpect not found]))
     AC_CHECK_LIB(pthread,pthread_mutex_init,[],AC_MSG_ERROR([libpthread missing.]))
@@ -155,7 +137,7 @@ AS_IF([test "$ac_cv_lib_protobuf_main" = yes], [
 AM_CONDITIONAL([WITH_LIBPBF],[test "$ac_cv_lib_pbf_main" = yes])
 
 #AC_CONFIG_FILES([Makefile])
-AC_OUTPUT(Makefile src/ddc10/Makefile src/common/Makefile src/master/Makefile src/slave/Makefile src/user/Makefile)
+AC_OUTPUT(Makefile src/ddc10/Makefile src/common/Makefile src/master/Makefile src/slave/Makefile)
 
 AS_IF([test "$ac_cv_lib_mongoclient_main" = yes], [AC_MSG_NOTICE([Compiling WITH mongodb support])],[AC_MSG_NOTICE([Compiling WITHOUT mongodb support])])
 AS_IF([test "$ac_cv_lib_pbf_main" = yes], [AC_MSG_NOTICE([Compiling WITH file output support])],[AC_MSG_NOTICE([Compiling WITHOUT file output support])])
