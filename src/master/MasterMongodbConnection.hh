@@ -74,6 +74,8 @@ public:
 
   void Start(koOptions *options,string user,string comment=""){return;};
   void EndRun(string user,string comment=""){return;};
+  void SendRunStartReply(int response, string message, string mode, string comment);
+
  private:
   koOptions                 *fOptions;
   mongo::DBClientConnection  fMongoDB;

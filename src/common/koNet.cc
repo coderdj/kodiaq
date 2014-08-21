@@ -75,7 +75,7 @@ int koNet::ReceiveString(int socket,string &buff)
       if(a==0) return -2;
       if(cbuff=='~') break;
       retstring.push_back(cbuff);
-      if(retstring.size()>1000) {
+      if(retstring.size()>100000) {
 	 buff=retstring;
 	 return -1; //crazy loop
       }      
@@ -86,6 +86,10 @@ int koNet::ReceiveString(int socket,string &buff)
 
 int koNet::SendStream(int socket, int id, stringstream *stream)
 {
+  // go to beginning of stream
+  stream->clear();
+  stream->seekg(0,std::ios::beg);
+
   string line;
   while(!stream->eof()){
     getline((*stream),line);

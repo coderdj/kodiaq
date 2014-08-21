@@ -44,71 +44,58 @@ int MasterMongodbConnection::Initialize(string user, string runMode, string name
 					koOptions *options, bool onlineOnly)
 {
   fOptions = options;
-      
-   //connect to mongodb
-/*   try {
-      fMongoDB.connect(fMongoOptions.DBAddress);
-   }
-   catch(const mongo::DBException &e)  {
-      stringstream ss;
-      ss<<"Problem connecting to mongo. Caught exception "<<e.what();
-      if(fLog!=NULL) fLog->Error(ss.str());
-      return -1;
-   }*/
+         
+  //Create a bson object with the basic run information
+  mongo::BSONObjBuilder b;
+  b.genOID();
+  b.append("runmode",runMode);
+  b.append("runtype","bern_test_daq");
+  b.append("starttime",0);
+  b.append("user",user);
+  b.append("compressed",options->compression);
+  b.append("data_taking_ended",false);
+  b.append("error",false);
+  b.append("trigger_ended",false);
+  b.append("processing_ended",false);
+  b.append("saved_to_file",false);
+  b.append("name",name);
+  
+  //put in start time
+  time_t currentTime;
+  struct tm *starttime;
+  time(&currentTime);
+  starttime = localtime(&currentTime);
+  b.appendTimeT("starttimestamp",mktime(starttime));
+  
    
-   //Create a bson object with the basic run information
-   mongo::BSONObjBuilder b;
-   b.genOID();
-   b.append("runmode",runMode);
-   b.append("runtype","bern_test_daq");
-   b.append("starttime",0);
-   b.append("user",user);
-   b.append("compressed",options->compression);
-   b.append("data_taking_ended",false);
-   b.append("error",false);
-   b.append("trigger_ended",false);
-   b.append("processing_ended",false);
-   b.append("saved_to_file",false);
-   b.append("name",name);
-
-   //put in start time
-   time_t currentTime;
-   struct tm *starttime;
-   time(&currentTime);
-   starttime = localtime(&currentTime);
-   b.appendTimeT("starttimestamp",mktime(starttime));
+  //eventually putting the .ini file will go here
    
    
-   //eventually putting the .ini file will go here
-   
-   
-   //insert into collection
-   mongo::BSONObj bObj = b.obj();
-   try   {	
-     if(!onlineOnly) {
-       stringstream collName;
-       collName<<fOptions->mongo_database<<"."<<fOptions->mongo_collection;
-       //       fMongoDB.insert(fMongoOptions.Collection.c_str(),bObj);
-       fMongoDB.insert(collName.str(),bObj);
-       //       fMongoDB.createCollection(fMongoOptions.Collection,1073741824,true);
-     }
-      fMongoDB.insert("online.runs",bObj);
-   }
-   catch (const mongo::DBException &e) {
-      if(fLog!=NULL) fLog->Error("MasterMongodbConnection::Initialize - Error inserting run information doc.");
-      return -1;
-   }   
-   mongo::BSONElement OIDElement;
-   bObj.getObjectID(OIDElement);
-   fLastDocOID=OIDElement.__oid();
-   return 0;   
+  //insert into collection
+  mongo::BSONObj bObj = b.obj();
+  try   {	
+    if(!onlineOnly) {
+      stringstream collName;
+      collName<<fOptions->mongo_database<<"."<<fOptions->mongo_collection;
+      fMongoDB.insert(collName.str(),bObj);
+    }
+    fMongoDB.insert("online.runs",bObj);
+  }
+  catch (const mongo::DBException &e) {
+    if(fLog!=NULL) fLog->Error("MasterMongodbConnection::Initialize - Error inserting run information doc.");
+    return -1;
+  }   
+  mongo::BSONElement OIDElement;
+  bObj.getObjectID(OIDElement);
+  fLastDocOID=OIDElement.__oid();
+  return 0;   
 }
 
 
 int MasterMongodbConnection::UpdateEndTime(bool onlineOnly)
 {
-   if(!fLastDocOID.isSet())  {
-      if(fLog!=NULL) fLog->Error("MasterMongodbConnection::UpdateEndTime - Want to stop run but don't have the _id field of the run info doc");
+  if(!fLastDocOID.isSet())  {
+    if(fLog!=NULL) fLog->Error("MasterMongodbConnection::UpdateEndTime - Want to stop run but don't have the _id field of the run info doc");
       return -1;
    }
    try  {
@@ -147,24 +134,50 @@ int MasterMongodbConnection::UpdateEndTime(bool onlineOnly)
 }
 
 void MasterMongodbConnection::SendLogMessage(string message, int priority)
-{
-/*   try   {	
-      fMongoDB.connect("xedaq00");
-   }   
-   catch(const mongo::DBException &e)   {	
-      stringstream ss;
-      ss<<"Problem connecting to mongo. Caught exception "<<e.what();
-      if(fLog!=NULL) fLog->Error(ss.str());
-   }*/
-   
+{      
+  time_t currentTime;
+  struct tm *starttime;
+  time(&currentTime);
+  starttime = localtime(&currentTime);
+  int ID=-1;
+  // For WARNINGS and ERRORS we put an additional entry into the alert DB
+  // users then get an immediate alert
+  if(priority==KOMESS_WARNING || priority==KOMESS_ERROR){
+    mongo::BSONObj obj = fMongoDB.findOne("online.alerts",
+					  mongo::Query().sort("idnum",-1));    
+    if(obj.isEmpty())
+      ID=0;
+    else
+      ID = obj.getIntField("idnum")+1;
+    cout<<"ID"<<ID<<endl;
+    mongo::BSONObjBuilder alert;
+    alert.genOID();
+    alert.append("idnum",ID);
+    alert.append("priority",priority);
+    alert.appendTimeT("timestamp",mktime(starttime));
+    alert.append("sender","dispatcher");
+    alert.append("message",message);
+    alert.append("addressed",false);
+    fMongoDB.insert("online.alerts",alert.obj());
+  }
+
+  stringstream messagestream;
+  string savemessage;
+  if(priority==KOMESS_WARNING){
+    messagestream<<"The dispatcher has issued a warning with ID "<<ID<<" and text: "<<message;
+    savemessage=messagestream.str();
+  }
+  else if(priority == KOMESS_ERROR){
+    messagestream<<"The dispatcher has issued an error with ID "<<ID<<" and text: "<<message;
+    savemessage=messagestream.str();
+  }
+  else savemessage=message;
+
+  // Save into normal log
    mongo::BSONObjBuilder b;
    b.genOID();
-   b.append("message",message);  
+   b.append("message",message);
    b.append("priority",priority);
-   time_t currentTime;
-   struct tm *starttime;
-   time(&currentTime);
-   starttime = localtime(&currentTime);
    b.appendTimeT("time",mktime(starttime));
    fMongoDB.insert("online.log",b.obj());
 }
@@ -244,6 +257,17 @@ int MasterMongodbConnection::CheckForCommand(string &command, string &user,
    if(command=="Start")
      PullRunMode(mode,options);
    return 0;
+}
+
+void MasterMongodbConnection::SendRunStartReply(int response, string message, 
+						string mode, string comment)
+{
+  mongo::BSONObjBuilder reply;
+  reply.append("message",message);
+  reply.append("replyenum",response);
+  reply.append("mode",mode);
+  reply.append("comment",comment);
+  fMongoDB.insert("online.dispatcherreply",reply.obj());
 }
 
 int MasterMongodbConnection::PullRunMode(string name, koOptions &options)

@@ -39,11 +39,15 @@ public:
   bool UpdateReady(){
     return m_bReady;
   };
-  bool CheckError(int ERRNO, string ERRTXT);
+  //  bool CheckError(int ERRNO, string ERRTXT);
+  void ThrowFatalError(bool killDAQ, string errTxt);
+  int ValidateStartCommand(string user, string comment, 
+			   koOptions *options);
+
   const koStatusPacket_t GetStatus(){    
     m_bReady=false;
     return m_DAQStatus;
-  };
+  }; 
 
   void PollNetwork();
   static void* UpdateThreadWrapper(void* monitor);
