@@ -161,7 +161,7 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
    
    try  {
      stringstream cS;
-     cS<<m_options->mongo_database<<"_"<<ID<<"."<<m_options->mongo_collection;
+     cS<<m_options->mongo_database<<"."<<m_options->mongo_collection;
      //(*m_vScopedConnections[ID])->ensureIndex(m_koMongoOptions.Collection.c_str(), mongo::fromjson("{time:-1}"));
      //(*m_vScopedConnections[ID])->insert(m_koMongoOptions.Collection.c_str(),
      //(*insvec));
