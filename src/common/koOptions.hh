@@ -21,10 +21,6 @@
 #include "config.h"
 #include "koHelper.hh"
 
-#ifdef WITH_DDC10
-#include <ddc_10.hh>
-#endif
-
 using namespace std;
 
 #define WRITEMODE_NONE    0
@@ -103,14 +99,17 @@ public:
   void AddVMEOption(vme_option_t vme){
     m_registers.push_back(vme);
   };
-            
+  
+  stringstream* GetDDCStream(){
+    return &m_ddc10_options_stream;
+  };
+  void SetDDCStream(string ddcoptions){
+    m_ddc10_options_stream.clear();
+    m_ddc10_options_stream.seekg(0,std::ios::beg);
+    m_ddc10_options_stream<<ddcoptions;
+  };
   void ToStream(stringstream *retstream);
   //Put any dependency-specific public members here
-#ifdef WITH_DDC10
-   ddc10_par_t GetVetoOptions()  {	
-      return fDDC10Options;
-   };
-#endif
    
   
 private:
@@ -118,7 +117,10 @@ private:
   vector<board_definition_t> m_boards;
   vector<vme_option_t>       m_registers;
   
+  stringstream               m_ddc10_options_stream;
+
   int ProcessLine(string line,string option,int &ret);
+ 
 
 public:
   // General info
@@ -152,12 +154,6 @@ public:
   int                        file_events_per_file;
 
   void                      Reset();   
-
-private:  
-// put any dependency-specific private members here   
-#ifdef WITH_DDC10
-   ddc10_par_t               fDDC10Options;
-#endif
    
 };
 #endif

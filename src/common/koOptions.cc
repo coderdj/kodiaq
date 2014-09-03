@@ -165,33 +165,11 @@ int koOptions::ReadParameterFile(string filename)
 	board.node=node;
 	m_boards.push_back(board);
       }
-
-      //DDC10 part has to go back in
-      //dependency-specific options. ddc10 support must be compiled in
-      /*#ifdef WITH_DDC10
-      if(words[0] == "DDC10_OPTIONS")   {	   
-	 if(words.size()<17) continue;
-	 fDDC10Options.IPAddress = words[1];
-	 fDDC10Options.Sign = koHelper::StringToInt(words[2]);
-	 fDDC10Options.IntWindow = koHelper::StringToInt(words[3]);
-	 fDDC10Options.VetoDelay = koHelper::StringToInt(words[4]);
-	 fDDC10Options.SigThreshold = koHelper::StringToInt(words[5]);
-	 fDDC10Options.IntThreshold = koHelper::StringToInt(words[6]);
-	 fDDC10Options.WidthCut = koHelper::StringToInt(words[7]);
-	 fDDC10Options.RiseTimeCut = koHelper::StringToInt(words[8]);
-	 fDDC10Options.ComponentStatus = koHelper::StringToInt(words[9]);
-	 fDDC10Options.Par[0] = koHelper::StringToDouble(words[10]);
-	 fDDC10Options.Par[1] = koHelper::StringToDouble(words[11]);
-	 fDDC10Options.Par[2] = koHelper::StringToDouble(words[12]);
-	 fDDC10Options.Par[3] = koHelper::StringToDouble(words[13]);
-	 fDDC10Options.OuterRingFactor = koHelper::StringToInt(words[14]);
-	 fDDC10Options.InnerRingFactor = koHelper::StringToInt(words[15]);
-	 fDDC10Options.PreScaling = koHelper::StringToInt(words[16]);
-	 fDDC10Options.Initialized = true;
+      else if(words[0].substr(0,5) == "ddc10"){
+	for(unsigned int x=0;x<words.size();x++)
+	  m_ddc10_options_stream<<words[x]<<" ";
+	m_ddc10_options_stream<<endl;
       }
-      #endif*/
-      //
-      
    }   
    initFile.close();
    return 0;   
@@ -237,4 +215,5 @@ void koOptions::ToStream(stringstream *retstream)
       dec<<" "<<m_boards[x].id<<" "<<m_boards[x].link<<" "<<
       m_boards[x].crate<<" "<<endl;
   }
+  (*retstream)<<m_ddc10_options_stream.str()<<endl;
 }

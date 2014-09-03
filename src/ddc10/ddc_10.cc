@@ -177,6 +177,68 @@ int ddc_10::Initialize(ddc10_par_t arg0)
 	else return 1;
 }
 
+int ddc_10::Initialize(istream *input)
+{
+  ddc10_par_t parameters;
+  string      line;
+
+  while(!input->eof()){
+    getline((*input),line);
+    
+    // parse line
+    istringstream iss(line);
+    vector<string> words;
+    copy(istream_iterator<string>(iss),
+	 istream_iterator<string>(),
+	 back_inserter<vector<string> >(words));
+    if(words.size()<2) continue;
+    
+    //Check for keywords
+    if(words[0] == "ddc10_ip_address")
+      parameters.IPAddress = words[1];
+    else if(words[0] == "ddc10_enable")
+      (words[1][0]=='0') ?
+        parameters.Enabled=false :
+        parameters.Enabled = true;
+    else if(words[0] == "ddc10_sign")
+      parameters.Sign = StringToInt(words[1]);
+    else if(words[0] == "ddc10_integration_window")
+      parameters.IntWindow = StringToInt(words[1]);
+    else if(words[0] == "ddc10_veto_delay")
+      parameters.VetoDelay = StringToInt(words[1]);
+    else if(words[0] == "ddc10_signal_threshold")
+      parameters.SigThreshold = StringToInt(words[1]);
+    else if(words[0] == "ddc10_integration_threshold")
+      parameters.IntThreshold = StringToInt(words[1]);
+    else if(words[0] == "ddc10_width_cut")
+      parameters.WidthCut = StringToInt(words[1]);
+    else if(words[0] == "ddc10_rise_time_cut")
+      parameters.RiseTimeCut = StringToInt(words[1]);
+    else if(words[0] == "ddc10_component_status")
+      parameters.ComponentStatus = StringToInt(words[1]);
+    else if(words[0] == "ddc10_par_0")
+      parameters.Par[0] = StringToInt(words[1]);
+    else if(words[0] == "ddc10_par_1")
+      parameters.Par[1] = StringToInt(words[1]);
+    else if(words[0] == "ddc10_par_2")
+      parameters.Par[2] = StringToInt(words[1]);
+    else if(words[0] == "ddc10_par_3")
+      parameters.Par[3] = StringToInt(words[1]);    
+    else if(words[0] == "ddc10_outer_ring_factor")
+      parameters.OuterRingFactor = StringToInt(words[1]);
+    else if(words[0] == "ddc10_inner_ring_factor")
+      parameters.InnerRingFactor = StringToInt(words[1]);
+    else if(words[0] == "ddc10_prescaling")
+      parameters.PreScaling = StringToInt(words[1]);
+  }
+  
+  // could add a consistency check here
+  parameters.Initialized = true;
+  
+  if(parameters.Enabled)
+    return Initialize(parameters);
+  return 0;
+}
 
 
 int ddc_10::LEDTestFlash(string IPAddress)
@@ -274,4 +336,12 @@ int ddc_10::LEDTestFlash(string IPAddress)
     	else return 1;
 
 }
+
+u_int32_t ddc_10::StringToInt(const string &str)
+{
+  stringstream ss(str);
+  u_int32_t result;
+  return ss >> result ? result : 0;
+}
+
 

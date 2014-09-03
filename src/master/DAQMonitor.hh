@@ -18,6 +18,9 @@
 #include <koOptions.hh>
 #include <pthread.h>
 #include "MasterMongodbConnection.hh"
+#ifdef WITH_DDC10
+#include <ddc_10.hh>
+#endif
 
 // Classification for error messages from slaves 
 #define DAQMASTER_WARNING           0      // DAQ can continue run, log this 

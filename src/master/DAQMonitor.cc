@@ -248,12 +248,28 @@ int DAQMonitor::Shutdown()
   m_DAQStatus.RunMode="None";
   return 0;
 }
+
 int DAQMonitor::Arm(koOptions *mode)
+/*
+  Arm the DAQ and configure the DDC-10 HE veto module
+*/
 {
   if(m_DAQStatus.DAQState!=KODAQ_IDLE)
     return -1;
+  
+  // Configure DDC10 if available
+#ifdef WITH_DDC10
+  ddc_10 heveto;
+  if(heveto.Initialize(mode->GetDDCStream())!=0)
+    m_Mongodb->SendLogMessage("DDC10 veto module could not be initialized.",
+			      KOMESS_WARNING);
+#endif
+
+  // Send arm command
   m_DAQStatus.RunMode = m_DAQStatus.RunModeLabel = mode->name;
   m_DAQNetwork->SendCommand("ARM");
+  
+  // Send options to slaves
   stringstream *optionsStream = new stringstream();
   mode->ToStream(optionsStream);
   if(m_DAQNetwork->SendOptionsStream(optionsStream)!=0){
@@ -262,5 +278,6 @@ int DAQMonitor::Arm(koOptions *mode)
     return -1;
   }
   delete optionsStream;
+  
   return 0;
 }

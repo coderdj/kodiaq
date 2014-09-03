@@ -40,6 +40,15 @@ MasterMongodbConnection::~MasterMongodbConnection()
 {
 }
 
+void MasterMongodbConnection::InsertOnline(string collection,mongo::BSONObj bson){
+  try{
+    fMongoDB.insert(collection,bson);
+  }
+  catch(const mongo::DBException &e){
+    cout<<"Lost connection to web server!"<<endl;
+  }
+}
+
 int MasterMongodbConnection::Initialize(string user, string runMode, string name,
 					koOptions *options, bool onlineOnly)
 {
@@ -77,9 +86,9 @@ int MasterMongodbConnection::Initialize(string user, string runMode, string name
     if(!onlineOnly) {
       stringstream collName;
       collName<<fOptions->mongo_database<<"."<<fOptions->mongo_collection;
-      fMongoDB.insert(collName.str(),bObj);
+      InsertOnline(collName.str(),bObj);
     }
-    fMongoDB.insert("online.runs",bObj);
+    InsertOnline("online.runs",bObj);
   }
   catch (const mongo::DBException &e) {
     if(fLog!=NULL) fLog->Error("MasterMongodbConnection::Initialize - Error inserting run information doc.");
@@ -110,11 +119,11 @@ int MasterMongodbConnection::UpdateEndTime(bool onlineOnly)
       //      string firstString = fMongoOptions.Collection.substr(0,pos);
       //string secondString = fMongoOptions.Collection.substr(pos+1,fMongoOptions.Collection.size()-pos);
 //      cout<<firstString<<" "<<secondString<<endl;
-      mongo::BSONObjBuilder b; 
+//      mongo::BSONObjBuilder b; 
       mongo::BSONObj res;
-      b << "findandmodify" << /*secondString.c_str()*/fOptions->mongo_collection.c_str() <<
-	"query" << BSON("_id" << fLastDocOID) << 
-	"update" << BSON("$set" << BSON("endtimestamp" <<mongo::Date_t(1000*mktime(currenttime)) << "data_taking_ended" << true));
+      //    b << "findandmodify" << /*secondString.c_str()*/fOptions->mongo_collection.c_str() <<
+      //"query" << BSON("_id" << fLastDocOID) << 
+      //	"update" << BSON("$set" << BSON("endtimestamp" <<mongo::Date_t(1000*mktime(currenttime)) << "data_taking_ended" << true));
 
       string onlinesubstr = "runs";
       mongo::BSONObjBuilder bo;
@@ -122,8 +131,8 @@ int MasterMongodbConnection::UpdateEndTime(bool onlineOnly)
 	"query" << BSON("_id" << fLastDocOID) << 
 	"update" << BSON("$set" << BSON("endtimestamp" <<mongo::Date_t(1000*mktime(currenttime)) << "data_taking_ended" << true)); 
       
-      if(!onlineOnly)
-	assert(fMongoDB.runCommand(fOptions->mongo_database.c_str()/*firstString.c_str()*/,b.obj(),res));      
+      //      if(!onlineOnly)
+      //assert(fMongoDB.runCommand(fOptions->mongo_database.c_str()/*firstString.c_str()*/,b.obj(),res));      
       assert(fMongoDB.runCommand("online",bo.obj(),res));
    }
    catch (const mongo::DBException &e) {
@@ -158,7 +167,7 @@ void MasterMongodbConnection::SendLogMessage(string message, int priority)
     alert.append("sender","dispatcher");
     alert.append("message",message);
     alert.append("addressed",false);
-    fMongoDB.insert("online.alerts",alert.obj());
+    InsertOnline("online.alerts",alert.obj());
   }
 
   stringstream messagestream;
@@ -179,7 +188,8 @@ void MasterMongodbConnection::SendLogMessage(string message, int priority)
    b.append("message",message);
    b.append("priority",priority);
    b.appendTimeT("time",mktime(starttime));
-   fMongoDB.insert("online.log",b.obj());
+   InsertOnline("online.log",b.obj());
+  
 }
 
 void MasterMongodbConnection::AddRates(koStatusPacket_t DAQStatus)
@@ -205,10 +215,9 @@ void MasterMongodbConnection::AddRates(koStatusPacket_t DAQStatus)
       b.append("runmode",DAQStatus.RunMode);
       b.append("nboards",DAQStatus.Slaves[x].nBoards);
       b.append("timeseconds",(int)currentTime);
-      fMongoDB.insert("online.rates",b.obj());
+      InsertOnline("online.rates",b.obj());
    }
-   
-   
+      
 }
 
 void MasterMongodbConnection::UpdateDAQStatus(koStatusPacket_t DAQStatus)
@@ -234,7 +243,7 @@ void MasterMongodbConnection::UpdateDAQStatus(koStatusPacket_t DAQStatus)
    b.append("currentRun",DAQStatus.RunInfo.RunNumber);
    b.append("startedBy",DAQStatus.RunInfo.StartedBy);
    b.append("numSlaves",(int)DAQStatus.Slaves.size());
-   fMongoDB.insert("online.daqstatus",b.obj());
+   InsertOnline("online.daqstatus",b.obj());
 }
 
 int MasterMongodbConnection::CheckForCommand(string &command, string &user, 
@@ -267,7 +276,7 @@ void MasterMongodbConnection::SendRunStartReply(int response, string message,
   reply.append("replyenum",response);
   reply.append("mode",mode);
   reply.append("comment",comment);
-  fMongoDB.insert("online.dispatcherreply",reply.obj());
+  InsertOnline("online.dispatcherreply",reply.obj());
 }
 
 int MasterMongodbConnection::PullRunMode(string name, koOptions &options)
@@ -305,6 +314,21 @@ int MasterMongodbConnection::PullRunMode(string name, koOptions &options)
    options.mongo_min_insert_size=(res.getIntField("mongo_min_insert_size"));
    options.file_path=(res.getIntField("file_path"));
    options.file_events_per_file=(res.getIntField("file_events_per_file"));
+
+   // Do we have DDC-10 options? Then fill them
+   vector<mongo::BSONElement> ddcdict = res.getField("ddc10_options").Array();
+   stringstream ddcstream;
+   for(unsigned int x=0; x < ddcdict.size(); x++){
+     string field = ddcdict[x].fieldName();
+     if(field == "ip_address")
+       ddcstream<<ddcdict[x].fieldName()<<" "<<ddcdict[x].String()<<endl;
+     else if(field == "enable")
+       ddcstream<<ddcdict[x].fieldName()<<" "<<ddcdict[x].Bool()<<endl;
+     else
+       ddcstream<<ddcdict[x].fieldName()<<" "<<ddcdict[x].Int()<<endl;
+   }
+   options.SetDDCStream(ddcstream.str());
+
    // registers, boards, and crates
    
    //registers

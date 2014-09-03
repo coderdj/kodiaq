@@ -16,12 +16,18 @@
 #include <stdio.h>
 #include <string>
 #include <cstring>
+#include <iterator>
+#include <algorithm>
+#include <vector>
+#include <sstream>
+#include <sys/types.h>
 //#include "parstruct.hh"
 
 using namespace std;
 
 
 struct ddc10_par_t{
+   bool   Enabled;      //Enable DDC10
    string IPAddress;	//IPAddress of DDC-10 board
    int Sign;		//sign of DDC-10 input signal (0=positive, 1=negative)
    int IntWindow;	//length of integration window [10 ns]
@@ -51,12 +57,17 @@ class ddc_10
    // Initialize status of DDC-10 with all parameters of ddc10_par_t'
    // Returns 0=successful, 1=error
    int Initialize(ddc10_par_t IPAddress);
+  
+   // Initialize with a file or string stream containing configuration
+   // options in text format. 
+   int Initialize(istream *input);
 
    // All status LEDs will flash for 5 s
    // This function is ment for testing the connection between DAQ and DDC-10
    int LEDTestFlash(string arg0);
 
  private:
+  u_int32_t StringToInt(const string &str);
 
 };
 #endif

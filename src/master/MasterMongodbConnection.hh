@@ -72,6 +72,7 @@ public:
   //           to the XeDAQOptions object. Returns 0 on success.
   int          PullRunMode(string name, koOptions &options);
 
+  void InsertOnline(string collection,mongo::BSONObj bson);
   void Start(koOptions *options,string user,string comment=""){return;};
   void EndRun(string user,string comment=""){return;};
   void SendRunStartReply(int response, string message, string mode, string comment);
