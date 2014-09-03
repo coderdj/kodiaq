@@ -316,16 +316,23 @@ int MasterMongodbConnection::PullRunMode(string name, koOptions &options)
    options.file_events_per_file=(res.getIntField("file_events_per_file"));
 
    // Do we have DDC-10 options? Then fill them
-   vector<mongo::BSONElement> ddcdict = res.getField("ddc10_options").Array();
+   mongo::BSONObj ddcdict = res.getObjectField("ddc10_options");
+   set<string> fieldNames;
+   ddcdict.getFieldNames(fieldNames);
+   
    stringstream ddcstream;
-   for(unsigned int x=0; x < ddcdict.size(); x++){
-     string field = ddcdict[x].fieldName();
-     if(field == "ip_address")
-       ddcstream<<ddcdict[x].fieldName()<<" "<<ddcdict[x].String()<<endl;
-     else if(field == "enable")
-       ddcstream<<ddcdict[x].fieldName()<<" "<<ddcdict[x].Bool()<<endl;
+   set<string>::iterator it;
+   for (it = fieldNames.begin(); it != fieldNames.end(); it++){
+     if(*it == "ddc10_ip_address")
+       ddcstream<<*it<<" "<<ddcdict.getField(*it).String()<<endl;
+     else if(*it == "ddc10_enable"){
+       bool enableddc = ddcdict.getField(*it).Bool();
+       ddcstream<<*it<<" ";
+       if(enableddc) ddcstream<<"1"<<endl;
+       else ddcstream<<"0"<<endl;
+     }
      else
-       ddcstream<<ddcdict[x].fieldName()<<" "<<ddcdict[x].Int()<<endl;
+       ddcstream<<*it<<" "<<ddcdict.getField(*it).Int()<<endl;
    }
    options.SetDDCStream(ddcstream.str());
 
