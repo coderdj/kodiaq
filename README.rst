@@ -8,31 +8,31 @@ kodiaq Data Acquisition Software
 All original kodiaq content copyright 2013 the University 
 of Bern.
 
-Dependencies such as CAENVME libraries and mongodb are 
-copyrighted and/or trademarked by their respective owners.
+Caen libraries and drivers included for convenience and are copyright Caen. 
+Find the most recent drivers at www.caen.it.
 
 Source and compiled code to be distributed only with 
 authorization according to the XENON1T MOU.
 
-Author(s): Daniel Coderre, LHEP, University of Bern           
+Author(s)
+	* Daniel Coderre, LHEP, University of Bern   
+   	* Lukas Bütikofer, LHEP, University of Bern
 
 1. Brief 
 ----------------------------------
 
 kodiaq is a networked DAQ software inferface for XENON1T.
 It is designed to read CAEN V1724 digitizers in parallel
-from multiple control PCs in order to achieve high speeds
+from multiple reader PCs in order to achieve high speeds
 without sacrificing synchronization or control. 
 
-The program is split into 3 parts. The koSlave program 
-should run on each readout PC. Additionally one instance
-of the koMaster program should run on a PC that is 
-accessible by network (preferably locally) to all of the
-slaves. The connectivity between master and slave must be
-defined prior to starting the daemons. The koUser program
-can be installed on any linux system and can be used to 
-connect to koMaster from any PC with a network connection
-to the master, provided the appropriate ports are open.
+The program can either be run as a single instance standalone program 
+for a one-machine DAQ deployment (a test stand for example) or in full 
+networked mode.
+
+In networked mode a single dispatcher controls an unlimited number of
+reader PCs. The dispatcher can either be controlled by simple text commands
+from the console or by the XENON1T online monitoring web interface.
 
 Please see the full documentation at http://xenon1t.github.io/kodiaq/
 
@@ -44,8 +44,8 @@ Prerequisites:
    * CAENVMElib installed, included in kodiaq/caen. Follow instructions in the readme
    * libncurses5-dev, also libmongoclient (for mongodb support) or libpbf (for file support)
   
-Steps to build and run:
-   1. ./configure --enable-lite --disable-user
+Steps to build and run the standalone module:
+   1. ./configure --enable-lite 
    2. make
    3. cd src/slave
    4. ./koSlave
@@ -56,28 +56,7 @@ Note that the file DAQConfig.ini must be present in src/slave/DAQConfig.ini. If 
 
 Then edit this file with your settings.
 
-3. Installation - User Client
------------------------------------------
-
-Follow these instructions if you just want the user client
-to login to the DAQ.
-
-Prerequisites:
-    * This code has only been tested and will only be supported on
-      Linux. Compilation on any other OS is accidental.
-    * You need the standard build libraries, such as gcc and make (on
-      Ubuntu these are provided in build-essential)
-    * The ncurses libraries (development version) are also needed:
-      libncurses, libmenu, libform libtinfo
-
-Steps to build the code:
-    1. ./configure
-    2. make
-    3. Resize your terminal to 132x43 at least
-    4. ./kodiaq_client
-    5. Login and have fun!
-
-4. Installation - Full version
+3. Installation - Full version
 ---------------------------------------------
 
 Prerequisites:
@@ -89,18 +68,18 @@ Prerequisites:
       * libsnappy, libpthread, libprotoc (dev versions)
       * For mongodb support, libmongoclient. Note that this also requires the boost libraries.
 
+If you are using the web interface to control the DAQ then the Mongodb libraries are required.
+
 Steps:
      1. Cofigure with ./configure. There are some possible options.
          * --enable-master to compile with master program
 	 * --enable-slave to compile with slave program
-	 * --disable-user to not compile UI
 	 * --enable-ddc10 to compile with support for DDC module. Only activated if koMaster is also compiled.
 	 * --enable-all to compile master (with ddc10 support), slave, and user programs
 	 * --enable-lite to compile a lite version of the software that is suitable for standalone systems	
      2. make
-     3. The executables for master/slave/user programs should be
-     available in src/*. A shortcut to starting the UI is in the top
-     directory. The folder klite contains shortcuts to the lite
+     3. The executables for master/slave programs should be
+     available in src/*.The folder klite contains shortcuts to the lite
      version executable and the initializeation file. Please refer to
      the online documentation to configure this file.
      
