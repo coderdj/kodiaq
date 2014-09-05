@@ -11,7 +11,7 @@
 
         Package for Linux kernels 2.6/3.6
 
-        Feb  2013
+        November  2013
 
 ----------------------------------------------------------------------
 
@@ -37,7 +37,7 @@
  -------------------
 
  - CAEN A3818 PCI CARD
- - Linux kernel Rel 2.6/3.6 with gnu C/C++ compiler 
+ - Linux kernel Rel 2.6/3.11 with gnu C/C++ compiler 
 
 
  Installation notes

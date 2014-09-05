@@ -66,6 +66,8 @@ int DigiInterface::Initialize(koOptions *options)
      if((cerr=CAENVME_Init(BType,Link.id,Link.crate,
 			   &tempHandle))!=cvSuccess){
        //throw exception?
+       if(m_koLog!=NULL)
+	 m_koLog->Error("VMECrate::Define - Error in CAEN initialization");
        return -1;
      }      
      m_vCrateHandles.push_back(tempHandle);

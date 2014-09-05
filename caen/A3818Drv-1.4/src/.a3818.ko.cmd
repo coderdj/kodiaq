@@ -1,1 +1,0 @@
-cmd_/home/dan/kodiaq/kodiaq/caen/A3818Drv-1.4/src/a3818.ko := ld -r -m elf_x86_64 -T /usr/src/linux-headers-3.13.0-27-generic/scripts/module-common.lds --build-id  -o /home/dan/kodiaq/kodiaq/caen/A3818Drv-1.4/src/a3818.ko /home/dan/kodiaq/kodiaq/caen/A3818Drv-1.4/src/a3818.o /home/dan/kodiaq/kodiaq/caen/A3818Drv-1.4/src/a3818.mod.o

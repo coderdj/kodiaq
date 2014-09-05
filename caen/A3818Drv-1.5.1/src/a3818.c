@@ -8,7 +8,7 @@
         Source file for the CAEN A3818 HS CONET board driver.
 
         September   2010 : Created.
-	February    2013 : Last Release.
+		November     2013 : Last Release.
 
         ----------------------------------------------------------------------
 */
@@ -19,7 +19,7 @@
 /*
         Version Information
 */
-#define DRIVER_VERSION "v1.40s"
+#define DRIVER_VERSION "v1.5.1s"
 #define DRIVER_AUTHOR "CAEN Computing Division  support.computing@caen.it"
 #define DRIVER_DESC "CAEN A3818 PCI Express CONET2 board driver"
 
@@ -86,28 +86,37 @@ static int a3818_ioctl(struct inode *, struct file *, unsigned int,unsigned long
 static long a3818_ioctl_unlocked(struct file *, unsigned int, unsigned long);
 #endif
 static struct class *a3818_class;
+#if LINUX_VERSION_CODE >= VERSION(3,10,0)
+static ssize_t a3818_procinfo(struct file* filp, char* buf, size_t count, loff_t* pos);
+#else
 static int a3818_procinfo(char *, char **, off_t, int, int *,void *);
+#endif
 static void a3818_handle_rx_pkt(struct a3818_state *s, int opt_link, int pp);
 static void a3818_dispatch_pkt(struct a3818_state *s, int opt_link);
 static void ReleaseBoards(void);
 
 
-/*		----------------------------------------------------------------------
-
-        Global variables
-
-        ----------------------------------------------------------------------
+/*
+  ----------------------------------------------------------------------
+  
+  Global variables
+  
+  ----------------------------------------------------------------------
 */
 
 static int a3818_major = 0;
 static struct a3818_state *devs;
+
 static struct proc_dir_entry *a3818_procdir;
+
+#if LINUX_VERSION_CODE >= VERSION(3,10,0)
+static struct file_operations a3818_procdir_fops = {
+ read: a3818_procinfo
+};
+#endif
 
 static struct file_operations a3818_fops =
 {
-#if LINUX_VERSION_CODE >= VERSION(3,10,00)
- read:       a3818_procinfo,
-#endif
 #if LINUX_VERSION_CODE >= VERSION(2,6,11)
         unlocked_ioctl: 	a3818_ioctl_unlocked,
 #else
@@ -117,12 +126,13 @@ static struct file_operations a3818_fops =
         release:  			a3818_release
 };
 
-/* 		-----------------------------------------------------------------------
- *
- * 		Static functions
- *
- * 		-----------------------------------------------------------------------
- */
+/*
+  -----------------------------------------------------------------------
+  
+  Static functions
+  
+  -----------------------------------------------------------------------
+*/
  
 static void a3818_dma_conf(struct a3818_state *s) {
 	uint i;
@@ -568,74 +578,85 @@ static void a3818_handle_vme_irq(u32 irq0, u32 irq1, struct a3818_state *s, int 
 
         ----------------------------------------------------------------------
 */
-static int a3818_procinfo(char *buf, char **start, off_t fpos, int lenght,
-                          int *eof, void *data) {
+#if LINUX_VERSION_CODE >= VERSION(3,10,0)
+static ssize_t a3818_procinfo(struct file* filp, char* buf, size_t count, loff_t* pos)
+#else
+static int a3818_procinfo(char *buf, char **start, off_t fpos, int lenght, int *eof, void *data)
+#endif
+{
   char *p;
   struct a3818_state* s = devs;
-  int i = 0,j=0,k;
-
+  int i=0, j=0, k;
+  
   p = buf;
   p += sprintf(p,"CAEN A3818 driver %s\n\n", DRIVER_VERSION);
   while( s ) {
-	  k = 0;
-      p += sprintf(p, "  CAEN A3818 PCI Expresss CONET2 Board found.\n");
-      p += sprintf(p, "  Card  number                  = %d\n", (int)s->CardNumber);
-      p += sprintf(p, "  Firmware Release              = %x\n", (int)(s->FwRel));
-	  for (j=0;j<s->NumOfLink;j++) {
+    k = 0;
+    p += sprintf(p, "  CAEN A3818 PCI Expresss CONET2 Board found.\n");
+    p += sprintf(p, "  Card  number                  = %d\n", (int)s->CardNumber);
+    p += sprintf(p, "  Firmware Release              = %x\n", (int)(s->FwRel));
+    for (j=0; j<s->NumOfLink; j++) {
       p += sprintf(p, "  Physical address Link %d       = %p\n",j, (void *)(s->phys)[j]);
       p += sprintf(p, "  Virtual  address Link %d       = %p\n",j, s->baseaddr[j]);
-      }
-      p += sprintf(p, "  Physical address Common Space = %p\n", (void *)(s->phys)[5]);
-      p += sprintf(p, "  Virtual  address Common Space = %p\n", s->baseaddr[5]);
-      p += sprintf(p, "  IRQ line                      = %d\n", (int)s->irq);
-	  p += sprintf(p, "  Opened Links                  = %d\n", k);
-	  for (j=0;j<s->NumOfLink;j++) {
+    }
+    p += sprintf(p, "  Physical address Common Space = %p\n", (void *)(s->phys)[5]);
+    p += sprintf(p, "  Virtual  address Common Space = %p\n", s->baseaddr[5]);
+    p += sprintf(p, "  IRQ line                      = %d\n", (int)s->irq);
+    p += sprintf(p, "  Opened Links                  = %d\n", k);
+    for (j=0; j<s->NumOfLink; j++) {
       p += sprintf(p, "  Ioctls on Link %d              = %i\n", j, s->ioctls[j]);
-	  }
-      p += sprintf(p,"\n");
-      s = s->next;
-      i++;
+    }
+    p += sprintf(p,"\n");
+    s = s->next;
+    i++;
   }
   p += sprintf(p,"%d CAEN A3818 board(s) found.\n", i);
+#if LINUX_VERSION_CODE < VERSION(3,10,0)
   *eof = 1;
+#endif
   return p - buf;
 }
 
-/*		----------------------------------------------------------------------
-
-        a3818_register_proc
-
-        ----------------------------------------------------------------------
+/*
+  ----------------------------------------------------------------------
+  
+  a3818_register_proc
+  
+  ----------------------------------------------------------------------
 */
 static void a3818_register_proc(void) {
-  a3818_procdir = proc_create_data("a2818",0,NULL,&a3818_fops,a3818_procinfo);
-
-  //  a3818_procdir = create_proc_entry("a3818", S_IFREG | S_IRUGO, 0);
-  //	a3818_procdir->read_proc = a3818_procinfo;
+#if LINUX_VERSION_CODE >= VERSION(3,10,0)
+	a3818_procdir = proc_create("a3818", 0, NULL, &a3818_procdir_fops);
+#else
+	a3818_procdir = create_proc_entry("a3818", S_IFREG | S_IRUGO, 0);
+	a3818_procdir->read_proc = a3818_procinfo;
+#endif
 }
 
-/*      ----------------------------------------------------------------------
-
-        a3818_unregister_proc
-
-        ----------------------------------------------------------------------
+/*
+  ----------------------------------------------------------------------
+  
+  a3818_unregister_proc
+  
+  ----------------------------------------------------------------------
 */
 static void a3818_unregister_proc(void) {
 	remove_proc_entry("a3818", 0);
 }
 
-/*		----------------------------------------------------------------------
-
-        a3818_open
-
-		minor meaning:
-
-
-		bit 0-2 => Slave VME
-		bit 3-5 => Optical link number
-		bit 6-7 => PCIe card index
-
-        ----------------------------------------------------------------------
+/*
+  ----------------------------------------------------------------------
+  
+  a3818_open
+  
+  minor meaning:
+  
+  
+  bit 0-2 => Slave VME
+  bit 3-5 => Optical link number
+  bit 6-7 => PCIe card index
+  
+  ----------------------------------------------------------------------
 */
 static int a3818_open(struct inode *inode, struct file *file) {
 
@@ -768,8 +789,10 @@ static int a3818_ioctl(struct inode *inode,struct file *file,unsigned int cmd, u
 				ret = -EFAULT;
 				break;
 			}
+			down(&s->ioctl_lock[opt_link]);
 			if( copy_from_user(&(s->buff_dma_out[opt_link][slave][1]), comm.out_buf, comm.out_count) > 0) {
 				ret = -EFAULT;
+				up(&s->ioctl_lock[opt_link]);
 				break;
 			}
 
@@ -807,10 +830,12 @@ static int a3818_ioctl(struct inode *inode,struct file *file,unsigned int cmd, u
 				ret = -EFAULT;
 				goto err_comm;
 			}
+			
 err_comm:
 			s->pos_app_dma_in[opt_link][slave] = 0;
 			s->rx_ready[opt_link][slave] = 0;
 			s->ndata_app_dma_in[opt_link][slave] = 0;
+			up(&s->ioctl_lock[opt_link]);
 			break;
 		case IOCTL_REG_WR:
 			if( copy_from_user(&reg, (a3818_reg_t *)arg, sizeof(reg)) > 0 ) {
@@ -824,12 +849,15 @@ err_comm:
 			if( reg.address & 0x1000 ) {
 				reg.address = reg.address & 0xfff;
 				// write to common space
+				down(&s->ioctl_lock[opt_link]);
 				writel(reg.value, s->baseaddr[A3818_COMMON_REG] + reg.address);
 			}
 			else {
 				// write the link space
+				down(&s->ioctl_lock[opt_link]);
 				writel(reg.value, s->baseaddr[opt_link] + reg.address);
 			}
+			up(&s->ioctl_lock[opt_link]);
 			a3818_mmiowb();
 			break;
 		case IOCTL_REG_RD:
@@ -843,13 +871,15 @@ err_comm:
 			if( reg.address & 0x1000 ) {
 				reg.address = reg.address & 0xfff;
 				// read to common space
+				down(&s->ioctl_lock[opt_link]);
 				reg.value = readl(s->baseaddr[A3818_COMMON_REG] + reg.address);
 			}
 			else {
-			
+				down(&s->ioctl_lock[opt_link]);
 				reg.value = readl(s->baseaddr[opt_link] + reg.address);
 				// read the link space
 			}
+			up(&s->ioctl_lock[opt_link]);
 			if( copy_to_user((a3818_reg_t *)arg, &reg, sizeof(reg)) > 0) {
 				ret = -EFAULT;
 				break;
@@ -860,7 +890,9 @@ err_comm:
 				ret = -EFAULT;
 				break;
 			}
+			down(&s->ioctl_lock[opt_link]);
 			writel(reg.value, s->baseaddr[A3818_COMMON_REG] + reg.address);
+			up(&s->ioctl_lock[opt_link]);
 			a3818_mmiowb();
 			break;
 		case IOCTL_COMM_REG_RD:
@@ -868,7 +900,9 @@ err_comm:
 				ret = -EFAULT;
 				break;
 			}
+			down(&s->ioctl_lock[opt_link]);
 			reg.value = readl(s->baseaddr[A3818_COMMON_REG] + reg.address);
+			up(&s->ioctl_lock[opt_link]);
 			if( copy_to_user((a3818_reg_t *)arg, &reg, sizeof(reg)) > 0) {
 				ret = -EFAULT;
 				break;
@@ -914,9 +948,10 @@ err_comm:
 				ret = -EFAULT;
 				break;
 			}
-
+			down(&s->ioctl_lock[opt_link]);
 			if( copy_from_user(&(s->buff_dma_out[opt_link][slave][1]), comm.out_buf, comm.out_count) > 0) {
 				ret = -EFAULT;
+				up(&s->ioctl_lock[opt_link]);
 				break;
 			}
 			for( i = 0; i < comm.out_count; i += 4 ) DPRINTK("Dump pkt: %08lX\n", *((long *)(&comm.out_buf[i])));
@@ -926,7 +961,7 @@ err_comm:
 				a3818_reset_comm(s, opt_link);
 				mdelay(10);  // Wait 10 ms
 				if( readl(s->baseaddr[opt_link] + A3818_LINK_SR) & A3818_LINK_FAIL ) {
-					ret = -EACCES;
+					ret = -EACCES;					
 					goto err_send;
 				}
 			}
@@ -935,20 +970,23 @@ err_comm:
 				s->buff_dma_out[opt_link][slave][0] = (slave << 24) | (slave << 16) | ((comm.out_count >> 1) & 0xFFFF);
 				ret = a3818_send_pkt(s, slave, opt_link, comm.out_buf, comm.out_count);
 				if( ret < 0 ) {
-					ret = -EFAULT;
+					ret = -EFAULT;					
 					goto err_send;
 				}
 			}
 			if( copy_to_user(comm.in_buf, s->app_dma_in[opt_link][slave], comm.in_count) ) {
 				ret = -EFAULT;
+				up(&s->ioctl_lock[opt_link]);
 				break;
 			}
+			up(&s->ioctl_lock[opt_link]);
 err_send:
 			break;
 		case IOCTL_RECV:
 			if ((s->NumOfLink == 0) && (s->TypeOfBoard == A3818RAW || s->TypeOfBoard == A3818DIGIT ))
 				return -EFAULT; // To avoid to use optical link of a not initialized board
 			ret = a3818_recv_pkt(s, slave, opt_link, (int *)arg);
+			up(&s->ioctl_lock[opt_link]);
 			if( ret < 0 ) {
 				ret = -EFAULT;
 			}
@@ -990,7 +1028,6 @@ static long a3818_ioctl_unlocked(struct file *file, unsigned int cmd, unsigned l
   struct a3818_state *s = (struct a3818_state *)file->private_data;
   long ret;
   unsigned int minor;
-  int opt_link;
   
 	minor = MINOR(inode->i_rdev);
 	s = (struct a3818_state *)file->private_data;
@@ -999,10 +1036,7 @@ static long a3818_ioctl_unlocked(struct file *file, unsigned int cmd, unsigned l
 		ret = (long) a3818_ioctl(inode, file, cmd, arg);
 		return ret;
 	}
-	opt_link = (minor >> 3) & 0x7;
-	down(&s->ioctl_lock[opt_link]);
 	ret = (long) a3818_ioctl(inode, file, cmd, arg);
-	up(&s->ioctl_lock[opt_link]);
 	return ret;
 }
 #endif
@@ -1017,11 +1051,11 @@ static long a3818_ioctl_unlocked(struct file *file, unsigned int cmd, unsigned l
 // Rev 1.5
 
 #if  LINUX_VERSION_CODE < VERSION(2,6,23)
-static irqreturn_t a3818_interrupt(int irq, void *dev_id, struct pt_regs *regs) {
+static irqreturn_t a3818_interrupt(int irq, void *dev_id, struct pt_regs *regs)
 #else
-static irqreturn_t a3818_interrupt(int irq, void *dev_id) {
+static irqreturn_t a3818_interrupt(int irq, void *dev_id)
 #endif
-
+{
 	struct a3818_state *s = (struct a3818_state *)dev_id;
 	uint32_t app;
 	int i;
@@ -1088,11 +1122,12 @@ static irqreturn_t a3818_interrupt(int irq, void *dev_id) {
 	return IRQ_HANDLED;
 }
 
-/*      ----------------------------------------------------------------------
-
-        a3818_init_board
-
-        ----------------------------------------------------------------------
+/*
+  ----------------------------------------------------------------------
+  
+  a3818_init_board
+  
+  ----------------------------------------------------------------------
 */
 static int a3818_init_board(struct pci_dev *pcidev, int index) {
 	struct a3818_state *s;
@@ -1186,10 +1221,11 @@ static int a3818_init_board(struct pci_dev *pcidev, int index) {
 	  s->TypeOfBoard = A3818DIGIT;
 	  s->irq = pcidev->irq;
 #if LINUX_VERSION_CODE < VERSION(2,6,23)
-	if( request_irq(s->irq, a3818_interrupt, SA_SHIRQ, "a3818", s) ) {
+	if( request_irq(s->irq, a3818_interrupt, SA_SHIRQ, "a3818", s) )
 #else
-	if( request_irq(s->irq, a3818_interrupt, IRQF_SHARED , "a3818", s) ) {
+	if( request_irq(s->irq, a3818_interrupt, IRQF_SHARED , "a3818", s) )
 #endif
+{
 		  printk(KERN_ERR PFX "irq %u in use\n", s->irq);
 		  goto err_common_region_map;
 	  }
@@ -1206,10 +1242,11 @@ static int a3818_init_board(struct pci_dev *pcidev, int index) {
 	else { // empty board => to be programmed
 	  s->irq = pcidev->irq;
 #if LINUX_VERSION_CODE < VERSION(2,6,23)
-	if( request_irq(s->irq, a3818_interrupt, SA_SHIRQ, "a3818", s) ) {
+	if( request_irq(s->irq, a3818_interrupt, SA_SHIRQ, "a3818", s) )
 #else
-	if( request_irq(s->irq, a3818_interrupt, IRQF_SHARED , "a3818", s) ) {
+	if( request_irq(s->irq, a3818_interrupt, IRQF_SHARED , "a3818", s) )
 #endif
+{
 		  printk(KERN_ERR PFX "irq %u in use\n", s->irq);
 		  goto err_common_region_map;
 	  }
@@ -1282,10 +1319,11 @@ static int a3818_init_board(struct pci_dev *pcidev, int index) {
 	s->irq = pcidev->irq;
 
 #if LINUX_VERSION_CODE < VERSION(2,6,23)
-	if( request_irq(s->irq, a3818_interrupt, SA_SHIRQ, "a3818", s) ) {
+	if( request_irq(s->irq, a3818_interrupt, SA_SHIRQ, "a3818", s) )
 #else
-	if( request_irq(s->irq, a3818_interrupt, IRQF_SHARED , "a3818", s) ) {
+	if( request_irq(s->irq, a3818_interrupt, IRQF_SHARED , "a3818", s) )
 #endif
+{
 		printk("irq %u in use\n", s->irq);
 		goto err_irq;
 	}
@@ -1432,6 +1470,14 @@ static int __init a3818_init(void) {
 #endif
 			}
 		}
+		if (s->NumOfLink == 0) {
+			sprintf(DevEntryName,"a3818_%d",(s->CardNumber << 6));
+#if LINUX_VERSION_CODE < VERSION(2,6,27)
+			device_create(a3818_class, NULL, MKDEV(a3818_major, index), DevEntryName);
+#else
+			device_create(a3818_class, NULL, MKDEV(a3818_major, index), NULL, DevEntryName);
+#endif
+		}
 		s->major = a3818_major;
 		s = s->next;
 	 }
@@ -1478,7 +1524,9 @@ static void ReleaseBoards(void)
 				device_destroy(a3818_class, MKDEV(s->major, index));
 			}
 		}
-		
+		if (s->NumOfLink == 0) {
+			device_destroy(a3818_class, MKDEV(s->major, (s->CardNumber << 6)));
+		}
         kfree(s);
 	}
 	a3818_unregister_proc();

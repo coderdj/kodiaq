@@ -205,8 +205,10 @@ int DAQMonitor::Start(string user, string comment, koOptions *options)
   while(m_DAQStatus.DAQState!=KODAQ_ARMED){
     sleep(1);
     timer++;
-    if(timer==5)
+    if(timer==15){
+      m_Mongodb->SendLogMessage("Timed out waiting for boards to arm",KOMESS_WARNING);
       return -1;
+    }
   }
   
   koHelper::UpdateRunInfo(m_DAQStatus.RunInfo,user);
