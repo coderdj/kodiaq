@@ -9,9 +9,9 @@
         
         ----------------------------------------------------------------------
 
-        Package for Linux kernels 2.4, 2.6, 3.2
+        Package for Linux kernels 2.4, 2.6, 3.10
 
-        July 2012
+        May 2014
 
 
  The complete documentation can be found in the User's Manual on CAEN's web
@@ -38,7 +38,7 @@
  -------------------
 
  - CAEN A2818 PCI CARD
- - Linux kernel Rel. 2.4/2.6/3.2 with gnu C/C++ compiler
+ - Linux kernel Rel. 2.4/2.6/3.10 with gnu C/C++ compiler
 
 
  Installation notes
@@ -46,9 +46,9 @@
 
   To install the A2818 device driver:
 
-  - Excecute: cp ./Makefile.2.4 Makefile (for 2.4 kernel) cp ./Makefile.2.6-3.x Makefile (for 2.6/3.2 kernel)
+  - Excecute: cp ./Makefile.2.4 Makefile (for 2.4 kernel) cp ./Makefile.2.6-3.x Makefile (for 2.6/3.10 kernel)
 
   - Execute: make
 
   - Execute: sh a2818_load.2.4 (for 2.4 kernel) 
-             or sh a2818_load (for 2.6/3.2 kernel)
+             or sh a2818_load (for 2.6/3.10 kernel)

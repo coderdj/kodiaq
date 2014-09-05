@@ -8,7 +8,6 @@ script_path=`dirname $0`
  2> /dev/null
 /sbin/rmmod $device 2> /dev/null
 /sbin/insmod $script_path/$module || exit 1
-#/sbin/modprobe $script_path/$module || exit 1
 
 rm -f /dev/${device}
 
@@ -44,6 +43,3 @@ mknod /dev/${device}_39 c $major 39
 chown root   /dev/${device}_*
 chgrp $group /dev/${device}_*
 chmod $mode  /dev/${device}_*
-
-echo $script_path
-echo $major

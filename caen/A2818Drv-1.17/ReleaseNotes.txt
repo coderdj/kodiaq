@@ -7,6 +7,7 @@
   A2818 Driver Release Notes
 
   -----------------------------------------------------------------------------
+  Rel. 1.17 - May 		2014
   Rel. 1.16 - July 		2012
   Rel. 1.15 - November 	2011
   Rel. 1.14 - March 	2010
@@ -40,8 +41,12 @@
  -------------------
 
   - CAEN A2818 PCI Board
-  - Linux kernel 2.4/2.6/3.2 and GNU C/C++ compiler
+  - Linux kernel 2.4/2.6/3.10 and GNU C/C++ compiler
 
+  What's New in Rel. 1.17
+  --------------------------
+   - Add compatibility with kernel 3.10
+  
    What's New in Rel. 1.16
   --------------------------
    - force the A2818 to be PCI Bus Master
