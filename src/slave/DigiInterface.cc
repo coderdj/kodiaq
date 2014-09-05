@@ -48,59 +48,59 @@ int DigiInterface::Initialize(koOptions *options)
    
    //Define electronics and initialize
    for(int ilink=0;ilink<options->GetLinks();ilink++)  {
-      int tempHandle=-1;
-      link_definition_t Link = options->GetLink(ilink);
-      CVBoardTypes BType;
-      if(Link.type=="V1718")
-	BType = cvV1718;
-      else if(Link.type=="V2718")
-	BType = cvV2718;
-      else  	{	   
+     
+     int tempHandle=-1;
+     link_definition_t Link = options->GetLink(ilink);
+     CVBoardTypes BType;
+     if(Link.type=="V1718")
+       BType = cvV1718;
+     else if(Link.type=="V2718")
+       BType = cvV2718;
+     else  	{	   
+       if(m_koLog!=NULL)
+	 m_koLog->Error("VMECrate::Define - Invalid link type, check file definition.");
+       return -1;
+     }
+      
+     int cerr=-1;
+     if((cerr=CAENVME_Init(BType,Link.id,Link.crate,
+			   &tempHandle))!=cvSuccess){
+       //throw exception?
+       return -1;
+     }      
+     m_vCrateHandles.push_back(tempHandle);
+     
+     // define modules corresponding to this crate (inefficient
+     // double for loops, but small crate/module vector size)
+     for(int imodule=0; imodule<options->GetBoards(); imodule++)	{
+       board_definition_t Board = options->GetBoard(imodule);
+       if(Board.link!=Link.id || Board.crate!=Link.crate)
+	 continue;
+       cout<<"Found a board with link "<<Board.link<<" and crate "<<Board.crate<<endl;
+       if(Board.type=="V1724"){	      
+	 CBV1724 *digitizer = new CBV1724(Board,m_koLog);
+	 m_vDigitizers.push_back(digitizer);
+	 digitizer->SetCrateHandle(tempHandle);
+       }	 
+       else if(Board.type=="V2718"){	      
+	 CBV2718 *digitizer = new CBV2718(Board, m_koLog);
+	 m_RunStartModule=digitizer;
+	 digitizer->SetCrateHandle(tempHandle);
+	 if(digitizer->Initialize(options)!=0)
+	   return -1;
+       }	 
+       else   {
 	 if(m_koLog!=NULL)
-	   m_koLog->Error("VMECrate::Define - Invalid link type, check file definition.");
-	 return -1;
-      }
-      
-      int cerr=-1;
-      if((cerr=CAENVME_Init(BType,Link.id,Link.crate,
-				&tempHandle))!=cvSuccess){
-	 //throw exception
-	 return -1;
-      }      
-      m_vCrateHandles.push_back(tempHandle);
-      
-      //define modules corresponding to this crate (inefficient
-      //double for loops, but small crate/module vector size)
-      for(int imodule=0; imodule<options->GetBoards(); imodule++)	{
-	 board_definition_t Board = options->GetBoard(imodule);
-	 if(Board.link!=Link.id || Board.crate!=Link.crate)
-	   continue;
-	 cout<<"Found a board with link "<<Board.link<<" and crate "<<Board.crate<<endl;
-	 if(Board.type=="V1724"){	      
-	    CBV1724 *digitizer = new CBV1724(Board,m_koLog);
-	    m_vDigitizers.push_back(digitizer);
-	    digitizer->SetCrateHandle(tempHandle);
-	 }	 
-	 else if(Board.type=="V2718"){	      
-	    CBV2718 *digitizer = new CBV2718(Board, m_koLog);
-	    m_RunStartModule=digitizer;
-	    digitizer->SetCrateHandle(tempHandle);
-	    if(digitizer->Initialize(options)!=0)
-	      return -1;
-	 }	 
-	 else   {
-	    if(m_koLog!=NULL)
-	      m_koLog->Error("Undefined board type in .ini file.");
-	    continue;
-	 }
-	 
-      }
+	   m_koLog->Error("Undefined board type in .ini file.");
+	 continue;
+       }
+     }
    }
    StopRun();
    // initialize digitizers
    for(unsigned int x=0; x<m_vDigitizers.size();x++)  {
-      if(m_vDigitizers[x]->Initialize(options)!=0)
-	return -1;
+     if(m_vDigitizers[x]->Initialize(options)!=0)
+       return -1;
    }
    
    
@@ -114,31 +114,31 @@ int DigiInterface::Initialize(koOptions *options)
    else m_vProcThreads.resize(1);
    
    for(unsigned int x=0;x<m_vProcThreads.size();x++)  {
-      m_vProcThreads[x].IsOpen=false;
-      m_vProcThreads[x].Processor=NULL;
+     m_vProcThreads[x].IsOpen=false;
+     m_vProcThreads[x].Processor=NULL;
    }
-            
+   
    //Set up daq recorder
    m_DAQRecorder = NULL;
-
+   
    if(options->write_mode==WRITEMODE_FILE){
 #ifdef HAVE_LIBPBF
      m_DAQRecorder = new DAQRecorder_protobuff(m_koLog);
 #else
-      //throw exception
-      m_koOptions->write_mode = WRITEMODE_NONE;
+     //throw exception?
+     m_koOptions->write_mode = WRITEMODE_NONE;
 #endif
    }   
 #ifdef HAVE_LIBMONGOCLIENT
    else if(options->write_mode==WRITEMODE_MONGODB)
      m_DAQRecorder = new DAQRecorder_mongodb(m_koLog);
 #else
-   //throw exception
+   //throw exception?
    m_koOptions->write_mode = WRITEMODE_NONE;
 #endif
    if(m_DAQRecorder!=NULL)
      m_DAQRecorder->Initialize(options);
-
+   
    return 0;
 }
 
@@ -202,7 +202,15 @@ void DigiInterface::ReadThread()
       ExitCondition=true;
       unsigned int rate=0,freq=0;
       for(unsigned int x=0; x<m_vDigitizers.size();x++)  {
-	 if(m_vDigitizers[x]->Activated()) ExitCondition=false; //at least one crate is active
+	
+	// First check if the digitizer is active. If at least
+	// one digitizer is active then keep the thread alive
+	if(m_vDigitizers[x]->Activated()) 
+	   ExitCondition=false; 
+	 else 
+	   continue;
+
+	// Read from the digitizer and adjust the rates
 	 unsigned int ratecycle=m_vDigitizers[x]->ReadMBLT();	 	 
 	 rate+=ratecycle;
 	 if(ratecycle!=0)
