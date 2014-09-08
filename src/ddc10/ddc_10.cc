@@ -59,7 +59,8 @@ int ddc_10::Initialize(ddc10_par_t arg0)
         temp += arg0.IPAddress;
 
         // exp_open spawn ssh and returns a stream.
-        FILE *expect = exp_popen((char *) temp.c_str());
+
+	FILE *expect = exp_popen((char *) temp.c_str());
         if (expect == 0) return 1;
 
         enum { usage, permission_denied, command_not_found,

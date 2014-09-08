@@ -261,10 +261,10 @@ int DAQMonitor::Arm(koOptions *mode)
   
   // Configure DDC10 if available
 #ifdef WITH_DDC10
-  ddc_10 heveto;
-  if(heveto.Initialize(mode->GetDDCStream())!=0)
-    m_Mongodb->SendLogMessage("DDC10 veto module could not be initialized.",
-			      KOMESS_WARNING);
+  //  ddc_10 heveto;
+  //if(heveto.Initialize(mode->GetDDCStream())!=0)
+  // m_Mongodb->SendLogMessage("DDC10 veto module could not be initialized.",
+  //			      KOMESS_WARNING);
 #endif
 
   // Send arm command

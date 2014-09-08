@@ -44,9 +44,6 @@
 /* Define to 1 if you have the `snappy' library (-lsnappy). */
 #undef HAVE_LIBSNAPPY
 
-/* Define to 1 if you have the `tcl8.5' library (-ltcl8.5). */
-#undef HAVE_LIBTCL8_5
-
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 

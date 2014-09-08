@@ -106,11 +106,12 @@ int main()
 
 string MakeStatusString(DAQMonitor dMonitor){
   stringstream ostream;
-  koStatusPacket_t stat = dMonitor.GetStatus();
+  koStatusPacket_t *stat = dMonitor.GetStatus();
   ostream<<"Network: ";
-  stat.NetworkUp ? ostream<<"up ("<<stat.Slaves.size()<<") " : ostream<<"down ";
+  stat->NetworkUp ? 
+    ostream<<"up ("<<stat->Slaves.size()<<") " : ostream<<"down ";
   ostream<<"DAQ: ";
-  switch(stat.DAQState){
+  switch(stat->DAQState){
   case KODAQ_IDLE:
     ostream<<"idle ";
     break;
@@ -130,10 +131,10 @@ string MakeStatusString(DAQMonitor dMonitor){
     ostream<<"unknown ";
     break;
   }
-  ostream<<"Mode: "<<stat.RunMode;
+  ostream<<"Mode: "<<stat->RunMode;
   double rate=0.;
-  for(unsigned int i=0;i<stat.Slaves.size();i++)
-    rate+=stat.Slaves[i].Rate;
+  for(unsigned int i=0;i<stat->Slaves.size();i++)
+    rate+=stat->Slaves[i].Rate;
   ostream<<" Rate: "<<rate;
   return ostream.str();
 }

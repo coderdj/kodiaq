@@ -34,19 +34,16 @@
 /* #undef HAVE_LIBNCURSES */
 
 /* Define to 1 if you have the `pbf' library (-lpbf). */
-#define HAVE_LIBPBF 1
+/* #undef HAVE_LIBPBF */
 
 /* Define to 1 if you have the `protobuf' library (-lprotobuf). */
-#define HAVE_LIBPROTOBUF 1
+/* #undef HAVE_LIBPROTOBUF */
 
 /* Define to 1 if you have the `pthread' library (-lpthread). */
 #define HAVE_LIBPTHREAD 1
 
 /* Define to 1 if you have the `snappy' library (-lsnappy). */
 #define HAVE_LIBSNAPPY 1
-
-/* Define to 1 if you have the `tcl8.5' library (-ltcl8.5). */
-#define HAVE_LIBTCL8_5 1
 
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1

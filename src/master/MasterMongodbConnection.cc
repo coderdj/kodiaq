@@ -192,57 +192,45 @@ void MasterMongodbConnection::SendLogMessage(string message, int priority)
   
 }
 
-void MasterMongodbConnection::AddRates(koStatusPacket_t DAQStatus)
-{
-/*   try     {	
-      fMongoDB.connect("xedaq00");
-   }   
-   catch(const mongo::DBException &e)    {	
-      stringstream ss;
-      ss<<"Problem connecting to mongo. Caught exception "<<e.what();
-      if(fLog!=NULL) fLog->Error(ss.str());
-   }*/
-   
-   for(unsigned int x=0;x<DAQStatus.Slaves.size(); x++)  {
+void MasterMongodbConnection::AddRates(koStatusPacket_t *DAQStatus)
+{   
+  for(unsigned int x = 0; x < DAQStatus->Slaves.size(); x++)  {
       mongo::BSONObjBuilder b;
-     // b.genOID();
       time_t currentTime;
       time(&currentTime);
       b.appendTimeT("createdAt",currentTime);
-      b.append("node",DAQStatus.Slaves[x].name);
-      b.append("bltrate",DAQStatus.Slaves[x].Freq);
-      b.append("datarate",DAQStatus.Slaves[x].Rate);
-      b.append("runmode",DAQStatus.RunMode);
-      b.append("nboards",DAQStatus.Slaves[x].nBoards);
+      b.append("node",DAQStatus->Slaves[x].name);
+      b.append("bltrate",DAQStatus->Slaves[x].Freq);
+      b.append("datarate",DAQStatus->Slaves[x].Rate);
+      b.append("runmode",DAQStatus->RunMode);
+      b.append("nboards",DAQStatus->Slaves[x].nBoards);
       b.append("timeseconds",(int)currentTime);
       InsertOnline("online.rates",b.obj());
-   }
-      
+   }     
 }
 
-void MasterMongodbConnection::UpdateDAQStatus(koStatusPacket_t DAQStatus)
+void MasterMongodbConnection::UpdateDAQStatus(koStatusPacket_t *DAQStatus)
 {
    mongo::BSONObjBuilder b;
-   //b.genOID();
    time_t currentTime;
    time(&currentTime);
    b.appendTimeT("createdAt",currentTime);
    b.append("timeseconds",(int)currentTime);
-   b.append("mode",DAQStatus.RunMode);
-   if(DAQStatus.DAQState==KODAQ_ARMED)
+   b.append("mode",DAQStatus->RunMode);
+   if(DAQStatus->DAQState==KODAQ_ARMED)
      b.append("state","Armed");
-   else if(DAQStatus.DAQState==KODAQ_RUNNING)
+   else if(DAQStatus->DAQState==KODAQ_RUNNING)
      b.append("state","Running");
-   else if(DAQStatus.DAQState==KODAQ_IDLE)
+   else if(DAQStatus->DAQState==KODAQ_IDLE)
      b.append("state","Idle");
-   else if(DAQStatus.DAQState==KODAQ_ERROR)
+   else if(DAQStatus->DAQState==KODAQ_ERROR)
      b.append("state","Error");
    else
      b.append("state","Undefined");
-   b.append("network",DAQStatus.NetworkUp);
-   b.append("currentRun",DAQStatus.RunInfo.RunNumber);
-   b.append("startedBy",DAQStatus.RunInfo.StartedBy);
-   b.append("numSlaves",(int)DAQStatus.Slaves.size());
+   b.append("network",DAQStatus->NetworkUp);
+   b.append("currentRun",DAQStatus->RunInfo.RunNumber);
+   b.append("startedBy",DAQStatus->RunInfo.StartedBy);
+   b.append("numSlaves",(int)DAQStatus->Slaves.size());
    InsertOnline("online.daqstatus",b.obj());
 }
 
