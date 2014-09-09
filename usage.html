@@ -5,7 +5,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Using the Client Program &mdash; kodiaq 0.9 documentation</title>
+    <title>Using the Standalone Reader &mdash; kodiaq 0.9 documentation</title>
     
     <link rel="stylesheet" href="_static/basic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -33,7 +33,7 @@
     <script type="text/javascript" src="_static/theme.js"></script>
     <link rel="top" title="kodiaq 0.9 documentation" href="index.html" />
     <link rel="next" title="Deployment of the Full System" href="deployment.html" />
-    <link rel="prev" title="Installation of the client UI" href="installation.html" />
+    <link rel="prev" title="Installation of the standalone reader" href="installation.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
@@ -67,7 +67,7 @@
             
 
 <li>
-    <a href="installation.html" title="Previous Chapter: Installation of the client UI"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm">&laquo; Installation of ...</span>
+    <a href="installation.html" title="Previous Chapter: Installation of the standalone reader"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm">&laquo; Installation of ...</span>
     </a>
   </li>
   <li>
@@ -103,12 +103,9 @@
 	<ul id="sidebar" class="nav nav-stacked"><ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="intro.html">Welcome</a></li>
 <li class="toctree-l1"><a class="reference internal" href="webinterface.html">A Tour of the Web Interface</a></li>
-<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation of the client UI</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="">Using the Client Program</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#logging-in">Logging In</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#daq-status-window">DAQ Status window</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#control-window">Control Window</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#messages-window">Messages Window</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation of the standalone reader</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Using the Standalone Reader</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#special-options-for-standalone-mode">Special options for standalone mode</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment of the Full System</a></li>
@@ -138,17 +135,14 @@
 <li class="toctree-l2"><a class="reference internal" href="webinterface.html#introduction">Introduction</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation of the client UI</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation of the standalone reader</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#fetching-the-source-code">Fetching the source code</a></li>
-<li class="toctree-l2"><a class="reference internal" href="installation.html#compiling-the-ui-module">Compiling the UI module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="installation.html#running-the-code">Running the code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#prerequisites-for-installation">Prerequisites for installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#how-to-install">How to install</a></li>
 </ul>
 </li>
-<li class="toctree-l1 current"><a class="current reference internal" href="">Using the Client Program</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#logging-in">Logging In</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#daq-status-window">DAQ Status window</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#control-window">Control Window</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#messages-window">Messages Window</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Using the Standalone Reader</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#special-options-for-standalone-mode">Special options for standalone mode</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment of the Full System</a><ul>
@@ -200,195 +194,29 @@
       </div>
     <div class="col-md-9">
       
-  <div class="section" id="using-the-client-program">
-<h1>Using the Client Program<a class="headerlink" href="#using-the-client-program" title="Permalink to this headline">¶</a></h1>
-<p>Users wanting slightly more control than provided by the web interface
-can login via the client program. The client program is also more
-responsive (updates from the slaves are processed more often) so it
-may be better for testing usage.</p>
-<p>The DAQ client program is written in ncurses and is designed to be run
-in a terminal over a remote connection. The ncurses library was chosen
-for its broad compatibility with most terminal emulators and the
-ability to run it over an ssh connection without X forwarding. This
-eliminates the need for us to handle the security.</p>
-<p>There are 3 sub-windows in the DAQ UI: control, monitoring, and
-history. The following is a basic explanation of the information
-provided and interactions possible with each.</p>
-<div class="section" id="logging-in">
-<h2>Logging In<a class="headerlink" href="#logging-in" title="Permalink to this headline">¶</a></h2>
-<p>After starting the client program you will be presented with a login
-screen. You should enter your name in the bottom line. The other three
-lines probably don&#8217;t need to be changed unless you are not running the
-default setup. The top line is the address of the computer running the
-koMaster program (dispatcher). The next two lines define the ports
-over which internal communication will take place.</p>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">You have to have the ability to actually connect to the dispatcher in order for this to work. If the dispatcher is sitting behind a firewall, for example, you will need to get inside or forward the ports before connecting.</p>
+  <div class="section" id="using-the-standalone-reader">
+<h1>Using the Standalone Reader<a class="headerlink" href="#using-the-standalone-reader" title="Permalink to this headline">¶</a></h1>
+<p>The standalone reader exists in src/slave. An options file in this directory
+called DAQConfig.ini should be defined to set your run options. This is explained
+in detail in the options section of this documentation.</p>
+<p>Assuming DAQConfig.ini is configured you should be able to run the code like this:</p>
+<div class="highlight-python"><div class="highlight"><pre>cd src/slave
+./koSlave
+</pre></div>
 </div>
-</div>
-<div class="section" id="daq-status-window">
-<h2>DAQ Status window<a class="headerlink" href="#daq-status-window" title="Permalink to this headline">¶</a></h2>
-<p>The DAQ status window is on the right side of the screen and is split
-into two parts. The top part gives general information on the state of
-the overall DAQ while the bottom part gives information on the status
-of each connected slave. We will start from the top down.</p>
-<ul>
-<li><dl class="first docutils">
-<dt>Network <em>(Disconnected/Connected)</em>:</dt>
-<dd><p class="first last">The DAQ network is the connection of the master program to the slave PCs. If the network
-interface is up and at least one slave is connected this field will
-read &#8220;Connected&#8221;.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt>Acquisition <em>(Idle/Armed/Running/Mixed)</em>:</dt>
-<dd><p class="first last">This tells if the DAQ is taking data or not. If the boards are not doing anything they are
-in idle state. The DAQ cannot be started in idle state. In order to
-start the DAQ the user has to choose a run mode. Once a mode is chosen
-the run mode is sent to the slave modules where mode-specific options
-are loaded into the digitizers. If all slaves successfully load the
-options the DAQ is in armed mode and can be started. If the DAQ is
-taking data it is in running mode, stopping the DAQ puts it back to
-armed mode. If all slave modes are not reporting the same mode the DAQ
-is in mixed mode. This is normal for a brief amount of time upon a state
-change but should not persist for more than a couple seconds.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt>DAQ Mode <em>(a string)</em>:</dt>
-<dd><p class="first last">Gives the name of the run mode used to collect the most recent run.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt>Current Run <em>(run name)</em>:</dt>
-<dd><p class="first last">Gives the name of the current or most recently stopped run.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt>Started by <em>(user name)</em>:</dt>
-<dd><p class="first last">Gives the name of the user who started the current or most recently stopped run.</p>
-</dd>
-</dl>
-</li>
+<p>Starting and stopping the run is done using the keyboard prompts.</p>
+<div class="section" id="special-options-for-standalone-mode">
+<h2>Special options for standalone mode<a class="headerlink" href="#special-options-for-standalone-mode" title="Permalink to this headline">¶</a></h2>
+<p>Most of the DAQ options for the DAQConfig.ini file are the same in standalone
+and networked mode. The differences are listed here.</p>
+<blockquote>
+<div><ul class="simple">
+<li>Run names cannot be defined with a &#8216;*&#8217; wildcard. Run names must be given
+absolute names. The same holds for file output paths.</li>
+<li>The &#8216;%&#8217; operator to define a certain slave node is not necessary and
+must be omitted.</li>
 </ul>
-<p>The lower part of the window provides information on each slave
-connected. The color of the slave name indicates its state (red-idle,
-yellow-armed, green-running). The rate given is the rate data is read
-out of the readout buffers of the digitizers. Due to formatting and
-zipping this is different than the rate actually transferred to the
-event builder buffer. The number of boards given is simply the number
-of digitizers connected to that slave. The frequency is the frequency
-of reads from the readout buffers of the digitizer. It is possible for
-multiple occurrences to be read in a single buffer. Note that this has
-nothing to do with the frequency of events since the concept of an
-event does not exist at this point in the data stream.</p>
-</div>
-<div class="section" id="control-window">
-<h2>Control Window<a class="headerlink" href="#control-window" title="Permalink to this headline">¶</a></h2>
-<p>The control window is on the top left and allows the user to control
-the DAQ. The options provided are dependent on the current state of
-the DAQ. The following table describes what each option does and under
-what states the option is available.</p>
-<table border="1" class="table-hover docutils">
-<colgroup>
-<col width="23%" />
-<col width="25%" />
-<col width="52%" />
-</colgroup>
-<thead valign="bottom">
-<tr class="row-odd"><th class="head">Command</th>
-<th class="head">States</th>
-<th class="head">Action</th>
-</tr>
-</thead>
-<tbody valign="top">
-<tr class="row-even"><td>Connect</td>
-<td>DAQ Disconnected</td>
-<td><div class="first last line-block">
-<div class="line">Puts up the DAQ network. The</div>
-<div class="line">master will put up its interface</div>
-<div class="line">and wait for 10 seconds for slaves to</div>
-<div class="line">connect</div>
-</div>
-</td>
-</tr>
-<tr class="row-odd"><td>Broadcast Message</td>
-<td>All</td>
-<td><div class="first last line-block">
-<div class="line">Puts a message into the DAQ log and</div>
-<div class="line">broadcasts it to all connected UIs</div>
-</div>
-</td>
-</tr>
-<tr class="row-even"><td>Choose Operation
-Mode</td>
-<td>DAQ Connected</td>
-<td><div class="first last line-block">
-<div class="line">Asks the master for a list of</div>
-<div class="line">available run modes. The user can</div>
-<div class="line">then choose a mode from the list.</div>
-<div class="line">the chosen mode is shipped to the</div>
-<div class="line">slaves and the boards are armed.</div>
-</div>
-</td>
-</tr>
-<tr class="row-odd"><td>Put DAQ into
-Standby Mode</td>
-<td>DAQ Armed</td>
-<td><div class="first last line-block">
-<div class="line">Clears the last run mode and puts the</div>
-<div class="line">boards into the idle state. Use this</div>
-<div class="line">if you won&#8217;t use the DAQ for a bit</div>
-</div>
-</td>
-</tr>
-<tr class="row-even"><td>Reset DAQ</td>
-<td>Idle</td>
-<td><div class="first last line-block">
-<div class="line">Disconnects and reconnects the DAQ</div>
-<div class="line">network. Used to debug connection</div>
-<div class="line">issues.</div>
-</div>
-</td>
-</tr>
-<tr class="row-odd"><td>Start DAQ</td>
-<td>Armed</td>
-<td><div class="first last line-block">
-<div class="line">Starts acquisition into a new run.</div>
-</div>
-</td>
-</tr>
-<tr class="row-even"><td>Stop  DAQ</td>
-<td>Running</td>
-<td><div class="first last line-block">
-<div class="line">Stops acquisition.</div>
-</div>
-</td>
-</tr>
-<tr class="row-odd"><td>Quit</td>
-<td>Running</td>
-<td><div class="first last line-block">
-<div class="line">Quit out of the UI. This does not</div>
-<div class="line">have any effect on the DAQ itself.</div>
-</div>
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="section" id="messages-window">
-<h2>Messages Window<a class="headerlink" href="#messages-window" title="Permalink to this headline">¶</a></h2>
-<p>The messages window displays the last 1000 lines of the DAQ log file
-as well as any messages for the user (certain messages are not
-recorder in the log). Scrolling is done with the arrow
-keys or the mouse wheel. In order to place a message in the log file
-use the &#8220;Broadcast Message&#8221; command. If you want to see something
-older than 1000 lines you have to look up the actual DAQ log files.</p>
+</div></blockquote>
 </div>
 </div>
 

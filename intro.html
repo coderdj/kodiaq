@@ -107,8 +107,8 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="webinterface.html">A Tour of the Web Interface</a></li>
-<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation of the client UI</a></li>
-<li class="toctree-l1"><a class="reference internal" href="usage.html">Using the Client Program</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation of the standalone reader</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Using the Standalone Reader</a></li>
 <li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment of the Full System</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options.html">DAQ Options</a></li>
 <li class="toctree-l1"><a class="reference internal" href="protocols.html">Data Formats</a></li>
@@ -136,17 +136,14 @@
 <li class="toctree-l2"><a class="reference internal" href="webinterface.html#introduction">Introduction</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation of the client UI</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation of the standalone reader</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#fetching-the-source-code">Fetching the source code</a></li>
-<li class="toctree-l2"><a class="reference internal" href="installation.html#compiling-the-ui-module">Compiling the UI module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="installation.html#running-the-code">Running the code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#prerequisites-for-installation">Prerequisites for installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#how-to-install">How to install</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="usage.html">Using the Client Program</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="usage.html#logging-in">Logging In</a></li>
-<li class="toctree-l2"><a class="reference internal" href="usage.html#daq-status-window">DAQ Status window</a></li>
-<li class="toctree-l2"><a class="reference internal" href="usage.html#control-window">Control Window</a></li>
-<li class="toctree-l2"><a class="reference internal" href="usage.html#messages-window">Messages Window</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Using the Standalone Reader</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#special-options-for-standalone-mode">Special options for standalone mode</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment of the Full System</a><ul>
@@ -215,11 +212,14 @@ the data from the buffer and builds events.</p>
 arbitrarily fast throughput speeds. A central dispatcher (the master)
 controls several client modules for readout (the slaves). The master
 and slave daemons are always running and require no intervention from
-the user. Users control the DAQ by logging into the master using a
-control interface. Additionally a web interface exists which ties the
-kodiaq (reader), cito (event builder), and wax (data processor)
-together. The web interface provides basic end user control and
-monitoring.</p>
+the user. Users can control the DAQ with a simple text-based interface
+to the master daemon or with a full featured web interface. The web
+interface is included in a separate repository. Communication between
+the web interface and kodiaq is mediated by an online database.</p>
+<p>In addition to the networked mode it is also possible to run kodiaq in
+a standalone mode. In this case the dispatcher (and web interface) are
+omitted in favor of a simple terminal-based control interface directly
+with a single instance of the slave program.</p>
 <p>This guide covers how to install and log into the DAQ.</p>
 </div>
 <div class="section" id="use-guidelines">
