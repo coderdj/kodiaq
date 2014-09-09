@@ -51,6 +51,20 @@ void MasterMongodbConnection::InsertOnline(string collection,mongo::BSONObj bson
 
 int MasterMongodbConnection::Initialize(string user, string runMode, string name,
 					koOptions *options, bool onlineOnly)
+/*
+  At run start create a new run document and put it into the online.runs database.
+  The OID of this document is saved as a private member so the document can be 
+  updated when the run ends. 
+  
+  Fields important for trigger:
+                              
+                  runtype :   tells trigger how run should be processed. Hardcoded
+                              at the moment but will be part of koOptions once we
+                              have different run types
+                  starttime:  NOT the UTC time (this is in runstart) but should be
+                              the first CAEN digitizer time in the run (usually 0)
+		  	     
+ */
 {
   fOptions = options;
          
@@ -103,6 +117,14 @@ int MasterMongodbConnection::Initialize(string user, string runMode, string name
 
 
 int MasterMongodbConnection::UpdateEndTime(bool onlineOnly)
+/*
+  When a run is ended we update the run document to indicate that we are finished writing.
+  
+             Fields updated: 
+
+		       "endtimestamp": UTC time of end of run
+		       "data_taking_ended": bool to indicate reader is done with the run
+ */
 {
   if(!fLastDocOID.isSet())  {
     if(fLog!=NULL) fLog->Error("MasterMongodbConnection::UpdateEndTime - Want to stop run but don't have the _id field of the run info doc");
@@ -114,36 +136,29 @@ int MasterMongodbConnection::UpdateEndTime(bool onlineOnly)
       time(&nowTime);
       currenttime = localtime(&nowTime);
 
-      //      std::size_t pos;
-      //      pos=fMongoOptions.Collection.find_first_of(".",0);
-      
-      //      string firstString = fMongoOptions.Collection.substr(0,pos);
-      //string secondString = fMongoOptions.Collection.substr(pos+1,fMongoOptions.Collection.size()-pos);
-//      cout<<firstString<<" "<<secondString<<endl;
-//      mongo::BSONObjBuilder b; 
       mongo::BSONObj res;
-      //    b << "findandmodify" << /*secondString.c_str()*/fOptions->mongo_collection.c_str() <<
-      //"query" << BSON("_id" << fLastDocOID) << 
-      //	"update" << BSON("$set" << BSON("endtimestamp" <<mongo::Date_t(1000*mktime(currenttime)) << "data_taking_ended" << true));
-
       string onlinesubstr = "runs";
+  
       mongo::BSONObjBuilder bo;
       bo << "findandmodify" << onlinesubstr.c_str() << 
 	"query" << BSON("_id" << fLastDocOID) << 
 	"update" << BSON("$set" << BSON("endtimestamp" <<mongo::Date_t(1000*mktime(currenttime)) << "data_taking_ended" << true)); 
       
-      //      if(!onlineOnly)
-      //assert(fMongoDB.runCommand(fOptions->mongo_database.c_str()/*firstString.c_str()*/,b.obj(),res));      
       assert(fMongoDB.runCommand("online",bo.obj(),res));
    }
    catch (const mongo::DBException &e) {
-      if(fLog!=NULL) fLog->Error("MasterMongodbConnection::UpdateEndTime - Error fetching and updating run info doc with end time stamp.");
-      return -1;
+     if(fLog!=NULL) fLog->Error("MasterMongodbConnection::UpdateEndTime - Error fetching and updating run info doc with end time stamp.");
+     return -1;
    }   
    return 0;
 }
 
 void MasterMongodbConnection::SendLogMessage(string message, int priority)
+/*
+  Log messages are saved into the database. An enum indicates the priority of the message.
+  For messages flagged with KOMESS_WARNING or KOMESS_ERROR an alert is created requiring
+  a user to mark the alert as solved before starting a new run.
+ */
 {      
   time_t currentTime;
   struct tm *starttime;
@@ -194,6 +209,11 @@ void MasterMongodbConnection::SendLogMessage(string message, int priority)
 }
 
 void MasterMongodbConnection::AddRates(koStatusPacket_t *DAQStatus)
+/*
+  Update the rates in the online db. 
+  Idea: combine all rates into one doc to cut down on queries?
+  The online.rates collection should be a TTL collection.
+*/
 {   
   for(unsigned int x = 0; x < DAQStatus->Slaves.size(); x++)  {
       mongo::BSONObjBuilder b;
@@ -211,6 +231,9 @@ void MasterMongodbConnection::AddRates(koStatusPacket_t *DAQStatus)
 }
 
 void MasterMongodbConnection::UpdateDAQStatus(koStatusPacket_t *DAQStatus)
+/*
+  Insert DAQ status doc. The online.daqstatus should be a TTL collection.
+ */
 {
    mongo::BSONObjBuilder b;
    time_t currentTime;
@@ -237,6 +260,12 @@ void MasterMongodbConnection::UpdateDAQStatus(koStatusPacket_t *DAQStatus)
 
 int MasterMongodbConnection::CheckForCommand(string &command, string &user, 
 					     string &comment, koOptions &options)
+/*
+  DAQ commands can be written to the online.daqcommand db. These usually come from the web
+  interface but they can actually come from anywhere. The only commands recognized are 
+  "Start" and "Stop". The run mode (for "Start") and comments (for both) are also pulled
+  from the doc.
+ */
 {
    if(fMongoDB.count("online.daqcommands") ==0)
      return -1;
@@ -259,6 +288,11 @@ int MasterMongodbConnection::CheckForCommand(string &command, string &user,
 
 void MasterMongodbConnection::SendRunStartReply(int response, string message, 
 						string mode, string comment)
+/*
+  When starting a run a plausibility check is performed. The result of this 
+  check is sent using this function. The web interface will wait for an 
+  entry in this DB and notify the user if something goes wrong.
+ */
 {
   mongo::BSONObjBuilder reply;
   reply.append("message",message);
@@ -269,6 +303,11 @@ void MasterMongodbConnection::SendRunStartReply(int response, string message,
 }
 
 int MasterMongodbConnection::PullRunMode(string name, koOptions &options)
+/*
+  Converts a mongodb run mode document to a koOptions object. Would be easier
+  in python since we could just save the dict. C++ requires we loop through 
+  each attribute and set it.
+ */
 {
    if(fMongoDB.count("online.run_modes") ==0)
      return -1;
