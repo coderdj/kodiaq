@@ -1,5 +1,5 @@
 ==============================
-Installation of the client UI
+Installation of the standalone reader
 ==============================
 
 Fetching the source code
@@ -19,36 +19,46 @@ Assuming you have repository access::
 You will have to provide your login credentials. This will then create
 the file 'kodiaq' in whatever directory you ran the command in. 
 
+Prerequisites for installation
+-------------------------------
 
-Compiling the UI module
-------------------------
+This software supports reading from Caen V1724 digitizers. Connection to
+a Caen V1724 is mediated by either an A2818 or A3818 PCI(e) card. This card 
+should be installed in your computer and configured according to the manufacturer's
+instructions. See http://www.caen.it for details.
 
-To build the software: ::
+For convenience the PCI card drivers are included in the caen folder in the 
+kodiaq top-level directory. 
 
-    cd kodiaq
-    ./configure
-    make
+In addition to the PCI card driver you also need CAENVMElib. This is included in 
+the kodiaq/caen folder as well and can be installed using the instructions in that 
+directory.
 
-There are a few dependencies required for the user library. You will
-need, of course, a compiler and build libraries like make. The UI is
-also written in ncurses, so you need libncurses-dev, libtinfo-dev,
-libmenu-dev, and libform-dev. On Ubuntu you can install this as
-follows: ::
+Software requirements are relatively lightweight and consist of the normal build tools. 
+You will need g++, make, and autotools. Additionally you need the ncurses library
+for the display. On Ubuntu these can be installed by::
 
-    sudo apt-get install build-essential libncurses5-dev
+  sudo apt-get install build-essential libncurses5-dev
 
+If you want to write data as well as reading is (generally the point of a DAQ) you will
+need some output method installed. Currently kodiaq supports writing to either a mongodb
+database or pbf files. 
 
-Running the code
------------------
+To write to mongodb you will need to install a mongodb database somewhere to write to. 
+The database should run at least mongodb 2.6. Connection to the database is defined in 
+the options file. The DAQ program also needs the mongodb c++ driver (26-compat version 
+as of 9.9.2014), which can be obtained from http://www.mongodb.com. 
 
-If make completed correctly you should have an executable called
-koUser in src/user. The program is run using this executable. There is
-a shortcut script in the top-level directory (kodiaq, unless you
-changed the name) called kodiaq_client.sh which you can use to run.::
+To write to files you need to install libpbf from https://github.com/XENON1T/libpbf.
 
-     ./kodiaq_client.sh
+How to install
+--------------
 
-The screen size of kodiaq is 132x43 (if you use ubuntu this is an
-option in the menu bar of the terminal). You should run with a
-terminal at least this large. If your terminal is larger, no problem,
-if it's smaller then you just won't be able to see some things. 
+Assuming you meet all the requirements installation should just be ::
+  
+  ./configure --enable-lite
+  make
+
+This will install the standalone executable into src/slave. The configure script should
+automatically detect your mongodb and/or libpbf installations. The scripts output will 
+tell you which output format(s) will be supported by your kodiaq installation.

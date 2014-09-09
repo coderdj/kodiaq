@@ -21,11 +21,15 @@ kodiaq is parallelized and scalable in order to achieve almost
 arbitrarily fast throughput speeds. A central dispatcher (the master)
 controls several client modules for readout (the slaves). The master
 and slave daemons are always running and require no intervention from
-the user. Users control the DAQ by logging into the master using a
-control interface. Additionally a web interface exists which ties the
-kodiaq (reader), cito (event builder), and wax (data processor)
-together. The web interface provides basic end user control and
-monitoring.
+the user. Users can control the DAQ with a simple text-based interface
+to the master daemon or with a full featured web interface. The web 
+interface is included in a separate repository. Communication between 
+the web interface and kodiaq is mediated by an online database.
+
+In addition to the networked mode it is also possible to run kodiaq in 
+a standalone mode. In this case the dispatcher (and web interface) are 
+omitted in favor of a simple terminal-based control interface directly 
+with a single instance of the slave program.
 
 This guide covers how to install and log into the DAQ.
 
