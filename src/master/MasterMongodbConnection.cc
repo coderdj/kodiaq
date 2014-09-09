@@ -68,17 +68,18 @@ int MasterMongodbConnection::Initialize(string user, string runMode, string name
   b.append("processing_ended",false);
   b.append("saved_to_file",false);
   b.append("name",name);
-  
+ 
+  // put in .ini file
+  stringstream optionsStream;
+  options->ToStream(&optionsStream);
+  b.append("daq_options",optionsStream.str());
+
   //put in start time
   time_t currentTime;
   struct tm *starttime;
   time(&currentTime);
   starttime = localtime(&currentTime);
-  b.appendTimeT("starttimestamp",mktime(starttime));
-  
-   
-  //eventually putting the .ini file will go here
-   
+  b.appendTimeT("starttimestamp",mktime(starttime));       
    
   //insert into collection
   mongo::BSONObj bObj = b.obj();
