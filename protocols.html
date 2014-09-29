@@ -108,10 +108,9 @@
 <li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment of the Full System</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options.html">DAQ Options</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="">Data Formats</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#output-to-mongodb">Output to Mongodb</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#mongodb">Mongodb</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#run-control-document">Run Control Document</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#data-documents">Data Documents</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#data-format">Data Format</a></li>
 </ul>
 </li>
 </ul>
@@ -158,7 +157,6 @@
 <li class="toctree-l3"><a class="reference internal" href="deployment.html#run-modes">Run Modes</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="deployment.html#deployment-of-the-standalone-reader-module">Deployment of the Standalone Reader Module</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="options.html">DAQ Options</a><ul>
@@ -170,10 +168,9 @@
 </ul>
 </li>
 <li class="toctree-l1 current"><a class="current reference internal" href="">Data Formats</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#output-to-mongodb">Output to Mongodb</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#mongodb">Mongodb</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#run-control-document">Run Control Document</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#data-documents">Data Documents</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#data-format">Data Format</a></li>
 </ul>
 </li>
 </ul>
@@ -201,18 +198,17 @@
       
   <div class="section" id="data-formats">
 <h1>Data Formats<a class="headerlink" href="#data-formats" title="Permalink to this headline">¶</a></h1>
-<p>Right now the only option for data output is writing to a mongodb
-database. It is forseen to add later direct file output, at which
-point this documentation will be updated.</p>
-<p>This section describes the data formats produced by the DAQ reader.</p>
-<div class="section" id="output-to-mongodb">
-<h2>Output to Mongodb<a class="headerlink" href="#output-to-mongodb" title="Permalink to this headline">¶</a></h2>
+<p>This section describes the data formats produced by the DAQ reader when writing to a database.
+This consists of the individual data documents as well as the run control document.</p>
+<p>Protocols for writing and reading from the online monitoring database are given in the next
+chapter.</p>
+<div class="section" id="mongodb">
+<h2>Mongodb<a class="headerlink" href="#mongodb" title="Permalink to this headline">¶</a></h2>
 <p>Mongodb is an open-source enterprise level no-sql database package. It
 automatically indexes and stores data sent to it locally or over a
 network. Kodiaq uses mongodb both as a buffer to store data
-temporarily while it is processed by an event builder, or as a more
-long term storage for data taken in triggered mode.</p>
-<p>Mongodb takes data in the form of BSON document objects. A BSON object
+temporarily while it is processed by an event builder.</p>
+<p>Mongodb stores data as a collection of BSON document objects. A BSON object
 always contains a unique ID number assigned and may also contain other
 data fields such as integers, strings, and binary data. The general
 procedure followed by the reader is to process the raw data from the
@@ -221,6 +217,30 @@ therein into meta-data fields in the BSON documents, put the binary
 data into a data field, and ship the document to mongodb.</p>
 <div class="section" id="run-control-document">
 <h3>Run Control Document<a class="headerlink" href="#run-control-document" title="Permalink to this headline">¶</a></h3>
+<p>The run control document is stored in a dedicated runs database. Currently this
+is part of the online monitor database but since it is required for DAQ operation
+it is included here. An occurrence processing mode must be selected for this format to be used.</p>
+<p>The collection for the runs database is online.runs.</p>
+<p>The document has the following fields (more can be added).</p>
+<blockquote>
+<div><ul class="simple">
+<li><em>id</em> - The mongodb ID tag. Can be used to pull specific docs from the database.</li>
+<li><em>runmode</em> - {string} The name of the operation mode used for this run</li>
+<li><em>runtype</em> - {string} An additional type describing how the run should be treated by the event builder</li>
+<li><em>starttime</em> - {int64} The CAEN digitizer time of the first event (usually zero)</li>
+<li><em>endtime</em> - {int64} Added when a run is stopped. The CAEN digitizer time of the end of the run.</li>
+<li><em>starttimestamp</em> - {datetime} A datetime object of the run start (unix time)</li>
+<li><em>endtimestamp</em> - {datetime} A datetime object of the run stop (unix time)</li>
+<li><em>user</em> - {string} User who started the run</li>
+<li><em>compressed</em> - {int} 0 for non-compressed data, 1 for data compressed with snappy</li>
+<li><em>name</em> - {string} Name of this run (contains the start date and time usually)</li>
+<li><em>daq_options</em> - {string} A string containing the options file used for this run (string output of a koOptions object</li>
+<li><em>data_taking_ended</em> - {bool} Set to true when the DAQ stops the run normally</li>
+<li><em>trigger_ended</em> - {bool} Set to true once the event builder finishes with the run</li>
+<li><em>processing_ended</em> - {bool} Set to true once the online processor finishes the run. The online processor should also make additional entries into the run object saying where the processed file was stored and what options were used for processing.</li>
+<li><em>saved_to_file</em> - {bool} Set to true once the data is stored to file. The file builder should also update the document with the path of the saved file.</li>
+</ul>
+</div></blockquote>
 </div>
 <div class="section" id="data-documents">
 <h3>Data Documents<a class="headerlink" href="#data-documents" title="Permalink to this headline">¶</a></h3>
@@ -259,22 +279,14 @@ probably not needed.</li>
 also given in the run control document).</li>
 </ul>
 </div></blockquote>
-</div>
-<div class="section" id="data-format">
-<h3>Data Format<a class="headerlink" href="#data-format" title="Permalink to this headline">¶</a></h3>
-<p>The data format always follows closely the CAEN digitizer format. The
-data can be thought of as an array of 32-bit words. Raw samples are 14
-bits and are stored two per word (16-bits are allocated for each with
-the highest two bits simply being ignored).</p>
-<p>Depending on the options chosen, some formatting may be done which strips
-headers out of the data and extracts this information into metadata.</p>
-<div class="section" id="full-events-in-triggered-mode">
-<h4>Full Events in Triggered Mode<a class="headerlink" href="#full-events-in-triggered-mode" title="Permalink to this headline">¶</a></h4>
-<p>In triggered mode, the digitizers are triggered via the TRIN connector
-on the front of each board. This mode can be used, for example, for
-LED calibration or for triggering via a discriminator module. In this
-case the binary data provided in the mongodb docs is exactly in the
-CAEN digitizer format.</p>
+<div class="section" id="output-of-full-events">
+<h4>Output of Full Events<a class="headerlink" href="#output-of-full-events" title="Permalink to this headline">¶</a></h4>
+<p>If the processing mode is set to &#8216;0&#8217; or &#8216;1&#8217; (or no processing) the data is dumped
+to mongodb documents exactly as it comes out of the digitizers. With &#8216;0&#8217; each doc can
+contain many events. Mode &#8216;1&#8217; means each doc contains exactly 1 trigger.</p>
+<p>In this case the data format is the CAEN format. This appears in the manual for the
+V1724 (available www.caen.it) and is reproduced below. Note that this format is valid
+for default V1724 firmware and may be different if a custom firmware is used.</p>
 <table border="1" class="docutils">
 <colgroup>
 <col width="3%" />
@@ -544,8 +556,7 @@ bit is.</p>
 </tr>
 </tbody>
 </table>
-<p>Of course this data is once again after extraction in the case that
-the compression flag is true in the run control document.</p>
+<p>If compression is turned on the data must first be extracted before it has the format shown above.</p>
 </div>
 </div>
 </div>

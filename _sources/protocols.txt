@@ -2,22 +2,21 @@
 Data Formats 
 ===========================
 
-Right now the only option for data output is writing to a mongodb
-database. It is forseen to add later direct file output, at which
-point this documentation will be updated. 
+This section describes the data formats produced by the DAQ reader when writing to a database. 
+This consists of the individual data documents as well as the run control document. 
 
-This section describes the data formats produced by the DAQ reader.
+Protocols for writing and reading from the online monitoring database are given in the next
+chapter.
 
-Output to Mongodb
+Mongodb
 ------------------
 
 Mongodb is an open-source enterprise level no-sql database package. It
 automatically indexes and stores data sent to it locally or over a
 network. Kodiaq uses mongodb both as a buffer to store data
-temporarily while it is processed by an event builder, or as a more
-long term storage for data taken in triggered mode. 
+temporarily while it is processed by an event builder. 
 
-Mongodb takes data in the form of BSON document objects. A BSON object
+Mongodb stores data as a collection of BSON document objects. A BSON object
 always contains a unique ID number assigned and may also contain other
 data fields such as integers, strings, and binary data. The general
 procedure followed by the reader is to process the raw data from the
@@ -27,6 +26,30 @@ data into a data field, and ship the document to mongodb.
 
 Run Control Document
 ^^^^^^^^^^^^^^^^^^^^^
+
+The run control document is stored in a dedicated runs database. Currently this 
+is part of the online monitor database but since it is required for DAQ operation 
+it is included here. An occurrence processing mode must be selected for this format to be used.
+
+The collection for the runs database is online.runs. 
+
+The document has the following fields (more can be added).
+
+    * *id* - The mongodb ID tag. Can be used to pull specific docs from the database.
+    * *runmode* - {string} The name of the operation mode used for this run
+    * *runtype* - {string} An additional type describing how the run should be treated by the event builder
+    * *starttime* - {int64} The CAEN digitizer time of the first event (usually zero)
+    * *endtime* - {int64} Added when a run is stopped. The CAEN digitizer time of the end of the run.
+    * *starttimestamp* - {datetime} A datetime object of the run start (unix time)
+    * *endtimestamp* - {datetime} A datetime object of the run stop (unix time)
+    * *user* - {string} User who started the run
+    * *compressed* - {int} 0 for non-compressed data, 1 for data compressed with snappy
+    * *name* - {string} Name of this run (contains the start date and time usually)
+    * *daq_options* - {string} A string containing the options file used for this run (string output of a koOptions object
+    * *data_taking_ended* - {bool} Set to true when the DAQ stops the run normally
+    * *trigger_ended* - {bool} Set to true once the event builder finishes with the run
+    * *processing_ended* - {bool} Set to true once the online processor finishes the run. The online processor should also make additional entries into the run object saying where the processed file was stored and what options were used for processing.
+    * *saved_to_file* - {bool} Set to true once the data is stored to file. The file builder should also update the document with the path of the saved file.
 
 Data Documents
 ^^^^^^^^^^^^^^^
@@ -62,25 +85,17 @@ needed for event building.
     * *zipped* - If the data is compressed or not (this information is
       also given in the run control document).
 
-Data Format
-^^^^^^^^^^^^^^^^^^^^^
 
-The data format always follows closely the CAEN digitizer format. The
-data can be thought of as an array of 32-bit words. Raw samples are 14
-bits and are stored two per word (16-bits are allocated for each with
-the highest two bits simply being ignored). 
+Output of Full Events
+"""""""""""""""""""""
 
-Depending on the options chosen, some formatting may be done which strips 
-headers out of the data and extracts this information into metadata. 
+If the processing mode is set to '0' or '1' (or no processing) the data is dumped 
+to mongodb documents exactly as it comes out of the digitizers. With '0' each doc can 
+contain many events. Mode '1' means each doc contains exactly 1 trigger. 
 
-Full Events in Triggered Mode
-"""""""""""""""""""""""""""""
-
-In triggered mode, the digitizers are triggered via the TRIN connector
-on the front of each board. This mode can be used, for example, for
-LED calibration or for triggering via a discriminator module. In this
-case the binary data provided in the mongodb docs is exactly in the
-CAEN digitizer format. 
+In this case the data format is the CAEN format. This appears in the manual for the 
+V1724 (available www.caen.it) and is reproduced below. Note that this format is valid 
+for default V1724 firmware and may be different if a custom firmware is used.
 
 +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 |31|30|29|28|27|26|25|24|23|22|21|20|19|18|17|16|15|14|13|12|11|10|09|08|07|06|05|04|03|02|01|00|
@@ -161,6 +176,5 @@ bit is.
 | 0| 0|       Sample[N]                         | 0| 0|        Sample[N-1]                      |
 +--+--+-----------------------------------------+--+--+-----------------------------------------+
 
-Of course this data is once again after extraction in the case that
-the compression flag is true in the run control document.
+If compression is turned on the data must first be extracted before it has the format shown above.
 
