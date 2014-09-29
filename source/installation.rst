@@ -28,7 +28,8 @@ should be installed in your computer and configured according to the manufacture
 instructions. See http://www.caen.it for details.
 
 For convenience the PCI card drivers are included in the caen folder in the 
-kodiaq top-level directory. 
+kodiaq top-level directory. However it is recommended to check the CAEN webpage for
+updated versions. 
 
 In addition to the PCI card driver you also need CAENVMElib. This is included in 
 the kodiaq/caen folder as well and can be installed using the instructions in that 
@@ -38,7 +39,7 @@ Software requirements are relatively lightweight and consist of the normal build
 You will need g++, make, and autotools. Additionally you need the ncurses library
 for the display. On Ubuntu these can be installed by::
 
-  sudo apt-get install build-essential libncurses5-dev
+  sudo apt-get install build-essential automake autoconf libtool libncurses5-dev
 
 If you want to write data as well as reading is (generally the point of a DAQ) you will
 need some output method installed. Currently kodiaq supports writing to either a mongodb
@@ -47,7 +48,8 @@ database or pbf files.
 To write to mongodb you will need to install a mongodb database somewhere to write to. 
 The database should run at least mongodb 2.6. Connection to the database is defined in 
 the options file. The DAQ program also needs the mongodb c++ driver (26-compat version 
-as of 9.9.2014), which can be obtained from http://www.mongodb.com. 
+as of 9.9.2014), which can be obtained from http://www.mongodb.com. The readme file has 
+step by step instructions on installing this driver.
 
 To write to files you need to install libpbf from https://github.com/XENON1T/libpbf.
 

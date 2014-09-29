@@ -2,17 +2,16 @@
 Deployment of the Full System
 =============================
 
-kodiaq consists of three parts:
+kodiaq consists of two parts:
 
 * The master module runs on one computer and manages the entire system
 * Slave modules run on each readout PC and drive the boards
-* User modules are used to log into the master and steer the DAQ
 
-All of these modules are required for running. Installation and
+Both of these modules are required for running in networked mode. Installation and
 configuration of the modules will be described in this section.
 
-All three modules require the libkodiaq, which is compiled
-automatically no matter which modules are added. The libkodiaq library contains
+Both modules require the libkodiaq, which is compiled
+automatically no matter which options are given. The libkodiaq library contains
 shared code for the network protocols, options file handling, logging,
 and other assorted helper functions. The source for this library is
 found in src/common.
@@ -21,22 +20,20 @@ Building the software is done using autotools. Line-by-line
 instructions are given below for each module, however in general the
 software is simply compiled by calling: ::
 
-  ./configure
+  ./configure --enable-all
   make
 
 Some of the modules have unique dependencies not shared by the others.
-For example the master and slave modules require the mongodb driver
-while the user does not. End users may not want to install mongodb
-just to use the DAQ UI. Therefore the configure script has several
+For example the master module require the mongodb driver
+while the slave module does not (if no mongodb output is needed). 
+The configure script has several
 flags that tell kodiaq which modules to include.
 
 .. cssclass:: table-hover
 +--------------------+----------------------------------------+
 | Argument           |  Description                           |
 +====================+========================================+
-| {no arguments}     | Compile the user module only           |
-+--------------------+----------------------------------------+
-| --disable-user     | Do not compile the user module         |
+| {no arguments}     | Compile the lite module only           |
 +--------------------+----------------------------------------+
 | --enable-slave     | Compile the slave module               |
 +--------------------+----------------------------------------+
@@ -45,6 +42,8 @@ flags that tell kodiaq which modules to include.
 | --enable-ddc10     | Enable ddc-10 support for master       |
 +--------------------+----------------------------------------+
 | --enable-lite      | Compile standalone slave module        |
++--------------------+----------------------------------------+
+| --enable-all       | Compile all modules                    |
 +--------------------+----------------------------------------+
 
 In all cases the shared common directory is compiled. For each option
@@ -61,19 +60,16 @@ Summary of Dependencies per Module
 +====================+========================================+
 | common             | | * c++ compiler (i.e. gcc)            |
 +--------------------+----------------------------------------+
-| user               | | * libncurses-dev                     |
-|                    | | * must contain libmenu, libform, and |
-|                    | |   libtinfo                           |
-+--------------------+----------------------------------------+
 | slave/lite         | | * libpthread-dev                     |
 |                    | | * libCAENVME                         |
 |                    | | * libsnappy-dev                      |
 |                    | | * libmongoclient (if mongodb output  |
 |                    | |   is required)                       |
-|                    | | * libprotobuf-dev                    |
+|                    | | * libprotobuf-dev (if file output    |
+|                    | |   is required                        |
 +--------------------+----------------------------------------+
-| master             | | * libmongoclient (if mongodb output  |
-|                    | |   is required)                       |
+| master             | | * libmongoclient                     |
+|                    | | * libboost-all-dev                   |
 +--------------------+----------------------------------------+
 | ddc10              | | * libtcl8.5                          |
 |                    | | * libexpect                          |
@@ -88,18 +84,20 @@ specific information on each step will be found in later sections.
 
 1. Hook up the hardware. A readout PC (from now on called a slave)
    needs a CAEN A2818 or A3818 PCI(e) card. Up to 8 digitizers can
-   be hooked up via optical link. You also need one V2718 crate
-   controller with output '0' fanned to the s-in of all digitizers.
+   be hooked up in daisy chain via optical link. You also need one V2718 crate
+   controller with LEMO output '0' fanned to the s-in of all digitizers.
 2. Install the koSlave module on each slave PC. Start the daemon in
    a detached screen.
 3. Find a spot for the master module to live. It is suggested to
    use an independent PC as dispatcher but also possible to install
    it alongside a slave. Install the master here. Make sure the
    linkage between master and slave is defined correctly. Start the
-   master daemon in a detached screen.
+   master daemon in a detached screen. Follow the on-screen prompt to bring up the network.
 4. Write your options file. Use the default as a base. You will
-   need to define the physical electronics setup exactly.
-5. Log into the UI and start the DAQ!
+   need to define the physical electronics setup exactly. If using a web database you can 
+   use the UI to define your options.
+5. Log into the web database and start the DAQ. Or start the DAQ from the command line using
+   the master module (less cool but works).
 
 The specifics on installing the slave and master, as well as how to
 write an options file are given in the next sections.
@@ -121,19 +119,18 @@ to work.
 * There are several library dependencies
    * CAENVMElib (available from CAEN, this is a closed-source
      library)
-   * mongodb greater than version 2.4 (earlier versions can work with
-     a slight modification to the source code). Specifically
+   * mongodb cxx driver greater than version 2.6. Specifically
      lbmongoclient is needed. 
    * libsnappy for on-the-fly compression
    * libpthread for parallel processing
    * libpbf for file output
-   * Normal build libraries (build-essential package on ubuntu)
+   * Normal build libraries (build-essential package on ubuntu) as well as automake, autotools, and libtool
    
-.. note:: It is possible to compile without libmongoclient and/or libprotobuf/libpbf. If you compile without libmongoclient you will not be able to output to a mongodb. If you compile without libprotobuf or libpbf you will not be able to write to file. Depending on your installation one of these may be fine. You will be notified at the end of the configure script which output forms are available on your system.
+.. note:: It is possible to compile without libmongoclient and/or libpbf. If you compile without libmongoclient you will not be able to output to a mongodb. If you compile without libpbf you will not be able to write to file. Depending on your installation one of these may be fine. You will be notified at the end of the configure script which output forms are available for your installation.
 
 Assuming you want to install everything, do it as follows.::
 
-      apt-get install libsnappy-dev build-essential git-core scons libprotobuf-dev protobuf-compiler libboost-all-dev
+      apt-get install libsnappy-dev build-essential git-core scons libprotobuf-dev protobuf-compiler libboost-all-dev automake autotools libtool
 
 Now make a directory for the code and install libpbf::
 
@@ -153,21 +150,19 @@ We also want a newer version of mongodb so we can install that as well.::
       scons --use-system-boost --full install-mongoclient
       cd ..
 
-Since mongo seems to change how to do this with nearly every release you may prefer to check their most recent documentation.
+Since mongo seems to change procedures and requirements with nearly every release you may prefer to check their most recent documentation.
 
 Checkout the DAQ code from github as follows.::
 
      git clone https://github.com/XENON1T/kodiaq.git kodiaq
 
 Now compile the CAEN software. There is a copy of this bundled with kodiaq or you can get the most recent versions from http://www.caen.it. The CAEN software is in kodiaq/caen. You need to install CAENVMElib and the driver for your PCI card (A2818 or A3818). The instructions for installation are given in the README files within these directories. 
-.. note:: As of 30.05.2014 the CAEN A2818 driver is not compatible with linux kernel >=3.10. A modified version of this driver (A2818Drv-dc) is included with kodiaq and should be used in this case. It might be prudent to check for an update from CAEN and if there is one remove the modified version from kodiaq and replace with the new one.
      
 Everything should be in place so you can now compile the kodiaq package itself.::
     
       cd kodiaq (top-level directory)
-      ./configure --enable-slave --disable-user
+      ./configure --enable-slave 
       make
-.. note:: If you get an error that the compiler can't find libncurses you probably forgot or intentionally omitted --disable-user. If you want the user module you need libncurses-5-dev. 
 
 The connection to the master must also be defined. Right now this is
 hard-coded in the koSlave.cc file. The line
@@ -204,45 +199,10 @@ The DDC-10 module uses telnet and requires libtcl8.5 and libexpect.
 
 Run Modes
 ^^^^^^^^^^^^^
-The operational modes for the DAQ are defined in
-src/master/data/RunModes.ini. This file is simply a list where the
-first entry is a string with a run mode identifier and the second
-entry is the path to the .ini file for that mode. This file can be
-edited while the master is running. For an exampe .ini file take a
-look in src/master/data/RunModes/DAQOptionsMaster.ini. 
+The operational mode for the DAQ can be pulled from an online mongodb database 
+or defined in a local file (src/master/DAQConfig.ini). The options with explanations are
+found later in this document or in src/master/data/RunModes/DAQOptionsMaster.ini. 
 
-
-Deployment of the Standalone Reader Module
-------------------------------------------
-
-It is also possible to deploy a standalone module for running small
-DAQ systems. This consists of the slave module which is steered via a
-text-based interface on the console.
-
-To deploy the standalone module, make sure all the same dependencies are met as
-for the slave module described previously. The standalone module additionally requires libncurses5-dev. Build using the following commands: ::
-
-    cd kodiaq
-    ./configure --enable-lite
-    make
-
-.. note:: As with the slave module, the lite module will automatically detect if you have libmongoclient (for mongodb output) and libpbf/libprotobuf (for file output). If you are missing these libraries certain output modes will be unavailable. You will be informed at the end of the configure script which output modes have been found on your system.
-
-Assuming you are successful, the koSlave executable should be
-installed with a special flag that allows local operation. To operate
-this module, use the script in the klite directory: ::
-
-    cd klite
-    ./StartDAQ.sh
-
-This will start the DAQ with the options defined in
-klite/DAQConfig.ini. Please note that editing of the DAQConfig.ini
-file is intended for expert users only. The available parameters in
-this file are described later in this documentation.
-
-The lite program has only two options. The DAQ is started with the 's'
-key. Pressing the 'q' key at any time will shut down the DAQ and stop
-the program.
 
 
 

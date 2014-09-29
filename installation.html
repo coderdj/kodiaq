@@ -155,7 +155,6 @@
 <li class="toctree-l3"><a class="reference internal" href="deployment.html#run-modes">Run Modes</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="deployment.html#deployment-of-the-standalone-reader-module">Deployment of the Standalone Reader Module</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="options.html">DAQ Options</a><ul>
@@ -219,14 +218,15 @@ a Caen V1724 is mediated by either an A2818 or A3818 PCI(e) card. This card
 should be installed in your computer and configured according to the manufacturer&#8217;s
 instructions. See <a class="reference external" href="http://www.caen.it">http://www.caen.it</a> for details.</p>
 <p>For convenience the PCI card drivers are included in the caen folder in the
-kodiaq top-level directory.</p>
+kodiaq top-level directory. However it is recommended to check the CAEN webpage for
+updated versions.</p>
 <p>In addition to the PCI card driver you also need CAENVMElib. This is included in
 the kodiaq/caen folder as well and can be installed using the instructions in that
 directory.</p>
 <p>Software requirements are relatively lightweight and consist of the normal build tools.
 You will need g++, make, and autotools. Additionally you need the ncurses library
 for the display. On Ubuntu these can be installed by:</p>
-<div class="highlight-python"><div class="highlight"><pre>sudo apt-get install build-essential libncurses5-dev
+<div class="highlight-python"><div class="highlight"><pre>sudo apt-get install build-essential automake autoconf libtool libncurses5-dev
 </pre></div>
 </div>
 <p>If you want to write data as well as reading is (generally the point of a DAQ) you will
@@ -235,7 +235,8 @@ database or pbf files.</p>
 <p>To write to mongodb you will need to install a mongodb database somewhere to write to.
 The database should run at least mongodb 2.6. Connection to the database is defined in
 the options file. The DAQ program also needs the mongodb c++ driver (26-compat version
-as of 9.9.2014), which can be obtained from <a class="reference external" href="http://www.mongodb.com">http://www.mongodb.com</a>.</p>
+as of 9.9.2014), which can be obtained from <a class="reference external" href="http://www.mongodb.com">http://www.mongodb.com</a>. The readme file has
+step by step instructions on installing this driver.</p>
 <p>To write to files you need to install libpbf from <a class="reference external" href="https://github.com/XENON1T/libpbf">https://github.com/XENON1T/libpbf</a>.</p>
 </div>
 <div class="section" id="how-to-install">
