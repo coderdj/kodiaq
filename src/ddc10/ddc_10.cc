@@ -12,7 +12,7 @@
 
 #include <iostream>
 #include "ddc_10.hh"
-#include <expect.h>
+#include <tcl8.6/expect.h>
 #include <sys/wait.h>
 #include <math.h>
 
