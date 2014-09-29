@@ -85,7 +85,7 @@ AS_IF([test "x$enable_ddc10" = "xyes"], [
     AM_CONDITIONAL(WITH_DDC10, true)
     AC_DEFINE(WITH_DDC10,[],[Compile with DDC HE veto support])    
 #    AC_CHECK_LIB([tcl8.5],main,[],AC_MSG_ERROR)
-    AC_CHECK_LIB([expect],exp_popen,[],AC_MSG_ERROR)
+    AC_CHECK_LIB([expect],main,[],AC_MSG_ERROR)
     ], [
     AM_CONDITIONAL(WITH_DDC10,false)
     ])
@@ -103,7 +103,8 @@ AS_IF([test "x$enable_all" = "xyes"], [
     AC_DEFINE(WITH_SLAVE,[],[Compile slave module])
     AC_DEFINE(WITH_DDC10,[],[Compile with DDC HE veto support])
 #    AC_CHECK_LIB([tcl8.5],main,[],AC_MSG_ERROR([libtcl8.5 not found]))
-    AC_CHECK_LIB([expect],exp_popen,[],AC_MSG_ERROR([libexpect not found]))
+#    AC_CHECK_LIB([expect],exp_popen,[],AC_MSG_ERROR([libexpect not found]))
+    AC_CHECK_LIB([expect],main,[],AC_MSG_ERROR([libexpect not found]))
     AC_CHECK_LIB(pthread,pthread_mutex_init,[],AC_MSG_ERROR([libpthread missing.]))
     AC_CHECK_LIB(CAENVME,CAENVME_Init,[],AC_MSG_ERROR([libCAENVME missing.]))
     AC_CHECK_LIB(snappy,_ZN6snappy11RawCompressEPKcmPcPm,[],AC_MSG_ERROR([libsnappy missing.]))
