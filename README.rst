@@ -43,6 +43,7 @@ Prerequisites:
    * CAEN A2818 or A3818 installed and configured
    * CAENVMElib installed, included in kodiaq/caen. Follow instructions in the readme
    * libncurses5-dev, also libmongoclient (for mongodb support) or libpbf (for file support)
+   * For compilation (on ubuntu) build-essential, autoconf, automake, libtool
   
 Steps to build and run the standalone module:
    1. ./configure --enable-lite 
