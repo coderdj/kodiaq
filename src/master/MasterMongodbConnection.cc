@@ -50,7 +50,7 @@ void MasterMongodbConnection::InsertOnline(string collection,mongo::BSONObj bson
 }
 
 int MasterMongodbConnection::Initialize(string user, string runMode, string name,
-					koOptions *options, bool onlineOnly)
+					koOptions *options)
 /*
   At run start create a new run document and put it into the online.runs database.
   The OID of this document is saved as a private member so the document can be 
@@ -66,52 +66,76 @@ int MasterMongodbConnection::Initialize(string user, string runMode, string name
 		  	     
  */
 {
-  fOptions = options;
+  // First create the collection on the buffer db so the event builder doesn't complain
+  mongo::DBClientConnection bufferDB;
+  try     {
+    bufferDB.connect( options->mongo_address );
+  }
+  catch(const mongo::DBException &e)    {
+    stringstream ss;
+    ss<<"Problem connecting to mongo buffer. Caught exception "<<e.what();
+    SendLogMessage( ss.str(), KOMESS_ERROR );
+    return -1;
+  }
+  stringstream collectionName;
+  collectionName << options->mongo_database << "." << options->mongo_collection;
+  bufferDB.createCollection( collectionName.str() );
          
-  //Create a bson object with the basic run information
-  mongo::BSONObjBuilder b;
-  b.genOID();
-  b.append("runmode",runMode);
-  b.append("runtype","bern_test_daq");
-  b.append("starttime",0);
-  b.append("user",user);
-  b.append("compressed",options->compression);
-  b.append("data_taking_ended",false);
-  b.append("error",false);
-  b.append("trigger_ended",false);
-  b.append("processing_ended",false);
-  b.append("saved_to_file",false);
-  b.append("name",name);
- 
-  // put in .ini file
+  //Create a bson object with the run information
+  mongo::BSONObjBuilder builder;
+  builder.genOID();
+
+  // event builder sub object
+  mongo::BSONObjBuilder trigger_sub; 
+  trigger_sub.append( "mode","bern_test_daq" );    // Hardcoded for now since only 1 mode
+  trigger_sub.append( "trigger_ended", false );
+
+  builder.append( "trigger", trigger_sub.obj() );
+
+  // reader sub object
   stringstream optionsStream;
-  options->ToStream(&optionsStream);
-  b.append("daq_options",optionsStream.str());
+  options->ToStream( &optionsStream );
+  mongo::BSONObjBuilder reader_sub;
+  reader_sub.append( "compressed", options->compression );
+  reader_sub.append( "starttime", 0 );
+  reader_sub.append( "data_taking_ended", false );
+  reader_sub.append( "options", optionsStream.str() );  
+  mongo::BSONObjBuilder storageSub;
+  storageSub.append( "dbname", options->mongo_database );
+  storageSub.append( "dbcollection", options->mongo_collection );
+  storageSub.append( "dbaddr", options->mongo_address );
+  reader_sub.append( "storage_buffer", storageSub.obj() );
+
+  builder.append( "reader", reader_sub.obj() );
+
+  // processor sub object
+  mongo::BSONObjBuilder processor_sub;
+  processor_sub.append( "mode", "default" ); // Hardcoded now since only 1 mode
+  builder.append( "processor", processor_sub.obj() );
+
+  // top-level fields 
+  builder.append("runmode",runMode);
+  builder.append("user",user);
+  builder.append("name",name);  
 
   //put in start time
   time_t currentTime;
   struct tm *starttime;
   time(&currentTime);
   starttime = localtime(&currentTime);
-  b.appendTimeT("starttimestamp",mktime(starttime));       
+  long offset = starttime->tm_gmtoff;
+  builder.appendTimeT("starttimestamp",currentTime+offset);//mktime(starttime));       
    
   //insert into collection
-  mongo::BSONObj bObj = b.obj();
-  try   {	
-    if(!onlineOnly) {
-      stringstream collName;
-      collName<<fOptions->mongo_database<<"."<<fOptions->mongo_collection;
-      InsertOnline(collName.str(),bObj);
-    }
-    InsertOnline("online.runs",bObj);
-  }
-  catch (const mongo::DBException &e) {
-    if(fLog!=NULL) fLog->Error("MasterMongodbConnection::Initialize - Error inserting run information doc.");
-    return -1;
-  }   
+  mongo::BSONObj bObj = builder.obj();
+  
+  InsertOnline("online.runs",bObj);
+
+  // store OID so you can update the end time
   mongo::BSONElement OIDElement;
   bObj.getObjectID(OIDElement);
   fLastDocOID=OIDElement.__oid();
+
   return 0;   
 }
 
@@ -135,6 +159,8 @@ int MasterMongodbConnection::UpdateEndTime(bool onlineOnly)
       struct tm *currenttime;
       time(&nowTime);
       currenttime = localtime(&nowTime);
+      long offset = currenttime->tm_gmtoff;
+      
 
       mongo::BSONObj res;
       string onlinesubstr = "runs";
@@ -142,7 +168,7 @@ int MasterMongodbConnection::UpdateEndTime(bool onlineOnly)
       mongo::BSONObjBuilder bo;
       bo << "findandmodify" << onlinesubstr.c_str() << 
 	"query" << BSON("_id" << fLastDocOID) << 
-	"update" << BSON("$set" << BSON("endtimestamp" <<mongo::Date_t(1000*mktime(currenttime)) << "data_taking_ended" << true)); 
+	"update" << BSON("$set" << BSON("endtimestamp" <<mongo::Date_t(1000*(nowTime+offset)) << "data_taking_ended" << true)); 
       
       assert(fMongoDB.runCommand("online",bo.obj(),res));
    }
@@ -164,6 +190,8 @@ void MasterMongodbConnection::SendLogMessage(string message, int priority)
   struct tm *starttime;
   time(&currentTime);
   starttime = localtime(&currentTime);
+  long offset = starttime->tm_gmtoff;
+
   int ID=-1;
   // For WARNINGS and ERRORS we put an additional entry into the alert DB
   // users then get an immediate alert
@@ -179,7 +207,7 @@ void MasterMongodbConnection::SendLogMessage(string message, int priority)
     alert.genOID();
     alert.append("idnum",ID);
     alert.append("priority",priority);
-    alert.appendTimeT("timestamp",mktime(starttime));
+    alert.appendTimeT("timestamp",currentTime+offset);
     alert.append("sender","dispatcher");
     alert.append("message",message);
     alert.append("addressed",false);
@@ -203,7 +231,8 @@ void MasterMongodbConnection::SendLogMessage(string message, int priority)
    b.genOID();
    b.append("message",message);
    b.append("priority",priority);
-   b.appendTimeT("time",mktime(starttime));
+   b.appendTimeT("time",currentTime+offset);	
+   b.append("sender","dispatcher");
    InsertOnline("online.log",b.obj());
   
 }
@@ -219,7 +248,11 @@ void MasterMongodbConnection::AddRates(koStatusPacket_t *DAQStatus)
       mongo::BSONObjBuilder b;
       time_t currentTime;
       time(&currentTime);
-      b.appendTimeT("createdAt",currentTime);
+      struct tm *starttime;
+      starttime = localtime(&currentTime);
+      long offset = starttime->tm_gmtoff;
+
+      b.appendTimeT("createdAt",currentTime+offset);
       b.append("node",DAQStatus->Slaves[x].name);
       b.append("bltrate",DAQStatus->Slaves[x].Freq);
       b.append("datarate",DAQStatus->Slaves[x].Rate);
@@ -238,7 +271,11 @@ void MasterMongodbConnection::UpdateDAQStatus(koStatusPacket_t *DAQStatus)
    mongo::BSONObjBuilder b;
    time_t currentTime;
    time(&currentTime);
-   b.appendTimeT("createdAt",currentTime);
+   struct tm *starttime;
+   starttime = localtime(&currentTime);
+   long offset = starttime->tm_gmtoff;
+
+   b.appendTimeT("createdAt",currentTime+offset);
    b.append("timeseconds",(int)currentTime);
    b.append("mode",DAQStatus->RunMode);
    if(DAQStatus->DAQState==KODAQ_ARMED)
