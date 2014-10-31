@@ -1,6 +1,0 @@
-Usage:
-
-Edit DAQConfig.ini
-./StartDAQ
-
-These are both softlinks to the actual .ini file and executable.
