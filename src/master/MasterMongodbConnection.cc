@@ -168,7 +168,7 @@ int MasterMongodbConnection::UpdateEndTime(bool onlineOnly)
       mongo::BSONObjBuilder bo;
       bo << "findandmodify" << onlinesubstr.c_str() << 
 	"query" << BSON("_id" << fLastDocOID) << 
-	"update" << BSON("$set" << BSON("endtimestamp" <<mongo::Date_t(1000*(nowTime+offset)) << "data_taking_ended" << true)); 
+	"update" << BSON("$set" << BSON("endtimestamp" <<mongo::Date_t(1000*(nowTime+offset)) << "reader.data_taking_ended" << true)); 
       
       assert(fMongoDB.runCommand("online",bo.obj(),res));
    }
@@ -379,6 +379,8 @@ int MasterMongodbConnection::PullRunMode(string name, koOptions &options)
    options.mongo_min_insert_size=(res.getIntField("mongo_min_insert_size"));
    options.file_path=(res.getIntField("file_path"));
    options.file_events_per_file=(res.getIntField("file_events_per_file"));
+   options.led_trigger = (res.getIntField("led_trigger"));
+   options.muon_veto = (res.getIntField("muon_veto"));
 
    // Do we have DDC-10 options? Then fill them
    mongo::BSONObj ddcdict = res.getObjectField("ddc10_options");

@@ -28,5 +28,9 @@ class CBV2718 : public VMEBoard {
    int SendStopSignal();
    
  private:
+
+  bool b_startwithsin;
+  bool b_led_on;
+  bool b_muonveto_on;
 };
 #endif

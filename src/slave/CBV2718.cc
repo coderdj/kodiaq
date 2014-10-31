@@ -15,6 +15,9 @@
 
 CBV2718::CBV2718()
 {
+  b_startwithsin = false;
+  b_led_on = false;
+  b_muonveto_on = false;
 }
 
 CBV2718::~CBV2718()
@@ -24,12 +27,23 @@ CBV2718::~CBV2718()
 CBV2718::CBV2718(board_definition_t BID, koLogger *kLog)
         :VMEBoard(BID,kLog)
 {
+  b_startwithsin = false;
+  b_led_on = false;
+  b_muonveto_on = false;
 }
 
 int CBV2718::Initialize(koOptions *options)
 {
    //Set output multiplex register to channels 0-4 to configure them to 
    //output whatever is written to the output buffer
+  
+  b_startwithsin = false;
+  b_led_on = false;
+  b_muonveto_on = false;
+  if(options->led_trigger)
+    b_led_on = true;
+  if(options->muon_veto)
+    b_muonveto_on = true;
    unsigned int data = 0x3FF; 
    if(CAENVME_WriteRegister(fCrateHandle,cvOutMuxRegSet,data)!=cvSuccess)
      cout<<"Can't write to CC!"<<endl;
@@ -40,8 +54,6 @@ int CBV2718::Initialize(koOptions *options)
 
 int CBV2718::SendStartSignal()
 {
-   cout<<"Really"<<endl;     
-   unsigned int data = 0x7C0;
 
    //configure line 3 to pulse (to start pulser) 
    CAENVME_SetOutputConf(fCrateHandle,cvOutput3,cvDirect,
@@ -50,6 +62,15 @@ int CBV2718::SendStartSignal()
 			 cvUnit25ns,1,
 			 cvManualSW,cvManualSW);
    
+   unsigned int data = 0x7C0;
+   if(b_muonveto_on && ! b_led_on) // Set output 1 to high
+     data = 0x6C0;
+   else if(b_led_on && ! b_muonveto_on)
+     data = 0x740;
+   else if(!b_led_on && !b_muonveto_on)
+     data = 0x640;
+  
+   // This is the S-IN
    if(CAENVME_WriteRegister(fCrateHandle,cvOutRegSet,data)!=0)
      return -1;
    

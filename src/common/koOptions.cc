@@ -48,7 +48,11 @@ void koOptions::Reset()
   //Reset file options
   file_path = "";
   file_events_per_file = -1;
-   
+
+  //Extra options
+  muon_veto = false;
+  led_trigger = false;
+
 #ifdef HAS_DDC
   //Reset ddc10 options
   fDDC10Options.Initialized=false;
@@ -134,6 +138,10 @@ int koOptions::ReadParameterFile(string filename)
 	file_path = words[1];
       else if(words[0] == "file_events_per_file")
 	file_events_per_file = koHelper::StringToInt(words[1]);
+      else if(words[0] == "led_trigger")
+	led_trigger = koHelper::StringToInt(words[1]);
+      else if(words[0] == "muon_veto")
+	muon_veto = koHelper::StringToInt(words[1]);
       else if(words[0] == "register") {
 	vme_option_t reg;
 	if(words.size()<3) break;
@@ -196,6 +204,8 @@ void koOptions::ToStream(stringstream *retstream)
   (*retstream)<<"mongo_min_insert_size "<<mongo_min_insert_size<<endl;
   (*retstream)<<"file_path "<<file_path<<endl;
   (*retstream)<<"file_events_per_file "<<file_events_per_file<<endl;
+  (*retstream)<<"led_trigger "<<led_trigger<<endl;
+  (*retstream)<<"muon_veto "<<muon_veto<<endl;
   for(unsigned int x=0;x<m_registers.size();x++){
     if(m_registers[x].node!='x')
       (*retstream)<<"%"<<m_registers[x].node;

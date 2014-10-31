@@ -153,7 +153,11 @@ public:
   string                     file_path;
   int                        file_events_per_file;
 
-  void                      Reset();   
+  // Extra options
+  int                        muon_veto;
+  int                        led_trigger;
+  
+  void                       Reset();   
    
 };
 #endif
