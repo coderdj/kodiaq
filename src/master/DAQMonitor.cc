@@ -221,7 +221,7 @@ int DAQMonitor::Start(string user, string comment, koOptions *options)
   m_DAQNetwork->SendCommand("START");  
   stringstream mess;
   mess<<"Run <b>"<<m_DAQStatus.RunInfo.RunNumber<<"</b> started by "<<user;
-  if( comment != "" )
+  if( comment.length() > 0 )
     mess<<" : "<<comment;  
   if(m_Mongodb!=NULL){
     m_Mongodb->SendLogMessage(mess.str(),KOMESS_STATE);
@@ -238,7 +238,9 @@ int DAQMonitor::Stop(string user,string comment)
 {
   m_DAQNetwork->SendCommand("STOP");
   stringstream mess;
-  mess<<"Run <b>"<<m_DAQStatus.RunInfo.RunNumber<<"</b> stopped by "<<user<<" : "<<comment;
+  mess<<"Run <b>"<<m_DAQStatus.RunInfo.RunNumber<<"</b> stopped by "<<user;
+  if(comment.length() > 0 )
+    mess<<" : "<<comment;
   if(m_Mongodb!=NULL){
     m_Mongodb->SendLogMessage(mess.str(),KOMESS_STATE);
     m_Mongodb->UpdateEndTime();
