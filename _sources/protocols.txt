@@ -46,6 +46,7 @@ The document has the following fields (more can be added).
     * *compressed* - {int} 0 for non-compressed data, 1 for data compressed with snappy
     * *name* - {string} Name of this run (contains the start date and time usually)
     * *daq_options* - {string} A string containing the options file used for this run (string output of a koOptions object
+    * *comments* - List of comment objects. Comment objects contain fields 'date' (datetime), 'user' (string), and 'text' (string). 
     * *data_taking_ended* - {bool} Set to true when the DAQ stops the run normally
     * *trigger_ended* - {bool} Set to true once the event builder finishes with the run
     * *processing_ended* - {bool} Set to true once the online processor finishes the run. The online processor should also make additional entries into the run object saying where the processed file was stored and what options were used for processing.

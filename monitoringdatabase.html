@@ -153,7 +153,6 @@
 <li class="toctree-l3"><a class="reference internal" href="deployment.html#run-modes">Run Modes</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="deployment.html#deployment-of-the-standalone-reader-module">Deployment of the Standalone Reader Module</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="options.html">DAQ Options</a><ul>
@@ -165,10 +164,9 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="protocols.html">Data Formats</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="protocols.html#output-to-mongodb">Output to Mongodb</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="protocols.html#mongodb">Mongodb</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="protocols.html#run-control-document">Run Control Document</a></li>
 <li class="toctree-l3"><a class="reference internal" href="protocols.html#data-documents">Data Documents</a></li>
-<li class="toctree-l3"><a class="reference internal" href="protocols.html#data-format">Data Format</a></li>
 </ul>
 </li>
 </ul>
@@ -201,6 +199,9 @@ operational data. The data will be described in this section. This
 database is shared by the event builder, data processor, and file
 builder (all separate packages) and the databases corresponding to
 these elements can be found in their documentation.</p>
+<p>The code for the monitoring web frontend is in the OnlineMonitor package. This
+frontend reads from the monitoring db and displays data. The DAQ can also be
+started and stopped via this interface.</p>
 </div>
 <div class="section" id="run-modes">
 <h1>Run Modes<a class="headerlink" href="#run-modes" title="Permalink to this headline">¶</a></h1>

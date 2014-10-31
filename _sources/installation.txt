@@ -39,7 +39,7 @@ Software requirements are relatively lightweight and consist of the normal build
 You will need g++, make, and autotools. Additionally you need the ncurses library
 for the display. On Ubuntu these can be installed by::
 
-  sudo apt-get install build-essential automake autoconf libtool libncurses5-dev
+  sudo apt-get install build-essential automake autoconf libtool libncurses5-dev libsnappy-dev
 
 If you want to write data as well as reading is (generally the point of a DAQ) you will
 need some output method installed. Currently kodiaq supports writing to either a mongodb

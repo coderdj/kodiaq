@@ -235,6 +235,7 @@ it is included here. An occurrence processing mode must be selected for this for
 <li><em>compressed</em> - {int} 0 for non-compressed data, 1 for data compressed with snappy</li>
 <li><em>name</em> - {string} Name of this run (contains the start date and time usually)</li>
 <li><em>daq_options</em> - {string} A string containing the options file used for this run (string output of a koOptions object</li>
+<li><em>comments</em> - List of comment objects. Comment objects contain fields &#8216;date&#8217; (datetime), &#8216;user&#8217; (string), and &#8216;text&#8217; (string).</li>
 <li><em>data_taking_ended</em> - {bool} Set to true when the DAQ stops the run normally</li>
 <li><em>trigger_ended</em> - {bool} Set to true once the event builder finishes with the run</li>
 <li><em>processing_ended</em> - {bool} Set to true once the online processor finishes the run. The online processor should also make additional entries into the run object saying where the processed file was stored and what options were used for processing.</li>

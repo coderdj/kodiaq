@@ -8,6 +8,10 @@ database is shared by the event builder, data processor, and file
 builder (all separate packages) and the databases corresponding to
 these elements can be found in their documentation.
 
+The code for the monitoring web frontend is in the OnlineMonitor package. This
+frontend reads from the monitoring db and displays data. The DAQ can also be 
+started and stopped via this interface.
+
 ==========
 Run Modes
 ==========

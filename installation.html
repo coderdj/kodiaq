@@ -166,10 +166,9 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="protocols.html">Data Formats</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="protocols.html#output-to-mongodb">Output to Mongodb</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="protocols.html#mongodb">Mongodb</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="protocols.html#run-control-document">Run Control Document</a></li>
 <li class="toctree-l3"><a class="reference internal" href="protocols.html#data-documents">Data Documents</a></li>
-<li class="toctree-l3"><a class="reference internal" href="protocols.html#data-format">Data Format</a></li>
 </ul>
 </li>
 </ul>
@@ -226,7 +225,7 @@ directory.</p>
 <p>Software requirements are relatively lightweight and consist of the normal build tools.
 You will need g++, make, and autotools. Additionally you need the ncurses library
 for the display. On Ubuntu these can be installed by:</p>
-<div class="highlight-python"><div class="highlight"><pre>sudo apt-get install build-essential automake autoconf libtool libncurses5-dev
+<div class="highlight-python"><div class="highlight"><pre>sudo apt-get install build-essential automake autoconf libtool libncurses5-dev libsnappy-dev
 </pre></div>
 </div>
 <p>If you want to write data as well as reading is (generally the point of a DAQ) you will
