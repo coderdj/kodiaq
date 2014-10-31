@@ -44,7 +44,12 @@ Prerequisites:
    * CAENVMElib installed, included in kodiaq/caen. Follow instructions in the readme
    * libncurses5-dev, also libmongoclient (for mongodb support) or libpbf (for file support)
    * For compilation (on ubuntu) build-essential, autoconf, automake, libtool
-  
+   * For compression: libsnappy-dev
+
+To install the minimum required prerequisites on Ubuntu 14.04 run the following command::
+
+    sudo apt-get install build-essential automake autoconf libtool libncurses5-dev libsnappy-dev                
+
 Steps to build and run the standalone module:
    1. ./configure --enable-lite 
    2. make
@@ -86,11 +91,10 @@ Steps:
 	 * --enable-ddc10 to compile with support for DDC module. Only activated if koMaster is also compiled.
 	 * --enable-all to compile master (with ddc10 support), slave, and user programs
 	 * --enable-lite to compile a lite version of the software that is suitable for standalone systems	
+	Note: if configure doesn't work you may have to run ./autogen.sh to regenerate the configuration scripts.
      3. make
      4. The executables for master/slave programs should be
-     available in src/*.The folder klite contains shortcuts to the lite
-     version executable and the initializeation file. Please refer to
-     the online documentation to configure this file.
+     available in src/*.
      
    
 Contact
