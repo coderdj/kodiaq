@@ -448,7 +448,9 @@ void DataProcessor::Process()
       eventIndices=sizevec=channels=times=NULL;      
     }//end loop through digis
   }//end while loop
+#ifdef HAVE_LIBMONGOCLIENT
   delete vMongoInsertVec;
+#endif
   return;
 }
 
