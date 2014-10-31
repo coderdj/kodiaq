@@ -453,7 +453,7 @@ int CBV1724::DetermineBaselines()
       //shooting for 16000. best is if we UNDERshoot and then can more accurately adjust DAC
       double discrepancy = baseline-idealBaseline;      
       //cout<<"Discrepancy "<<discrepancy<<" old BL: "<<DACValues[(*dchannels)[x]]<<endl;
-      if(abs(discrepancy)<=maxDev) { 
+      if(fabs(discrepancy)<=maxDev) { 
 	channelFinished[(*dchannels)[x]]=true;
 	continue;
       }
