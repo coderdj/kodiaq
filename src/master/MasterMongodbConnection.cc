@@ -50,7 +50,7 @@ void MasterMongodbConnection::InsertOnline(string collection,mongo::BSONObj bson
 }
 
 int MasterMongodbConnection::Initialize(string user, string runMode, string name,
-					koOptions *options)
+					string comment, koOptions *options)
 /*
   At run start create a new run document and put it into the online.runs database.
   The OID of this document is saved as a private member so the document can be 
@@ -89,7 +89,7 @@ int MasterMongodbConnection::Initialize(string user, string runMode, string name
   mongo::BSONObjBuilder trigger_sub; 
   trigger_sub.append( "mode","bern_test_daq" );    // Hardcoded for now since only 1 mode
   trigger_sub.append( "trigger_ended", false );
-
+  trigger_sub.append( "trigger_status", "waiting_to_be_processed" );
   builder.append( "trigger", trigger_sub.obj() );
 
   // reader sub object
@@ -125,6 +125,16 @@ int MasterMongodbConnection::Initialize(string user, string runMode, string name
   starttime = localtime(&currentTime);
   long offset = starttime->tm_gmtoff;
   builder.appendTimeT("starttimestamp",currentTime+offset);//mktime(starttime));       
+  // if comment, add comment sub-object                                              
+  if(comment != ""){
+    mongo::BSONArrayBuilder comment_arr;
+    mongo::BSONObjBuilder comment_sub;    
+    comment_sub.append( "text", comment);
+    comment_sub.appendTimeT( "date", currentTime+offset );
+    comment_sub.append( "user", user );
+    comment_arr.append( comment_sub.obj() );
+    builder.appendArray( "comments", comment_arr.arr() );
+  }
    
   //insert into collection
   mongo::BSONObj bObj = builder.obj();

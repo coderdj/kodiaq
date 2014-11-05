@@ -34,7 +34,7 @@ public:
   //           information in the koOptions object
   // 
   int          Initialize(string user, string runMode, string name,
-			   koOptions *options);
+			  string comment, koOptions *options);
   //
   // Name    : UpdateEndTime
   // Purpose : Updates run control document with the time the run ended.
