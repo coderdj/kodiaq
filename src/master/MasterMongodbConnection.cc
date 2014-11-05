@@ -375,6 +375,13 @@ int MasterMongodbConnection::PullRunMode(string name, koOptions &options)
    options.mongo_address=(res.getStringField("mongo_address"));
    options.mongo_database=(res.getStringField("mongo_database"));
    options.mongo_collection=(res.getStringField("mongo_collection"));
+   // Check for dynamic run name character
+   if( options.mongo_collection[options.mongo_collection.size()-1] == '*' ) {
+     options.mongo_collection = options.mongo_collection.
+       substr( 0, options.mongo_collection.size() - 1 );
+     options.dynamic_run_names = true;
+   }
+
    options.mongo_write_concern=(res.getIntField("mongo_write_concern"));
    options.mongo_min_insert_size=(res.getIntField("mongo_min_insert_size"));
    options.file_path=(res.getIntField("file_path"));

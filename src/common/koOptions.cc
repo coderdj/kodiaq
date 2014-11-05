@@ -126,8 +126,14 @@ int koOptions::ReadParameterFile(string filename)
 	processing_readout_threshold = koHelper::StringToInt(words[1]);
       else if(words[0] == "mongo_address")
 	mongo_address = words[1];
-      else if(words[0] == "mongo_collection")
+      else if(words[0] == "mongo_collection"){
 	mongo_collection = words[1];
+	if(mongo_collection[mongo_collection.size()-1] == '*' ) {
+	  dynamic_run_names = true;
+	  mongo_collection = mongo_collection.substr
+	    (0, mongo_collection.size() - 1 );
+	}
+      }
       else if(words[0] == "mongo_database")
 	mongo_database = words[1];
       else if(words[0] == "mongo_write_concern")
