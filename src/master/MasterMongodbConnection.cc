@@ -80,6 +80,7 @@ int MasterMongodbConnection::Initialize(string user, string runMode, string name
   stringstream collectionName;
   collectionName << options->mongo_database << "." << options->mongo_collection;
   bufferDB.createCollection( collectionName.str() );
+  bufferDB.ensureIndex( collectionName.str(), mongo::fromjson( "{ time: -1, module: -1, _id: -1}" ));
          
   //Create a bson object with the run information
   mongo::BSONObjBuilder builder;
