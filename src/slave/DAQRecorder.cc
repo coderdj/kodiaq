@@ -173,7 +173,7 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
      // (*m_vScopedConnections[ID])->insert(cS.str(),(*insvec));
 
      // New insert format. Put insvec into sub-docs of the main BSON
-     long long minTime = 0xFFFFFFFFFFFFFFFF, maxTime = -1; 
+     long long minTime = 0x7FFFFFFFFFFFFFFF, maxTime = -1; 
      mongo::BSONArrayBuilder subdoc_array;
      for( unsigned int x = 0; x < insvec->size(); x++ ) {
        // insvec should be in temporal order somewhat, but might not be perfect. 
