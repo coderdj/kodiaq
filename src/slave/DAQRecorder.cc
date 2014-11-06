@@ -124,12 +124,18 @@ int DAQRecorder_mongodb::RegisterProcessor()
    retval = m_vScopedConnections.size()-1;
    pthread_mutex_unlock(&m_ConnectionMutex);
 
+   // These lines create a capped collection with name DB_ID.collection
+   // So one database is made per thread
+   // stringstream cS;
+   // int ID = m_vScopedConnections.size()-1;
+   // cS<<m_options->mongo_database<<"_"<<ID<<"."<<m_options->mongo_collection;
+   // conn->conn().createCollection(cS.str(),1000000000,true); //1GB capped collection 
+   
+   // The following line connects to a capped collection (one collection for all threads)
    stringstream cS;
-   int ID = m_vScopedConnections.size()-1;
-   cS<<m_options->mongo_database<<"_"<<ID<<"."<<m_options->mongo_collection;
-   //create capped collection
-   conn->conn().createCollection(cS.str(),1000000000,true); //1GB capped collection 
-      
+   cS<<m_options->mongo_database<<"."<<m_options->mongo_collection;
+   conn->conn().createCollection(cS.str(),10000000000,true); // Capped at 10GB
+   
    return retval;
 }
 
