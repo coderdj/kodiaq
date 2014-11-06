@@ -204,7 +204,10 @@ void koOptions::ToStream(stringstream *retstream)
   (*retstream)<<"processing_num_threads "<<processing_num_threads<<endl;
   (*retstream)<<"processing_readout_threshold "<<processing_readout_threshold<<endl;
   (*retstream)<<"mongo_address "<<mongo_address<<endl;
-  (*retstream)<<"mongo_collection "<<mongo_collection<<endl;
+  (*retstream)<<"mongo_collection "<<mongo_collection;
+  if(dynamic_run_names) (*retstream)<<"*";
+  (*retstream)<<endl;
+  //(*retstream)<<"mongo_collection "<<mongo_collection<<endl;
   (*retstream)<<"mongo_database "<<mongo_database<<endl;
   (*retstream)<<"mongo_write_concern "<<mongo_write_concern<<endl;
   (*retstream)<<"mongo_min_insert_size "<<mongo_min_insert_size<<endl;

@@ -88,8 +88,8 @@ int MasterMongodbConnection::Initialize(string user, string runMode, string name
   // event builder sub object
   mongo::BSONObjBuilder trigger_sub; 
   trigger_sub.append( "mode","bern_test_daq" );    // Hardcoded for now since only 1 mode
-  trigger_sub.append( "trigger_ended", false );
-  trigger_sub.append( "trigger_status", "waiting_to_be_processed" );
+  trigger_sub.append( "ended", false );
+  trigger_sub.append( "status", "waiting_to_be_processed" );
   builder.append( "trigger", trigger_sub.obj() );
 
   // reader sub object
