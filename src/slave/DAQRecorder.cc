@@ -168,10 +168,28 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
    try  {
      stringstream cS;
      cS<<m_options->mongo_database<<"."<<m_options->mongo_collection;
-     //(*m_vScopedConnections[ID])->ensureIndex(m_koMongoOptions.Collection.c_str(), mongo::fromjson("{time:-1}"));
-     //(*m_vScopedConnections[ID])->insert(m_koMongoOptions.Collection.c_str(),
-     //(*insvec));
-     (*m_vScopedConnections[ID])->insert(cS.str(),(*insvec));
+     
+     // Normal bulk insert
+     // (*m_vScopedConnections[ID])->insert(cS.str(),(*insvec));
+
+     // New insert format. Put insvec into sub-docs of the main BSON
+     long long minTime = 0xFFFFFFFFFFFFFFFF, maxTime = -1; 
+     mongo::BSONArrayBuilder subdoc_array;
+     for( unsigned int x = 0; x < insvec->size(); x++ ) {
+       // insvec should be in temporal order somewhat, but might not be perfect. 
+       // so have to track min and max time manually
+       long long thisTime = (*insvec)[x].getField( "time" ).Long();
+       if ( thisTime < minTime ) minTime = thisTime;
+       if ( thisTime > maxTime ) maxTime = thisTime;
+       subdoc_array.append( (*insvec)[x] );
+     }
+       // Now make a master BSON doc
+       mongo::BSONObjBuilder docBuilder;
+       docBuilder.append( "time_min", minTime );
+       docBuilder.append( "time_max", maxTime );
+       docBuilder.appendArray( "bulk", subdoc_array.arr() );
+       (*m_vScopedConnections[ID])->insert( cS.str(), docBuilder.obj() );
+     
    }
    catch(const mongo::DBException &e)  {
       LogError("DAQRecorder_mongodb - Caught mongodb exception");
