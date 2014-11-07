@@ -148,6 +148,7 @@ public:
   string                     mongo_collection;
   int                        mongo_write_concern;
   int                        mongo_min_insert_size;
+  string                     mongo_output_format;
 
   // File output options
   string                     file_path;
@@ -156,6 +157,8 @@ public:
   // Extra options
   int                        muon_veto;
   int                        led_trigger;
+  string                     trigger_mode;
+  string                     data_processor_mode;
   
   void                       Reset();   
    

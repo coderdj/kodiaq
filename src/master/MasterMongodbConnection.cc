@@ -375,6 +375,8 @@ int MasterMongodbConnection::PullRunMode(string name, koOptions &options)
    options.creator=(res.getStringField("creator"));
    options.creation_date=(res.getStringField("creation_date"));
    options.write_mode=(res.getIntField("write_mode"));
+   options.trigger_mode = res.getStringField("trigger_mode");
+   options.data_processor_mode = res.getStringField("data_processor_mode");
    options.baseline_mode=(res.getIntField("baseline_mode"));
    options.run_start=(res.getIntField("run_start"));
    options.run_start_module=(res.getIntField("run_start_module"));
@@ -386,6 +388,7 @@ int MasterMongodbConnection::PullRunMode(string name, koOptions &options)
    options.mongo_address=(res.getStringField("mongo_address"));
    options.mongo_database=(res.getStringField("mongo_database"));
    options.mongo_collection=(res.getStringField("mongo_collection"));
+   options.mongo_output_format = res.getStringField("mongo_output_fomat");
    // Check for dynamic run name character
    if( options.mongo_collection[options.mongo_collection.size()-1] == '*' ) {
      options.mongo_collection = options.mongo_collection.

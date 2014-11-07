@@ -32,6 +32,7 @@ void koOptions::Reset()
   
   //Reset general
   name=creator=creation_date="";
+  trigger_mode = data_processor_mode = "none";
   
   //Reset run options
   write_mode = baseline_mode = run_start = run_start_module = 
@@ -41,7 +42,8 @@ void koOptions::Reset()
   //Reset mongodb options
   mongo_address = mongo_database = mongo_collection = "";
   mongo_write_concern = mongo_min_insert_size = -1;
-  
+  mongo_output_format = "default";
+
   //Reset processing options
   processing_mode = processing_num_threads = processing_readout_threshold = -1;
   
@@ -106,6 +108,10 @@ int koOptions::ReadParameterFile(string filename)
 	creator = words[1];
       else if(words[0] == "creation_date")
 	creation_date = words[1];
+      else if(words[0] == "trigger_mode")
+	trigger_mode = words[1];
+      else if(words[0] == "data_processor_mode")
+	data_processor_mode = words[1];
       else if(words[0] == "write_mode")
 	write_mode = koHelper::StringToInt(words[1]);
       else if(words[0] == "baseline_mode")
@@ -126,6 +132,8 @@ int koOptions::ReadParameterFile(string filename)
 	processing_readout_threshold = koHelper::StringToInt(words[1]);
       else if(words[0] == "mongo_address")
 	mongo_address = words[1];
+      else if(words[0] == "mongo_output_format")
+	mongo_output_format = words[1];
       else if(words[0] == "mongo_collection"){
 	mongo_collection = words[1];
 	if(mongo_collection[mongo_collection.size()-1] == '*' ) {
@@ -195,6 +203,8 @@ void koOptions::ToStream(stringstream *retstream)
   (*retstream)<<"creator "<<creator<<endl;
   (*retstream)<<"creation_date "<<creation_date<<endl;
   (*retstream)<<"write_mode "<<write_mode<<endl;
+  (*retstream)<<"trigger_mode "<<trigger_mode<<endl;
+  (*retstream)<<"data_processor_mode "<<data_processor_mode<<endl;
   (*retstream)<<"baseline_mode "<<baseline_mode<<endl;
   (*retstream)<<"run_start "<<run_start<<endl;
   (*retstream)<<"run_start_module "<<run_start_module<<endl;
@@ -205,6 +215,7 @@ void koOptions::ToStream(stringstream *retstream)
   (*retstream)<<"processing_readout_threshold "<<processing_readout_threshold<<endl;
   (*retstream)<<"mongo_address "<<mongo_address<<endl;
   (*retstream)<<"mongo_collection "<<mongo_collection;
+  (*retstream)<<"mongo_output_format "<<mongo_output_format;
   if(dynamic_run_names) (*retstream)<<"*";
   (*retstream)<<endl;
   //(*retstream)<<"mongo_collection "<<mongo_collection<<endl;
