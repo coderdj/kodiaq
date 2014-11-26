@@ -125,6 +125,7 @@ private:
 public:
   // General info
   string                     name;
+  string                     nickname;
   string                     creator;
   string                     creation_date;
   

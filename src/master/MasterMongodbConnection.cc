@@ -118,6 +118,7 @@ int MasterMongodbConnection::Initialize(string user, string runMode, string name
   builder.append("runmode",runMode);
   builder.append("user",user);
   builder.append("name",name);  
+  builder.append("shorttype",options->nickname);
 
   //put in start time
   time_t currentTime;
@@ -372,6 +373,7 @@ int MasterMongodbConnection::PullRunMode(string name, koOptions &options)
    //Set Options From Mongo
    cout<<"Retrieved mongo run mode "<<name<<endl;
    options.name=(res.getStringField("name"));
+   options.nickname=(res.getStringField("nickname"));
    options.creator=(res.getStringField("creator"));
    options.creation_date=(res.getStringField("creation_date"));
    options.write_mode=(res.getIntField("write_mode"));
@@ -388,7 +390,7 @@ int MasterMongodbConnection::PullRunMode(string name, koOptions &options)
    options.mongo_address=(res.getStringField("mongo_address"));
    options.mongo_database=(res.getStringField("mongo_database"));
    options.mongo_collection=(res.getStringField("mongo_collection"));
-   options.mongo_output_format = res.getStringField("mongo_output_fomat");
+   options.mongo_output_format = res.getStringField("mongo_output_format");
    // Check for dynamic run name character
    if( options.mongo_collection[options.mongo_collection.size()-1] == '*' ) {
      options.mongo_collection = options.mongo_collection.

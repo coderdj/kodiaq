@@ -31,7 +31,7 @@ void koOptions::Reset()
   m_registers.clear();
   
   //Reset general
-  name=creator=creation_date="";
+  name=nickname=creator=creation_date="";
   trigger_mode = data_processor_mode = "none";
   
   //Reset run options
@@ -103,7 +103,9 @@ int koOptions::ReadParameterFile(string filename)
       // Ugly if/else but what else to do in C++?
 
       if(words[0] == "name")
-	  name = words[1];
+	name = words[1];
+      else if(words[0] == "nickname")
+	nickname = words[1];
       else if(words[0] == "creator")
 	creator = words[1];
       else if(words[0] == "creation_date")
@@ -200,6 +202,7 @@ int koOptions::ReadParameterFile(string filename)
 void koOptions::ToStream(stringstream *retstream)
 {
   (*retstream)<<"name "<<name<<endl;
+  (*retstream)<<"nickname "<<nickname<<endl;
   (*retstream)<<"creator "<<creator<<endl;
   (*retstream)<<"creation_date "<<creation_date<<endl;
   (*retstream)<<"write_mode "<<write_mode<<endl;
