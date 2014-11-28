@@ -28,7 +28,8 @@ koLogger::~koLogger()
 
 koLogger::koLogger(string logpath)
 {
-   SetLogfile(logpath);
+  pthread_mutex_init(&fLogMutex,NULL);
+  SetLogfile(logpath);
 }
 
 void koLogger::SetLogfile(string logpath)
