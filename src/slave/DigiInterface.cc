@@ -58,7 +58,7 @@ int DigiInterface::Initialize(koOptions *options)
        BType = cvV2718;
      else  	{	   
        if(m_koLog!=NULL)
-	 m_koLog->Error("VMECrate::Define - Invalid link type, check file definition.");
+	 m_koLog->Error("DigiInterface::Initialize - Invalid link type, check file definition.");
        return -1;
      }
       
@@ -67,9 +67,10 @@ int DigiInterface::Initialize(koOptions *options)
 			   &tempHandle))!=cvSuccess){
        //throw exception?
        if(m_koLog!=NULL)
-	 m_koLog->Error("VMECrate::Define - Error in CAEN initialization");
+	 m_koLog->Error("DigiInterface::Initialize - Error in CAEN initialization");
        return -1;
      }      
+     cout<<"Initialized link ID: "<<Link.id<<" Crate: "<<Link.crate<<" with handle: "<<tempHandle<<endl;
      m_vCrateHandles.push_back(tempHandle);
      
      // define modules corresponding to this crate (inefficient

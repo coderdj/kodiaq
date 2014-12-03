@@ -18,6 +18,7 @@ AC_ENABLE_SHARED
 AC_DISABLE_STATIC
 LT_INIT
 
+
 ###########################
 # Compile Master Module
 ###########################

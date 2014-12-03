@@ -63,7 +63,10 @@ int koNetServer::PutUpNetwork()
 {
    //Check plausibility of ports
    if(fPORT<=0 || fDATAPORT<=0)  {
-      LogError("koNetServer::Connect - Bad options, check configuration.");
+     stringstream err;
+     err<<"koNetServer::Connect - Bad options. Can't connect with port "<<fPORT
+	<<" or data port "<<fDATAPORT;
+     LogError(err.str());
       return -1;
    }
    

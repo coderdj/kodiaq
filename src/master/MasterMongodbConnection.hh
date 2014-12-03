@@ -34,7 +34,7 @@ public:
   //           information in the koOptions object
   // 
   int          Initialize(string user, string runMode, string name,
-			  string comment, koOptions *options);
+			  string comment, string detector, koOptions *options);
   //
   // Name    : UpdateEndTime
   // Purpose : Updates run control document with the time the run ended.
@@ -58,13 +58,15 @@ public:
   // Purpose  : Update rate and status information in online DB. 
   //
   void         AddRates(koStatusPacket_t *DAQStatus);   
-  void         UpdateDAQStatus(koStatusPacket_t *DAQStatus);
+  void         UpdateDAQStatus(koStatusPacket_t *DAQStatus, 
+			       string detector="all");
 
   //
   // Name    : CheckForCommand
   // Purpose : Checks the mongodb command db for remote commands (from web)
   int          CheckForCommand(string &command, string &user,
-			       string &comment,koOptions &options);
+			       string &comment, string &detector,
+			       koOptions &options);
   
   //
   // Name    : PullRunMode

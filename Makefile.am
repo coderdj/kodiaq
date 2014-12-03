@@ -1,4 +1,5 @@
 ACLOCAL_AMFLAGS = -I build/m4
+ACLOCAL_CXXFLAGS = -std=c++11
 
 SUBDIRS = 
 if WITH_DDC10

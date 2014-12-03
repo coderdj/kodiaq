@@ -21,10 +21,11 @@ DAQMonitor::DAQMonitor()
    koHelper::InitializeRunInfo(m_RunInfo);
    pthread_mutex_init(&m_DAQStatusMutex,NULL);
    m_bReady=false;
+   m_detector = "";
 }
 
 DAQMonitor::DAQMonitor(koNetServer *DAQNetwork, koLogger *logger,
-				   MasterMongodbConnection *mongodb)
+		       MasterMongodbConnection *mongodb, string detector)
 {
    m_DAQNetwork = DAQNetwork;
    m_Log        = logger;
@@ -33,6 +34,7 @@ DAQMonitor::DAQMonitor(koNetServer *DAQNetwork, koLogger *logger,
    koHelper::InitializeRunInfo(m_RunInfo);
    pthread_mutex_init(&m_DAQStatusMutex,NULL);
    m_bReady=false;
+   m_detector = detector;
 }
 
 
@@ -210,8 +212,8 @@ int DAQMonitor::Start(string user, string comment, koOptions *options)
       return -1;
     }
   }
-  
-  koHelper::UpdateRunInfo(m_DAQStatus.RunInfo,user);
+      
+  koHelper::UpdateRunInfo(m_DAQStatus.RunInfo,user,m_detector);
   if(options->dynamic_run_names && options->write_mode == WRITEMODE_MONGODB){
     options->mongo_collection = koHelper::MakeDBName(m_DAQStatus.RunInfo,
 						     options->mongo_collection);
@@ -226,7 +228,7 @@ int DAQMonitor::Start(string user, string comment, koOptions *options)
   if(m_Mongodb!=NULL){
     m_Mongodb->SendLogMessage(mess.str(),KOMESS_STATE);
     m_Mongodb->Initialize(user,options->name,m_DAQStatus.RunInfo.RunNumber, 
-			  comment, options);
+			  comment, m_detector, options);
   }
   return 0;
   /*

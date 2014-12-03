@@ -208,10 +208,12 @@ connection_loop:
 	       continue;
 	    }	    
 	    //change the write collection
+	    cout<<"CHANGING COLLECTION"<<endl;
 	    if(fDAQOptions.write_mode==WRITEMODE_MONGODB) {
 	      fDAQOptions.mongo_collection = newCollection;
 	      fElectronics->UpdateRecorderCollection(&fDAQOptions);	    
 	    }	      
+	    cout<<"DONE CHANGING COLLECTION"<<endl;
 	 }	 
 	 if(command=="SLEEP")  {
 	    if(bRunning) continue;
@@ -219,9 +221,12 @@ connection_loop:
 	    fElectronics->Close();	    
 	 }	 
 	 if(command=="START")  {
+	   cout<<"GOT START"<<endl;
 	    if(!bArmed || bRunning) continue;
+	    cout<<"STARTING"<<endl;
 	    fElectronics->StartRun();
 	    bRunning=true;
+	    cout<<"STARTED"<<endl;
 	 }
 	 if(command=="STOP")  {
 	    if(!bRunning) continue;

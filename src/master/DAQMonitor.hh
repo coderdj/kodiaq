@@ -34,7 +34,7 @@ public:
   DAQMonitor();
   virtual ~DAQMonitor();
   DAQMonitor(koNetServer *DAQNetwork, koLogger *logger, 
-		   MasterMongodbConnection *mongodb);
+	     MasterMongodbConnection *mongodb, string detector);
   
   void ProcessCommand(string command,string user, 
 		      string comment="", koOptions *options=NULL);
@@ -73,6 +73,7 @@ private:
   
   int                      m_iErrorFlag;
   string                   m_sErrorText;
+  string                   m_detector;
 
   pthread_t                m_NetworkUpdateThread;
   pthread_mutex_t          m_DAQStatusMutex;

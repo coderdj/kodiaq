@@ -164,7 +164,8 @@ class koHelper
    //               start time, number, who started it, etc. The object is of course
    //               also updated.
    // 
-   static int       UpdateRunInfo(koRunInfo_t &fRunInfo,string startedby);
+   static int       UpdateRunInfo(koRunInfo_t &fRunInfo,
+				  string startedby,string detector);
    //
    //
    // Function    : InitializeNode(XeNode_t&)
@@ -176,7 +177,7 @@ class koHelper
    // Purpose     : Returns a run number (actually a run name string) based on 
    //               the current time and date
    // 
-   static string    GetRunNumber();
+   static string    GetRunNumber(string detector = "data");
    //
    // Function    : MakeDBName
    // Purpose     : Returns a database name based on the current run number from

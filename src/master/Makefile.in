@@ -312,7 +312,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 koMaster_SOURCES = koMaster.cc MasterMongodbConnection.cc MasterMongodbConnection.hh DAQMonitor.hh DAQMonitor.cc
 koMaster_CPPFLAGS = -I$(top_srcdir)/src/common -Wall -g -DLINUX -fPIC \
-	$(am__append_2)
+	-std=c++11 $(am__append_2)
 koMaster_LDADD = -L$(top_srcdir)/src/common/.libs -lkodiaq \
 	$(am__append_1)
 koMaster_LDFLAGS = -static

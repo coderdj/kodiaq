@@ -1,6 +1,6 @@
 bin_PROGRAMS = koMaster
 koMaster_SOURCES =  koMaster.cc MasterMongodbConnection.cc MasterMongodbConnection.hh DAQMonitor.hh DAQMonitor.cc
-koMaster_CPPFLAGS = -I$(top_srcdir)/src/common -Wall -g -DLINUX -fPIC
+koMaster_CPPFLAGS = -I$(top_srcdir)/src/common -Wall -g -DLINUX -fPIC -std=c++11
 koMaster_LDADD = -L$(top_srcdir)/src/common/.libs -lkodiaq
 
 if WITH_DDC10

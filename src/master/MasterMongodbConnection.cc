@@ -50,7 +50,8 @@ void MasterMongodbConnection::InsertOnline(string collection,mongo::BSONObj bson
 }
 
 int MasterMongodbConnection::Initialize(string user, string runMode, string name,
-					string comment, koOptions *options)
+					string comment, string detector, 
+					koOptions *options)
 /*
   At run start create a new run document and put it into the online.runs database.
   The OID of this document is saved as a private member so the document can be 
@@ -118,6 +119,8 @@ int MasterMongodbConnection::Initialize(string user, string runMode, string name
   builder.append("runmode",runMode);
   builder.append("user",user);
   builder.append("name",name);  
+  if(detector == "all") detector = "tpc";
+  builder.append("detector", detector);
   builder.append("shorttype",options->nickname);
 
   //put in start time
@@ -275,7 +278,8 @@ void MasterMongodbConnection::AddRates(koStatusPacket_t *DAQStatus)
    }     
 }
 
-void MasterMongodbConnection::UpdateDAQStatus(koStatusPacket_t *DAQStatus)
+void MasterMongodbConnection::UpdateDAQStatus(koStatusPacket_t *DAQStatus,
+					      string detector)
 /*
   Insert DAQ status doc. The online.daqstatus should be a TTL collection.
  */
@@ -289,6 +293,7 @@ void MasterMongodbConnection::UpdateDAQStatus(koStatusPacket_t *DAQStatus)
 
    b.appendTimeT("createdAt",currentTime+offset);
    b.append("timeseconds",(int)currentTime);
+   b.append("detector", detector);
    b.append("mode",DAQStatus->RunMode);
    if(DAQStatus->DAQState==KODAQ_ARMED)
      b.append("state","Armed");
@@ -308,7 +313,8 @@ void MasterMongodbConnection::UpdateDAQStatus(koStatusPacket_t *DAQStatus)
 }
 
 int MasterMongodbConnection::CheckForCommand(string &command, string &user, 
-					     string &comment, koOptions &options)
+					     string &comment, string &detector,
+					     koOptions &options)
 /*
   DAQ commands can be written to the online.daqcommand db. These usually come from the web
   interface but they can actually come from anywhere. The only commands recognized are 
@@ -327,6 +333,7 @@ int MasterMongodbConnection::CheckForCommand(string &command, string &user,
    command=b.getStringField("command");
    string mode=b.getStringField("mode");
    comment = b.getStringField("comment");
+   detector = b.getStringField("detector");
    user=b.getStringField("name");
    fMongoDB.remove("online.daqcommands",QUERY("command"<<"Start"));
    fMongoDB.remove("online.daqcommands",QUERY("command"<<"Stop")); 

@@ -1,140 +1,194 @@
-// **************************************************** 
-//                                                       
-// kodiaq Data Acquisition Software                      
-//                                                                             
-// Author  : Daniel Coderre, LHEP, Universitaet Bern                           
-// Date    : 08.07.2014                                                       
-// File    : koMaster.cc                                                       
-//                                                                             
-// Brief   : Updated main program for koMaster controller
-//                                                      
+// ****************************************************
+//
+// kodiaq Data Acquisition Software
+//
+// Author  : Daniel Coderre, LHEP, Universitaet Bern
+// Date    : 08.07.2014
+// Update  : 02.12.2014
+// File    : koMaster.cc          
+// 
+// Brief   : Dispatcher program to handle multiple detectors    
+//
 // *****************************************************
 
 #include <iostream>
 #include <fstream>
 #include <kbhit.hh>
+#include <map>
 #include "DAQMonitor.hh"
 #include "MasterMongodbConnection.hh"
 
-string MakeStatusString(DAQMonitor dMonitor);
+
+int ReadIniFile(string filepath, string &monitorDB, string &monitorADDR,
+		map<string, koNetServer*> &dNetworks, 
+		map<string, DAQMonitor*> &dMonitors, koLogger *LocalLog,
+		MasterMongodbConnection *Mongodb);
+
+struct timepair_t {
+  time_t RatesTime;
+  time_t StatusTime;
+};
 
 int main()
 {
-  // command line arguments later to provide mongodb path
-  string monitordb_address="xedaq01";
-  string monitorDB = "online";
-
-  //local log used for errors if network goes down
+  // Declare some objects
   koLogger LocalLog("log/koMaster.log");
-  
-  //network
-  koNetServer DAQNetwork(&LocalLog);
-  DAQNetwork.Initialize(2002,2003,1);
-  
-  // Mongodb Connection 
   MasterMongodbConnection Mongodb(&LocalLog);
+  map <string, timepair_t> StatusTimes;
+  map <string, timepair_t> UpdateTimes;
 
-  // DAQ Status Object
-  DAQMonitor dMonitor(&DAQNetwork,&LocalLog,&Mongodb);
-  time_t fStatusTime = koLogger::GetCurrentTime();
-  time_t fPrevTime = koLogger::GetCurrentTime();
+  // Read an ini file
+  map <string, koNetServer*> dNetworks;
+  map <string, DAQMonitor*> dMonitors;
+  string monitorDB   = "none";
+  string monitorADDR = "none";
+  if( ReadIniFile("MasterConfig.ini", monitorDB, monitorADDR,
+		  dNetworks, dMonitors, &LocalLog, &Mongodb) != 0 ) {
+    cerr<<"Error reading initialization file MasterConfig.ini! Closing."<<endl;
+    return -1;
+  }
+  for(auto iterator : UpdateTimes) {
+    iterator.second.RatesTime = koLogger::GetCurrentTime();
+    iterator.second.StatusTime = koLogger::GetCurrentTime();
+  }
 
-  // Allow local commands to start/stop in case web interface fails
+  // Local command interface
   char cCommand = '0';
-
+  
+  cout<<"Welcome to the kodiaq dispatcher interface."<<endl;
   cout<<"(c)onnect (d)isconnect (s)tart sto(p)"<<endl;
-  //Main loop
-  while(cCommand!='q'){    
-    sleep(1);
-    usleep(100); //prevent high cpu
+  
+  // Main Loop
+  while ( cCommand != 'q' ){
+    sleep(1); //prevent high CPU
     
-    if(kbhit()) {
-      cin.get(cCommand);      
-      // Local commands can connect, disconnect, and stop DAQ (start coming later?)
+    if ( kbhit() ) {
+      cin.get( cCommand );
       string commandString = "";
       koOptions runMode;
-      if(cCommand=='c')
+      
+      if( cCommand == 'c' )
 	commandString = "Connect";
-      if(cCommand=='d')
+      if( cCommand == 'd' )
 	commandString = "Disconnect";
-      if(cCommand=='p')
+      if( cCommand == 'p' )
 	commandString = "Stop";
-      if(cCommand=='s'){
+      if( cCommand == 's' ) {
 	commandString = "Start";
-	if(runMode.ReadParameterFile("DAQOptions.ini")!=0){
-	  cout<<"Error reading DAQOptions.ini"<<endl;
-	  cCommand='0';
+	if ( runMode.ReadParameterFile( "DAQOptions.ini" ) != 0 ) {
+	  cout<<"Error reading DAQOptions.ini. Fix to proceed."<<endl;
+	  cCommand = '0';
 	  continue;
 	}
       }
-      string comment = "";      
       
-      dMonitor.ProcessCommand(commandString,"dispatcher_console",comment,&runMode);
-      cCommand='0';//reset
-      
-    }
-
-    //Check for commands on web network. Only "start" and "stop" are possible
-    string command="",user="", comment="";
-    koOptions options;
-    if(Mongodb.CheckForCommand(command,user,comment,options)==0){
-      dMonitor.ProcessCommand(command,user,comment,&options);
-    }
+      string comment = "";
+      for(auto iter : dMonitors) {
+	iter.second->ProcessCommand( commandString,
+				      "dispatcher_console",
+				      comment,
+				      &runMode);
+      }
+      cCommand = '0';
+    } // end if kbhit
     
-    //Get updates from slaves, send updates to monitors
-    if(dMonitor.UpdateReady()){
-      time_t fCurrentTime = koLogger::GetCurrentTime();
-      //keep data socket alive            
-      double dtimeStatus = difftime(fCurrentTime,fStatusTime);
-      if(dtimeStatus>1.){
-	fStatusTime = fCurrentTime;
-	Mongodb.UpdateDAQStatus(dMonitor.GetStatus());
+    // Check for commands on web network. 
+    string command="", user="", comment="", detector="";
+    koOptions options;
+    if(Mongodb.CheckForCommand( command, user, comment, detector, options ) ==0 ){
+      for(auto iterator : dMonitors ){
+	if ( detector == "all" || detector == iterator.first ) {
+	  //send command to this detector
+	  iterator.second->ProcessCommand( command, user, comment, &options );
+	}
       }
-      double dtime = difftime(fCurrentTime,fPrevTime);      
-      if(dtime>10.){
-	fPrevTime = fCurrentTime;
-	Mongodb.AddRates(dMonitor.GetStatus());
-	Mongodb.UpdateDAQStatus(dMonitor.GetStatus());
+    } 
+
+    // Status update section
+    for(auto iter : dMonitors) {
+      if( iter.second->UpdateReady() ) {
+	time_t CurrentTime = koLogger::GetCurrentTime();
+	double dTimeStatus = difftime( CurrentTime, 
+				       UpdateTimes[iter.first].StatusTime );
+	if ( dTimeStatus > 1. ) { //don't flood DB with updates
+	  UpdateTimes[iter.first].StatusTime = CurrentTime;
+	  Mongodb.UpdateDAQStatus( iter.second->GetStatus(), 
+				   iter.first );
+	}
+	double dTimeRates = difftime( CurrentTime,
+				      UpdateTimes[iter.first].RatesTime);
+	if ( dTimeRates > 10. ) { //send rates
+	  UpdateTimes[iter.first].RatesTime = CurrentTime;
+	  Mongodb.AddRates( iter.second->GetStatus() );
+	  Mongodb.UpdateDAQStatus( iter.second->GetStatus(),
+				   iter.first );
+	}
       }
-    }
-    // Print a status to the local console
-    cout<<MakeStatusString(dMonitor)<<'\r';
-    cout.flush();
-  }//end while cCommand!='q'
-  
+    } // End status update
+
+  } // end while through main loop
+  return 0;
 }
 
-string MakeStatusString(DAQMonitor dMonitor){
-  stringstream ostream;
-  koStatusPacket_t *stat = dMonitor.GetStatus();
-  ostream<<"Network: ";
-  stat->NetworkUp ? 
-    ostream<<"up ("<<stat->Slaves.size()<<") " : ostream<<"down ";
-  ostream<<"DAQ: ";
-  switch(stat->DAQState){
-  case KODAQ_IDLE:
-    ostream<<"idle ";
-    break;
-  case KODAQ_ARMED:
-    ostream<<"armed ";
-    break;
-  case KODAQ_RUNNING:
-    ostream<<"running ";
-    break;
-  case KODAQ_MIXED:
-    ostream<<"mixed ";
-    break;
-  case KODAQ_ERROR:
-    ostream<<"error ";
-    break;
-  default:
-    ostream<<"unknown ";
-    break;
+int ReadIniFile(
+		string filepath, string &monitorDB, string &monitorADDR,
+                map<string, koNetServer*> &dNetworks,
+                map<string, DAQMonitor*> &dMonitors, koLogger *LocalLog,
+		MasterMongodbConnection *Mongodb 
+	       ) 
+// Reads in an initialization file for the master. The following options
+// MUST be provided: MONITOR_DB, MONITOR_ADDR, DETECTOR (min 1)
+{
+  ifstream inifile;
+  inifile.open( filepath.c_str() );
+  if( !inifile ) return -1;
+
+  monitorDB   = "";
+  monitorADDR = "";  
+  vector <string> detnames;
+  vector <int>    ports;
+  vector <int>    dataports;
+
+  string line;
+  while ( !inifile.eof() ){
+    getline( inifile, line );
+    if ( line[0] == '#' ) continue; //ignore comments
+    
+    //parse                                                                   
+    istringstream iss(line);
+    vector<string> words;
+    copy(istream_iterator<string>(iss),
+	 istream_iterator<string>(),
+	 back_inserter<vector<string> >(words));
+    if(words.size()<2) continue;
+    
+    if( words[0] == "MONITOR_DB" )
+      monitorDB = words[1];
+    else if ( words[0] == "MONITOR_ADDR" )
+      monitorADDR = words[1];
+    else if ( words[0] == "DETECTOR" ){
+      if ( words.size() < 4) continue;
+      detnames.push_back( words[1] );
+      ports.push_back( koHelper::StringToInt( words[2] ) );
+      dataports.push_back( koHelper::StringToInt( words[3] ) );
+    }
   }
-  ostream<<"Mode: "<<stat->RunMode;
-  double rate=0.;
-  for(unsigned int i=0;i<stat->Slaves.size();i++)
-    rate+=stat->Slaves[i].Rate;
-  ostream<<" Rate: "<<rate;
-  return ostream.str();
+  inifile.close();
+  // Check to make sure all values are filled
+  if ( monitorDB == "" || monitorADDR == "" || detnames.size() == 0 )
+    return -1;
+  
+  for ( unsigned int x=0; x<detnames.size(); x++ ){
+
+    // Define the network connection
+    koNetServer *Network = new koNetServer(LocalLog);
+    Network->Initialize(ports[x], dataports[x], 1);
+    dNetworks[detnames[x]] = Network;
+      
+    // Define the monitor
+    DAQMonitor *Monitor = new DAQMonitor(Network, LocalLog, Mongodb, detnames[x]);
+    dMonitors[detnames[x]] = Monitor;
+
+  }
+  return 0;
 }

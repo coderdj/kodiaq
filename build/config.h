@@ -25,7 +25,7 @@
 #define HAVE_LIBCAENVME 1
 
 /* Define to 1 if you have the `expect' library (-lexpect). */
-/* #undef HAVE_LIBEXPECT */
+#define HAVE_LIBEXPECT 1
 
 /* Define to 1 if you have the `mongoclient' library (-lmongoclient). */
 #define HAVE_LIBMONGOCLIENT 1
@@ -104,7 +104,7 @@
 #define VERSION "0.9"
 
 /* Compile with DDC HE veto support */
-/* #undef WITH_DDC10 */
+#define WITH_DDC10 /**/
 
 /* Compile master module */
 #define WITH_MASTER /**/
