@@ -22,10 +22,10 @@
 #define HAVE_LIBBOOST_THREAD 1
 
 /* Define to 1 if you have the `CAENVME' library (-lCAENVME). */
-#define HAVE_LIBCAENVME 1
+/* #undef HAVE_LIBCAENVME */
 
 /* Define to 1 if you have the `expect' library (-lexpect). */
-#define HAVE_LIBEXPECT 1
+/* #undef HAVE_LIBEXPECT */
 
 /* Define to 1 if you have the `mongoclient' library (-lmongoclient). */
 #define HAVE_LIBMONGOCLIENT 1
@@ -40,10 +40,10 @@
 /* #undef HAVE_LIBPROTOBUF */
 
 /* Define to 1 if you have the `pthread' library (-lpthread). */
-#define HAVE_LIBPTHREAD 1
+/* #undef HAVE_LIBPTHREAD */
 
 /* Define to 1 if you have the `snappy' library (-lsnappy). */
-#define HAVE_LIBSNAPPY 1
+/* #undef HAVE_LIBSNAPPY */
 
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
@@ -104,10 +104,10 @@
 #define VERSION "0.9"
 
 /* Compile with DDC HE veto support */
-#define WITH_DDC10 /**/
+/* #undef WITH_DDC10 */
 
 /* Compile master module */
-#define WITH_MASTER /**/
+/* #undef WITH_MASTER */
 
 /* Compile slave module */
-#define WITH_SLAVE /**/
+/* #undef WITH_SLAVE */

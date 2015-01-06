@@ -48,7 +48,7 @@ AS_IF([test "x$enable_slave" = "xyes"], [
     
     AC_CHECK_LIB(pthread,pthread_mutex_init,[],AC_MSG_ERROR([libpthread missing.]))
     AC_CHECK_LIB(CAENVME,CAENVME_Init,[],AC_MSG_ERROR([libCAENVME missing.]))
-    AC_CHECK_LIB(snappy,_ZN6snappy11RawCompressEPKcmPcPm,[],AC_MSG_ERROR([libsnappy missing.]))
+    AC_CHECK_LIB(snappy,main,[],AC_MSG_ERROR([libsnappy missing.]))
     AC_CHECK_LIB(boost_system,main,[],AC_MSG_ERROR([libboost_system missing.]))
     AC_CHECK_LIB(boost_program_options,main,[],AC_MSG_ERROR([libboost_program_options missing.]))
     AC_CHECK_LIB(boost_filesystem,main,[],AC_MSG_ERROR([libboost_filesystem missing.]))
@@ -69,7 +69,7 @@ AS_IF([test "x$enable_lite" = "xyes"], [
     AC_DEFINE([KLITE],[1],[Compile standalone slave])    
     AC_CHECK_LIB(pthread,pthread_mutex_init,[],AC_MSG_ERROR([libpthread missing.]))
     AC_CHECK_LIB(CAENVME,CAENVME_Init,[],AC_MSG_ERROR([libCAENVME missing.]))
-    AC_CHECK_LIB(snappy,_ZN6snappy11RawCompressEPKcmPcPm,[],AC_MSG_ERROR([libsnappymissing.]))
+    AC_CHECK_LIB(snappy,main,[],AC_MSG_ERROR([libsnappymissing.]))
     AC_CHECK_LIB([ncurses],initscr,[],AC_MSG_ERROR)   
 #    AC_CHECK_LIB(protobuf,main,[],AC_MSG_ERROR([libprotobuf missing]))
     ], [
@@ -108,7 +108,7 @@ AS_IF([test "x$enable_all" = "xyes"], [
     AC_CHECK_LIB([expect],main,[],AC_MSG_ERROR([libexpect not found]))
     AC_CHECK_LIB(pthread,pthread_mutex_init,[],AC_MSG_ERROR([libpthread missing.]))
     AC_CHECK_LIB(CAENVME,CAENVME_Init,[],AC_MSG_ERROR([libCAENVME missing.]))
-    AC_CHECK_LIB(snappy,_ZN6snappy11RawCompressEPKcmPcPm,[],AC_MSG_ERROR([libsnappy missing.]))
+    AC_CHECK_LIB(snappy,main,[],AC_MSG_ERROR([libsnappy missing.]))
     AC_CHECK_LIB(boost_system,main,[],AC_MSG_ERROR([libboost_system missing.]))
     AC_CHECK_LIB(boost_program_options,main,[],AC_MSG_ERROR([libboost_program_options missing.]))
     AC_CHECK_LIB(boost_filesystem,main,[],AC_MSG_ERROR([libboost_filesystem missing.]))

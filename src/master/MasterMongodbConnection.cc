@@ -18,14 +18,14 @@ MasterMongodbConnection::MasterMongodbConnection()
 {
    fLog=NULL;
    fOptions=NULL;
-   fLastDocOID.clear();
+   //   fLastDocOIDs.clear();
 }
 
 MasterMongodbConnection::MasterMongodbConnection(koLogger *Log)
 {
    fLog=Log;
    fOptions=NULL;
-   fLastDocOID.clear();
+   //fLastDocOIDs.clear();
    try     {	
       fMongoDB.connect("xedaq01");
    }   
@@ -149,13 +149,13 @@ int MasterMongodbConnection::Initialize(string user, string runMode, string name
   // store OID so you can update the end time
   mongo::BSONElement OIDElement;
   bObj.getObjectID(OIDElement);
-  fLastDocOID=OIDElement.__oid();
+  fLastDocOIDs[detector]=OIDElement.__oid();
 
   return 0;   
 }
 
 
-int MasterMongodbConnection::UpdateEndTime(bool onlineOnly)
+int MasterMongodbConnection::UpdateEndTime(string detector)
 /*
   When a run is ended we update the run document to indicate that we are finished writing.
   
@@ -165,7 +165,7 @@ int MasterMongodbConnection::UpdateEndTime(bool onlineOnly)
 		       "data_taking_ended": bool to indicate reader is done with the run
  */
 {
-  if(!fLastDocOID.isSet())  {
+  if(!fLastDocOIDs[detector].isSet())  {
     if(fLog!=NULL) fLog->Error("MasterMongodbConnection::UpdateEndTime - Want to stop run but don't have the _id field of the run info doc");
       return -1;
    }
@@ -182,7 +182,7 @@ int MasterMongodbConnection::UpdateEndTime(bool onlineOnly)
   
       mongo::BSONObjBuilder bo;
       bo << "findandmodify" << onlinesubstr.c_str() << 
-	"query" << BSON("_id" << fLastDocOID) << 
+	"query" << BSON("_id" << fLastDocOIDs[detector]) << 
 	"update" << BSON("$set" << BSON("endtimestamp" <<mongo::Date_t(1000*(nowTime+offset)) << "reader.data_taking_ended" << true)); 
       
       assert(fMongoDB.runCommand("online",bo.obj(),res));
@@ -335,8 +335,8 @@ int MasterMongodbConnection::CheckForCommand(string &command, string &user,
    comment = b.getStringField("comment");
    detector = b.getStringField("detector");
    user=b.getStringField("name");
-   fMongoDB.remove("online.daqcommands",QUERY("command"<<"Start"));
-   fMongoDB.remove("online.daqcommands",QUERY("command"<<"Stop")); 
+   fMongoDB.remove("online.daqcommands",QUERY("command"<<"Start"<<"detector"<<detector));
+   fMongoDB.remove("online.daqcommands",QUERY("command"<<"Stop"<<"detector"<<detector)); 
    if(command=="Start")
      PullRunMode(mode,options);
    return 0;

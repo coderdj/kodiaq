@@ -246,7 +246,7 @@ int DAQMonitor::Stop(string user,string comment)
     mess<<" : "<<comment;
   if(m_Mongodb!=NULL){
     m_Mongodb->SendLogMessage(mess.str(),KOMESS_STATE);
-    m_Mongodb->UpdateEndTime();
+    m_Mongodb->UpdateEndTime(m_detector);
   }
   return 0;
 }

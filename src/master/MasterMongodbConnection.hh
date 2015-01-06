@@ -42,7 +42,7 @@ public:
   //           seen as confirmation from the DAQ that the user stopped the run.
   //           Also updates end time in mongodb
   // 
-  int          UpdateEndTime(bool OnlineOnly=false);
+  int          UpdateEndTime(string detector);
   
    
   //
@@ -82,7 +82,7 @@ public:
  private:
   koOptions                 *fOptions;
   mongo::DBClientConnection  fMongoDB;
-  mongo::OID                 fLastDocOID;
+  map <string,mongo::OID>    fLastDocOIDs;
   koLogger                  *fLog;
 };
 
