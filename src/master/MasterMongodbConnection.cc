@@ -65,7 +65,7 @@ int MasterMongodbConnection::Initialize(string user, string runMode, string name
                   starttime:  NOT the UTC time (this is in runstart) but should be
                               the first CAEN digitizer time in the run (usually 0)
 		  	     
- */
+*/
 {
   // First create the collection on the buffer db so the event builder doesn't complain
   mongo::DBClientConnection bufferDB;
@@ -308,6 +308,16 @@ void MasterMongodbConnection::UpdateDAQStatus(koStatusPacket_t *DAQStatus,
    b.append("network",DAQStatus->NetworkUp);
    b.append("currentRun",DAQStatus->RunInfo.RunNumber);
    b.append("startedBy",DAQStatus->RunInfo.StartedBy);
+   
+   //start time
+   //   struct tm timeobj;
+   //strptime(DAQStatus->RunInfo.StartDate.c_str(), "%Y.%m.%d [%H:%M:%S]", &timeobj);
+   string datestring = DAQStatus->RunInfo.StartDate;
+   if(datestring.size()!=0){
+     datestring.pop_back();
+     datestring+="+01:00";
+   }
+   b.append("startTime",datestring);
    b.append("numSlaves",(int)DAQStatus->Slaves.size());
    InsertOnline("online.daqstatus",b.obj());
 }

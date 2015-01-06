@@ -68,7 +68,7 @@ string koLogger::GetTimeString()
    time(&rawtime);
    timeinfo = localtime(&rawtime);
    
-   strftime(timestring,25,"%Y.%m.%d [%H:%M:%S] - ",timeinfo);
+   strftime(timestring,25,"%Y-%m-%dT%H:%M:%S - ",timeinfo);
    string retstring(timestring);
    return retstring;
 }
