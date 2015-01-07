@@ -136,7 +136,7 @@ class DAQRecorder_mongodb : public DAQRecorder
 
 #ifdef HAVE_LIBPBF
 
-#include <pbf_output.hh>
+#include <pbf/pbf_output.hh>
 
 
 /*! \brief Derived class for recording to file using google protocol buffers
