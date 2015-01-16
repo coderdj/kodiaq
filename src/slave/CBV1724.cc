@@ -101,10 +101,12 @@ int CBV1724::Initialize(koOptions *options)
 	cout<<" . . . failed!"<<endl;
    }
    else cout<<"Didn't determine baselines."<<endl;
-   
-   cout<<"Loading baselines"<<endl;
-   LoadBaselines();
-   cout<<"Done with baselines."<<endl;
+
+   if(options->baseline_mode != 2){
+     cout<<"Loading baselines"<<endl;
+     LoadBaselines();
+     cout<<"Done with baselines."<<endl;
+   }
    return retVal;
 }
 
