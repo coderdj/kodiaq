@@ -32,5 +32,6 @@ class CBV2718 : public VMEBoard {
   bool b_startwithsin;
   bool b_led_on;
   bool b_muonveto_on;
+  int  i_pulserHz;
 };
 #endif

@@ -38,7 +38,8 @@ void koOptions::Reset()
   write_mode = baseline_mode = run_start = run_start_module = 
     blt_size = compression = -1;
   dynamic_run_names = false;
-  
+  pulser_freq = 0;
+
   //Reset mongodb options
   mongo_address = mongo_database = mongo_collection = "";
   mongo_write_concern = mongo_min_insert_size = -1;
@@ -122,6 +123,8 @@ int koOptions::ReadParameterFile(string filename)
 	run_start = koHelper::StringToInt(words[1]);
       else if(words[0] == "run_start_module")
 	run_start_module = koHelper::StringToInt(words[1]);
+      else if(words[0] == "pulser_freq")
+	pulser_freq = koHelper::StringToInt(words[1]);
       else if(words[0] == "blt_size")
 	blt_size = koHelper::StringToInt(words[1]);
       else if(words[0] == "compression")
@@ -211,6 +214,7 @@ void koOptions::ToStream(stringstream *retstream)
   (*retstream)<<"baseline_mode "<<baseline_mode<<endl;
   (*retstream)<<"run_start "<<run_start<<endl;
   (*retstream)<<"run_start_module "<<run_start_module<<endl;
+  (*retstream)<<"pulser_freq "<<pulser_freq<<endl;
   (*retstream)<<"blt_size "<<blt_size<<endl;
   (*retstream)<<"compression "<<compression<<endl;
   (*retstream)<<"processing_mode "<<processing_mode<<endl;

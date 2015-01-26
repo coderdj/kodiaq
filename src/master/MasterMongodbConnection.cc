@@ -399,6 +399,7 @@ int MasterMongodbConnection::PullRunMode(string name, koOptions &options)
    options.baseline_mode=(res.getIntField("baseline_mode"));
    options.run_start=(res.getIntField("run_start"));
    options.run_start_module=(res.getIntField("run_start_module"));
+   options.pulser_freq=(res.getIntField("pulser_freq"));
    options.blt_size=(res.getIntField("blt_size"));
    options.compression=(res.getIntField("compression"));
    options.processing_mode=(res.getIntField("processing_mode"));

@@ -134,6 +134,7 @@ public:
   int                        baseline_mode;
   int                        run_start;
   int                        run_start_module;
+  int                        pulser_freq;
   int                        blt_size;
   int                        compression;
   bool                       dynamic_run_names;
