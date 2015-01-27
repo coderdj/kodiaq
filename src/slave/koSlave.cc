@@ -139,7 +139,7 @@ int main()
    koLogger      *koLog = new koLogger("log/slave.log");
    koNetClient    fNetworkInterface(koLog);
    //   fNetworkInterface.Initialize("xedaq02",2002,2003,2,"xedaq02");
-   fNetworkInterface.Initialize("xedaq02",2004,2005,2,"muon_veto"); 
+   fNetworkInterface.Initialize("xedaq02",2002,2003,4,"xedaq04"); 
    DigiInterface  *fElectronics = new DigiInterface(koLog);
    koOptions   fDAQOptions;
    koRunInfo_t    fRunInfo;
