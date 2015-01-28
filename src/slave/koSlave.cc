@@ -151,6 +151,7 @@ int main()
      return -1;
    }
    fNetworkInterface.Initialize(SERVERADDR,PORT,DATAPORT,ID,NODENAME); 
+
    DigiInterface  *fElectronics = new DigiInterface(koLog);
    koOptions   fDAQOptions;
    koRunInfo_t    fRunInfo;

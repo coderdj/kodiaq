@@ -231,10 +231,10 @@ void DigiInterface::ReadThread()
 int DigiInterface::StartRun()
 {   
    //Tell Boards to start acquisition
-   if(m_RunStartModule!=NULL)    {	
+  if(m_koOptions->run_start == 1){//if(m_RunStartModule!=NULL)    {	
       for(unsigned int x=0;x<m_vDigitizers.size();x++)
 	m_vDigitizers[x]->SetActivated(true);
-      m_RunStartModule->SendStartSignal();
+      //      m_RunStartModule->SendStartSignal();
    }   
    else   {	//start by write to software register
       for(unsigned int x=0;x<m_vDigitizers.size();x++){
@@ -245,6 +245,8 @@ int DigiInterface::StartRun()
 	 m_vDigitizers[x]->SetActivated(true);
       }
    }
+  if(m_RunStartModule!=NULL)
+    m_RunStartModule->SendStartSignal();
    
    //Spawn read, write, and processing threads
    for(unsigned int x=0; x<m_vProcThreads.size();x++)  {
