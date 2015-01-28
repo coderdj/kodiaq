@@ -150,7 +150,6 @@ int main()
      cout<<"Error reading .ini file, does it exist at src/slave/SlaveConfig.ini?"<<endl;
      return -1;
    }
-   //   fNetworkInterface.Initialize("xedaq02",2002,2003,2,"xedaq02");
    fNetworkInterface.Initialize(SERVERADDR,PORT,DATAPORT,ID,NODENAME); 
    DigiInterface  *fElectronics = new DigiInterface(koLog);
    koOptions   fDAQOptions;
