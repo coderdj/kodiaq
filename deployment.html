@@ -405,7 +405,7 @@ make install
 cd ..
 </pre></div>
 </div>
-<p>We also want a newer version of mongodb so we can install that as well.:</p>
+<p>We also want a newer version of mongodb so we can install that as well:</p>
 <div class="highlight-python"><div class="highlight"><pre>git clone https://github.com/mongodb/mongo-cxx-driver.git mongodb
 cd mongodb
 git checkout 26compat    #currently for 2.6 compatible driver
@@ -414,7 +414,7 @@ cd ..
 </pre></div>
 </div>
 <p>Since mongo seems to change procedures and requirements with nearly every release you may prefer to check their most recent documentation.</p>
-<p>Checkout the DAQ code from github as follows.:</p>
+<p>Checkout the DAQ code from github as follows:</p>
 <div class="highlight-python"><div class="highlight"><pre>git clone https://github.com/XENON1T/kodiaq.git kodiaq
 </pre></div>
 </div>
@@ -427,11 +427,12 @@ make
 </div>
 <p>The connection to the master must also be defined. This is defined in the file src/slave/SlaveConfig.ini,
 which looks as follows:</p>
-<blockquote>
-<div>COM_PORT 2002
+<div class="highlight-python"><div class="highlight"><pre>COM_PORT 2002
 DATA_PORT 2003
 NAME xedaq01
-ID 1</div></blockquote>
+ID 1
+</pre></div>
+</div>
 <p>This examples defines slave &#8216;xedaq01&#8217; with ID &#8216;1&#8217; to use ports 2002 and 2003. These ports must
 also correspond to a detector defined in src/master/MasterConfig.ini (see below) or the slave will
 never be contacted by the network and will just listen perpetually.</p>
@@ -455,12 +456,13 @@ make
 <p>The executable is in src/master/koMaster. This should also be run in a
 detached screen and can be left on more or less indefinitely unless
 there are issues.</p>
-<p>The options for the master are stored in a configuration file in src/master at MasterConfig.ini. The options look as follows:</p>
-<blockquote>
-<div>MONITOR_DB online        // name of monitoring database
+<p>The options for the master are stored in a configuration file in src/master at MasterConfig.ini. The options look as follows</p>
+<div class="highlight-python"><div class="highlight"><pre>MONITOR_DB online        // name of monitoring database
 MONITOR_ADDR xedaq01     // address of mongodb server (hostname or IP)
-DETECTOR tpc 2002 2003   // define detector &#8216;tpc&#8217; to communicate over ports 2002 and 2003
-DETECTOR muon_veto 2004 2005  // define detector &#8216;muon_veto&#8217; to communicate over ports 2004 and 2005</div></blockquote>
+DETECTOR tpc 2002 2003   // define detector &#39;tpc&#39; to communicate over ports 2002 and 2003
+DETECTOR muon_veto 2004 2005  // define detector &#39;muon_veto&#39; to communicate over ports 2004 and 2005
+</pre></div>
+</div>
 <p>The detector names allow the web interface to send specific commands to specific detectors only.</p>
 <p>The DDC-10 module uses telnet and requires libtcl8.5 and libexpect.</p>
 <div class="section" id="run-modes">

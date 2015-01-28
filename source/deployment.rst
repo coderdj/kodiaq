@@ -164,7 +164,7 @@ Now make a directory for the code and install libpbf::
       make install 
       cd ..
 
-We also want a newer version of mongodb so we can install that as well.::
+We also want a newer version of mongodb so we can install that as well::
 
       git clone https://github.com/mongodb/mongo-cxx-driver.git mongodb
       cd mongodb
@@ -174,7 +174,7 @@ We also want a newer version of mongodb so we can install that as well.::
 
 Since mongo seems to change procedures and requirements with nearly every release you may prefer to check their most recent documentation.
 
-Checkout the DAQ code from github as follows.::
+Checkout the DAQ code from github as follows::
 
      git clone https://github.com/XENON1T/kodiaq.git kodiaq
 
@@ -187,12 +187,12 @@ Everything should be in place so you can now compile the kodiaq package itself.:
       make
 
 The connection to the master must also be defined. This is defined in the file src/slave/SlaveConfig.ini,
-which looks as follows:
+which looks as follows::
 
-    COM_PORT 2002
-    DATA_PORT 2003
-    NAME xedaq01
-    ID 1
+      COM_PORT 2002
+      DATA_PORT 2003
+      NAME xedaq01
+      ID 1
 
 This examples defines slave 'xedaq01' with ID '1' to use ports 2002 and 2003. These ports must
 also correspond to a detector defined in src/master/MasterConfig.ini (see below) or the slave will
@@ -225,7 +225,7 @@ detached screen and can be left on more or less indefinitely unless
 there are issues.
 
 The options for the master are stored in a configuration file in src/master at MasterConfig.ini. The options look as follows\
-:
+::
 
     MONITOR_DB online        // name of monitoring database
     MONITOR_ADDR xedaq01     // address of mongodb server (hostname or IP)
