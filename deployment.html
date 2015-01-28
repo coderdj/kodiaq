@@ -108,6 +108,7 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="">Deployment of the Full System</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#summary-of-dependencies-per-module">Summary of Dependencies per Module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#deployment-step-by-step">Deployment, Step by Step</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#general-network-structure">General network structure</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#koslave">koSlave</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#komaster">koMaster</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#run-modes">Run Modes</a></li>
@@ -154,6 +155,7 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="">Deployment of the Full System</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#summary-of-dependencies-per-module">Summary of Dependencies per Module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#deployment-step-by-step">Deployment, Step by Step</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#general-network-structure">General network structure</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#koslave">koSlave</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#komaster">koMaster</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#run-modes">Run Modes</a></li>
@@ -170,10 +172,9 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="protocols.html">Data Formats</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="protocols.html#output-to-mongodb">Output to Mongodb</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="protocols.html#mongodb">Mongodb</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="protocols.html#run-control-document">Run Control Document</a></li>
 <li class="toctree-l3"><a class="reference internal" href="protocols.html#data-documents">Data Documents</a></li>
-<li class="toctree-l3"><a class="reference internal" href="protocols.html#data-format">Data Format</a></li>
 </ul>
 </li>
 </ul>
@@ -337,6 +338,24 @@ the master module (less cool but works).</li>
 <p>The specifics on installing the slave and master, as well as how to
 write an options file are given in the next sections.</p>
 </div>
+<div class="section" id="general-network-structure">
+<h2>General network structure<a class="headerlink" href="#general-network-structure" title="Permalink to this headline">¶</a></h2>
+<p>It&#8217;s a good idea to know a bit about how the networked mode actually works since the options
+will make a little more sense. Basically you have a single instance of koMaster which acts as a dispatcher
+and communicates with all the slave nodes and with an outside database. All the slave nodes connect to
+this dispatcher. The connection is done over two ports. One port is interactive and is used for commands
+and responses from the dispatcher to the slaves and vice versa. The other port is used to transmit a
+constant stream of data from the slaves to the dispatcher which reports the rate, run mode, status, etc.</p>
+<p>The master additionally supports independent operation of multiple detectors over the same dispatcher. Each
+detector is basically its own independent deployment but they can also be operated together. Detectors are
+defined in the master config file and each detector operates over two unique ports.</p>
+<p>Within a single detector the slaves are organized such that each has its own ID number and name. The ID numbers
+are integers and are used to define different options for different slaves. In the .ini file you can send an
+option to a specific slave by prefacing a line with &#8216;%n&#8217; where &#8216;n&#8217; is the ID number of the slave. The name of
+each slave can be anything and is used in status reporting.</p>
+<p>If you want to use the DAQ with the web interface you need a mongodb database set up. The connectivity to this DB
+is defined in the koMaster section below.</p>
+</div>
 <div class="section" id="koslave">
 <h2>koSlave<a class="headerlink" href="#koslave" title="Permalink to this headline">¶</a></h2>
 <p>The kodiaq slave module is the meat of the acquisition system. It
@@ -406,10 +425,16 @@ cd ..
 make
 </pre></div>
 </div>
-<p>The connection to the master must also be defined. Right now this is
-hard-coded in the koSlave.cc file. The line
-fNetworkInterface.Initialize(...) must be edited to give the proper
-address of the master. It is forseen to put this in a config file.</p>
+<p>The connection to the master must also be defined. This is defined in the file src/slave/SlaveConfig.ini,
+which looks as follows:</p>
+<blockquote>
+<div>COM_PORT 2002
+DATA_PORT 2003
+NAME xedaq01
+ID 1</div></blockquote>
+<p>This examples defines slave &#8216;xedaq01&#8217; with ID &#8216;1&#8217; to use ports 2002 and 2003. These ports must
+also correspond to a detector defined in src/master/MasterConfig.ini (see below) or the slave will
+never be contacted by the network and will just listen perpetually.</p>
 <p>To start the slave just run koSlave, preferably in a detached screen.
 The program will automatically scan the master and check to see if
 it puts the network up. If so the slave will connect automatically.</p>
@@ -430,6 +455,13 @@ make
 <p>The executable is in src/master/koMaster. This should also be run in a
 detached screen and can be left on more or less indefinitely unless
 there are issues.</p>
+<p>The options for the master are stored in a configuration file in src/master at MasterConfig.ini. The options look as follows:</p>
+<blockquote>
+<div>MONITOR_DB online        // name of monitoring database
+MONITOR_ADDR xedaq01     // address of mongodb server (hostname or IP)
+DETECTOR tpc 2002 2003   // define detector &#8216;tpc&#8217; to communicate over ports 2002 and 2003
+DETECTOR muon_veto 2004 2005  // define detector &#8216;muon_veto&#8217; to communicate over ports 2004 and 2005</div></blockquote>
+<p>The detector names allow the web interface to send specific commands to specific detectors only.</p>
 <p>The DDC-10 module uses telnet and requires libtcl8.5 and libexpect.</p>
 <div class="section" id="run-modes">
 <h3>Run Modes<a class="headerlink" href="#run-modes" title="Permalink to this headline">¶</a></h3>

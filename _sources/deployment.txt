@@ -102,6 +102,28 @@ specific information on each step will be found in later sections.
 The specifics on installing the slave and master, as well as how to
 write an options file are given in the next sections.
 
+General network structure
+-------------------------
+
+It's a good idea to know a bit about how the networked mode actually works since the options
+will make a little more sense. Basically you have a single instance of koMaster which acts as a dispatcher
+and communicates with all the slave nodes and with an outside database. All the slave nodes connect to
+this dispatcher. The connection is done over two ports. One port is interactive and is used for commands
+and responses from the dispatcher to the slaves and vice versa. The other port is used to transmit a
+constant stream of data from the slaves to the dispatcher which reports the rate, run mode, status, etc.
+
+The master additionally supports independent operation of multiple detectors over the same dispatcher. Each
+detector is basically its own independent deployment but they can also be operated together. Detectors are
+defined in the master config file and each detector operates over two unique ports.
+
+Within a single detector the slaves are organized such that each has its own ID number and name. The ID numbers
+are integers and are used to define different options for different slaves. In the .ini file you can send an
+option to a specific slave by prefacing a line with '%n' where 'n' is the ID number of the slave. The name of
+each slave can be anything and is used in status reporting.
+
+If you want to use the DAQ with the web interface you need a mongodb database set up. The connectivity to this DB
+is defined in the koMaster section below.
+
 koSlave
 ---------
 
@@ -164,10 +186,17 @@ Everything should be in place so you can now compile the kodiaq package itself.:
       ./configure --enable-slave 
       make
 
-The connection to the master must also be defined. Right now this is
-hard-coded in the koSlave.cc file. The line
-fNetworkInterface.Initialize(...) must be edited to give the proper
-address of the master. It is forseen to put this in a config file.
+The connection to the master must also be defined. This is defined in the file src/slave/SlaveConfig.ini,
+which looks as follows:
+
+    COM_PORT 2002
+    DATA_PORT 2003
+    NAME xedaq01
+    ID 1
+
+This examples defines slave 'xedaq01' with ID '1' to use ports 2002 and 2003. These ports must
+also correspond to a detector defined in src/master/MasterConfig.ini (see below) or the slave will
+never be contacted by the network and will just listen perpetually.
 
 To start the slave just run koSlave, preferably in a detached screen.
 The program will automatically scan the master and check to see if
@@ -194,6 +223,16 @@ To build use the following: ::
 The executable is in src/master/koMaster. This should also be run in a
 detached screen and can be left on more or less indefinitely unless
 there are issues.
+
+The options for the master are stored in a configuration file in src/master at MasterConfig.ini. The options look as follows\
+:
+
+    MONITOR_DB online        // name of monitoring database
+    MONITOR_ADDR xedaq01     // address of mongodb server (hostname or IP)
+    DETECTOR tpc 2002 2003   // define detector 'tpc' to communicate over ports 2002 and 2003
+    DETECTOR muon_veto 2004 2005  // define detector 'muon_veto' to communicate over ports 2004 and 2005
+
+The detector names allow the web interface to send specific commands to specific detectors only.
 
 The DDC-10 module uses telnet and requires libtcl8.5 and libexpect. 
 
