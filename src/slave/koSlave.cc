@@ -12,6 +12,7 @@
 
 #include <koLogger.hh>
 #include <iostream>
+#include <fstream>
 #include <iomanip>
 #include <koNetClient.hh>
 #include "DigiInterface.hh"
@@ -24,6 +25,8 @@
 
 using namespace std;
 
+int ReadIniFile(string filepath, string &SERVERADDR, int &PORT, 
+		int &DATAPORT, string &NODENAME, int &ID);
 
 #ifdef KLITE
 // *******************************************************************************
@@ -138,8 +141,17 @@ int main()
    //Set up objects
    koLogger      *koLog = new koLogger("log/slave.log");
    koNetClient    fNetworkInterface(koLog);
+   
+   string filepath = "SlaveConfig.ini";
+   string SERVERADDR = "xedaq02";
+   int PORT = 2002, DATAPORT = 2003, ID = 1;
+   string NODENAME = "DAQ01";
+   if(ReadIniFile(filepath, SERVERADDR, PORT, DATAPORT, NODENAME, ID)!=0){
+     cout<<"Error reading .ini file, does it exist at src/slave/SlaveConfig.ini?"<<endl;
+     return -1;
+   }
    //   fNetworkInterface.Initialize("xedaq02",2002,2003,2,"xedaq02");
-   fNetworkInterface.Initialize("xedaq02",2004,2005,2,"muon_veto"); 
+   fNetworkInterface.Initialize(SERVERADDR,PORT,DATAPORT,ID,NODENAME); 
    DigiInterface  *fElectronics = new DigiInterface(koLog);
    koOptions   fDAQOptions;
    koRunInfo_t    fRunInfo;
@@ -280,4 +292,40 @@ connection_loop:
    return 0;
    
    
+}
+
+int ReadIniFile(string filepath, string &SERVERADDR, int &PORT, 
+		int &DATAPORT, string &NODENAME, int &ID)
+{
+  ifstream inifile;
+  inifile.open( filepath.c_str() );
+  if( !inifile ) return -1;
+
+  string line;
+  while ( !inifile.eof() ){
+    getline( inifile, line );
+    if ( line[0] == '#' ) continue; //ignore comments                                
+
+    //parse                                                                          
+    istringstream iss(line);
+    vector<string> words;
+    copy(istream_iterator<string>(iss),
+         istream_iterator<string>(),
+         back_inserter<vector<string> >(words));
+    if(words.size()<2) continue;
+
+    if( words[0] == "COM_PORT" )
+      PORT = koHelper::StringToInt(words[1]);
+    else if ( words[0] == "DATA_PORT" )
+      DATAPORT = koHelper::StringToInt(words[1]);
+    else if ( words[0] == "NAME" )
+      NODENAME=words[1];
+    else if ( words[0] == "ID" )
+      ID = koHelper::StringToInt(words[1]);
+    else if ( words[0] == "SERVERADDR" )
+      SERVERADDR = words[1];
+  }
+  inifile.close();
+  return 0;
+  
 }
