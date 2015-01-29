@@ -22,11 +22,13 @@ DigiInterface::DigiInterface()
    m_koLog = NULL;
    m_DAQRecorder=NULL;
    m_RunStartModule=NULL;
+   pthread_mutex_init(&m_RateMutex,NULL);
    Close();
 }
 
 DigiInterface::~DigiInterface()
 {     
+  pthread_mutex_destroy(&m_RateMutex);
    Close();
 }
 
@@ -37,6 +39,7 @@ DigiInterface::DigiInterface(koLogger *logger)
    m_koLog              = logger;
    m_DAQRecorder        = NULL;
    m_RunStartModule     = NULL;
+   pthread_mutex_init(&m_RateMutex,NULL);
    Close();
 }
 
@@ -109,7 +112,7 @@ int DigiInterface::Initialize(koOptions *options)
    
    
    //Set up threads
-   pthread_mutex_init(&m_RateMutex,NULL);
+   //pthread_mutex_init(&m_RateMutex,NULL);
    m_iReadSize=0;
    m_iReadFreq=0;
    if(options->processing_num_threads>0)
@@ -158,7 +161,7 @@ void DigiInterface::Close()
 {
    StopRun();
    
-   pthread_mutex_destroy(&m_RateMutex);
+   //pthread_mutex_destroy(&m_RateMutex);
    
    //deactivate digis
    for(unsigned int x=0;x<m_vDigitizers.size();x++)

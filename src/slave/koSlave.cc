@@ -262,6 +262,7 @@ connection_loop:
 	 double rate=0.,freq=0.,nBoards=fElectronics->GetDigis();
 	 unsigned int iFreq=0;	 
 	 unsigned int iRate=fElectronics->GetRate(iFreq);
+	 cout<<"Got rate as "<<iRate<<endl;
 	 rate=(double)iRate;
 	 freq=(double)iFreq;
 	 rate=rate/tdiff;
