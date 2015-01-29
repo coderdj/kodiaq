@@ -189,14 +189,19 @@ Everything should be in place so you can now compile the kodiaq package itself.:
 The connection to the master must also be defined. This is defined in the file src/slave/SlaveConfig.ini,
 which looks as follows::
 
+      SERVERADDR xedaq02
       COM_PORT 2002
       DATA_PORT 2003
       NAME xedaq01
       ID 1
 
-This examples defines slave 'xedaq01' with ID '1' to use ports 2002 and 2003. These ports must
-also correspond to a detector defined in src/master/MasterConfig.ini (see below) or the slave will
-never be contacted by the network and will just listen perpetually.
+This examples defines slave 'xedaq01' with ID '1' to use ports 2002 and 2003 to 
+try to connect to the server at hostname xedaq02. The ports given must correspond 
+to a detector defined in src/master/MasterConfig.ini (see below) or the slave will
+never be contacted by the network and will just listen perpetually. The server address
+can be an IP address or a hostname. The NAME should be a single unique string (any words
+beyond the first one are ignored). The ID should be a single digit between 0 and 9 and is
+used to uniquely identify this slave from the dispatcher.
 
 To start the slave just run koSlave, preferably in a detached screen.
 The program will automatically scan the master and check to see if
