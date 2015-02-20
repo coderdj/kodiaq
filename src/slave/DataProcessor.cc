@@ -147,15 +147,22 @@ void DataProcessor::SplitChannels(vector<u_int32_t*> *&buffvec, vector<u_int32_t
     u_int32_t headerTime=0;
     u_int32_t channelSize=0;
     while(idx<(((*sizevec)[x])/(sizeof(u_int32_t)))) {	   
-      if(((*buffvec)[x][idx])==0xFFFFFFFF){idx++; continue;}//empty data, iterate
-      if(((*buffvec)[x][idx]>>20)!=0xA00){idx++; continue;} //found a header
-      if(!ZLE) channelSize = (((*buffvec)[x][idx]&0xFFFFFF)-4)/8;
+
+      if(((*buffvec)[x][idx])==0xFFFFFFFF){idx++; continue;}// empty data, iterate
+      if(((*buffvec)[x][idx]>>20)!=0xA00){idx++; continue;} // stop if you found a header
+
+      // Read header
+
+      // Proper computation of channel size needs channel mask
+      u_int32_t mask = ((*buffvec)[x][idx+1])&0xFF;
+      // need Hamming weight of mask
+      if(!ZLE) channelSize = (((*buffvec)[x][idx]&0xFFFFFF)-4)/__builtin_popcount(mask);      
+
       if(eventIndices!=NULL)
 	eventIndices->push_back(retbuff->size());
-      //Read information from header. Need channel mask and header time
-      u_int32_t mask = ((*buffvec)[x][idx+1])&0xFF;
       headerTime = ((*buffvec)[x][idx+3])&0x7FFFFFFF;
-      idx+=4;    //skip header, we have what we need
+      idx+=4;    
+      //skip past header, we have what we need
       
       for(int channel=0; channel<8;channel++){   //loop through channels
 	if(!((mask>>channel)&1))      //Do we have this channel in the event?
@@ -277,81 +284,115 @@ void DataProcessor::SplitChannelsNewFW(vector<u_int32_t*> *&buffvec, vector<u_in
 
 void DataProcessor::Process()
 {
+
   // General processing class. Parses data then passes on to the appropriate recorder object
-  bool bExitCondition = false; //set to true if no boards are active
   
+  // If no boards are active set this to true to exit
+  bool bExitCondition = false; 
+  
+  // Check if objects have been initialized properly
   if(m_DigiInterface == NULL || m_koOptions == NULL) 
     return;
   if(m_DAQRecorder==NULL && m_koOptions->write_mode!=WRITEMODE_NONE)
     return;
 
+ 
 #ifdef HAVE_LIBMONGOCLIENT
+  // MongoDB-specific variables
+  
   int mongoID = -1;
   DAQRecorder_mongodb *DAQRecorder_mdb = NULL;
   vector <mongo::BSONObj> *vMongoInsertVec = new vector<mongo::BSONObj>();
-  if(m_koOptions->write_mode == WRITEMODE_MONGODB){
-    DAQRecorder_mdb = dynamic_cast<DAQRecorder_mongodb*>(m_DAQRecorder);
+  
+  if( m_koOptions->write_mode == WRITEMODE_MONGODB ){
+
+    // We trust that we are being sent a mongoDB recorder, so we can safely dynamic cast
+    DAQRecorder_mdb = dynamic_cast <DAQRecorder_mongodb*> ( m_DAQRecorder );
+    
     if((mongoID = m_DAQRecorder->RegisterProcessor())==-1)       
       return;
   }
+  
 #endif
+
 #ifdef HAVE_LIBPBF
+  // Protocol Buffer File output
+  
   DAQRecorder_protobuff *DAQRecorder_pb = NULL;
   if(m_koOptions->write_mode == WRITEMODE_FILE){
     DAQRecorder_pb = dynamic_cast<DAQRecorder_protobuff*>(m_DAQRecorder);
   }
+  
 #endif
  
   //declare data containers
-  vector<u_int32_t*> *buffvec      = NULL;
-  vector<u_int32_t > *sizevec      = NULL;
-  vector<u_int32_t > *channels     = NULL;
-  vector<u_int32_t > *times        = NULL;
-  vector<u_int32_t > *eventIndices = NULL;
-  int                 iModule      = 0;
+  vector<u_int32_t*> *buffvec      = NULL;  // Data
+  vector<u_int32_t > *sizevec      = NULL;  // Data sizes (words)
+  vector<u_int32_t > *channels     = NULL;  // Channel number
+  vector<u_int32_t > *times        = NULL;  // Timestamp
+  vector<u_int32_t > *eventIndices = NULL;  // Event
+  int                 iModule      = 0;     // Fill with ID of current module
+
 
   while(!bExitCondition){
+    //
+    // This loop will be processed until the DigiInterface switches all digitizers to inactive.
+    // 
     bExitCondition = true;
-    for(unsigned int x=0; x<m_DigiInterface->GetDigis();x++)  {
+
+    for(unsigned int x = 0; x < m_DigiInterface->GetDigis(); x++)  {
       CBV1724 *digi = m_DigiInterface->GetDigi(x);
+      
       if(digi->Activated()) bExitCondition=false;
       
-      usleep(10);
+      //usleep(10); // Seems unneccesary, commented 20.2.2014
       
-      // Get the data if there is some      
+      // Check if the digitizer has data and is not associated 
+      // with another processor
       if(digi->RequestDataLock()!=0) continue;
-      int resetCounterStart = 0;
-      buffvec = digi->ReadoutBuffer(sizevec, resetCounterStart);
+
+      // resetCounterStart = how many times has the digitizer clock cycled (it's only 31-bit)
+      // at the start of the event
+      int resetCounterStart = 0; 
+
+      buffvec = digi->ReadoutBuffer( sizevec, resetCounterStart );
       iModule = digi->GetID().id;
       digi->UnlockDataBuffer();
      
       // Parse the data if requested
-      if(m_koOptions->processing_mode == 1) { //simple block parsing
+      // The processing functions will modify the vectors sent as arguments
+      if(m_koOptions->processing_mode == 1) { //simple block parsing. 
 	SplitBlocks(buffvec,sizevec);
       }
-      else if(m_koOptions->processing_mode !=0 ){
+      else if(m_koOptions->processing_mode !=0 ){ // all other modes separate channels
 	channels = new vector<u_int32_t>();
 	times = new vector<u_int32_t>();
 
 	if(m_koOptions->processing_mode == 2 || m_koOptions->processing_mode == 3) { //channel parsing old fw
+
 	  eventIndices = new vector<u_int32_t>();
+
 	  if(m_koOptions->processing_mode == 2)
-	    SplitChannels(buffvec,sizevec,times,channels,eventIndices);
-	  
-	  else SplitChannels(buffvec,sizevec,times,channels,eventIndices,false);
+	    SplitChannels(buffvec,sizevec,times,channels,eventIndices);	  
+	  else 
+	    SplitChannels(buffvec,sizevec,times,channels,eventIndices,false);
 	}
 	else if(m_koOptions->processing_mode == 4) { //channel parsing new fw
 	  SplitChannelsNewFW(buffvec,sizevec,times,channels);
 	}
       }
       
+
+      // Processing part is over. Now write the data with the DAQRecorder object
       unsigned int        currentEventIndex = 0;
       int                 protocHandle = -1;
       long long           latestTime64 =0;
+
       //Loop through the parsed buffers
       for(unsigned int b = 0; b < buffvec->size(); b++) {
 	u_int32_t TimeStamp = 0;
 	int       Channel    = -1;
+
 	// Get time stamp if required
 	if(m_koOptions->processing_mode==0 || 
 	   m_koOptions->processing_mode==1) {
@@ -364,9 +405,7 @@ void DataProcessor::Process()
 	}
 	
 	//Convert the time to 64-bit
-	// We assume this data is in temporal order
-	//	int ResetCounter = 0;
-	//	if(m_DAQRecorder!=NULL) ResetCounter = m_DAQRecorder->GetResetCounter(TimeStamp);
+	// We assume this data is in temporal order for computation using the reset counter
 	long long Time64 = ((unsigned long)resetCounterStart << 31) | TimeStamp;
 	if(Time64-latestTime64 < -1E9){
 	  resetCounterStart++;
