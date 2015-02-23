@@ -85,7 +85,7 @@ class VMEBoard
    void LogMessage(string mess);
    void LogSendMessage(string mess);
    
- private:
+ protected:
    koLogger *m_koLog;
 };
 

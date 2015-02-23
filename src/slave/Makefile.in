@@ -108,7 +108,8 @@ PROGRAMS = $(bin_PROGRAMS)
 am_koSlave_OBJECTS = koSlave-koSlave.$(OBJEXT) \
 	koSlave-CBV1724.$(OBJEXT) koSlave-CBV2718.$(OBJEXT) \
 	koSlave-DigiInterface.$(OBJEXT) koSlave-VMEBoard.$(OBJEXT) \
-	koSlave-DAQRecorder.$(OBJEXT) koSlave-DataProcessor.$(OBJEXT)
+	koSlave-DAQRecorder.$(OBJEXT) koSlave-DataProcessor.$(OBJEXT) \
+	koSlave-NCursesUI.$(OBJEXT)
 koSlave_OBJECTS = $(am_koSlave_OBJECTS)
 am__DEPENDENCIES_1 =
 koSlave_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
@@ -317,7 +318,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-koSlave_SOURCES = koSlave.cc CBV1724.cc CBV1724.hh CBV2718.cc CBV2718.hh DigiInterface.cc DigiInterface.hh VMEBoard.cc VMEBoard.hh DAQRecorder.cc DAQRecorder.hh DataProcessor.cc DataProcessor.hh
+koSlave_SOURCES = koSlave.cc CBV1724.cc CBV1724.hh CBV2718.cc CBV2718.hh DigiInterface.cc DigiInterface.hh VMEBoard.cc VMEBoard.hh DAQRecorder.cc DAQRecorder.hh DataProcessor.cc DataProcessor.hh NCursesUI.hh NCursesUI.cc
 koSlave_CPPFLAGS = -I$(top_srcdir)/src/common -Wall -g -DLINUX -fPIC \
 	$(am__append_3)
 koSlave_LDADD = -L$(top_srcdir)/src/common/.libs -lkodiaq -lCAENVME \
@@ -422,6 +423,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/koSlave-DAQRecorder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/koSlave-DataProcessor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/koSlave-DigiInterface.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/koSlave-NCursesUI.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/koSlave-VMEBoard.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/koSlave-koSlave.Po@am__quote@
 
@@ -543,6 +545,20 @@ koSlave-DataProcessor.obj: DataProcessor.cc
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='DataProcessor.cc' object='koSlave-DataProcessor.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(koSlave_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o koSlave-DataProcessor.obj `if test -f 'DataProcessor.cc'; then $(CYGPATH_W) 'DataProcessor.cc'; else $(CYGPATH_W) '$(srcdir)/DataProcessor.cc'; fi`
+
+koSlave-NCursesUI.o: NCursesUI.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(koSlave_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT koSlave-NCursesUI.o -MD -MP -MF $(DEPDIR)/koSlave-NCursesUI.Tpo -c -o koSlave-NCursesUI.o `test -f 'NCursesUI.cc' || echo '$(srcdir)/'`NCursesUI.cc
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/koSlave-NCursesUI.Tpo $(DEPDIR)/koSlave-NCursesUI.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='NCursesUI.cc' object='koSlave-NCursesUI.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(koSlave_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o koSlave-NCursesUI.o `test -f 'NCursesUI.cc' || echo '$(srcdir)/'`NCursesUI.cc
+
+koSlave-NCursesUI.obj: NCursesUI.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(koSlave_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT koSlave-NCursesUI.obj -MD -MP -MF $(DEPDIR)/koSlave-NCursesUI.Tpo -c -o koSlave-NCursesUI.obj `if test -f 'NCursesUI.cc'; then $(CYGPATH_W) 'NCursesUI.cc'; else $(CYGPATH_W) '$(srcdir)/NCursesUI.cc'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/koSlave-NCursesUI.Tpo $(DEPDIR)/koSlave-NCursesUI.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='NCursesUI.cc' object='koSlave-NCursesUI.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(koSlave_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o koSlave-NCursesUI.obj `if test -f 'NCursesUI.cc'; then $(CYGPATH_W) 'NCursesUI.cc'; else $(CYGPATH_W) '$(srcdir)/NCursesUI.cc'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

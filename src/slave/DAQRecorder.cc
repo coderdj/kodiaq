@@ -112,7 +112,6 @@ int DAQRecorder_mongodb::RegisterProcessor()
      stringstream err;
       err<<"DAQRecorder_mongodb::RegisterProcessor - Error connecting to mongodb "<<e.toString();
       LogError(err.str());
-      cout<<err<<endl;
       return -1;
    }
    int lock = pthread_mutex_lock(&m_ConnectionMutex);

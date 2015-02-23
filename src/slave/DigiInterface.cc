@@ -73,7 +73,10 @@ int DigiInterface::Initialize(koOptions *options)
 	 m_koLog->Error("DigiInterface::Initialize - Error in CAEN initialization");
        return -1;
      }      
-     cout<<"Initialized link ID: "<<Link.id<<" Crate: "<<Link.crate<<" with handle: "<<tempHandle<<endl;
+     stringstream logmess;
+     logmess<<"Initialized link ID: "<<Link.id<<" Crate: "<<Link.crate<<" with handle: "<<tempHandle;
+     m_koLog->Message(logmess.str());
+     
      m_vCrateHandles.push_back(tempHandle);
      
      // define modules corresponding to this crate (inefficient
@@ -82,7 +85,10 @@ int DigiInterface::Initialize(koOptions *options)
        board_definition_t Board = options->GetBoard(imodule);
        if(Board.link!=Link.id || Board.crate!=Link.crate)
 	 continue;
-       cout<<"Found a board with link "<<Board.link<<" and crate "<<Board.crate<<endl;
+       logmess.str(std::string());
+       logmess<<"Found a board with link "<<Board.link<<" and crate "<<Board.crate;
+       m_koLog->Message(logmess.str());
+
        if(Board.type=="V1724"){	      
 	 CBV1724 *digitizer = new CBV1724(Board,m_koLog);
 	 m_vDigitizers.push_back(digitizer);
@@ -156,6 +162,19 @@ void DigiInterface::UpdateRecorderCollection(koOptions *options)
 #endif
 }
 
+int DigiInterface::GetBufferOccupancy( vector<int> &digis, vector<int> &sizes)
+{
+  digis.resize(0);
+  sizes.resize(0);
+  int totalSize = 0;
+  for(unsigned int x=0; x<m_vDigitizers.size(); x++){
+    digis.push_back(m_vDigitizers[x]->GetID().id);
+    int bSize = m_vDigitizers[x]->GetBufferSize();
+    sizes.push_back(bSize);
+    totalSize += bSize;
+  }
+  return totalSize;
+}
 
 void DigiInterface::Close()
 {

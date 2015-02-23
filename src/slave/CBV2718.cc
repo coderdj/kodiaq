@@ -68,12 +68,14 @@ int CBV2718::Initialize(koOptions *options)
     i_pulserHz = options->pulser_freq;
     data+=0x80;
   }
-  cout<<"Writing cvOutMuxRegSet with :"<<data<<endl;
+  //cout<<"Writing cvOutMuxRegSet with :"<<data<<endl;
   //unsigned int data = 0x3FF; 
    if(CAENVME_WriteRegister(fCrateHandle,cvOutMuxRegSet,data)!=cvSuccess)
-     cout<<"Can't write to CC!"<<endl;
+     m_koLog->Error("Can't write to crate controller!");
+   //cout<<"Can't write to CC!"<<endl;
    if(SendStopSignal()!=0)
-     cout<<"Stop signal failed."<<endl;
+     m_koLog->Error("Sending stop signal failed in CBV2718");
+   //cout<<"Stop signal failed."<<endl;
    return 0;
 }
 
@@ -150,7 +152,7 @@ int CBV2718::SendStopSignal()
 {
   u_int16_t data = 0x7C8;
   //u_int16_t data = 0x7FF;
-  cout<<"Writing cvOutRegClear with: "<<data<<endl;
+  //cout<<"Writing cvOutRegClear with: "<<data<<endl;
    if(CAENVME_WriteRegister(fCrateHandle,cvOutRegClear,data)!=0)  
      return -1;
    return 0;   
