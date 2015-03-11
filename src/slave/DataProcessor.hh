@@ -98,6 +98,11 @@ private:
   // 
   u_int32_t         GetTimeStamp(u_int32_t *buffer);
   
+  //
+  // Name       : int DataProcessor::GetBufferIntegral( u_int32_t *buffvec, u_int32_t size )
+  // Purpose    : Return the integral of the pulse in the buffer in digi units
+  //
+  int               GetBufferIntegral( u_int32_t *buffvec, u_int32_t size );
   
   // Access to private members
   //DAQRecorder*   GetDAQRecorder(){

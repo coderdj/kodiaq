@@ -47,7 +47,8 @@ void koOptions::Reset()
 
   //Reset processing options
   processing_mode = processing_num_threads = processing_readout_threshold = -1;
-  
+  occurrence_integral = false;
+
   //Reset file options
   file_path = "";
   file_events_per_file = -1;
@@ -57,7 +58,7 @@ void koOptions::Reset()
   led_trigger = false;
   
   buffer_size_kill = -1;
-
+ 
 #ifdef HAS_DDC
   //Reset ddc10 options
   fDDC10Options.Initialized=false;
@@ -137,6 +138,8 @@ int koOptions::ReadParameterFile(string filename)
 	processing_num_threads = koHelper::StringToInt(words[1]);
       else if(words[0] == "processing_readout_threshold")
 	processing_readout_threshold = koHelper::StringToInt(words[1]);
+      else if( words[0] == "occurrence_integral" )
+	occurrence_integral = !!koHelper::StringToInt(words[1]);
       else if(words[0] == "mongo_address")
 	mongo_address = words[1];
       else if(words[0] == "mongo_output_format")
@@ -224,6 +227,7 @@ void koOptions::ToStream(stringstream *retstream)
   (*retstream)<<"processing_mode "<<processing_mode<<endl;
   (*retstream)<<"processing_num_threads "<<processing_num_threads<<endl;
   (*retstream)<<"processing_readout_threshold "<<processing_readout_threshold<<endl;
+  (*retstream)<<"occurrence_integral "<<occurrence_integral<<endl;
   (*retstream)<<"mongo_address "<<mongo_address<<endl;
   (*retstream)<<"mongo_collection "<<mongo_collection;
   if(dynamic_run_names) (*retstream)<<"*";
@@ -235,7 +239,7 @@ void koOptions::ToStream(stringstream *retstream)
   (*retstream)<<"file_path "<<file_path<<endl;
   (*retstream)<<"file_events_per_file "<<file_events_per_file<<endl;
   (*retstream)<<"led_trigger "<<led_trigger<<endl;
-  (*retstream)<<"muon_veto "<<muon_veto<<endl;
+  (*retstream)<<"muon_veto "<<muon_veto<<endl;  
   for(unsigned int x=0;x<m_registers.size();x++){
     if(m_registers[x].node!='x')
       (*retstream)<<"%"<<m_registers[x].node;

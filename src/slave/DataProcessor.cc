@@ -412,7 +412,12 @@ void DataProcessor::Process()
 	  Time64 += ((unsigned long) 1 << 31);
 	}
 	latestTime64 = Time64;
-	  
+
+	// Get integral if required (do before zipping)
+	int integral = 0;
+	if( m_koOptions->occurrence_integral )
+	  integral = GetBufferIntegral( (*buffvec)[b], (*sizevec)[b] );
+	
 	
 	//zip data if required
 	char* buff=NULL;
@@ -446,8 +451,13 @@ void DataProcessor::Process()
 	  bson.append("module",iModule);
 	  bson.append("channel",Channel);
 	  bson.append("time",Time64);
+
+	  if( m_koOptions->occurrence_integral )
+	    bson.append("integral", integral);
+
 	  bson.appendBinData("data",(int)eventSize,mongo::BinDataGeneral,(const void*)buff);
 	  vMongoInsertVec->push_back(bson.obj());
+
 	  if((int)vMongoInsertVec->size()>m_koOptions->mongo_min_insert_size){
 	    if(DAQRecorder_mdb->InsertThreaded(vMongoInsertVec,mongoID)==0){ //success
 	      vMongoInsertVec = new vector<mongo::BSONObj>();
@@ -493,6 +503,32 @@ void DataProcessor::Process()
   return;
 }
 
+int DataProcessor::GetBufferIntegral( u_int32_t *buffvec, u_int32_t size ){
+  
+  // Want to loop through buffer and get integral
+  // Assume as first step baseline @ 0xAFFF
+  int integral = 0;
+  int baseline = 0;
+  for ( u_int32_t i = 0; i < size/4; i++ ){
+         
+    int firstWord  =  buffvec[i]&0x3FFF;
+    int secondWord = (buffvec[i]>>16)&0x3FFF;
+    
+    if ( i <= 3 ){
+      baseline += firstWord;
+      baseline += secondWord;
+      
+      if ( i == 3 )
+	baseline /= 8;
+    }
+    else {
+      integral += baseline - firstWord;
+      integral += baseline - secondWord;
+    }
+
+  }
+  return integral;
+}
 
 	
 

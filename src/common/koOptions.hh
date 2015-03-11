@@ -143,6 +143,7 @@ public:
   int                        processing_mode;
   int                        processing_num_threads;
   int                        processing_readout_threshold;
+  bool                       occurrence_integral;
 
   // Mongodb options
   string                     mongo_address;

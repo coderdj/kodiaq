@@ -405,6 +405,7 @@ int MasterMongodbConnection::PullRunMode(string name, koOptions &options)
    options.processing_mode=(res.getIntField("processing_mode"));
    options.processing_num_threads=(res.getIntField("processing_num_threads"));
    options.processing_readout_threshold=(res.getIntField("processing_readout_threshold"));
+   options.occurrence_integral = (res.getBooleanField("occurrence_integral"));
    options.mongo_address=(res.getStringField("mongo_address"));
    options.mongo_database=(res.getStringField("mongo_database"));
    options.mongo_collection=(res.getStringField("mongo_collection"));
