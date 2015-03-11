@@ -61,9 +61,9 @@ int StandaloneMain()
 
 program_start:
    theGUI.UpdateOutput("","");
-   //   theGUI.UpdateRunDisplay(0, 0., 0.);
+   theGUI.UpdateRunDisplay(0, 0., 0.);
    theGUI.DrawBottomBar(0);
-   //theGUI.UpdateBufferSize(0);
+   theGUI.UpdateBufferSize(0);
 
    char input='a';
    //cout<<"Welcome to kodiaq lite! Press 's' to start the run, 'q' to quit."<<endl;
