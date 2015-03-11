@@ -57,7 +57,9 @@ class CBV1724 : public VMEBoard {
    
    int DetermineBaselines();                                       /*!<  Simple baseline determination is performed. Basically this just takes data for some time and averages the value on the wire. The DAC register is adjusted iteratively until the baseline minimizes around 16000 (ADC units). There will be problems if there is a lot of activity on the channels, since obviously the baselines are not flat in this case. Do not try to call this function if there is a high rate on the channels or if a strong source is in. At best it will fail and revert back to the old baselines anyway while at worst it will determine poor baselines which can cause undefined behavior.*/
    void SetActivated(bool active);                                 /*!<  Set if this board is active (taking data).*/
-  
+
+  /* GetBufferSize: get the size of the buffer in this digitizer in bytes. */
+  int GetBufferSize(){ return fBufferOccSize; }
  private:
    int                  LoadDAC(vector <int> baselines);
    int                  LoadBaselines();                       //Load baselines to boards
@@ -72,6 +74,7 @@ class CBV1724 : public VMEBoard {
    vector <u_int32_t*> *fBuffers;
    int                  i_clockResetCounter;
    u_int64_t            i64_blt_first_time,i64_blt_second_time,i64_blt_last_time;
+   int                  fBufferOccSize;
 };
 
 #endif

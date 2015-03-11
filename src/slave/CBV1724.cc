@@ -23,6 +23,7 @@ CBV1724::CBV1724()
    bActivated=false;
    fBuffers=NULL;
    fSizes=NULL;
+   fBufferOccSize = 0;
    fReadoutThresh=10;
    pthread_mutex_init(&fDataLock,NULL);
    pthread_cond_init(&fReadyCondition,NULL);
@@ -48,6 +49,7 @@ CBV1724::CBV1724(board_definition_t BoardDef, koLogger *kLog)
   pthread_mutex_init(&fDataLock,NULL);
   pthread_cond_init(&fReadyCondition,NULL);
   i64_blt_first_time = i64_blt_second_time = i64_blt_last_time = 0;
+  fBufferOccSize = 0;
 }
 
 int CBV1724::Initialize(koOptions *options)
@@ -84,29 +86,32 @@ int CBV1724::Initialize(koOptions *options)
    fSizes   = new vector<u_int32_t>();
 
    if(options->baseline_mode==1)    {	
-      cout<<"Determining baselines ";
-      int tries = 0;
-      int ret=-1;
-      while((ret=DetermineBaselines())!=0 && tries<5){
-	 cout<<" .";
-	 tries++;
-	 if(ret==-2){
-	    cout<<"Failed"<<endl;
-	    return -2;
-	 }	 
-      }
-      if(ret==0)
-	cout<<" . . . done!"<<endl;
-      else
-	cout<<" . . . failed!"<<endl;
+     m_koLog->Message("Determining baselines ");
+     int tries = 0;
+     int ret=-1;
+     while((ret=DetermineBaselines())!=0 && tries<5){
+       cout<<" .";
+       tries++;
+       if(ret==-2){
+	 m_koLog->Error("Baselines failed with ret -2");
+	 return -2;
+       }	 
+     }
+     //if(ret==0)
+     //cout<<" . . . done!"<<endl;
+     //else
+     //cout<<" . . . failed!"<<endl;
+     stringstream logmess;
+     logmess<<"Baselines returned value "<<ret;
+     m_koLog->Message(logmess.str());
    }
-   else cout<<"Didn't determine baselines."<<endl;
-
+   else m_koLog->Message("Automatic baseline determination switched off");
+   
    if(options->baseline_mode != 2){
-     cout<<"Loading baselines"<<endl;
      LoadBaselines();
-     cout<<"Done with baselines."<<endl;
+     m_koLog->Message("Baselines loaded from file");
    }
+   fBufferOccSize = 0;
    return retVal;
 }
 
@@ -136,7 +141,7 @@ unsigned int CBV1724::ReadMBLT()
 	// board (!). 
 	 stringstream ss;	 
 	 ss<<"Board "<<fBID.id<<" reports insufficient BLT buffer size. ("<<blt_bytes<<" > "<<fBufferSize<<")"<<endl;	 
-	 cout<<ss.str()<<endl;
+	 m_koLog->Error(ss.str());
 	 delete[] buff;
 	 return 0;
       }
@@ -153,6 +158,9 @@ unsigned int CBV1724::ReadMBLT()
       LockDataBuffer();
       fBuffers->push_back(writeBuff);
       fSizes->push_back(blt_bytes);
+
+      // Update total buffer size
+      fBufferOccSize += blt_bytes;
       
       if(fBuffers->size()==1) i64_blt_first_time = koHelper::GetTimeStamp(buff);
 
@@ -256,6 +264,9 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
    fSizes = new vector<u_int32_t>();
    i64_blt_last_time = i64_blt_first_time = i64_blt_second_time;
 
+   // Reset total buffer size
+   fBufferOccSize = 0;
+
    return retVec;
 }
 
@@ -337,8 +348,8 @@ int CBV1724::DetermineBaselines()
   //ReadReg32(0x8124,fwRev);
   ReadReg32(0x118C,fwRev);
   int fwVERSION = ((fwRev>>8)&0xFF); //0 for old FW, 137 for new FW
-  int fwVERSIONOTHER = (fwRev)&0xFF;
-  cout<<fwVERSION<<" VERSION "<<fwVERSIONOTHER<<endl;
+  //int fwVERSIONOTHER = (fwRev)&0xFF;
+  //cout<<fwVERSION<<" VERSION "<<fwVERSIONOTHER<<endl;
   //Channel configuration 0x8000 - turn off ZLE/VETO
   ReadReg32(CBV1724_ChannelConfReg,reg_CConf);
   if(fwVERSION!=0)
@@ -408,7 +419,9 @@ int CBV1724::DetermineBaselines()
     do{
       ret = CAENVME_FIFOBLTReadCycle(fCrateHandle,fBID.vme_address,((unsigned char*)(*buff)[0])+blt_bytes,fBLTSize,cvA32_U_BLT,cvD32,&nb);
       if(ret!=cvSuccess && ret!=cvBusError) {
-	cout<<"CAENVME Read error, baselines, "<<ret<<endl;
+	stringstream errorstr;
+	errorstr<<"CAENVME read error. Baselines. "<<ret;
+	m_koLog->Error(errorstr.str());
 	delete[] buff;
 	return -2;
       }
@@ -449,7 +462,8 @@ int CBV1724::DetermineBaselines()
       }
       baseline/=bdiv;
       if(maxval-minval > 500) {
-	cout<<"Channel "<<(*dchannels)[x]<<" signal in baseline?"<<endl;
+	//cout<<"Channel "<<(*dchannels)[x]<<" signal in baseline?"<<endl;
+	
 	continue; //signal in baseline?
       }
       //shooting for 16000. best is if we UNDERshoot and then can more accurately adjust DAC

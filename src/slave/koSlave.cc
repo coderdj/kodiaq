@@ -19,9 +19,9 @@
 #include <config.h>
 
 //If using the light version we need user input functions
-#ifdef KLITE
-#include <kbhit.hh>
-#endif
+//#ifdef KLITE
+//#include <kbhit.hh>
+//#endif
 
 using namespace std;
 
@@ -34,6 +34,7 @@ int ReadIniFile(string filepath, string &SERVERADDR, int &PORT,
 //           STANDALONE CODE FOR KODIAQ_LITE, SINGLE-INSTANCE DAQ
 //           
 // *******************************************************************************
+#include "NCursesUI.hh"
 
 int StandaloneMain()
 {   
@@ -42,26 +43,56 @@ int StandaloneMain()
    DigiInterface *fElectronics = new DigiInterface(&fLog);
    koOptions fDAQOptions;
    string fOptionsPath = "DAQConfig.ini";
-      
+
+   
+   // Not yet ready
+   NCursesUI theGUI;
+   theGUI.Initialize();
+   theGUI.DrawBottomBar(0);
+   string mess = fLog.GetTimeString();
+   mess += "Started kodiaq";
+   theGUI.AddMessage(mess, 0);
+   //char killit;
+   //cin>>killit;
+   //return 0;
+
+   theGUI.UpdateRunDisplay(0, 0., 0.);
+   theGUI.UpdateBufferSize(0);
+
 program_start:
+   theGUI.UpdateOutput("","");
+   //   theGUI.UpdateRunDisplay(0, 0., 0.);
+   theGUI.DrawBottomBar(0);
+   //theGUI.UpdateBufferSize(0);
+
    char input='a';
-   cout<<"Welcome to kodiaq lite! Press 's' to start the run, 'q' to quit."<<endl;
-   cout<<"To arm over and over again (5 seconds in between) press 'l'"<<endl;
+   //cout<<"Welcome to kodiaq lite! Press 's' to start the run, 'q' to quit."<<endl;
+   //cout<<"To arm over and over again (5 seconds in between) press 'l'"<<endl;
    while(!kbhit())
      usleep(100);
    cin.get(input);
-   if(input=='q') return 0;
-   else if(input=='l')  {
+   if(input=='q') {
+     theGUI.Close();
+     return 0;
+   }
+   else if(input=='b')  {
       if(fDAQOptions.ReadParameterFile(fOptionsPath)!=0)
 	return -1;
       int n=0;
-      while(input!='q')	{
-	 if(fElectronics->Initialize(&fDAQOptions)==0)
-	   cout<<"Initialized! That was number "<<n<<"! (q-quit)"<<endl;
+      theGUI.UpdateRunDisplay(3, 0., 0.);
+      theGUI.DrawBottomBar(1);
+
+      while(input!='q' && input != 'p')	{
+	stringstream messstream;
+	if(fElectronics->Initialize(&fDAQOptions)==0){
+	  messstream<<fLog.GetTimeString()<<"Initialized. Counter = "<<n<<".";
+	  theGUI.AddMessage(messstream.str(), 0);
+	}
 	 else{
-	    cout<<"Initialization FAILED!!!!"<<endl;
-//	    n=-1;
-	   return -1;
+	   mess = koLogger::GetTimeString();
+	   mess+= "Initialization failed!";
+	   theGUI.AddMessage( mess, 3 );
+	   goto program_start; // yup, I did it
 	 }	 
 	 n++;
 	 int counter=0;
@@ -72,57 +103,113 @@ program_start:
 	 if(counter<1000)
 	   cin.get(input);	        
       }      
+      if(input == 'p')
+	goto program_start;
       return -1;
    }   
+   else if(input=='f'){
+     theGUI.AddMessage( koLogger::GetTimeString() + "Firmware check not yet implemented");
+     goto program_start;
+   }
+   else if(input == 'i'){
+     theGUI.InputBox("Input your .ini file path:", fOptionsPath);
+     theGUI.DrawBottomBar(0);
+     goto program_start;
+   }
    else if(input!='s')  goto program_start;
    
    //load options
-   cout<<"Reading options . . .";
+   mess = koLogger::GetTimeString();
+   mess += "Reading file ";
+   mess += fOptionsPath;
+   theGUI.AddMessage( mess, 0);
    if(fDAQOptions.ReadParameterFile(fOptionsPath)!=0)   {	
-      cout<<"Error reading options file!"<<endl;
-      return 1;
+     theGUI.AddMessage(koLogger::GetTimeString() +  "Error opening .ini file!", 3 );
+     goto program_start; 
    }   
-   cout<<" done!"<<endl;
    //start digi interface
-   cout<<"Initializing electronics."<<endl;
+   mess = koLogger::GetTimeString();
+   mess+="Initializing electronics";
+   theGUI.AddMessage(mess,0);
    if(fElectronics->Initialize(&fDAQOptions)!=0)  {	
-      cout<<"Error initializing electronics"<<endl;
-      return 1;
+     theGUI.AddMessage(koLogger::GetTimeString() + "Error initializing electronics", 3);
+     goto program_start;
    }   
-   cout<<"Finished initializing electronics."<<endl;
+   
+   // Set output to display
+   if(fDAQOptions.write_mode == 0)
+     theGUI.UpdateOutput("none","");
+   else if(fDAQOptions.write_mode == 1)
+     theGUI.UpdateOutput("file", fDAQOptions.file_path);
+   else if(fDAQOptions.write_mode == 2)
+     theGUI.UpdateOutput("MongoDB:", fDAQOptions.mongo_address + ":" + fDAQOptions.mongo_database + "." + fDAQOptions.mongo_collection);
+
    //start run
    if(fElectronics->StartRun()!=0)    {	
-      cout<<"Error starting run."<<endl;
-      return 1;
+     theGUI.AddMessage(koLogger::GetTimeString() + "Error starting run", 3);
+     goto program_start;
    }
-   cout<<koLogger::GetTimeString()<<" Start of run."<<endl;
-   
+   mess = koLogger::GetTimeString();
+   mess+= "Start of run";
+   theGUI.AddMessage(mess, 1);
+   theGUI.DrawBottomBar(1);
+
    input='a';
    time_t prevTime = koLogger::GetCurrentTime();
    while(1)  {	
       if(kbhit()) cin.get(input);
       if(input=='q') break;
+      if(input=='p'){
+	fElectronics->StopRun();
+	theGUI.AddMessage(koLogger::GetTimeString() + "Run stopped",1);
+	theGUI.DrawBottomBar(0);
+	// update text display to zero
+	goto program_start;
+      }
       time_t currentTime = koLogger::GetCurrentTime();
       
       //updates every second
       time_t tdiff;
       if((tdiff = difftime(currentTime,prevTime))>=1.0)  {	 
-	 prevTime=currentTime;
-	 unsigned int iFreq=0;
-	 unsigned int iRate = fElectronics->GetRate(iFreq);
-	 double rate = (double)iRate;
-	 double freq = (double)iFreq;
-	 rate = rate/tdiff;
-	 rate/=1048576;
-	 freq=freq/tdiff;
-	 
-	 cout<<setprecision(2)<<"Rate: "<<rate<<"MB/s   Freq: "<<freq<<"Hz             "<<'\r';//   Averaged over "<<tdiff<<"s"<<'\r';//endl;
-	 cout.flush();
+	
+	// Check for run time errors
+	string errmess;
+	if ( fElectronics->RunError(errmess) ){
+	  theGUI.AddMessage(koLogger::GetTimeString() + "DAQ Error " +errmess,3);
+	  theGUI.UpdateRunDisplay(2, 0., 0.);
+	  goto program_start;
+	}
+	prevTime=currentTime;
+	unsigned int iFreq=0;
+	unsigned int iRate = fElectronics->GetRate(iFreq);
+	double rate = (double)iRate;
+	double freq = (double)iFreq;
+	rate = rate/tdiff;
+	rate/=1048576;
+	freq=freq/tdiff;
+	
+	vector <int> digis;
+	vector <int> sizes;
+	int BufferSize = fElectronics->GetBufferOccupancy(digis, sizes);
+	theGUI.UpdateBufferSize(BufferSize);
+
+	if( fDAQOptions.buffer_size_kill != -1 && 
+	    BufferSize/1000000 > fDAQOptions.buffer_size_kill ){
+	  theGUI.AddMessage(koLogger::GetTimeString() + "Buffer size too large!",3);
+	  theGUI.UpdateRunDisplay(2, 0., 0.);
+	  goto program_start;
+	}
+	theGUI.UpdateRunDisplay(1, rate, freq);
+	
+	 //cout<<setprecision(2)<<"Rate: "<<rate<<"MB/s   Freq: "<<freq<<"Hz             "<<'\r';//   Averaged over "<<tdiff<<"s"<<'\r';//endl;
+	 //cout.flush();
       }      
    }      
-   cout<<koLogger::GetTimeString()<<" End of run."<<endl;
-   
-   return 0;
+   mess = koLogger::GetTimeString();
+   mess += "End of run.";
+   theGUI.AddMessage( mess, 1 );
+   theGUI.Close();
+   exit(0);//return 0;
 }
 
 #endif     

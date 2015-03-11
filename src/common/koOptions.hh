@@ -161,6 +161,7 @@ public:
   int                        led_trigger;
   string                     trigger_mode;
   string                     data_processor_mode;
+  int                        buffer_size_kill;
   
   void                       Reset();   
    

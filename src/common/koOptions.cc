@@ -55,6 +55,8 @@ void koOptions::Reset()
   //Extra options
   muon_veto = false;
   led_trigger = false;
+  
+  buffer_size_kill = -1;
 
 #ifdef HAS_DDC
   //Reset ddc10 options
@@ -161,6 +163,8 @@ int koOptions::ReadParameterFile(string filename)
 	led_trigger = koHelper::StringToInt(words[1]);
       else if(words[0] == "muon_veto")
 	muon_veto = koHelper::StringToInt(words[1]);
+      else if(words[0] == "buffer_size_kill")
+	buffer_size_kill = koHelper::StringToInt(words[1]);
       else if(words[0] == "register") {
 	vme_option_t reg;
 	if(words.size()<3) break;
