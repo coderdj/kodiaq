@@ -3,7 +3,7 @@ koSlave_SOURCES =  koSlave.cc CBV1724.cc CBV1724.hh CBV2718.cc CBV2718.hh DigiIn
 koSlave_CPPFLAGS = -I$(top_srcdir)/src/common -Wall -g -DLINUX -fPIC
 
 
-koSlave_LDADD = -L$(top_srcdir)/src/common/.libs -lkodiaq -lCAENVME
+koSlave_LDADD = -L$(top_srcdir)/src/common/.libs -lkodiaq -lCAENVME -lncurses
 
 if WITH_LIBPBF
 koSlave_LDADD += -lpbf -lprotobuf -lsnappy -lpthread
