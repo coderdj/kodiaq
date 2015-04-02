@@ -22,7 +22,7 @@
 #define HAVE_LIBBOOST_THREAD 1
 
 /* Define to 1 if you have the `CAENVME' library (-lCAENVME). */
-#define HAVE_LIBCAENVME 1
+/* #undef HAVE_LIBCAENVME */
 
 /* Define to 1 if you have the `expect' library (-lexpect). */
 /* #undef HAVE_LIBEXPECT */
@@ -31,7 +31,7 @@
 #define HAVE_LIBMONGOCLIENT 1
 
 /* Define to 1 if you have the `ncurses' library (-lncurses). */
-#define HAVE_LIBNCURSES 1
+/* #undef HAVE_LIBNCURSES */
 
 /* Define to 1 if you have the `pbf' library (-lpbf). */
 #define HAVE_LIBPBF 1
@@ -43,7 +43,7 @@
 #define HAVE_LIBPTHREAD 1
 
 /* Define to 1 if you have the `snappy' library (-lsnappy). */
-#define HAVE_LIBSNAPPY 1
+/* #undef HAVE_LIBSNAPPY */
 
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
@@ -70,7 +70,7 @@
 #define HAVE_UNISTD_H 1
 
 /* Compile standalone slave */
-#define KLITE 1
+/* #undef KLITE */
 
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */
@@ -107,7 +107,7 @@
 /* #undef WITH_DDC10 */
 
 /* Compile master module */
-/* #undef WITH_MASTER */
+#define WITH_MASTER /**/
 
 /* Compile slave module */
 /* #undef WITH_SLAVE */
