@@ -83,7 +83,7 @@ private:
   WINDOW* create_newwin(int height, int width, int starty, int startx);
 
   void Close();
-  int Redraw();
+
   int WindowResize();
   void MoveMessagesUp();
   void MoveMessagesDown();

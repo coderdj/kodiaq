@@ -346,8 +346,10 @@ int MasterMongodbConnection::CheckForCommand(string &command, string &user,
    comment = b.getStringField("comment");
    detector = b.getStringField("detector");
    user=b.getStringField("name");
-   fMongoDB.remove("online.daqcommands",MONGO_QUERY("command"<<"Start"<<"detector"<<detector));
-   fMongoDB.remove("online.daqcommands",MONGO_QUERY("command"<<"Stop"<<"detector"<<detector)); 
+   fMongoDB.remove("online.daqcommands", 
+		   QUERY("command"<<"Start"<<"detector"<<detector));
+   fMongoDB.remove("online.daqcommands",
+		   QUERY("command"<<"Stop"<<"detector"<<detector)); 
    if(command=="Start")
      PullRunMode(mode,options);
    return 0;

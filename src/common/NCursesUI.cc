@@ -412,7 +412,6 @@ int NCursesUI::InputBox( string prompt, string &reply )
   wrefresh(local_win);
   delwin(local_win);
   // Draw .ini file              
-  Redraw();
   AddMessage("Updated .ini file");
   mvprintw(4, 16, "                                                                      ");
   mvprintw(4, 16, message.c_str());
