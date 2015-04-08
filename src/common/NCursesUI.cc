@@ -42,12 +42,12 @@ void NCursesUI::Close(){
   endwin();
 }
 
-int NCursesUI::Initialize( bool standalone, koMasterConfig_t conf,
+int NCursesUI::Initialize( bool standalone, 
 			   koStatusPacket_t (*f)(string), 
 			   vector <string> detectors )
 {
   initscr();
-  getmaxyx(stdscr, mWINDOW_WIDTH, mWINDOW_HEIGHT);
+  getmaxyx(stdscr, mWINDOW_HEIGHT, mWINDOW_WIDTH);
 
   curs_set(0);
   start_color();
@@ -127,8 +127,9 @@ void NCursesUI::Refresh()
   DrawOutputBox( );
   DrawMessageWin( );
   UpdateRunDisplay( );
+  doupdate();
   refresh();
-
+  return;
 }
 
 int NCursesUI::DrawBottomBar( )
@@ -176,20 +177,20 @@ int NCursesUI::DrawBottomBar( )
     
     wattron( CONTROL_WIN, A_BOLD );
     wattron( CONTROL_WIN, COLOR_PAIR(6) );
-    mvwprintw( CONTROL_WIN, mCONTROL_INDEX, index, (*it).first.c_str() );
+    mvwprintw( CONTROL_WIN, 0, index, (*it).first.c_str() );
     wattroff( CONTROL_WIN, COLOR_PAIR(6) );
     wattron( CONTROL_WIN, COLOR_PAIR(1) );
     index += (*it).first.size();
-    mvwprintw( CONTROL_WIN, mCONTROL_INDEX, index, (*it).second.c_str() );
+    mvwprintw( CONTROL_WIN, 0, index, (*it).second.c_str() );
     index += (*it).second.size();
-    mvwprintw( CONTROL_WIN, mCONTROL_INDEX, index, " ");
+    mvwprintw( CONTROL_WIN, 0, index, " ");
     index++;
     wattroff( CONTROL_WIN, COLOR_PAIR(1) );
     wattroff( CONTROL_WIN, A_BOLD );
 
   }
   
-  wnoutrefresh( CONTROL_WIN );
+  wrefresh( CONTROL_WIN );
 
   return 0;
 }
@@ -237,7 +238,7 @@ int NCursesUI::DrawMessageWin( )
     if( mLine > mMESSAGE_INDEX + mMESSAGE_HEIGHT ) 
       break;
   }
-  wnoutrefresh( MESSAGE_WIN );
+  wrefresh( MESSAGE_WIN );
   return 0;
 }
 
@@ -276,7 +277,7 @@ int NCursesUI::DrawOutputBox( )
   mvwprintw( OUTPUT_WIN, 1, 1, "Output mode: " );  
   mvwprintw( OUTPUT_WIN, 1, mOUTPUT_WIDTH/2, oMode.c_str() );
   wattroff( OUTPUT_WIN, A_BOLD );
-  wnoutrefresh( OUTPUT_WIN );
+  wrefresh( OUTPUT_WIN );
   return 0;
 }
 
@@ -302,7 +303,7 @@ int NCursesUI::AddStatusPacket( koStatusPacket_t DAQStatus, string detector ){
 int NCursesUI::UpdateRunDisplay( )
 {  
   wclear( STATUS_WIN );
-
+  mvwprintw( STATUS_WIN, 0, 0, "TEST");
   int CurrentLine = 1;
 
   // Nested For Loops, first loop detectors
@@ -361,7 +362,7 @@ int NCursesUI::UpdateRunDisplay( )
   ratestring<<"  "<<freq<<" Hz @ "<<rate<<" MB/s       ";
   mvprintw( 2, 50, ratestring.str().c_str() );
   */
-  wnoutrefresh( STATUS_WIN );
+  wrefresh( STATUS_WIN );
   return 0;    
 }
 
@@ -425,7 +426,7 @@ WINDOW* NCursesUI::create_newwin(int height, int width,
 {
   WINDOW *local_win;
   local_win = newwin(height, width, starty, startx);
-  box(local_win, 0 , 0);
+  //box(local_win, 1, 1);
   /* 0, 0 gives default characters                       
    *  * for the vertical and horizontal         
    *  * lines

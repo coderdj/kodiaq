@@ -20,13 +20,6 @@
 
 using namespace std;
 
-struct koMasterConfig_t{
-  string filepath;
-  string monitorDB;
-  string monitorAddr;
-  string outputPath;
-  string outputMode;  
-};
 
 class NCursesUI
 {
@@ -39,8 +32,7 @@ public:
   // if standalone is true draw for standalone mode. 
   // otherwise master mode.
   // You have to send an argument with the function used to poll data
-  int Initialize( bool standalone,  koMasterConfig_t conf,
-		  koStatusPacket_t (*f)(string), vector<string> detectors );
+  int Initialize( bool standalone, koStatusPacket_t (*f)(string), vector<string> detectors );
 
   // Starts running
   int StartLoop();
