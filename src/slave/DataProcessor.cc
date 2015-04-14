@@ -451,6 +451,7 @@ void DataProcessor::Process()
 	  bson.append("module",iModule);
 	  bson.append("channel",Channel);
 	  bson.append("time",Time64);
+	  bson.append("endtime", Time64 + (long long)eventSize);
 
 	  if( m_koOptions->occurrence_integral )
 	    bson.append("integral", integral);

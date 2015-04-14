@@ -78,10 +78,11 @@ int MasterMongodbConnection::Initialize(string user, string runMode, string name
     SendLogMessage( ss.str(), KOMESS_ERROR );
     return -1;
   }
-  stringstream collectionName;
-  collectionName << options->mongo_database << "." << options->mongo_collection;
-  bufferDB.createCollection( collectionName.str() );
-  bufferDB.ensureIndex( collectionName.str(), mongo::fromjson( "{ time: -1, module: -1, _id: -1}" ));
+
+  string collectionName = options->mongo_database + "." + options->mongo_collection;
+  bufferDB.createCollection( collectionName );
+  bufferDB.ensureIndex( collectionName,
+  		      mongo::fromjson( "{ time: -1, module: -1, _id: -1}" ) );
          
   //Create a bson object with the run information
   mongo::BSONObjBuilder builder;
@@ -345,8 +346,10 @@ int MasterMongodbConnection::CheckForCommand(string &command, string &user,
    comment = b.getStringField("comment");
    detector = b.getStringField("detector");
    user=b.getStringField("name");
-   fMongoDB.remove("online.daqcommands",QUERY("command"<<"Start"<<"detector"<<detector));
-   fMongoDB.remove("online.daqcommands",QUERY("command"<<"Stop"<<"detector"<<detector)); 
+   fMongoDB.remove("online.daqcommands", 
+		   QUERY("command"<<"Start"<<"detector"<<detector));
+   fMongoDB.remove("online.daqcommands",
+		   QUERY("command"<<"Stop"<<"detector"<<detector)); 
    if(command=="Start")
      PullRunMode(mode,options);
    return 0;
@@ -405,7 +408,7 @@ int MasterMongodbConnection::PullRunMode(string name, koOptions &options)
    options.processing_mode=(res.getIntField("processing_mode"));
    options.processing_num_threads=(res.getIntField("processing_num_threads"));
    options.processing_readout_threshold=(res.getIntField("processing_readout_threshold"));
-   options.occurrence_integral = (res.getBooleanField("occurrence_integral"));
+   options.occurrence_integral = (res.getBoolField("occurrence_integral"));
    options.mongo_address=(res.getStringField("mongo_address"));
    options.mongo_database=(res.getStringField("mongo_database"));
    options.mongo_collection=(res.getStringField("mongo_collection"));

@@ -70,7 +70,6 @@ AS_IF([test "x$enable_lite" = "xyes"], [
     AC_CHECK_LIB(pthread,pthread_mutex_init,[],AC_MSG_ERROR([libpthread missing.]))
     AC_CHECK_LIB(CAENVME,CAENVME_Init,[],AC_MSG_ERROR([libCAENVME missing.]))
     AC_CHECK_LIB(snappy,main,[],AC_MSG_ERROR([libsnappymissing.]))
-    AC_CHECK_LIB([ncurses],initscr,[],AC_MSG_ERROR)   
 #    AC_CHECK_LIB(protobuf,main,[],AC_MSG_ERROR([libprotobuf missing]))
     ], [
     AM_CONDITIONAL(KODIAQ_LITE,false)
@@ -124,6 +123,8 @@ AC_CHECK_LIB(boost_system,main,[],[])
 AC_CHECK_LIB(boost_program_options,main,[],[])
 AC_CHECK_LIB(boost_filesystem,main,[],[])
 AC_CHECK_LIB(boost_thread,main,[],[])
+AC_CHECK_LIB([ncurses],initscr,[],AC_MSG_ERROR)
+
 
 AC_CHECK_LIB(mongoclient,main)
 AS_IF([test "$ac_cv_lib_mongoclient_main" = yes], [HAVE_LIBMONGOCLIENT=1],[HAVE_LIBMONGOCLIENT=0]) 
