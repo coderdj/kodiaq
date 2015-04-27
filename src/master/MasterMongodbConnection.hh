@@ -78,12 +78,16 @@ public:
   void Start(koOptions *options,string user,string comment=""){return;};
   void EndRun(string user,string comment=""){return;};
   void SendRunStartReply(int response, string message, string mode, string comment);
+  bool IsConnected(){
+    return bConnected; 
+  };
 
  private:
   koOptions                 *fOptions;
   mongo::DBClientConnection  fMongoDB;
   map <string,mongo::OID>    fLastDocOIDs;
   koLogger                  *fLog;
+  bool                       bConnected;
 };
 
 #endif

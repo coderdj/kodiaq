@@ -18,6 +18,7 @@ MasterMongodbConnection::MasterMongodbConnection()
 {
    fLog=NULL;
    fOptions=NULL;
+   bConnected = false;
    //   fLastDocOIDs.clear();
 }
 
@@ -25,6 +26,7 @@ MasterMongodbConnection::MasterMongodbConnection(koLogger *Log)
 {
    fLog=Log;
    fOptions=NULL;
+   bConnected = false;
    //fLastDocOIDs.clear();
    try     {	
       fMongoDB.connect("xedaq01");
@@ -34,6 +36,7 @@ MasterMongodbConnection::MasterMongodbConnection(koLogger *Log)
       ss<<"Problem connecting to mongo. Caught exception "<<e.what();
       if(fLog!=NULL) fLog->Error(ss.str());
    }      
+   bConnected = true;
 }
 
 MasterMongodbConnection::~MasterMongodbConnection()
@@ -41,12 +44,15 @@ MasterMongodbConnection::~MasterMongodbConnection()
 }
 
 void MasterMongodbConnection::InsertOnline(string collection,mongo::BSONObj bson){
+  if ( !bConnected ) return;
   try{
     fMongoDB.insert(collection,bson);
   }
   catch(const mongo::DBException &e){
-    cout<<"Lost connection to web server!"<<endl;
+    //cout<<"Lost connection to web server!"<<endl;
+    bConnected = false;
   }
+  return;
 }
 
 int MasterMongodbConnection::Initialize(string user, string runMode, string name,
@@ -76,9 +82,10 @@ int MasterMongodbConnection::Initialize(string user, string runMode, string name
     stringstream ss;
     ss<<"Problem connecting to mongo buffer. Caught exception "<<e.what();
     SendLogMessage( ss.str(), KOMESS_ERROR );
+    bConnected = false;
     return -1;
   }
-
+  bConnected = true;
   string collectionName = options->mongo_database + "." + options->mongo_collection;
   bufferDB.createCollection( collectionName );
   bufferDB.ensureIndex( collectionName,
@@ -146,6 +153,7 @@ int MasterMongodbConnection::Initialize(string user, string runMode, string name
   mongo::BSONObj bObj = builder.obj();
   
   InsertOnline("online.runs",bObj);
+    
 
   // store OID so you can update the end time
   mongo::BSONElement OIDElement;
@@ -166,6 +174,7 @@ int MasterMongodbConnection::UpdateEndTime(string detector)
 		       "data_taking_ended": bool to indicate reader is done with the run
  */
 {
+
   if(!fLastDocOIDs[detector].isSet())  {
     if(fLog!=NULL) fLog->Error("MasterMongodbConnection::UpdateEndTime - Want to stop run but don't have the _id field of the run info doc");
       return -1;
@@ -202,6 +211,7 @@ void MasterMongodbConnection::SendLogMessage(string message, int priority)
   a user to mark the alert as solved before starting a new run.
  */
 {      
+
   time_t currentTime;
   struct tm *starttime;
   time(&currentTime);
@@ -333,6 +343,7 @@ int MasterMongodbConnection::CheckForCommand(string &command, string &user,
   from the doc.
  */
 {
+  if( !bConnected ) return -1;
    if(fMongoDB.count("online.daqcommands") ==0)
      return -1;
    auto_ptr<mongo::DBClientCursor> cursor = fMongoDB.query("online.daqcommands",mongo::BSONObj());

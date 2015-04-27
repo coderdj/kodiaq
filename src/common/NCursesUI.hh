@@ -31,17 +31,13 @@ public:
   // Initialize draws the main menu
   // if standalone is true draw for standalone mode. 
   // otherwise master mode.
-  // You have to send an argument with the function used to poll data
-  int Initialize( bool standalone, koStatusPacket_t (*f)(string), vector<string> detectors );
-
-  // Starts running
-  int StartLoop();
+  int Initialize( bool standalone );
 
   // Add message  
   // highlight ( 0=none, 1=blue, 2=yellow, 3=red, 4=green )  
   int AddMessage( string message, int highlight=0 );
 
-private:
+protected:
   
   // Refresh refreshes the entire screen 
   void Refresh();
@@ -69,7 +65,7 @@ private:
   // only for standalone deployment
   //int UpdateBufferSize( int size );
 
-  int AddStatusPacket( koStatusPacket_t DAQStatus, string detector );
+  int AddStatusPacket( koStatusPacket_t *DAQStatus, string detector );
 
   int AddOutputMode( string detector, string mode, string path );
   WINDOW* create_newwin(int height, int width, int starty, int startx);
@@ -83,12 +79,16 @@ private:
   string GetFillString( double rate );
 
   bool    bStandalone;
+  map< string, bool >  mbConnected;
   string  mCurrentDet;
+  vector <string> mDetectors;
   WINDOW *STATUS_WIN, *OUTPUT_WIN, *MESSAGE_WIN, *CONTROL_WIN;
-  map<string, int> mMessages; // messages and highlight IDs
-  map<string, koStatusPacket_t> mLatestStatus; // latest status for each det
+  vector <string> mMessages;
+  vector <int> mHighlights;
+  map<string, koStatusPacket_t*> mLatestStatus; // latest status for each det
+  map<string, string> mIniFiles;
   // needs all
-  map<string, time_t> mLatestUpdate; // latest update each det
+  //map<string, time_t> mLatestUpdate; // latest update each det
   // needs all
   map<string, string> mOutputModes;
   // needs all
@@ -103,6 +103,8 @@ private:
 
   // messages info
   int mMessageIndex;
+  int mMessID = 0;
+  bool mMongoOnline;
 };
 
 #endif

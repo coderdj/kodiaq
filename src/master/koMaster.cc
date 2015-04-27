@@ -17,12 +17,16 @@
 #include <map>
 #include "DAQMonitor.hh"
 #include "MasterMongodbConnection.hh"
+#include "MasterUI.hh" // has to be after MasterMongodbConnection.hh
 
+// Global DAQ Monitor object map
 
 int ReadIniFile(string filepath, string &monitorDB, string &monitorADDR,
 		map<string, koNetServer*> &dNetworks, 
 		map<string, DAQMonitor*> &dMonitors, koLogger *LocalLog,
 		MasterMongodbConnection *Mongodb);
+
+koStatusPacket_t UpdateDAQStatus( string detector );
 
 struct timepair_t {
   time_t RatesTime;
@@ -52,6 +56,11 @@ int main()
     iterator.second.StatusTime = koLogger::GetCurrentTime();
   }
 
+  // Start NCurses UI
+  MasterUI theGUI;
+  theGUI.Initialize( false);
+  theGUI.StartLoop( &LocalLog, &dMonitors, &dNetworks, &Mongodb );
+  return 0;
   // Local command interface
   char cCommand = '0';
   
@@ -114,6 +123,7 @@ int main()
 	  UpdateTimes[iter.first].StatusTime = CurrentTime;
 	  Mongodb.UpdateDAQStatus( iter.second->GetStatus(), 
 				   iter.first );
+	  
 	}
 	double dTimeRates = difftime( CurrentTime,
 				      UpdateTimes[iter.first].RatesTime);
@@ -192,3 +202,20 @@ int ReadIniFile(
   }
   return 0;
 }
+
+/*koStatusPacket_t UpdateDAQStatus( string detector ){
+
+  map< string, DAQMonitor* >::iterator it = dMonitors.find( detector ); 
+  if( it != dMonitors.end() ){
+    //element found;
+    
+    // this has to go in somehow
+    //Mongodb.AddRates( iter.second->GetStatus() );
+    //Mongodb.UpdateDAQStatus( iter.second->GetStatus(),
+    //iter.first );
+
+    return *(it->second->GetStatus());
+  }
+
+}
+*/

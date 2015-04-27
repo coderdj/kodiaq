@@ -131,9 +131,9 @@ int DAQRecorder_mongodb::RegisterProcessor()
    // conn->conn().createCollection(cS.str(),1000000000,true); //1GB capped collection 
    
    // The following line connects to a capped collection (one collection for all threads)
-   stringstream cS;
-   cS<<m_options->mongo_database<<"."<<m_options->mongo_collection;
-   conn->conn().createCollection(cS.str(),10000000000,true); // Capped at 10GB
+   //stringstream cS;
+   //cS<<m_options->mongo_database<<"."<<m_options->mongo_collection;
+   //conn->conn().createCollection(cS.str(),10000000000,true); // Capped at 10GB
    
    return retval;
 }

@@ -25,19 +25,19 @@
 #define HAVE_LIBCAENVME 1
 
 /* Define to 1 if you have the `expect' library (-lexpect). */
-#define HAVE_LIBEXPECT 1
+/* #undef HAVE_LIBEXPECT */
 
 /* Define to 1 if you have the `mongoclient' library (-lmongoclient). */
 #define HAVE_LIBMONGOCLIENT 1
 
 /* Define to 1 if you have the `ncurses' library (-lncurses). */
-/* #undef HAVE_LIBNCURSES */
+#define HAVE_LIBNCURSES 1
 
 /* Define to 1 if you have the `pbf' library (-lpbf). */
-/* #undef HAVE_LIBPBF */
+#define HAVE_LIBPBF 1
 
 /* Define to 1 if you have the `protobuf' library (-lprotobuf). */
-/* #undef HAVE_LIBPROTOBUF */
+#define HAVE_LIBPROTOBUF 1
 
 /* Define to 1 if you have the `pthread' library (-lpthread). */
 #define HAVE_LIBPTHREAD 1
@@ -104,7 +104,7 @@
 #define VERSION "0.9"
 
 /* Compile with DDC HE veto support */
-#define WITH_DDC10 /**/
+/* #undef WITH_DDC10 */
 
 /* Compile master module */
 #define WITH_MASTER /**/
