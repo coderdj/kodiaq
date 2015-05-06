@@ -178,7 +178,6 @@ void CBV1724::SetActivated(bool active)
 {
    bActivated=active;
    if(active==false){
-      sleep(1);
       if(pthread_mutex_trylock(&fDataLock)==0){	      
 	 pthread_cond_signal(&fReadyCondition);
 	 pthread_mutex_unlock(&fDataLock);
