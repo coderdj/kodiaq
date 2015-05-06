@@ -125,7 +125,6 @@ int DAQMonitor::Connect()
     if(m_DAQNetwork->AddConnection(cID,cName,cIP)==0)  {
       stringstream errstring;
       errstring<<"Connected to slave "<<cName<<"("<<cID<<") at IP "<<cIP<<".";
-      cout<<errstring.str()<<endl;
       m_Mongodb->SendLogMessage(errstring.str(),KOMESS_NORMAL);	
       nSlaves++;
     }

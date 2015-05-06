@@ -228,7 +228,7 @@ void MasterMongodbConnection::SendLogMessage(string message, int priority)
       ID=0;
     else
       ID = obj.getIntField("idnum")+1;
-    cout<<"ID"<<ID<<endl;
+    //cout<<"ID"<<ID<<endl;
     mongo::BSONObjBuilder alert;
     alert.genOID();
     alert.append("idnum",ID);
@@ -395,14 +395,14 @@ int MasterMongodbConnection::PullRunMode(string name, koOptions &options)
    //Find doc corresponding to this run mode
    mongo::BSONObjBuilder query; 
    query.append( "name" , name ); 
-   cout<<"Looking for run mode "<<name<<endl;
+   //cout<<"Looking for run mode "<<name<<endl;
    mongo::BSONObj res = fMongoDB.findOne("online.run_modes" , query.obj() ); 
    if(res.nFields()==0) 
      return -1; //empty object
 
 
    //Set Options From Mongo
-   cout<<"Retrieved mongo run mode "<<name<<endl;
+   //cout<<"Retrieved mongo run mode "<<name<<endl;
    options.name=(res.getStringField("name"));
    options.nickname=(res.getStringField("nickname"));
    options.creator=(res.getStringField("creator"));
@@ -485,7 +485,7 @@ int MasterMongodbConnection::PullRunMode(string name, koOptions &options)
    vector<mongo::BSONElement> boards = res.getField("boards").Array();
    for(unsigned int x=0;x<boards.size();x++){
      board_definition_t board;
-     cout<<"Found board "<<boards[x]["serial"].Int()<<endl;
+     //cout<<"Found board "<<boards[x]["serial"].Int()<<endl;
      board.type = boards[x]["boardtype"].String();
      board.vme_address = koHelper::StringToHex(boards[x]["vme"].String());
      board.id = boards[x]["serial"].Int();

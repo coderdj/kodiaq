@@ -61,6 +61,17 @@ int main()
   theGUI.Initialize( false);
   theGUI.StartLoop( &LocalLog, &dMonitors, &dNetworks, &Mongodb );
   return 0;
+
+
+
+
+
+
+
+  // below is outdated and can be removed!
+
+
+
   // Local command interface
   char cCommand = '0';
   
