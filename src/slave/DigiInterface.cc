@@ -45,7 +45,7 @@ DigiInterface::DigiInterface(koLogger *logger)
 
 int DigiInterface::Initialize(koOptions *options)
 {
-   Close();
+  //   Close();
   
    m_koOptions = options;
    
