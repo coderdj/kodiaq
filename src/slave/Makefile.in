@@ -322,7 +322,7 @@ koSlave_SOURCES = koSlave.cc CBV1724.cc CBV1724.hh CBV2718.cc CBV2718.hh DigiInt
 koSlave_CPPFLAGS = -I$(top_srcdir)/src/common -Wall -g -DLINUX -fPIC \
 	$(am__append_3)
 koSlave_LDADD = -L$(top_srcdir)/src/common/.libs -lkodiaq -lCAENVME \
-	$(am__append_1) $(am__append_2)
+	-lncurses $(am__append_1) $(am__append_2)
 koSlave_LDFLAGS = -static
 all: all-am
 

@@ -435,7 +435,8 @@ int CBV1724::DetermineBaselines()
     dsizes->push_back(blt_bytes);
     vector <u_int32_t> *dchannels = new vector<u_int32_t>;
     vector <u_int32_t> *dtimes = new vector<u_int32_t>;
-    if(fwVERSION!=0) DataProcessor::SplitChannelsNewFW(buff,dsizes,dtimes,dchannels);
+    bool berr; string serr;
+    if(fwVERSION!=0) DataProcessor::SplitChannelsNewFW(buff,dsizes,dtimes,dchannels,berr,serr);
     else DataProcessor::SplitChannels(buff,dsizes,dtimes,dchannels,NULL,false);
         //loop through channels
     for(unsigned int x=0;x<dchannels->size();x++){

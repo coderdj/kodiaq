@@ -216,8 +216,10 @@ void DataProcessor::SplitChannels(vector<u_int32_t*> *&buffvec, vector<u_int32_t
 }
 
 void DataProcessor::SplitChannelsNewFW(vector<u_int32_t*> *&buffvec, vector<u_int32_t> *&sizevec, 
-					   vector<u_int32_t> *timeStamps, vector<u_int32_t> *channels)
+				       vector<u_int32_t> *timeStamps, vector<u_int32_t> *channels, bool &bErrorSet, string &sErrorText )
 {
+  bErrorSet = false;
+  sErrorText = "";
   vector <u_int32_t*> *retbuff = new vector <u_int32_t*>();
   vector <u_int32_t>  *retsize = new vector <u_int32_t>();
   
@@ -265,12 +267,24 @@ void DataProcessor::SplitChannelsNewFW(vector<u_int32_t*> *&buffvec, vector<u_in
 	//char *keep = new char[(channelSize-2)*4];	     
 	u_int32_t *keep = new u_int32_t[channelSize-2];
 	//	copy((*buffvec)[x]+idx,(*buffvec)[x]+(idx+channelSize-2),keep); //copy channel data
-	copy(&((*buffvec)[x][idx]),&((*buffvec)[x][idx+channelSize-2]),keep);
+	try{
+	  copy(&((*buffvec)[x][idx]),&((*buffvec)[x][idx+channelSize-2]),keep);
+	  retbuff->push_back(keep);
+	  retsize->push_back((channelSize-2)*4);
+	  channels->push_back(channel);
+	  timeStamps->push_back(channelTime);
+	}
+	catch ( ... ) {
+	  stringstream errorlog;
+	  errorlog<<"Error parsing data with newfw algorithm. Index: "<<idx
+		  <<" channelSize: "<<channelSize<<" channel: "<<channel
+		  <<" channelTime: "<<channelTime;
+	  sErrorText = errorlog.str();
+	  bErrorSet = true;
+	  continue;
+	}
 	idx+=channelSize-2;
-	retbuff->push_back(keep);
-	retsize->push_back((channelSize-2)*4);
-	channels->push_back(channel);
-	timeStamps->push_back(channelTime);
+
       }
     }//end while       
     delete(*buffvec)[x];
@@ -378,7 +392,12 @@ void DataProcessor::Process()
 	    SplitChannels(buffvec,sizevec,times,channels,eventIndices,false);
 	}
 	else if(m_koOptions->processing_mode == 4) { //channel parsing new fw
-	  SplitChannelsNewFW(buffvec,sizevec,times,channels);
+	  bool bErrorSet = false;
+	  string sErrorText = "";
+	  SplitChannelsNewFW(buffvec,sizevec,times,channels, bErrorSet, sErrorText);
+	  if ( bErrorSet )
+	    LogError( sErrorText );
+	  
 	}
       }
       

@@ -15,22 +15,36 @@
 #include <fstream>
 #include <kbhit.hh>
 #include <map>
+#include <koHelper.hh>
 #include "DAQMonitor.hh"
 #include "MasterMongodbConnection.hh"
-
+#include <NCursesUI.hh> // MUST be after MasterMongodbConnection
 
 int ReadIniFile(string filepath, string &monitorDB, string &monitorADDR,
 		map<string, koNetServer*> &dNetworks, 
 		map<string, DAQMonitor*> &dMonitors, koLogger *LocalLog,
 		MasterMongodbConnection *Mongodb);
 
+koStatusPacket_t StatusChecker( string who );
+
 struct timepair_t {
   time_t RatesTime;
   time_t StatusTime;
 };
 
+
 int main()
 {
+  // test UI
+  NCursesUI theUI;
+  vector<string> detectors;
+  detectors.push_back("TPC");
+  
+  theUI.Initialize( false, StatusChecker, detectors );
+  char a;
+  cin>>a;
+  return 0;
+
   // Declare some objects
   koLogger LocalLog("log/koMaster.log");
   MasterMongodbConnection Mongodb(&LocalLog);
@@ -191,4 +205,11 @@ int ReadIniFile(
 
   }
   return 0;
+}
+
+koStatusPacket_t StatusChecker( string who )
+{
+  koStatusPacket_t k;
+  koHelper::InitializeStatus(k);
+  return k;
 }

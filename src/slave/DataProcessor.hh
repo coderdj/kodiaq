@@ -82,7 +82,9 @@ public:
   static void           SplitChannelsNewFW(vector <u_int32_t*> *&buffvec,
 				    vector <u_int32_t> *&sizevec,
 				    vector <u_int32_t> *timestamps,
-				    vector <u_int32_t> *channels);
+					   vector <u_int32_t> *channels,
+					   bool &bErrorSet,
+					   string &sErrorText);
 
 private:  
   //

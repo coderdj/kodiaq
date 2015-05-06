@@ -1,4 +1,3 @@
-
 // ********************************************************
 // 
 // kodiaq Data Acquisition Software
@@ -73,6 +72,10 @@ int DigiInterface::Initialize(koOptions *options)
 	 m_koLog->Error("DigiInterface::Initialize - Error in CAEN initialization");
        return -1;
      }      
+
+     //FOR DAQ TEST ONLY
+     CAENVME_WriteRegister( tempHandle, cvVMEControlReg, 0x1c);
+
      stringstream logmess;
      logmess<<"Initialized link ID: "<<Link.id<<" Crate: "<<Link.crate<<" with handle: "<<tempHandle;
      m_koLog->Message(logmess.str());
@@ -190,6 +193,7 @@ void DigiInterface::Close()
    
    for(unsigned int x=0;x<m_vCrateHandles.size();x++){
       if(CAENVME_End(m_vCrateHandles[x])!=cvSuccess)	{
+	cout<<"Failed to end crate "<<x<<endl;
 	 //throw error
       }      
    }   
@@ -303,6 +307,7 @@ int DigiInterface::StartRun()
 
 int DigiInterface::StopRun()
 {
+  cout<<"Entering stoprun"<<endl;
    if(m_RunStartModule!=NULL){      
      m_RunStartModule->SendStopSignal();
       for(unsigned int x=0;x<m_vDigitizers.size();x++)
@@ -320,13 +325,14 @@ int DigiInterface::StopRun()
    CloseThreads();
    if(m_DAQRecorder != NULL)
      m_DAQRecorder->Shutdown();
-
+   cout<<"Leaving stoprun"<<endl;
    return 0;
 }
 
 
 void DigiInterface::CloseThreads(bool Completely)
 {
+  cout<<"Entering closethreads"<<endl;
    if(m_ReadThread.IsOpen)  {
       m_ReadThread.IsOpen=false;
       pthread_join(m_ReadThread.Thread,NULL);      
@@ -346,6 +352,7 @@ void DigiInterface::CloseThreads(bool Completely)
       }
       m_vProcThreads.clear();		 
    }           
+   cout<<"Leaving closethreads"<<endl;
    return;
 }
 

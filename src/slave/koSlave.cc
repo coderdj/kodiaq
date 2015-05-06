@@ -356,6 +356,15 @@ connection_loop:
 	 rate/=1048576;
 	 freq=freq/tdiff;
 	 cout<<"rate: "<<rate<<" freq: "<<freq<<" iRate: "<<iRate<<" tdiff: "<<tdiff<<endl;
+	 
+	 // Check for errors in threads
+	 string err;
+	 if( fElectronics->RunError( err ) ){
+	   cout<<"ERROR "<<err;
+	   koLog->Error("koSlave::main - [ ERROR ] From parser: " + err );
+	 }
+
+
 	 if(fNetworkInterface.SendStatusUpdate(status,rate,freq,nBoards)!=0){
 	    bConnected=false;
 	   koLog->Error("koSlave::main - [ FATAL ERROR ] Could not send status update. Going to idle state!");
