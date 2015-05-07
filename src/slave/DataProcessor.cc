@@ -441,10 +441,13 @@ void DataProcessor::Process()
 	
 	//Convert the time to 64-bit
 	// We assume this data is in temporal order for computation using the reset counter
-	long long Time64 = ((unsigned long)resetCounterStart << 31) | TimeStamp;
+	int iBitShift = 31; 
+	if( m_koOptions->processing_mode == 4 )
+	  iBitShift = 30;
+	long long Time64 = ((unsigned long)resetCounterStart << iBitShift) | TimeStamp;
 	if(Time64-latestTime64 < -1E9){
 	  resetCounterStart++;
-	  Time64 += ((unsigned long) 1 << 31);
+	  Time64 += ((unsigned long) 1 << iBitShift);
 	}
 	latestTime64 = Time64;
 

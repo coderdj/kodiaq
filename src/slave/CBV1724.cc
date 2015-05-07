@@ -112,6 +112,16 @@ int CBV1724::Initialize(koOptions *options)
      m_koLog->Message("Baselines loaded from file");
    }
    fBufferOccSize = 0;
+   
+   stringstream messstr;
+   if( retVal == 0 ){
+     messstr<<"Board "<<fBID.id<<" initialized successfully";
+     m_koLog->Message( messstr.str() );
+   }
+   else{
+     messstr<<"Board "<<fBID.id<<" failed initialization";
+     m_koLog->Message( messstr.str() );
+   }
    return retVal;
 }
 
@@ -336,7 +346,10 @@ int CBV1724::DetermineBaselines()
   }
 
   //Load the old baselines into the board
-  if(LoadDAC(DACValues)!=0) return -1;
+  if(LoadDAC(DACValues)!=0) {
+    LogError("Can't load to DAC!");
+    return -1;
+  }
 
   // Record all register values before overwriting (will put back later)
   u_int32_t reg_DPP,reg_ACR,reg_SWTRIG,reg_CConf,reg_BuffOrg,reg_CustomSize,
@@ -512,7 +525,12 @@ int CBV1724::DetermineBaselines()
   WriteReg32(0x8038,reg_PT);
   int retval=0;
   for(unsigned int x=0;x<channelFinished.size();x++){
-    if(channelFinished[x]=false) retval=-1;
+    if(channelFinished[x]=false) {
+      stringstream errstream;
+      errstream<<"Didn't finish channel "<<x;
+      LogError(errstream.str());
+      retval=-1;
+    }
   }
 
   return retval;
@@ -520,10 +538,21 @@ int CBV1724::DetermineBaselines()
 }
 
 int CBV1724::LoadDAC(vector<int> baselines){
-  if(baselines.size()!=8) return -1;
+
+  if(baselines.size()!=8) {
+    stringstream errorstr;
+    errorstr<<"Baseline size incorrect, only "<<baselines.size()<<endl;
+    LogError(errorstr.str());
+    return -1;
+  }
+
   for(unsigned int x=0;x<baselines.size();x++){
-    if(WriteReg32((0x1098)+(0x100*x),baselines[x])!=0){
-      LogSendMessage("Error loading old baselines");
+    usleep(100);
+    if(WriteReg32((0x1098)+(0x100*x),baselines[x])!=0){      
+      stringstream errors;
+      errors<<"Error loading baseline "<<hex<<baselines[x]<<" to register "
+	    <<((0x1098)+(0x100*x))<<dec;
+      LogError(errors.str());
       return -1;
     }
   }

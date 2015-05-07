@@ -34,10 +34,10 @@
 #define HAVE_LIBNCURSES 1
 
 /* Define to 1 if you have the `pbf' library (-lpbf). */
-/* #undef HAVE_LIBPBF */
+#define HAVE_LIBPBF 1
 
 /* Define to 1 if you have the `protobuf' library (-lprotobuf). */
-/* #undef HAVE_LIBPROTOBUF */
+#define HAVE_LIBPROTOBUF 1
 
 /* Define to 1 if you have the `pthread' library (-lpthread). */
 #define HAVE_LIBPTHREAD 1
@@ -107,7 +107,7 @@
 /* #undef WITH_DDC10 */
 
 /* Compile master module */
-#define WITH_MASTER /**/
+/* #undef WITH_MASTER */
 
 /* Compile slave module */
 #define WITH_SLAVE /**/
