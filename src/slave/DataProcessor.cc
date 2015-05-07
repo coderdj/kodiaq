@@ -11,6 +11,7 @@
 //             digitizer output buffer and file/db write buffer
 // 
 // *************************************************************
+#include <fstream>
 
 #include "DataProcessor.hh"
 #include "DigiInterface.hh"
@@ -267,18 +268,31 @@ void DataProcessor::SplitChannelsNewFW(vector<u_int32_t*> *&buffvec, vector<u_in
 	//char *keep = new char[(channelSize-2)*4];	     
 	u_int32_t *keep = new u_int32_t[channelSize-2];
 	//	copy((*buffvec)[x]+idx,(*buffvec)[x]+(idx+channelSize-2),keep); //copy channel data
-	try{
+	if( idx + channelSize-2 < (*sizevec)[x] ){
 	  copy(&((*buffvec)[x][idx]),&((*buffvec)[x][idx+channelSize-2]),keep);
 	  retbuff->push_back(keep);
 	  retsize->push_back((channelSize-2)*4);
 	  channels->push_back(channel);
 	  timeStamps->push_back(channelTime);
 	}
-	catch ( ... ) {
+	else {
 	  stringstream errorlog;
 	  errorlog<<"Error parsing data with newfw algorithm. Index: "<<idx
 		  <<" channelSize: "<<channelSize<<" channel: "<<channel
-		  <<" channelTime: "<<channelTime;
+		  <<" channelTime: "<<channelTime<<" index attempted: "<<idx
+		  <<"-"<<idx+channelSize-2<<" from max "<<(*sizevec)[x]
+		  <<" Dump: ";
+
+	  for( unsigned int dex = idx; dex<(*sizevec)[x]; dex++)
+	    errorlog<<hex<<(*buffvec)[x][dex]<<endl;
+
+	  // ERROR DUMP
+	  ofstream outfile;
+          outfile.open("stupiderror.txt");
+          outfile<<errorlog.str();
+          outfile.close();
+
+	  
 	  sErrorText = errorlog.str();
 	  bErrorSet = true;
 	  continue;
@@ -323,8 +337,10 @@ void DataProcessor::Process()
     // We trust that we are being sent a mongoDB recorder, so we can safely dynamic cast
     DAQRecorder_mdb = dynamic_cast <DAQRecorder_mongodb*> ( m_DAQRecorder );
     
-    if((mongoID = m_DAQRecorder->RegisterProcessor())==-1)       
+    if((mongoID = m_DAQRecorder->RegisterProcessor())==-1) {
+      LogError("Failed to initialize mongodb. Check connection settings!");
       return;
+    }
   }
   
 #endif

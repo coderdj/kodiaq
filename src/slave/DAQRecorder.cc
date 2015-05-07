@@ -48,6 +48,16 @@ void DAQRecorder::LogError(string err)
   pthread_mutex_lock(&m_logMutex);
   m_sErrorText = err;
   m_bErrorSet  = true;   
+  if( m_koLogger!= NULL )
+    m_koLogger->Error( err );
+  pthread_mutex_unlock(&m_logMutex);
+}
+
+void DAQRecorder::LogMessage(string message)
+{
+  pthread_mutex_lock(&m_logMutex);
+  if( m_koLogger != NULL )
+    m_koLogger->Message(message);
   pthread_mutex_unlock(&m_logMutex);
 }
 
@@ -107,6 +117,17 @@ int DAQRecorder_mongodb::RegisterProcessor()
    mongo::ScopedDbConnection *conn;
    try  {
      conn = new mongo::ScopedDbConnection(m_options->mongo_address,10000.);
+     
+     // Set write concern
+     if( m_options->mongo_write_concern == 0 ){
+       conn->conn().setWriteConcern( mongo::W_NONE );
+       LogMessage( "MongoDB WriteConcern set to NONE" );
+     }
+     else{
+       conn->conn().setWriteConcern( mongo::W_NORMAL );
+       LogMessage( "MongoDB WriteConcern set to NORMAL" );
+     }
+
    }
    catch(const mongo::DBException &e)  {
      stringstream err;

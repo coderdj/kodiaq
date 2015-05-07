@@ -53,6 +53,7 @@ class DAQRecorder
    // Purpose  : Sets the error flag to true and sets error text to err
    // 
    void          LogError(string err);
+   void           LogMessage(string message);
    void          ResetError();
    
    koLogger     *m_koLogger;

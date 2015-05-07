@@ -360,8 +360,11 @@ connection_loop:
 	 // Check for errors in threads
 	 string err;
 	 if( fElectronics->RunError( err ) ){
-	   cout<<"ERROR "<<err;
-	   koLog->Error("koSlave::main - [ ERROR ] From parser: " + err );
+	   cout<<"ERROR "<<err;	   
+	   koLog->Error("koSlave::main - [ ERROR ] From threads: " + err );
+	   fElectronics->StopRun();
+	   fElectronics->Close();
+	   continue;;
 	 }
 
 

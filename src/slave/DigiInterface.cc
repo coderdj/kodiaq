@@ -46,115 +46,140 @@ int DigiInterface::Initialize(koOptions *options)
 {
   //   Close();
   
-   m_koOptions = options;
-   
-   //Define electronics and initialize
-   for(int ilink=0;ilink<options->GetLinks();ilink++)  {
-     
-     int tempHandle=-1;
-     link_definition_t Link = options->GetLink(ilink);
-     CVBoardTypes BType;
-     if(Link.type=="V1718")
-       BType = cvV1718;
-     else if(Link.type=="V2718")
-       BType = cvV2718;
-     else  	{	   
-       if(m_koLog!=NULL)
-	 m_koLog->Error("DigiInterface::Initialize - Invalid link type, check file definition.");
-       return -1;
-     }
+  m_koOptions = options;
+  
+  //Define electronics and initialize
+  for(int ilink=0;ilink<options->GetLinks();ilink++)  {
+    
+    int tempHandle=-1;
+    link_definition_t Link = options->GetLink(ilink);
+    CVBoardTypes BType;
+    if(Link.type=="V1718")
+      BType = cvV1718;
+    else if(Link.type=="V2718")
+      BType = cvV2718;
+    else  	{	   
+      if(m_koLog!=NULL)
+	m_koLog->Error("DigiInterface::Initialize - Invalid link type, check file definition.");
+      return -1;
+    }
       
-     int cerr=-1;
-     if((cerr=CAENVME_Init(BType,Link.id,Link.crate,
-			   &tempHandle))!=cvSuccess){
-       //throw exception?
-       if(m_koLog!=NULL)
-	 m_koLog->Error("DigiInterface::Initialize - Error in CAEN initialization");
-       return -1;
-     }      
-
-     //FOR DAQ TEST ONLY
-     CAENVME_WriteRegister( tempHandle, cvVMEControlReg, 0x1c);
-
-     stringstream logmess;
-     logmess<<"Initialized link ID: "<<Link.id<<" Crate: "<<Link.crate<<" with handle: "<<tempHandle;
-     m_koLog->Message(logmess.str());
+    int cerr=-1;
+    if((cerr=CAENVME_Init(BType,Link.id,Link.crate,
+			  &tempHandle))!=cvSuccess){
+      //throw exception?
+      if(m_koLog!=NULL)
+	m_koLog->Error("DigiInterface::Initialize - Error in CAEN initialization");
+      return -1;
+    }
+    
+    //FOR DAQ TEST ONLY
+    CAENVME_SystemReset( tempHandle );
+    sleep(1);
+    CAENVME_WriteRegister( tempHandle, cvVMEControlReg, 0x1c);
      
-     m_vCrateHandles.push_back(tempHandle);
+    stringstream logmess;
+    logmess<<"Initialized link ID: "<<Link.id<<" Crate: "<<Link.crate<<" with handle: "<<tempHandle;
+    m_koLog->Message(logmess.str());
      
-     // define modules corresponding to this crate (inefficient
-     // double for loops, but small crate/module vector size)
-     for(int imodule=0; imodule<options->GetBoards(); imodule++)	{
-       board_definition_t Board = options->GetBoard(imodule);
-       if(Board.link!=Link.id || Board.crate!=Link.crate)
-	 continue;
-       logmess.str(std::string());
-       logmess<<"Found a board with link "<<Board.link<<" and crate "<<Board.crate;
-       m_koLog->Message(logmess.str());
+    m_vCrateHandles.push_back(tempHandle);
+     
+    // define modules corresponding to this crate (inefficient
+    // double for loops, but small crate/module vector size)
+    for(int imodule=0; imodule<options->GetBoards(); imodule++)	{
+      board_definition_t Board = options->GetBoard(imodule);
+      if(Board.link!=Link.id || Board.crate!=Link.crate)
+	continue;
+      logmess.str(std::string());
+      logmess<<"Found a board with link "<<Board.link<<" and crate "<<Board.crate;
+      m_koLog->Message(logmess.str());
+      
+      if(Board.type=="V1724"){	      
+	CBV1724 *digitizer = new CBV1724(Board,m_koLog);
+	m_vDigitizers.push_back(digitizer);
+	digitizer->SetCrateHandle(tempHandle);
+      }	 
+      else if(Board.type=="V2718"){	      
+	CBV2718 *digitizer = new CBV2718(Board, m_koLog);
+	m_RunStartModule=digitizer;
+	digitizer->SetCrateHandle(tempHandle);
+	if(digitizer->Initialize(options)!=0)
+	  return -1;
+      }	 
+      else   {
+	if(m_koLog!=NULL)
+	  m_koLog->Error("Undefined board type in .ini file.");
+	continue;
+      }
+    }
+  }
+  StopRun();
 
-       if(Board.type=="V1724"){	      
-	 CBV1724 *digitizer = new CBV1724(Board,m_koLog);
-	 m_vDigitizers.push_back(digitizer);
-	 digitizer->SetCrateHandle(tempHandle);
-       }	 
-       else if(Board.type=="V2718"){	      
-	 CBV2718 *digitizer = new CBV2718(Board, m_koLog);
-	 m_RunStartModule=digitizer;
-	 digitizer->SetCrateHandle(tempHandle);
-	 if(digitizer->Initialize(options)!=0)
-	   return -1;
-       }	 
-       else   {
-	 if(m_koLog!=NULL)
-	   m_koLog->Error("Undefined board type in .ini file.");
-	 continue;
-       }
-     }
-   }
-   StopRun();
-   // initialize digitizers
-   for(unsigned int x=0; x<m_vDigitizers.size();x++)  {
-     if(m_vDigitizers[x]->Initialize(options)!=0)
-       return -1;
-   }
+
+  // initialize digitizers
+  for(unsigned int x=0; x<m_vDigitizers.size();x++)  {
+    if(m_vDigitizers[x]->Initialize(options)!=0)
+      return -1;
+  }
    
    
    
-   //Set up threads
-   //pthread_mutex_init(&m_RateMutex,NULL);
-   m_iReadSize=0;
-   m_iReadFreq=0;
-   if(options->processing_num_threads>0)
-     m_vProcThreads.resize(options->processing_num_threads);
-   else m_vProcThreads.resize(1);
+  //Set up threads
+  m_iReadSize=0;
+  m_iReadFreq=0;
+
+  if(options->processing_num_threads>0)
+    m_vProcThreads.resize(options->processing_num_threads);
+  else 
+    m_vProcThreads.resize(1);
+  
+  for(unsigned int x=0;x<m_vProcThreads.size();x++)  {
+    m_vProcThreads[x].IsOpen=false;
+    m_vProcThreads[x].Processor=NULL;
+  }
    
-   for(unsigned int x=0;x<m_vProcThreads.size();x++)  {
-     m_vProcThreads[x].IsOpen=false;
-     m_vProcThreads[x].Processor=NULL;
-   }
+  //Set up daq recorder
+  m_DAQRecorder = NULL;
    
-   //Set up daq recorder
-   m_DAQRecorder = NULL;
-   
-   if(options->write_mode==WRITEMODE_FILE){
+  if(options->write_mode==WRITEMODE_FILE){
 #ifdef HAVE_LIBPBF
-     m_DAQRecorder = new DAQRecorder_protobuff(m_koLog);
-#else
-     //throw exception?
-     m_koOptions->write_mode = WRITEMODE_NONE;
+    m_DAQRecorder = new DAQRecorder_protobuff(m_koLog);
+
+#else    
+    if( m_koLog != NULL )
+      m_koLog->Error("DigitInterface::Initialize - Your chosen write mode is not available in this installation");
+    m_koOptions->write_mode = WRITEMODE_NONE;
+
 #endif
-   }   
+  }   
+
+  else if ( options->write_mode == WRITEMODE_MONGODB ){
 #ifdef HAVE_LIBMONGOCLIENT
-   else if(options->write_mode==WRITEMODE_MONGODB)
-     m_DAQRecorder = new DAQRecorder_mongodb(m_koLog);
+    m_DAQRecorder = new DAQRecorder_mongodb(m_koLog);
+
 #else
-   //throw exception?
-   m_koOptions->write_mode = WRITEMODE_NONE;
+    if( m_koLog != NULL ) 
+      m_koLog->Error("DigitInterface::Initialize - Your chosen write mode is not available in this installation");
+    m_koOptions->write_mode = WRITEMODE_NONE;
+
 #endif
-   if(m_DAQRecorder!=NULL)
-     m_DAQRecorder->Initialize(options);
-   
-   return 0;
+  }
+  
+  else
+    m_koOptions->write_mode = WRITEMODE_NONE;
+  
+   // Initialize recorder
+  if(m_DAQRecorder!=NULL){
+    int tret =  m_DAQRecorder->Initialize(options);
+    if( tret !=0 ){
+      if(m_koLog!=NULL)
+	m_koLog->Error("DigiInterface::Initialize - Couldn't initialize DAQ recorder");
+      return -1;
+    }
+  }
+  
+  
+  return 0;
 }
 
 void DigiInterface::UpdateRecorderCollection(koOptions *options)
@@ -256,58 +281,73 @@ void DigiInterface::ReadThread()
  
 int DigiInterface::StartRun()
 {   
-   //Tell Boards to start acquisition
-  if(m_koOptions->run_start == 1){//if(m_RunStartModule!=NULL)    {	
-      for(unsigned int x=0;x<m_vDigitizers.size();x++)
-	m_vDigitizers[x]->SetActivated(true);
-      //      m_RunStartModule->SendStartSignal();
-   }   
-   else   {	//start by write to software register
-      for(unsigned int x=0;x<m_vDigitizers.size();x++){
-	 u_int32_t data;
-	 m_vDigitizers[x]->ReadReg32(CBV1724_AcquisitionControlReg,data);
-	 data |= 0x4;
-	 m_vDigitizers[x]->WriteReg32(CBV1724_AcquisitionControlReg,data);
-	 m_vDigitizers[x]->SetActivated(true);
-      }
-   }
-  if(m_RunStartModule!=NULL)
-    m_RunStartModule->SendStartSignal();
-   
-   //Spawn read, write, and processing threads
-   for(unsigned int x=0; x<m_vProcThreads.size();x++)  {
-     if(m_vProcThreads[x].IsOpen) {
-       StopRun();
-       return -1;
-     }
-     if(m_vProcThreads[x].Processor!=NULL) delete m_vProcThreads[x].Processor;
-     
-     // Spawning of processing threads. depends on readout options.
-     m_vProcThreads[x].Processor = new DataProcessor(this,m_DAQRecorder,
-						     m_koOptions);
-     pthread_create(&m_vProcThreads[x].Thread,NULL,DataProcessor::WProcess,
-		    static_cast<void*>(m_vProcThreads[x].Processor));
-     m_vProcThreads[x].IsOpen=true;
-   }
-   
-   if(m_ReadThread.IsOpen)  {
+  //Tell Boards to start acquisition
+  
+  
+  if(m_koOptions->run_start == 1){
+    // Start with S-IN
+  
+    // Set boards as active
+    for(unsigned int x=0;x<m_vDigitizers.size();x++)
+      m_vDigitizers[x]->SetActivated(true);
+
+    // Send s-in
+    if( m_RunStartModule != NULL )
+      m_RunStartModule->SendStartSignal();      
+	
+  }   
+  else   {	
+    //start by write to software register
+    
+    // Write to registers and activate
+    for(unsigned int x=0;x<m_vDigitizers.size();x++){
+      u_int32_t data;
+      m_vDigitizers[x]->ReadReg32(CBV1724_AcquisitionControlReg,data);
+      data |= 0x4;
+      m_vDigitizers[x]->WriteReg32(CBV1724_AcquisitionControlReg,data);
+      m_vDigitizers[x]->SetActivated(true);
+    }
+  }
+
+
+  //Spawn read, write, and processing threads
+  for(unsigned int x=0; x<m_vProcThreads.size();x++)  {
+
+    // All threads should be closed. Otherwise close them and fail
+    if(m_vProcThreads[x].IsOpen) {
       StopRun();
-      if(m_koLog!=NULL) 
-	m_koLog->Error("DigiInterface::StartRun - Read thread was already open.");
       return -1;
-   }
+    }
+
+    // Get rid of the processor if it still exists
+    if(m_vProcThreads[x].Processor!=NULL) delete m_vProcThreads[x].Processor;
+     
+    // Spawning of processing threads. depends on readout options.
+    m_vProcThreads[x].Processor = new DataProcessor(this,m_DAQRecorder,
+						    m_koOptions);
+    pthread_create(&m_vProcThreads[x].Thread,NULL,DataProcessor::WProcess,
+		   static_cast<void*>(m_vProcThreads[x].Processor));
+    m_vProcThreads[x].IsOpen=true;
+  }
    
-   //Create read thread even if not writing
-   pthread_create(&m_ReadThread.Thread,NULL,DigiInterface::ReadThreadWrapper,
-		  static_cast<void*>(this));
-   m_ReadThread.IsOpen=true;
-      
-   return 0;
+  if(m_ReadThread.IsOpen)  {
+    StopRun();
+    if(m_koLog!=NULL) 
+      m_koLog->Error("DigiInterface::StartRun - Read thread was already open.");
+    return -1;
+  }
+   
+  //Create read thread even if not writing
+  pthread_create(&m_ReadThread.Thread,NULL,DigiInterface::ReadThreadWrapper,
+		 static_cast<void*>(this));
+  m_ReadThread.IsOpen=true;
+  
+  return 0;
 }
 
-int DigiInterface::StopRun()
-{
-  cout<<"Entering stoprun"<<endl;
+ int DigiInterface::StopRun()
+ {
+   cout<<"Entering stoprun"<<endl;
    if(m_RunStartModule!=NULL){      
      m_RunStartModule->SendStopSignal();
       for(unsigned int x=0;x<m_vDigitizers.size();x++)
