@@ -292,9 +292,12 @@ int DigiInterface::StartRun()
       m_vDigitizers[x]->SetActivated(true);
 
     // Send s-in
-    if( m_RunStartModule != NULL )
+    if( m_RunStartModule != NULL ){
+      m_koLog->Message( "Sent start signal to run start module ");
       m_RunStartModule->SendStartSignal();      
-	
+    }	
+    else
+      m_koLog->Message(" No run start module found. Maybe it's on a different reader" );
   }   
   else   {	
     //start by write to software register

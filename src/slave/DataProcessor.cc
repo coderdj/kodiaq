@@ -501,7 +501,7 @@ void DataProcessor::Process()
 	    else{
 	      LogError("MongoDB insert error from processor thread.");
 	      bExitCondition=true;
-	      delete vMongoInsertVec;
+	      //delete vMongoInsertVec;
 	      break;
 	    }
 	  }

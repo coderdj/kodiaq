@@ -213,7 +213,9 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
 
    }
    catch(const mongo::DBException &e)  {
-      LogError("DAQRecorder_mongodb - Caught mongodb exception");
+     stringstream elog;
+     elog<<"DAQRecorder_mongodb - Caught mongodb exception "<<e.what();
+     LogError(elog.str());
       delete insvec;
       return -1;
    }

@@ -68,10 +68,18 @@ int CBV2718::Initialize(koOptions *options)
     i_pulserHz = options->pulser_freq;
     data+=0x80;
   }
-  //cout<<"Writing cvOutMuxRegSet with :"<<data<<endl;
+
+  m_koLog->Message("Writing cvOutMuxRegSet with :" + 
+		   koHelper::IntToString(data) );
+  
   //unsigned int data = 0x3FF; 
    if(CAENVME_WriteRegister(fCrateHandle,cvOutMuxRegSet,data)!=cvSuccess)
      m_koLog->Error("Can't write to crate controller!");
+
+   // DAQ test emergency configure
+   if(CAENVME_SetOutputConf(fCrateHandle, cvOutput0, cvDirect, cvActiveLow,
+			    cvManualSW)!=0)
+     m_koLog->Error("Can't write to outputconf directly");
    //cout<<"Can't write to CC!"<<endl;
    if(SendStopSignal()!=0)
      m_koLog->Error("Sending stop signal failed in CBV2718");
@@ -138,10 +146,15 @@ int CBV2718::SendStartSignal()
    usleep(1000);
   */
    // This is the S-IN                
-   //  cout<<"Writing cvOutRegSet with :"<<dec<<data<<endl;          
-   if(CAENVME_WriteRegister(fCrateHandle,cvOutRegSet,data)!=0)                      
-     return -1; 
-   //now start the pulser 
+  m_koLog->Message("Writing cvOutRegSet with :" + 
+		   koHelper::IntToString( data ) );
+  //if(CAENVME_WriteRegister(fCrateHandle,cvOutRegSet,data)!=0)    
+  //return -1; 
+  if(CAENVME_SetOutputRegister(fCrateHandle,data)!=0){
+    m_koLog->Error("Could't set output register. Crate Controller not found.");
+    return -1;
+  }
+  //now start the pulser 
    if(i_pulserHz > 0)
      CAENVME_StartPulser(fCrateHandle,cvPulserB);    
    
