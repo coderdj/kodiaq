@@ -250,23 +250,25 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
 // updated if needed. The value of this counter at the BEGINNING of the buffer
 // is passed by reference to the caller
 {
-  if(fBuffers->size()!=0)
+  if(fBuffers->size()!=0 ) {
+    i64_blt_first_time = koHelper::GetTimeStamp((*fBuffers)[0]);
+   
     i64_blt_second_time = koHelper::GetTimeStamp((*fBuffers)[fBuffers->size()-1]);
-  else i64_blt_second_time = i64_blt_first_time;
-
-  resetCounter = i_clockResetCounter;
-  //Q1: Did the counter reset between the last BLT and now?
-  if(i64_blt_last_time>i64_blt_first_time){
-    i_clockResetCounter++;
+    
     resetCounter = i_clockResetCounter;
-    //    i64_blt_second_time += ((unsigned long) 1 << 31);
+    //Q1: Did the counter reset between the last BLT and now?
+    if(i64_blt_last_time>i64_blt_first_time){
+      i_clockResetCounter++;
+      resetCounter = i_clockResetCounter;
+      //    i64_blt_second_time += ((unsigned long) 1 << 31);
+    }
+    //Q2: Did the counter reset during this BLT?
+    else if(i64_blt_first_time>i64_blt_second_time){
+      i_clockResetCounter++;
+      //    i64_blt_second_time += ((unsigned long) 1 << 31);
+    }
   }
-  //Q2: Did the counter reset during this BLT?
-  else if(i64_blt_first_time>i64_blt_second_time){
-    i_clockResetCounter++;
-    //    i64_blt_second_time += ((unsigned long) 1 << 31);
-  }
- 
+
    vector<u_int32_t*> *retVec = fBuffers;
    fBuffers = new vector<u_int32_t*>();
    sizes = fSizes;

@@ -441,13 +441,16 @@ void DataProcessor::Process()
 	
 	//Convert the time to 64-bit
 	// We assume this data is in temporal order for computation using the reset counter
-	int iBitShift = 31; 
-	if( m_koOptions->processing_mode == 4 )
-	  iBitShift = 30;
+	int iBitShift = 32; 
+
 	long long Time64 = ((unsigned long)resetCounterStart << iBitShift) | TimeStamp;
-	if(Time64-latestTime64 < -1E9){
-	  resetCounterStart++;
+	//	if(Time64-latestTime64 < -3E9){
+	if( latestTime64 > Time64 ){ // the previous time is greater than this
+	  //resetCounterStart++;
 	  Time64 += ((unsigned long) 1 << iBitShift);
+	
+	  if( latestTime64 - Time64 < -3E9 )
+	    resetCounterStart++;
 	}
 	latestTime64 = Time64;
 
@@ -490,6 +493,9 @@ void DataProcessor::Process()
 	  bson.append("channel",Channel);
 	  bson.append("time",Time64);
 	  bson.append("endtime", Time64 + (long long)eventSize);
+
+	  bson.append("raw_time", TimeStamp);
+	  bson.append("time_reset_counter", resetCounterStart );
 
 	  if( m_koOptions->occurrence_integral )
 	    bson.append("integral", integral);
