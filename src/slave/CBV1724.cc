@@ -567,7 +567,7 @@ int CBV1724::LoadDAC(vector<int> baselines){
     int othercounter = 0;
     while( counter < 100 && othercounter < 10000 ){
       
-      u_int32_t data;
+      u_int32_t data = 0x4;
 
       // Check DAC status to see if it's OK to write
       if( ReadReg32( (0x1088)+(0x100*x), data ) !=0 ){
@@ -589,13 +589,19 @@ int CBV1724::LoadDAC(vector<int> baselines){
       break;
     }
     
-    if( counter == 100 ){
+    if( counter >= 100 ){
       stringstream errorstr;
       errorstr<<"Timed out waiting for DAC to clear in channel "<<x;
       LogError(errorstr.str());
       return -1;
     }
-      
+    if( othercounter >= 10000 ){
+      stringstream errorstre;
+      errorstre<<"Timed out waiting for read to DAC status register in channel "<<x;
+      LogError(errorstre.str());
+      return -1;
+    }
+
     if(WriteReg32((0x1098)+(0x100*x),baselines[x])!=0){      
       stringstream errors;
       errors<<"Error loading baseline "<<hex<<baselines[x]<<" to register "
@@ -603,7 +609,29 @@ int CBV1724::LoadDAC(vector<int> baselines){
       LogError(errors.str());
       return -1;
     }
-  }
+
+    // Post check to make sure thing applies
+    counter = 0;
+    while( counter < 100 ){
+      u_int32_t data = 0x4;
+
+      if( ReadReg32( (0x1088)+(0x100*x), data ) !=0 ){
+	usleep(1000);
+	counter++;
+	continue;
+      }
+      if( data&0x4 ){
+	counter++;
+	usleep(1000);
+	continue;
+      }
+      break;
+      stringstream goodstr;
+      goodstr<<"Baseline for channel "<<x<<" written";
+      LogMessage(goodstr.str());
+    }
+    
+  } //end for
   return 0;
 }
 

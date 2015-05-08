@@ -28,7 +28,7 @@ class VMEBoard
 {
  public:
    VMEBoard();
-   explicit VMEBoard(board_definition_t BID, koLogger *koLog);
+  VMEBoard(board_definition_t BID, koLogger *koLog);
    virtual ~VMEBoard();
 
        

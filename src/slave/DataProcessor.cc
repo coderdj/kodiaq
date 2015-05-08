@@ -270,19 +270,19 @@ void DataProcessor::SplitChannelsNewFW(vector<u_int32_t*> *&buffvec, vector<u_in
 
 	// SANITY CHECK FOR DAQ TEST
 
-	if ( channelSize > 100000 ){
-	  idx -=2;
+	if ( channelSize > 100000 ){	 
 	  stringstream errorlog;
-          errorlog<<"Error parsing data with newfw algorithm. Index: "<<idx
+          errorlog<<"Error parsing data with newfw algorithm (1). Index: "<<idx
                   <<" channelSize: "<<channelSize<<" channel: "<<channel
                   <<" channelTime: "<<channelTime<<" index attempted: "<<idx
                   <<"-"<<idx+channelSize-2<<" from max "<<(*sizevec)[x]
                   <<" Dump: ";
 
-          for( unsigned int dex = idx; dex<(*sizevec)[x]; dex++)
+          for( unsigned int dex = 0; dex<idx; dex++)
             errorlog<<hex<<(*buffvec)[x][dex]<<endl;
 
-          // ERROR DUMP                                                              
+          // ERROR DUMP                   
+	  cout<<"Messed up event written to log."<<endl;
           ofstream outfile;
           outfile.open("stupiderror.txt");
           outfile<<errorlog.str();
@@ -306,15 +306,15 @@ void DataProcessor::SplitChannelsNewFW(vector<u_int32_t*> *&buffvec, vector<u_in
 	else {	 
 	  /* FOR DAQ TEST */
 	  stringstream errorlog;
-	  errorlog<<"Error parsing data with newfw algorithm. Index: "<<idx
+	  errorlog<<"Error parsing data with newfw algorithm (2). Index: "<<idx
 		  <<" channelSize: "<<channelSize<<" channel: "<<channel
 		  <<" channelTime: "<<channelTime<<" index attempted: "<<idx
 		  <<"-"<<idx+channelSize-2<<" from max "<<(*sizevec)[x]
 		  <<" Dump: ";
 
-	  for( unsigned int dex = idx-2; dex<(*sizevec)[x]; dex++)
+	  for( unsigned int dex = 0; dex<idx; dex++)
 	    errorlog<<hex<<(*buffvec)[x][dex]<<endl;
-
+	  cout<<"Messed up event (2) written to log"<<endl;
 	  // ERROR DUMP
 	  ofstream outfile;
           outfile.open("stupiderror.txt");

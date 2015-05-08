@@ -35,8 +35,9 @@ VMEBoard::VMEBoard(board_definition_t BID, koLogger *koLog)
 
 void VMEBoard::LogError(string err)
 {
-   if(m_koLog!=NULL)
-     m_koLog->Error(err);
+  if(m_koLog!=NULL){
+    m_koLog->Error(err);
+  }
 }
 void VMEBoard::LogMessage(string mess)
 {
