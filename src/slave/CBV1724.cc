@@ -562,6 +562,36 @@ int CBV1724::LoadDAC(vector<int> baselines){
 
   for(unsigned int x=0;x<baselines.size();x++){
     usleep(100);
+    
+    int counter = 0;
+    while( counter < 100 ){
+      
+      u_int32_t data;
+
+      // Check DAC status to see if it's OK to write
+      if( ReadReg32( (0x1088)+(0x100*x), data ) !=0 ){
+	stringstream errorst;
+	errorst<<"Error reading channel status register "<<hex
+	      <<((0x1088)+(0x100*x))<<dec;
+	LogError(errorst.str());
+	return -1;
+      }
+      
+      if( !data&0x4 ){
+	counter++;
+	usleep(1000);
+	continue;
+      }
+      break;
+    }
+    
+    if( counter == 100 ){
+      stringstream errorstr;
+      errorstr<<"Timed out waiting for DAC to clear in channel "<<x;
+      LogError(errorstr.str());
+      return -1;
+    }
+      
     if(WriteReg32((0x1098)+(0x100*x),baselines[x])!=0){      
       stringstream errors;
       errors<<"Error loading baseline "<<hex<<baselines[x]<<" to register "
