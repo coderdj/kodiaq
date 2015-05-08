@@ -266,6 +266,34 @@ void DataProcessor::SplitChannelsNewFW(vector<u_int32_t*> *&buffvec, vector<u_in
 	u_int32_t channelTime = ((*buffvec)[x][idx])&0x7FFFFFFF;
 	idx++;
 	//char *keep = new char[(channelSize-2)*4];	     
+
+
+	// SANITY CHECK FOR DAQ TEST
+
+	if ( channelSize > 100000 ){
+	  idx -=2;
+	  stringstream errorlog;
+          errorlog<<"Error parsing data with newfw algorithm. Index: "<<idx
+                  <<" channelSize: "<<channelSize<<" channel: "<<channel
+                  <<" channelTime: "<<channelTime<<" index attempted: "<<idx
+                  <<"-"<<idx+channelSize-2<<" from max "<<(*sizevec)[x]
+                  <<" Dump: ";
+
+          for( unsigned int dex = idx; dex<(*sizevec)[x]; dex++)
+            errorlog<<hex<<(*buffvec)[x][dex]<<endl;
+
+          // ERROR DUMP                                                              
+          ofstream outfile;
+          outfile.open("stupiderror.txt");
+          outfile<<errorlog.str();
+          outfile.close();
+	  continue;
+	}
+
+	// REMOVE ABOVE AFTER TEST
+
+
+
 	u_int32_t *keep = new u_int32_t[channelSize-2];
 	//	copy((*buffvec)[x]+idx,(*buffvec)[x]+(idx+channelSize-2),keep); //copy channel data
 	if( idx + channelSize-2 < (*sizevec)[x] ){
@@ -275,7 +303,8 @@ void DataProcessor::SplitChannelsNewFW(vector<u_int32_t*> *&buffvec, vector<u_in
 	  channels->push_back(channel);
 	  timeStamps->push_back(channelTime);
 	}
-	else {
+	else {	 
+	  /* FOR DAQ TEST */
 	  stringstream errorlog;
 	  errorlog<<"Error parsing data with newfw algorithm. Index: "<<idx
 		  <<" channelSize: "<<channelSize<<" channel: "<<channel
@@ -283,7 +312,7 @@ void DataProcessor::SplitChannelsNewFW(vector<u_int32_t*> *&buffvec, vector<u_in
 		  <<"-"<<idx+channelSize-2<<" from max "<<(*sizevec)[x]
 		  <<" Dump: ";
 
-	  for( unsigned int dex = idx; dex<(*sizevec)[x]; dex++)
+	  for( unsigned int dex = idx-2; dex<(*sizevec)[x]; dex++)
 	    errorlog<<hex<<(*buffvec)[x][dex]<<endl;
 
 	  // ERROR DUMP
@@ -293,9 +322,10 @@ void DataProcessor::SplitChannelsNewFW(vector<u_int32_t*> *&buffvec, vector<u_in
           outfile.close();
 
 	  
-	  sErrorText = errorlog.str();
-	  bErrorSet = true;
+	  //	  sErrorText = errorlog.str();
+	  //bErrorSet = true;
 	  continue;
+	  /* END FOR DAQ TEST */
 	}
 	idx+=channelSize-2;
 
