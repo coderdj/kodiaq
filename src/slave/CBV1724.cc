@@ -577,7 +577,7 @@ int CBV1724::LoadDAC(vector<int> baselines){
 	return -1;
       }
       
-      if( !data&0x4 ){
+      if( data&0x4 ){
 	counter++;
 	usleep(1000);
 	continue;
