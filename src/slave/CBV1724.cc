@@ -29,6 +29,7 @@ CBV1724::CBV1724()
    pthread_cond_init(&fReadyCondition,NULL);
    i_clockResetCounter = 0;
    i64_blt_first_time = i64_blt_second_time = i64_blt_last_time = 0;
+   bOver15 = false;
 }
 
 CBV1724::~CBV1724()
@@ -50,6 +51,7 @@ CBV1724::CBV1724(board_definition_t BoardDef, koLogger *kLog)
   pthread_cond_init(&fReadyCondition,NULL);
   i64_blt_first_time = i64_blt_second_time = i64_blt_last_time = 0;
   fBufferOccSize = 0;
+  bOver15 = false;
 }
 
 int CBV1724::Initialize(koOptions *options)
@@ -255,25 +257,35 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
    
     i64_blt_second_time = koHelper::GetTimeStamp((*fBuffers)[fBuffers->size()-1]);
     
+    // Is the object's over18 bool set?
+    if( i64_blt_first_time <5E8 && bOver15 ){
+      bOver15=false;
+      i_clockResetCounter++;
+    }
+    else if( i64_blt_first_time > 15E8 && !bOver15 )
+      bOver15 = true;
+    resetCounter = i_clockResetCounter;
+    /*
+
     resetCounter = i_clockResetCounter;
     //Q1: Did the counter reset between the last BLT and now?
-    if(i64_blt_last_time>i64_blt_first_time){
+    if( i64_blt_last_time - i64_blt_first_time > 3E9 ){
       i_clockResetCounter++;
       resetCounter = i_clockResetCounter;
       //    i64_blt_second_time += ((unsigned long) 1 << 31);
     }
     //Q2: Did the counter reset during this BLT?
-    else if(i64_blt_first_time>i64_blt_second_time){
+    else if( i64_blt_first_time - i64_blt_second_time > 3E9 ){
       i_clockResetCounter++;
       //    i64_blt_second_time += ((unsigned long) 1 << 31);
     }
-  }
+    i64_blt_last_time = i64_blt_first_time = i64_blt_second_time;
+    */  }
 
    vector<u_int32_t*> *retVec = fBuffers;
    fBuffers = new vector<u_int32_t*>();
    sizes = fSizes;
    fSizes = new vector<u_int32_t>();
-   i64_blt_last_time = i64_blt_first_time = i64_blt_second_time;
 
    // Reset total buffer size
    fBufferOccSize = 0;

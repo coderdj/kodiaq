@@ -374,9 +374,9 @@ void DataProcessor::Process()
       CBV1724 *digi = m_DigiInterface->GetDigi(x);
       
       if(digi->Activated()) bExitCondition=false;
-      
-      //usleep(10); // Seems unneccesary, commented 20.2.2014
-      
+
+      usleep(10); //avoid 100% cpu
+
       // Check if the digitizer has data and is not associated 
       // with another processor
       if(digi->RequestDataLock()!=0) continue;
@@ -441,17 +441,17 @@ void DataProcessor::Process()
 	
 	//Convert the time to 64-bit
 	// We assume this data is in temporal order for computation using the reset counter
-	int iBitShift = 32; 
+	int iBitShift = 31; 
 
 	long long Time64 = ((unsigned long)resetCounterStart << iBitShift) | TimeStamp;
-	//	if(Time64-latestTime64 < -3E9){
-	if( latestTime64 > Time64 ){ // the previous time is greater than this
-	  //resetCounterStart++;
-	  Time64 += ((unsigned long) 1 << iBitShift);
 	
-	  if( latestTime64 - Time64 < -3E9 )
-	    resetCounterStart++;
-	}
+	//	Time64 += ((unsigned long) 1 << iBitShift);
+	
+	/*if( latestTime64 - Time64 < -3E9 )
+	  resetCounterStart++;
+	if( latestTime64 > Time64 )
+	  Time64 += ((unsigned long) 1 << iBitShift);
+	*/
 	latestTime64 = Time64;
 
 	// Get integral if required (do before zipping)
