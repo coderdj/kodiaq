@@ -564,17 +564,21 @@ int CBV1724::LoadDAC(vector<int> baselines){
     usleep(100);
     
     int counter = 0;
-    while( counter < 100 ){
+    int othercounter = 0;
+    while( counter < 100 && othercounter < 10000 ){
       
       u_int32_t data;
 
       // Check DAC status to see if it's OK to write
       if( ReadReg32( (0x1088)+(0x100*x), data ) !=0 ){
-	stringstream errorst;
-	errorst<<"Error reading channel status register "<<hex
-	      <<((0x1088)+(0x100*x))<<dec;
-	LogError(errorst.str());
-	return -1;
+	//stringstream errorst;
+	//errorst<<"Error reading channel status register "<<hex
+	//<<((0x1088)+(0x100*x))<<dec;
+	//LogError(errorst.str());
+	//return -1;
+	usleep(100);
+	othercounter++;
+	continue;
       }
       
       if( data&0x4 ){
