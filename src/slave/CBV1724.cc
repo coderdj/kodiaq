@@ -103,12 +103,18 @@ int CBV1724::Initialize(koOptions *options)
     stringstream logmess;
     logmess<<"Baselines returned value "<<ret;
     m_koLog->Message(logmess.str());
+    if( ret == -1 )
+      retVal = ret;
   }
   else m_koLog->Message("Automatic baseline determination switched off");
 
   // Reload VME options
-  if( LoadVMEOptions( options ) != 0 ) 
-    retVal = -1;
+  int tries = 0;
+  while( LoadVMEOptions( options ) != 0 && tries < 5) {
+    tries ++;
+    if( tries == 5 )
+      retVal = -1;
+  }
 
   // Load baselines
   if(options->baseline_mode != 2){
@@ -398,16 +404,38 @@ int CBV1724::DetermineBaselines()
 
   // New for DAQ test. Write all the registers. When finished 
   // reload registers after baselines.
-  WriteReg32( 0xEF24, 0x1 );
-  WriteReg32( 0xEF1C, 0x1 );
-  WriteReg32( 0xEF00, 0x10 );
-  WriteReg32( 0x8120, 0xFF );
-  WriteReg32( 0x8100, 0x0 );
-  WriteReg32( 0x800C, 0xA );
-  WriteReg32( 0x8000, 0x310 );
-  WriteReg32( 0x8080, 0x1310000 );
-  WriteReg32( 0x811C, 0x840 );
-  WriteReg32( CBV1724_TriggerSourceReg, 0x80000000 );
+  int success = 0;
+  int tries = 0;
+  while ( success != 0 && tries<5 ){
+    success = 0;
+    if ( WriteReg32( 0xEF24, 0x1 ) != 0 )
+      success = -1;
+    if ( WriteReg32( 0xEF1C, 0x1 ) != 0 )
+      success = -1;
+    if ( WriteReg32( 0xEF00, 0x10 ) != 0 )
+      success = -1;
+    if ( WriteReg32( 0x8120, 0xFF ) != 0 )
+      success = -1;
+    if ( WriteReg32( 0x8100, 0x0 ) != 0 )
+      success = -1;
+    if ( WriteReg32( 0x800C, 0xA ) != 0 )
+      success = -1;
+    if ( WriteReg32( 0x8000, 0x310 ) != 0 )
+      success = -1;
+    if ( WriteReg32( 0x8080, 0x1310000 ) != 0 )
+      success = -1;
+    if ( WriteReg32( 0x811C, 0x840 ) != 0 )
+      success = -1;
+    if ( WriteReg32( CBV1724_TriggerSourceReg, 0x80000000 ) != 0 )
+      success = -1;
+    if( success != 0 )
+      usleep(1000);
+    tries++;
+  }
+  if( tries == 5 ) {
+    LogError("Error in baseline register setting. Out of tries!");
+    return -1;
+  }
   
   //Get the firmware revision (for data formats)                                    
   u_int32_t fwRev=0;
