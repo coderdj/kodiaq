@@ -404,7 +404,7 @@ int CBV1724::DetermineBaselines()
 
   // New for DAQ test. Write all the registers. When finished 
   // reload registers after baselines.
-  int success = 0;
+  int success = -1;
   int tries = 0;
   while ( success != 0 && tries<5 ){
     success = 0;
