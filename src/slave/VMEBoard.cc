@@ -57,9 +57,14 @@ int VMEBoard::WriteReg32(u_int32_t address, u_int32_t data)
   str<<"Board: "<<fBID.id<<" writes register "<<hex<<address<<" with "<<data<<dec;
   LogMessage( str.str() );
 
-   if(CAENVME_WriteCycle(fCrateHandle,fBID.vme_address+address,
-			  &data,cvA32_U_DATA,cvD32)!=cvSuccess)        
-     return -1;
+  int ret = CAENVME_WriteCycle(fCrateHandle,fBID.vme_address+address,
+			       &data,cvA32_U_DATA,cvD32);
+  if( ret!=cvSuccess ){
+    stringstream err;
+    err<<"Failed to write with CAEN ENUM "<<ret;
+    LogError( err.str() );
+    return -1;
+  }
    return 0;   
 }
 

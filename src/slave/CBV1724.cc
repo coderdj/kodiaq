@@ -395,12 +395,25 @@ int CBV1724::DetermineBaselines()
   // Record all register values before overwriting (will put back later)
   u_int32_t reg_DPP,reg_ACR,reg_SWTRIG,reg_CConf,reg_BuffOrg,reg_CustomSize,
     reg_PT;
+
+  // New for DAQ test. Write all the registers. When finished 
+  // reload registers after baselines.
+  WriteReg32( 0xEF24, 0x1 );
+  WriteReg32( 0xEF1C, 0x1 );
+  WriteReg32( 0xEF00, 0x10 );
+  WriteReg32( 0x8120, 0xFF );
+  WriteReg32( 0x8100, 0x0 );
+  WriteReg32( 0x800C, 0xA );
+  WriteReg32( 0x8000, 0x310 );
+  WriteReg32( 0x8080, 0x1310000 );
+  WriteReg32( 0x811C, 0x840 );
+  WriteReg32( CBV1724_TriggerSourceReg, 0x80000000 );
   
   //Get the firmware revision (for data formats)                                    
   u_int32_t fwRev=0;
   ReadReg32(0x118C,fwRev);
   int fwVERSION = ((fwRev>>8)&0xFF); //0 for old FW, 137 for new FW
-  
+  /*
   ReadReg32(CBV1724_ChannelConfReg,reg_CConf);
   
   if(fwVERSION!=0)
@@ -427,18 +440,19 @@ int CBV1724::DetermineBaselines()
   ReadReg32(CBV1724_BuffOrg,reg_BuffOrg);
   if(fwVERSION!=0)
     WriteReg32(CBV1724_BuffOrg,0xA);
-  
+  */
   //Make the acquisition window a reasonable size (400 samples == 4 mus)
-  ReadReg32(CBV1724_CustomSize,reg_CustomSize);
+  //ReadReg32(CBV1724_CustomSize,reg_CustomSize);
   if(fwVERSION!=0)
     WriteReg32(CBV1724_CustomSize,0xC8);
-  
+  u_int32_t datasize = ( 524288 );  // 4byte/word, 8ch/digi, 16byte head
+
   //PTWindow can be little
   ReadReg32(0x1038,reg_PT);
   if(fwVERSION!=0)
     WriteReg32(0x8038,0x10);
   
-
+  
   //Do the magic
   double idealBaseline = 16000.;
   double maxDev = 2.;
@@ -470,11 +484,14 @@ int CBV1724::DetermineBaselines()
     int ret=0,nb=0;
     u_int32_t blt_bytes=0;
     vector<u_int32_t*> *buff=new vector<u_int32_t*>;
-    u_int32_t *tempBuff = new u_int32_t[fBufferSize];
+    //u_int32_t *tempBuff = new u_int32_t[fBufferSize];
+    u_int32_t *tempBuff = new u_int32_t[ datasize*8 ];
     buff->push_back(tempBuff);
     
     do{
-      ret = CAENVME_FIFOBLTReadCycle(fCrateHandle,fBID.vme_address,((unsigned char*)(*buff)[0])+blt_bytes,fBLTSize,cvA32_U_BLT,cvD32,&nb);
+      ret = CAENVME_FIFOBLTReadCycle(fCrateHandle,fBID.vme_address,
+				     ((unsigned char*)(*buff)[0])+blt_bytes,
+				     datasize,cvA32_U_BLT,cvD32,&nb);
       if(ret!=cvSuccess && ret!=cvBusError) {
 	stringstream errorstr;
 	errorstr<<"CAENVME read error. Baselines. "<<ret;
@@ -484,7 +501,7 @@ int CBV1724::DetermineBaselines()
 	return -2;
       }
       blt_bytes+=nb;
-      if(blt_bytes>fBufferSize) 
+      if(blt_bytes>datasize) 
 	continue;
     }while(ret!=cvBusError);
     if(blt_bytes==0)
@@ -578,13 +595,16 @@ int CBV1724::DetermineBaselines()
   outfile.close();  
 
   //Put everyhting back to how it was
-  WriteReg32(CBV1724_ChannelConfReg,reg_CConf);
+
+  // XE100 test. Don't deal with this here. Load regs from scratch after!
+  /*  WriteReg32(CBV1724_ChannelConfReg,reg_CConf);
   WriteReg32(CBV1724_AcquisitionControlReg,reg_ACR);
   WriteReg32(CBV1724_TriggerSourceReg,reg_SWTRIG);
   WriteReg32(CBV1724_DPPReg,reg_DPP);
   WriteReg32(CBV1724_BuffOrg,reg_BuffOrg);
   WriteReg32(CBV1724_CustomSize,reg_CustomSize);
   WriteReg32(0x8038,reg_PT);
+  */
   int retval=0;
   for(unsigned int x=0;x<channelFinished.size();x++){
     if(channelFinished[x]=false) {
