@@ -275,7 +275,11 @@ void DigiInterface::ReadThread()
       ExitCondition=true;
       unsigned int rate=0,freq=0;
       for(unsigned int x=0; x<m_vDigitizers.size();x++)  {
-	
+
+	// avoid hammering the vme bus
+	// replace with proper IRQ handling ;-)
+	usleep(100);
+
 	// First check if the digitizer is active. If at least
 	// one digitizer is active then keep the thread alive
 	if(m_vDigitizers[x]->Activated()) {
