@@ -22,7 +22,7 @@ DigiInterface::DigiInterface()
    m_DAQRecorder=NULL;
    m_RunStartModule=NULL;
    pthread_mutex_init(&m_RateMutex,NULL);
-   Close();
+   //   Close();
 }
 
 DigiInterface::~DigiInterface()
@@ -39,13 +39,11 @@ DigiInterface::DigiInterface(koLogger *logger)
    m_DAQRecorder        = NULL;
    m_RunStartModule     = NULL;
    pthread_mutex_init(&m_RateMutex,NULL);
-   Close();
+   //Close();
 }
 
 int DigiInterface::Initialize(koOptions *options)
-{
-  //   Close();
-  
+{  
   m_koOptions = options;
   
   //Define electronics and initialize
@@ -73,10 +71,17 @@ int DigiInterface::Initialize(koOptions *options)
       return -1;
     }
     
+    // LOG FW
+    char *fw = (char*)malloc (100);
+    CAENVME_BoardFWRelease( tempHandle, fw );
+    stringstream logm;
+    logm<<"Found V2718 with firmware "<<hex<<fw<<dec;
+    m_koLog->Message( logm.str() );
+    free(fw);
     //FOR DAQ TEST ONLY
     CAENVME_SystemReset( tempHandle );
-    sleep(1);
-    CAENVME_WriteRegister( tempHandle, cvVMEControlReg, 0x1c);
+    //sleep(1);
+    //CAENVME_WriteRegister( tempHandle, cvVMEControlReg, 0x1c);
      
     stringstream logmess;
     logmess<<"Initialized link ID: "<<Link.id<<" Crate: "<<Link.crate<<" with handle: "<<tempHandle;
@@ -113,7 +118,11 @@ int DigiInterface::Initialize(koOptions *options)
       }
     }
   }
-  StopRun();
+
+  //Sleep between CC activation and digi
+  sleep(4);
+
+  //  StopRun();
 
 
   // initialize digitizers
@@ -177,7 +186,7 @@ int DigiInterface::Initialize(koOptions *options)
       return -1;
     }
   }
-  
+  sleep(2);
   
   return 0;
 }
@@ -243,7 +252,7 @@ void DigiInterface::Close()
 }
 
 void* DigiInterface::ReadThreadWrapper(void* data)
-{
+{ 
    DigiInterface *digi = static_cast<DigiInterface*>(data);
    digi->ReadThread();
    return (void*)data;
@@ -251,7 +260,13 @@ void* DigiInterface::ReadThreadWrapper(void* data)
 
 void DigiInterface::ReadThread()
 {
-   bool ExitCondition=false;
+  bool  RanOnce = false;
+  bool ExitCondition=false;
+  int counter = 0;
+
+  // Use this to make sure you read each digitizer once even once the run finishes
+  vector<bool> EndOfRunClear( m_vDigitizers.size(), false );
+
    while(!ExitCondition)  {
       ExitCondition=true;
       unsigned int rate=0,freq=0;
@@ -259,31 +274,45 @@ void DigiInterface::ReadThread()
 	
 	// First check if the digitizer is active. If at least
 	// one digitizer is active then keep the thread alive
-	if(m_vDigitizers[x]->Activated()) 
+	if(m_vDigitizers[x]->Activated()) {
 	   ExitCondition=false; 
-	 else 
-	   continue;
-
+	   RanOnce = true;
+	   EndOfRunClear[x] = false;
+	}
+	else {
+	  // Read once to clear any last data in buffer
+	  if( EndOfRunClear[x] )
+	    continue;
+	  EndOfRunClear[x] = true;
+	}
 	// Read from the digitizer and adjust the rates
 	 unsigned int ratecycle=m_vDigitizers[x]->ReadMBLT();	 	 
 	 rate+=ratecycle;
 	 if(ratecycle!=0)
 	   freq++;
       }  
+
       LockRateMutex();
       m_iReadSize+=rate;      
       m_iReadFreq+=freq;
       UnlockRateMutex();
+      if( !RanOnce ){
+	usleep(1000);
+	counter++;
+	if( counter < 1000 )
+	  ExitCondition = false;
+      }
    }
+   
    
    return;
 }
  
 int DigiInterface::StartRun()
-{   
+{ 
+  /*  
   //Tell Boards to start acquisition
-  
-  
+    
   if(m_koOptions->run_start == 1){
     // Start with S-IN
   
@@ -311,7 +340,7 @@ int DigiInterface::StartRun()
       m_vDigitizers[x]->SetActivated(true);
     }
   }
-
+  */
 
   //Spawn read, write, and processing threads
   for(unsigned int x=0; x<m_vProcThreads.size();x++)  {
@@ -344,6 +373,45 @@ int DigiInterface::StartRun()
   pthread_create(&m_ReadThread.Thread,NULL,DigiInterface::ReadThreadWrapper,
 		 static_cast<void*>(this));
   m_ReadThread.IsOpen=true;
+
+  //Tell Boards to start acquisition   
+  if(m_koOptions->run_start == 1){
+    // Start with S-IN
+    
+    // Set boards as active  
+    for(unsigned int x=0;x<m_vDigitizers.size();x++){
+      u_int32_t data;
+      m_vDigitizers[x]->ReadReg32( CBV1724_AcquisitionControlReg,data);
+      cout<<"Read data as"<<hex<<data<<endl;
+      data |= 0x4;
+      cout<<"Write data as"<<hex<<data<<dec<<endl;
+      m_vDigitizers[x]->WriteReg32(CBV1724_AcquisitionControlReg,data);
+      m_vDigitizers[x]->SetActivated(true);
+    }
+    
+    cout<<"Waiting!"<<endl;
+    sleep(3);
+    // Send s-in    
+    if( m_RunStartModule != NULL ){
+      cout<<"Sending S-IN!"<<endl;
+      m_koLog->Message( "Sent start signal to run start module ");
+      m_RunStartModule->SendStartSignal();
+    }
+    else
+      m_koLog->Message("No run start module found. Maybe it's on a different reader" );
+  }
+  else   {
+    //start by write to software register   
+    m_koLog->Message("Starting boards with SW register");
+    // Write to registers and activate  
+    for(unsigned int x=0;x<m_vDigitizers.size();x++){
+      u_int32_t data;
+      m_vDigitizers[x]->ReadReg32(CBV1724_AcquisitionControlReg,data);
+      data |= 0x4;
+      m_vDigitizers[x]->WriteReg32(CBV1724_AcquisitionControlReg,data);
+      m_vDigitizers[x]->SetActivated(true);
+    }
+  }
   
   return 0;
 }
@@ -351,8 +419,11 @@ int DigiInterface::StartRun()
  int DigiInterface::StopRun()
  {
    cout<<"Entering stoprun"<<endl;
-   if(m_RunStartModule!=NULL){      
+   if(m_RunStartModule!=NULL){
+     
      m_RunStartModule->SendStopSignal();
+     usleep(1000);
+
       for(unsigned int x=0;x<m_vDigitizers.size();x++)
 	m_vDigitizers[x]->SetActivated(false);
    }   
@@ -377,23 +448,29 @@ void DigiInterface::CloseThreads(bool Completely)
 {
   cout<<"Entering closethreads"<<endl;
    if(m_ReadThread.IsOpen)  {
+     cout<<"Closing read thread...";
       m_ReadThread.IsOpen=false;
       pthread_join(m_ReadThread.Thread,NULL);      
+      cout<<" done!"<<endl;
    }
    for(unsigned int x=0;x<m_vProcThreads.size();x++)  {
+     cout<<"Closing processing thread "<<x<<"...";
       if(m_vProcThreads[x].IsOpen==false) continue;
       m_vProcThreads[x].IsOpen=false;
       pthread_join(m_vProcThreads[x].Thread,NULL);
+      cout<<" done!"<<endl;
    }
    
    if(Completely)  {
+     cout<<"Destroying proc threads...";
       for(unsigned int x=0;x<m_vProcThreads.size();x++)	{
 	 if(m_vProcThreads[x].Processor != NULL)  {
 	    delete m_vProcThreads[x].Processor;
 	    m_vProcThreads[x].Processor = NULL;
 	 }
       }
-      m_vProcThreads.clear();		 
+      m_vProcThreads.clear();		
+      cout<<" done!"<<endl;
    }           
    cout<<"Leaving closethreads"<<endl;
    return;

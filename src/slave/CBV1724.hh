@@ -64,6 +64,7 @@ class CBV1724 : public VMEBoard {
    int                  LoadDAC(vector <int> baselines);
    int                  LoadBaselines();                       //Load baselines to boards
    int                  GetBaselines(vector <int> &baselines, bool bQuiet=false);  //Get baselines from file 
+  int                   LoadVMEOptions( koOptions *options );
 
    unsigned int         fReadoutThresh;
    pthread_mutex_t      fDataLock;

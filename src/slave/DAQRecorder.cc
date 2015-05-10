@@ -152,9 +152,9 @@ int DAQRecorder_mongodb::RegisterProcessor()
    // conn->conn().createCollection(cS.str(),1000000000,true); //1GB capped collection 
    
    // The following line connects to a capped collection (one collection for all threads)
-   stringstream cS;
-   cS<<m_options->mongo_database<<"."<<m_options->mongo_collection;
-   conn->conn().createCollection(cS.str(),10000000000,true); // Capped at 10GB
+   //stringstream cS;
+   //cS<<m_options->mongo_database<<"."<<m_options->mongo_collection;
+   //conn->conn().createCollection(cS.str(),10000000000,true); // Capped at 10GB
    
    return retval;
 }
@@ -174,17 +174,24 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
 					 int ID)
 {  // The ownership of insvec is passed to this function!
    
-   if(m_vScopedConnections.size()==0 || !m_bInitialized)  {
+  if(m_vScopedConnections.size()==0 || !m_bInitialized 
+     || insvec->size() == 0)  {
       delete insvec;
       return 0;
    }
    
-   if(ID>(int)m_vScopedConnections.size() || ID<0)  {
+   if(ID>(int)m_vScopedConnections.size() || ID<0 )  {
       delete insvec;
       LogError("DAQRecorder_mongodb - Received request for out of scope insert.");
       return -1;
    }
-   
+
+   if ( !m_vScopedConnections[ID]->ok() ){
+     delete insvec;
+     LogError("FATAL - Lost connection to mongoDB on insert. Data lost!");
+     return -1;
+   }
+
    try  {
      stringstream cS;
      cS<<m_options->mongo_database<<"."<<m_options->mongo_collection;
@@ -209,7 +216,7 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
        (*m_vScopedConnections[ID])->insert( cS.str(), docBuilder.obj() );
      }
      else
-       (*m_vScopedConnections[ID])->insert(cS.str(),(*insvec));
+       (*m_vScopedConnections[ID])->insert( cS.str(),(*insvec) );
 
    }
    catch(const mongo::DBException &e)  {

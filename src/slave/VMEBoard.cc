@@ -20,6 +20,7 @@ VMEBoard::VMEBoard()
    bActivated=false;
    bIsSumModule=false;
    m_koLog=NULL;
+   fBID.id = -1;
 }
 
 VMEBoard::~VMEBoard()
@@ -52,6 +53,10 @@ void VMEBoard::LogSendMessage(string mess)
 
 int VMEBoard::WriteReg32(u_int32_t address, u_int32_t data)
 {
+  stringstream str;
+  str<<"Board: "<<fBID.id<<" writes register "<<hex<<address<<" with "<<data<<dec;
+  LogMessage( str.str() );
+
    if(CAENVME_WriteCycle(fCrateHandle,fBID.vme_address+address,
 			  &data,cvA32_U_DATA,cvD32)!=cvSuccess)        
      return -1;
@@ -66,7 +71,12 @@ int VMEBoard::ReadReg32(u_int32_t address, u_int32_t &data)
 			     &temp,cvA32_U_DATA,cvD32))!=cvSuccess)
      return -1;      
    data=temp;
-   return 0;
+ 
+   stringstream str;
+   str<<"Board: "<<fBID.id<<" reads register "<<hex<<address<<" data "<<data<<dec;
+   LogMessage( str.str() );
+   
+  return 0;
 }
 
 int VMEBoard::WriteReg16(u_int32_t address,u_int16_t data)

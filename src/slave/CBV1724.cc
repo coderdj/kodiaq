@@ -56,137 +56,156 @@ CBV1724::CBV1724(board_definition_t BoardDef, koLogger *kLog)
 
 int CBV1724::Initialize(koOptions *options)
 {
-   int retVal=0;
-   i_clockResetCounter=0;
-   for(int x=0;x<options->GetVMEOptions();x++)  {
-     if((options->GetVMEOption(x).board==-1 || 
-	 options->GetVMEOption(x).board==fBID.id)){
-       int success = WriteReg32(options->GetVMEOption(x).address,
-				options->GetVMEOption(x).value);    
-       retVal=success;	 
-     }      
-   }
+  // Initialize and ready the board according to the options object
+  
+  // Set private members
+  int retVal=0;
+  i_clockResetCounter=0;
+  bActivated=false;
+  UnlockDataBuffer();
+  
+  // Load options. This must be done again after the baseline
+  // and noise procedures to reset the board's internal counters
+  //  if( LoadVMEOptions( options ) != 0 )
+  //retVal = -1;
    
-   //Reset all values
-   bActivated=false;
-   UnlockDataBuffer();
    
-   //Get size of BLT read using board data and options
-   u_int32_t data;
-   ReadReg32(CBV1724_BoardInfoReg,data);
-   u_int32_t memorySize = (u_int32_t)((data>>8)&0xFF);
-   ReadReg32(CBV1724_BuffOrg,data);
-   u_int32_t eventSize = (u_int32_t)((((memorySize*pow(2,20))/
-					  (u_int32_t)pow(2,data))*8+16)/4);
-   ReadReg32(CBV1724_BltEvNumReg,data);
-   fBLTSize=options->blt_size;
-   fBufferSize = data*eventSize*(u_int32_t)4+(fBLTSize);
-   fBufferSize = eventSize*data + fBLTSize;
-   fReadoutThresh = options->processing_readout_threshold;
+  //Get size of BLT read using board data and options
+  u_int32_t data;
+  ReadReg32(CBV1724_BoardInfoReg,data);
+  u_int32_t memorySize = (u_int32_t)((data>>8)&0xFF);
+  ReadReg32(CBV1724_BuffOrg,data);
+  u_int32_t eventSize = (u_int32_t)((((memorySize*pow(2,20))/
+				      (u_int32_t)pow(2,data))*8+16)/4);
+  ReadReg32(CBV1724_BltEvNumReg,data);
+  fBLTSize=options->blt_size;
+  fBufferSize = data*eventSize*(u_int32_t)4+(fBLTSize);
+  fBufferSize = eventSize*data + fBLTSize;
+  fReadoutThresh = options->processing_readout_threshold;
    
-   fBuffers = new vector<u_int32_t*>();
-   fSizes   = new vector<u_int32_t>();
+  // Data is stored in these two vectors
+  fBuffers = new vector<u_int32_t*>();
+  fSizes   = new vector<u_int32_t>();
 
-   if(options->baseline_mode==1)    {	
-     m_koLog->Message("Determining baselines ");
-     int tries = 0;
-     int ret=-1;
-     while((ret=DetermineBaselines())!=0 && tries<5){
-       cout<<" .";
-       tries++;
-       if(ret==-2){
-	 m_koLog->Error("Baselines failed with ret -2");
-	 return -2;
-       }	 
-     }
-     //if(ret==0)
-     //cout<<" . . . done!"<<endl;
-     //else
-     //cout<<" . . . failed!"<<endl;
-     stringstream logmess;
-     logmess<<"Baselines returned value "<<ret;
-     m_koLog->Message(logmess.str());
-   }
-   else m_koLog->Message("Automatic baseline determination switched off");
-   
-   if(options->baseline_mode != 2){
-     LoadBaselines();
-     m_koLog->Message("Baselines loaded from file");
-   }
-   fBufferOccSize = 0;
-   
-   stringstream messstr;
-   if( retVal == 0 ){
-     messstr<<"Board "<<fBID.id<<" initialized successfully";
-     m_koLog->Message( messstr.str() );
-   }
-   else{
-     messstr<<"Board "<<fBID.id<<" failed initialization";
-     m_koLog->Message( messstr.str() );
-   }
+  // Determine baselines if required
+  if(options->baseline_mode==1)    {	
+    m_koLog->Message("Determining baselines ");
+    int tries = 0;
+    int ret=-1;
+    while((ret=DetermineBaselines())!=0 && tries<5){
+      cout<<" .";
+      tries++;
+      if(ret==-2){
+	m_koLog->Error("Baselines failed with ret -2");
+	return -2;
+      }	 
+    }
+    stringstream logmess;
+    logmess<<"Baselines returned value "<<ret;
+    m_koLog->Message(logmess.str());
+  }
+  else m_koLog->Message("Automatic baseline determination switched off");
+
+  // Reload VME options
+  if( LoadVMEOptions( options ) != 0 ) 
+    retVal = -1;
+
+  // Load baselines
+  if(options->baseline_mode != 2){
+    LoadBaselines();
+    m_koLog->Message("Baselines loaded from file");
+  }
+  fBufferOccSize = 0;
+
+
+  // Report whether we succeeded or not
+  stringstream messstr;
+  if( retVal == 0 ){
+    messstr<<"Board "<<fBID.id<<" initialized successfully";
+    m_koLog->Message( messstr.str() );
+  }
+  else{
+    messstr<<"Board "<<fBID.id<<" failed initialization";
+    m_koLog->Message( messstr.str() );
+  }
    return retVal;
 }
 
 unsigned int CBV1724::ReadMBLT()
+// Performs a FIFOBLT read cycle for this board and reads the
+// data into the buffer of this CBV1724 object
 {
-   unsigned int blt_bytes=0;
-   int nb=0,ret=-5;   
+
+  // Read the VME status register to see if there is an event ready
+  // this avoids hammering attempted BLTs
+  //u_int32_t regValue = 0x0;
+  //if( ReadReg32( 0xEF04, regValue ) != 0 )
+  //  return 0;
+  //if( ! regValue&0x1 )
+  //  return 0;
+  
+  // Initialize
+  unsigned int blt_bytes=0;
+  int nb=0,ret=-5;   
    
-   // The buffer must be freed in this function (fBufferSize can be large!)
-   u_int32_t *buff = new u_int32_t[fBufferSize];       
-   do{
-      ret = CAENVME_FIFOBLTReadCycle(fCrateHandle,fBID.vme_address,
-				     ((unsigned char*)buff)+blt_bytes,
-				     fBLTSize,cvA32_U_BLT,cvD32,&nb);
-      if((ret!=cvSuccess) && (ret!=cvBusError)){
-	 stringstream ss;
-	 ss<<"Board "<<fBID.id<<" reports read error "<<dec<<ret<<endl;
-	 LogError(ss.str());
-	 delete[] buff;
-	 return 0;
-      }
-      blt_bytes+=nb;
-      if(blt_bytes>fBufferSize)	{
-	// For Custom V1724 firmware max event size is ~10mus, corresponding to a 
-	// buffer of several MB. Events which are this large are probably non
-	// physical. Events going over the 10mus limit are simply ignored by the
-	// board (!). 
-	 stringstream ss;	 
-	 ss<<"Board "<<fBID.id<<" reports insufficient BLT buffer size. ("<<blt_bytes<<" > "<<fBufferSize<<")"<<endl;	 
-	 m_koLog->Error(ss.str());
-	 delete[] buff;
-	 return 0;
-      }
-   }while(ret!=cvBusError);
+  // The buffer must be freed in this function (fBufferSize can be large!)
+  u_int32_t *buff = new u_int32_t[fBufferSize];       
+  do{
+    ret = CAENVME_FIFOBLTReadCycle(fCrateHandle,fBID.vme_address,
+    				   ((unsigned char*)buff)+blt_bytes,
+    				   fBLTSize,cvA32_U_BLT,cvD32,&nb);
+    
+    if((ret!=cvSuccess) && (ret!=cvBusError)){
+      stringstream ss;
+      ss<<"Board "<<fBID.id<<" reports read error "<<dec<<ret<<endl;
+      LogError(ss.str());
+      delete[] buff;
+      return 0;
+    }
+    blt_bytes+=nb;
+    if(blt_bytes>fBufferSize)	{
+      // For Custom V1724 firmware max event size is ~10mus, corresponding to a 
+      // buffer of several MB. Events which are this large are probably non
+      // physical. Events going over the 10mus limit are simply ignored by the
+      // board (!). 
+      stringstream ss;	 
+      ss<<"Board "<<fBID.id<<" reports insufficient BLT buffer size. ("
+	<<blt_bytes<<" > "<<fBufferSize<<")"<<endl;	 
+      m_koLog->Error(ss.str());
+      delete[] buff;
+      return 0;
+    }
+  }while(ret!=cvBusError);
    
-   if(blt_bytes>0){
-     // We reserve too much space for the buffer (block transfers can get long). 
-     // In order to avoid shipping huge amounts of empty space around we copy
-     // the buffer here to a new buffer that is just large enough for the data.
-     // This memory is reserved here but it's ownership will be passed to the
-     // processing function that drains it (that function must free it!)
-      u_int32_t *writeBuff = new u_int32_t[blt_bytes/(sizeof(u_int32_t))]; 
-      memcpy(writeBuff,buff,blt_bytes);
-      LockDataBuffer();
-      fBuffers->push_back(writeBuff);
-      fSizes->push_back(blt_bytes);
+  if(blt_bytes>0){
+    // We reserve too much space for the buffer (block transfers can get long). 
+    // In order to avoid shipping huge amounts of empty space around we copy
+    // the buffer here to a new buffer that is just large enough for the data.
+    // This memory is reserved here but it's ownership will be passed to the
+    // processing function that drains it (that function must free it!)
+    u_int32_t *writeBuff = new u_int32_t[blt_bytes/(sizeof(u_int32_t))]; 
+    memcpy(writeBuff,buff,blt_bytes);
+    LockDataBuffer();
+    fBuffers->push_back(writeBuff);
+    fSizes->push_back(blt_bytes);
+    
+    // Update total buffer size
+    fBufferOccSize += blt_bytes;
+    
+    if(fBuffers->size()==1) i64_blt_first_time = koHelper::GetTimeStamp(buff);
+    
+    // If we have enough BLTs (user option) signal that board can be read out
+    if(fBuffers->size()>fReadoutThresh)
+      pthread_cond_signal(&fReadyCondition);
+    UnlockDataBuffer();
+  }
 
-      // Update total buffer size
-      fBufferOccSize += blt_bytes;
-      
-      if(fBuffers->size()==1) i64_blt_first_time = koHelper::GetTimeStamp(buff);
-
-      // If we have enough BLTs (user option) signal that board can be read out
-      if(fBuffers->size()>fReadoutThresh)
-	pthread_cond_signal(&fReadyCondition);
-      UnlockDataBuffer();
-   }
-
-   delete[] buff;
-   return blt_bytes;
+  delete[] buff;
+  return blt_bytes;
 }
 
 void CBV1724::SetActivated(bool active)
+// Set this board to active and ready to go
 {
    bActivated=active;
    if(active==false){
@@ -258,11 +277,11 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
     i64_blt_second_time = koHelper::GetTimeStamp((*fBuffers)[fBuffers->size()-1]);
     
     // Is the object's over18 bool set?
-    if( i64_blt_first_time <5E8 && bOver15 ){
+    if( i64_blt_first_time <3E8 && bOver15 ){
       bOver15=false;
       i_clockResetCounter++;
     }
-    else if( i64_blt_first_time > 15E8 && !bOver15 )
+    else if( i64_blt_first_time > 7E8 && !bOver15 )
       bOver15 = true;
     resetCounter = i_clockResetCounter;
     /*
@@ -294,7 +313,8 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
 }
 
 int CBV1724::LoadBaselines()
-{
+// Get Baselines from file and put into DAC
+{  
    vector <int> baselines;
    if(GetBaselines(baselines)!=0) {
       LogMessage("Error loading baselines.");
@@ -306,54 +326,61 @@ int CBV1724::LoadBaselines()
 }
 
 int CBV1724::GetBaselines(vector <int> &baselines, bool bQuiet)
+// Baselines are stored in local file.
+// Q: do we need to keep a record of these per run?
+// Could provide them to the run doc somehow
 {
-   stringstream filename; 
-   filename<<"baselines/XeBaselines_"<<fBID.id<<".ini";
-   ifstream infile;
-   infile.open(filename.str().c_str());
-   if(!infile)  {
-      stringstream error;
-      error<<"No baselines found for board "<<fBID.id;
-      LogError(error.str());
-      LogSendMessage(error.str());
-      return -1;
-   }
-   baselines.clear();
-   //Get date and determine how old baselines are. If older than 24 hours give a warning.
-   string line;
-   getline(infile,line);
-   unsigned int filetime = koHelper::StringToInt(line);
-   //filetime of form YYMMDDHH
-   if(koHelper::CurrentTimeInt()-filetime > 100 && !bQuiet)  {
-      stringstream warning;   	   
-      warning<<"Warning: Module "<<fBID.id<<" is using baselines that are more than a day old.";
-      LogSendMessage(warning.str());
-   }
-   while(getline(infile,line)){
-      int value=0;
-      if(koHelper::ProcessLineHex(line,koHelper::IntToString(baselines.size()+1),
-				  value)!=0)
-	break;
-      baselines.push_back(value);
-   }
-   if(baselines.size()!=8)   {
-      stringstream error;
-      error<<"Warning from module "<<fBID.id<<". Error loading baselines.";
-      LogSendMessage(error.str());
-      LogError(error.str());
-      infile.close();
-      return -1;
-   }
-   infile.close();
-   return 0;      
+  stringstream filename; 
+  filename<<"baselines/XeBaselines_"<<fBID.id<<".ini";
+  ifstream infile;
+  infile.open(filename.str().c_str());
+  if(!infile)  {
+    stringstream error;
+    error<<"No baselines found for board "<<fBID.id;
+    LogError(error.str());
+    LogSendMessage(error.str());
+    return -1;
+  }
+  baselines.clear();
+  
+  // Get date and determine how old baselines are. 
+  // If older than 24 hours give a warning.
+  string line;
+  getline(infile,line);
+  unsigned int filetime = koHelper::StringToInt(line);
+  //filetime of form YYMMDDHH
+  if(koHelper::CurrentTimeInt()-filetime > 100 && !bQuiet)  {
+    stringstream warning;   	   
+    warning<<"Warning: Module "<<fBID.id
+	   <<" is using baselines that are more than a day old.";
+    LogSendMessage(warning.str());
+  }
+  while(getline(infile,line)){
+    int value=0;
+    if(koHelper::ProcessLineHex(line,koHelper::IntToString(baselines.size()+1),
+				value)!=0)
+      break;
+    baselines.push_back(value);
+  }
+  if(baselines.size()!=8)   {
+    stringstream error;
+    error<<"Warning from module "<<fBID.id<<". Error loading baselines.";
+    LogSendMessage(error.str());
+    LogError(error.str());
+    infile.close();
+    return -1;
+  }
+  infile.close();
+  return 0;      
 }
+
 
 int CBV1724::DetermineBaselines()
 //Rewrite of baseline routine from Marc S
 //Updates to C++, makes compatible with new FW
 {
-  // If there are old baselines we can use them as a starting point
 
+  // If there are old baselines we can use them as a starting point
   vector <int> DACValues;  
   if(GetBaselines(DACValues,true)!=0) {
     DACValues.resize(8,0x1000);
@@ -368,40 +395,44 @@ int CBV1724::DetermineBaselines()
   // Record all register values before overwriting (will put back later)
   u_int32_t reg_DPP,reg_ACR,reg_SWTRIG,reg_CConf,reg_BuffOrg,reg_CustomSize,
     reg_PT;
-
-  //Get the firmware revision (for data formats)                                     
+  
+  //Get the firmware revision (for data formats)                                    
   u_int32_t fwRev=0;
-  //ReadReg32(0x8124,fwRev);
   ReadReg32(0x118C,fwRev);
   int fwVERSION = ((fwRev>>8)&0xFF); //0 for old FW, 137 for new FW
-  //int fwVERSIONOTHER = (fwRev)&0xFF;
-  //cout<<fwVERSION<<" VERSION "<<fwVERSIONOTHER<<endl;
-  //Channel configuration 0x8000 - turn off ZLE/VETO
+  
   ReadReg32(CBV1724_ChannelConfReg,reg_CConf);
+  
   if(fwVERSION!=0)
     WriteReg32(CBV1724_ChannelConfReg,0x310);  
   else 
     WriteReg32(CBV1724_ChannelConfReg,0x10);
+
   //Acquisition control register 0x8100 - turn off S-IN
   ReadReg32(CBV1724_AcquisitionControlReg,reg_ACR);
   WriteReg32(CBV1724_AcquisitionControlReg,0x0);
+  
   //Trigger source reg - turn off TRIN, turn on SWTRIG
   ReadReg32(CBV1724_TriggerSourceReg,reg_SWTRIG);
   WriteReg32(CBV1724_TriggerSourceReg,0x80000000);
+  
   //Turn off DPP (for old FW should do nothing [no harm either])
   ReadReg32(0x1080,reg_DPP);
   if(fwVERSION!=0)
     WriteReg32(CBV1724_DPPReg,0x1310000);  
   else 
     WriteReg32(CBV1724_DPPReg,0x800000);
+  
   //Change buffer organization so that custom size works 
   ReadReg32(CBV1724_BuffOrg,reg_BuffOrg);
   if(fwVERSION!=0)
     WriteReg32(CBV1724_BuffOrg,0xA);
+  
   //Make the acquisition window a reasonable size (400 samples == 4 mus)
   ReadReg32(CBV1724_CustomSize,reg_CustomSize);
   if(fwVERSION!=0)
     WriteReg32(CBV1724_CustomSize,0xC8);
+  
   //PTWindow can be little
   ReadReg32(0x1038,reg_PT);
   if(fwVERSION!=0)
@@ -425,7 +456,7 @@ int CBV1724::DetermineBaselines()
       if(channelFinished[x]==false) getOut=false;
     }
     if(getOut) break;
-
+    
     // Enable to board
     WriteReg32(CBV1724_AcquisitionControlReg,0x4);
     usleep(5000); //
@@ -441,14 +472,15 @@ int CBV1724::DetermineBaselines()
     vector<u_int32_t*> *buff=new vector<u_int32_t*>;
     u_int32_t *tempBuff = new u_int32_t[fBufferSize];
     buff->push_back(tempBuff);
-
+    
     do{
       ret = CAENVME_FIFOBLTReadCycle(fCrateHandle,fBID.vme_address,((unsigned char*)(*buff)[0])+blt_bytes,fBLTSize,cvA32_U_BLT,cvD32,&nb);
       if(ret!=cvSuccess && ret!=cvBusError) {
 	stringstream errorstr;
 	errorstr<<"CAENVME read error. Baselines. "<<ret;
 	m_koLog->Error(errorstr.str());
-	delete[] buff;
+	delete []tempBuff;
+	delete buff;
 	return -2;
       }
       blt_bytes+=nb;
@@ -463,47 +495,62 @@ int CBV1724::DetermineBaselines()
     vector <u_int32_t> *dchannels = new vector<u_int32_t>;
     vector <u_int32_t> *dtimes = new vector<u_int32_t>;
     bool berr; string serr;
-    if(fwVERSION!=0) DataProcessor::SplitChannelsNewFW(buff,dsizes,dtimes,dchannels,berr,serr);
-    else DataProcessor::SplitChannels(buff,dsizes,dtimes,dchannels,NULL,false);
-        //loop through channels
+    if(fwVERSION!=0) 
+      DataProcessor::SplitChannelsNewFW(buff,dsizes,
+					dtimes,dchannels,berr,serr);
+    else 
+      DataProcessor::SplitChannels(buff,dsizes,dtimes,dchannels,NULL,false);
+
+    //loop through channels
     for(unsigned int x=0;x<dchannels->size();x++){
       if(channelFinished[(*dchannels)[x]] || (*dsizes)[x]==0) {
 	delete[] (*buff)[x];
 	continue;
       }
+
       //compute baseline
       double baseline=0.,bdiv=0.;
       unsigned int maxval=0.,minval=17000.;
-      //cout<<"Channel: "<<(*dchannels)[x]<<endl;
+
+      // Loop through data
       for(unsigned int y=0;y<(*dsizes)[x]/4;y++){
+	// Second loop for first/second sample in word
 	for(int z=0;z<2;z++){
 	  u_int32_t dbase=0;
-	  if(z==0) dbase=(((*buff)[x][y])&0xFFFF);
-	  else dbase=(((*buff)[x][y]>>16)&0xFFFF);
-	  //	  cout<<hex<<dbase<<endl;
+	  if(z==0) 
+	    dbase=(((*buff)[x][y])&0xFFFF);
+	  else 
+	    dbase=(((*buff)[x][y]>>16)&0xFFFF);
 	  baseline+=dbase;
 	  bdiv+=1.;
-	  if(dbase>maxval) maxval=dbase;
-	  if(dbase<minval) minval=dbase;
+	  if(dbase>maxval) 
+	    maxval=dbase;
+	  if(dbase<minval) 
+	    minval=dbase;
 	}      
       }
       baseline/=bdiv;
       if(maxval-minval > 500) {
-	//cout<<"Channel "<<(*dchannels)[x]<<" signal in baseline?"<<endl;
-	
+	stringstream error;
+	error<<"Channel "<<(*dchannels)[x]<<" signal in baseline?";
+	LogMessage( error.str() );	
 	continue; //signal in baseline?
       }
-      //shooting for 16000. best is if we UNDERshoot and then can more accurately adjust DAC
+
+      // shooting for 16000. best is if we UNDERshoot 
+      // and then can more accurately adjust DAC
       double discrepancy = baseline-idealBaseline;      
-      //cout<<"Discrepancy "<<discrepancy<<" old BL: "<<DACValues[(*dchannels)[x]]<<endl;
       if(fabs(discrepancy)<=maxDev) { 
 	channelFinished[(*dchannels)[x]]=true;
 	continue;
       }
+      
       if(discrepancy<0) //baseline is BELOW ideal
-	DACValues[(*dchannels)[x]] = (int)DACValues[(*dchannels)[x]]-((0xFFFF/2)*((-1*discrepancy)/(16383.)));
+	DACValues[(*dchannels)[x]] = (int)DACValues[(*dchannels)[x]]
+	  -((0xFFFF/2)*((-1*discrepancy)/(16383.)));
       else if(discrepancy<300) // find adj
-	DACValues[(*dchannels)[x]] = (int)DACValues[(*dchannels)[x]]+((0xFFFF/2)*((discrepancy/(16383.))));
+	DACValues[(*dchannels)[x]] = (int)DACValues[(*dchannels)[x]]
+	  +((0xFFFF/2)*((discrepancy/(16383.))));
       else //coarse adj
 	DACValues[(*dchannels)[x]] = (int)DACValues[(*dchannels)[x]]+300;
       if(DACValues[(*dchannels)[x]]>0xFFFF) DACValues[(*dchannels)[x]]=0xFFFF;
@@ -529,6 +576,7 @@ int CBV1724::DetermineBaselines()
     outfile<<x+1<<"  "<<hex<<setw(4)<<setfill('0')<<((DACValues[x])&0xFFFF)<<endl;                                                                                  
   }                                                                                 
   outfile.close();  
+
   //Put everyhting back to how it was
   WriteReg32(CBV1724_ChannelConfReg,reg_CConf);
   WriteReg32(CBV1724_AcquisitionControlReg,reg_ACR);
@@ -635,3 +683,25 @@ int CBV1724::LoadDAC(vector<int> baselines){
   return 0;
 }
 
+ int CBV1724::LoadVMEOptions( koOptions *options )
+ {
+   int retVal = 0;
+   // Reload VME options    
+   for(int x=0;x<options->GetVMEOptions();x++)  {
+     if((options->GetVMEOption(x).board==-1 ||
+	 options->GetVMEOption(x).board==fBID.id)){
+       int success = WriteReg32(options->GetVMEOption(x).address,
+				options->GetVMEOption(x).value);
+       if( success != 0 ){
+	 retVal=success;
+	 stringstream errorstr;
+	 errorstr<<"Couldn't write VME option "<<hex
+		 <<options->GetVMEOption(x).address<<" with value "
+		 <<options->GetVMEOption(x).value<<" to board "<<fBID.id;
+	 LogError( errorstr.str() );
+       }
+     }
+
+   }
+   return retVal;
+ }

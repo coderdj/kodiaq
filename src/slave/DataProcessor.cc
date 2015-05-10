@@ -263,7 +263,8 @@ void DataProcessor::SplitChannelsNewFW(vector<u_int32_t*> *&buffvec, vector<u_in
 	  continue;	     
 	u_int32_t channelSize = ((*buffvec)[x][idx]);
 	idx++; //iterate past the size word
-	u_int32_t channelTime = ((*buffvec)[x][idx])&0x7FFFFFFF;
+	//u_int32_t channelTime = ((*buffvec)[x][idx])&0x7FFFFFFF;
+	u_int32_t channelTime = ((*buffvec)[x][idx])&0x3FFFFFFF;
 	idx++;
 	//char *keep = new char[(channelSize-2)*4];	     
 
@@ -293,7 +294,7 @@ void DataProcessor::SplitChannelsNewFW(vector<u_int32_t*> *&buffvec, vector<u_in
 	// REMOVE ABOVE AFTER TEST
 
 
-
+	
 	u_int32_t *keep = new u_int32_t[channelSize-2];
 	//	copy((*buffvec)[x]+idx,(*buffvec)[x]+(idx+channelSize-2),keep); //copy channel data
 	if( idx + channelSize-2 < (*sizevec)[x] ){
@@ -320,7 +321,7 @@ void DataProcessor::SplitChannelsNewFW(vector<u_int32_t*> *&buffvec, vector<u_in
           outfile.open("stupiderror.txt");
           outfile<<errorlog.str();
           outfile.close();
-
+	  delete keep;
 	  
 	  //	  sErrorText = errorlog.str();
 	  //bErrorSet = true;
@@ -471,9 +472,9 @@ void DataProcessor::Process()
 	
 	//Convert the time to 64-bit
 	// We assume this data is in temporal order for computation using the reset counter
-	int iBitShift = 31; 
+	int iBitShift = 30; 
 
-	long long Time64 = ((unsigned long)resetCounterStart << iBitShift) | TimeStamp;
+	long long Time64 = ((unsigned long)resetCounterStart << iBitShift) +TimeStamp;//| TimeStamp;
 	
 	//	Time64 += ((unsigned long) 1 << iBitShift);
 	
