@@ -112,6 +112,7 @@ int CBV1724::Initialize(koOptions *options)
   int tries = 0;
   while( LoadVMEOptions( options ) != 0 && tries < 5) {
     tries ++;
+    usleep(1000);
     if( tries == 5 )
       retVal = -1;
   }
@@ -740,6 +741,8 @@ int CBV1724::LoadDAC(vector<int> baselines){
 	 options->GetVMEOption(x).board==fBID.id)){
        int success = WriteReg32(options->GetVMEOption(x).address,
 				options->GetVMEOption(x).value);
+       if( options->GetVMEOption(x).address == 0xEF24 ) // give time to reset
+	 usleep(1000);
        if( success != 0 ){
 	 retVal=success;
 	 stringstream errorstr;

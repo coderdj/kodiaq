@@ -127,8 +127,12 @@ int DigiInterface::Initialize(koOptions *options)
 
   // initialize digitizers
   for(unsigned int x=0; x<m_vDigitizers.size();x++)  {
-    if(m_vDigitizers[x]->Initialize(options)!=0)
+    if(m_vDigitizers[x]->Initialize(options)!=0){
+      stringstream err;
+      err<<"Digtizer "<<m_vDigitizers[x]->GetID().id<<" failed initialization!";
+      m_koLog->Error( err.str() );
       return -1;
+    }
   }
    
    
