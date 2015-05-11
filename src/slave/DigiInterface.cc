@@ -278,7 +278,7 @@ void DigiInterface::ReadThread()
 
 	// avoid hammering the vme bus
 	// replace with proper IRQ handling ;-)
-	usleep(100);
+	usleep(1000);
 
 	// First check if the digitizer is active. If at least
 	// one digitizer is active then keep the thread alive

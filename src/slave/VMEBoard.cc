@@ -58,7 +58,7 @@ int VMEBoard::WriteReg32(u_int32_t address, u_int32_t data)
   LogMessage( str.str() );
 
   int ret = CAENVME_WriteCycle(fCrateHandle,fBID.vme_address+address,
-			       &data,cvA32_U_DATA,cvD32);
+			       &data,cvA32_S_DATA,cvD32);
   if( ret!=cvSuccess ){
     stringstream err;
     err<<"Failed to write with CAEN ENUM "<<ret;
@@ -73,7 +73,7 @@ int VMEBoard::ReadReg32(u_int32_t address, u_int32_t &data)
    u_int32_t temp;
    int ret=0;
    if((ret=CAENVME_ReadCycle(fCrateHandle,fBID.vme_address+address,
-			     &temp,cvA32_U_DATA,cvD32))!=cvSuccess)
+			     &temp,cvA32_S_DATA,cvD32))!=cvSuccess)
      return -1;      
    data=temp;
  
