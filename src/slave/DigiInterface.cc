@@ -66,8 +66,11 @@ int DigiInterface::Initialize(koOptions *options)
     if((cerr=CAENVME_Init(BType,Link.id,Link.crate,
 			  &tempHandle))!=cvSuccess){
       //throw exception?
+      stringstream therror;
+      therror<<"DigiInterface::Initialize - Error in CAEN initialization link "
+	     <<Link.id<<" crate "<<Link.crate;
       if(m_koLog!=NULL)
-	m_koLog->Error("DigiInterface::Initialize - Error in CAEN initialization");
+	m_koLog->Error(therror.str());
       return -1;
     }
     
@@ -277,8 +280,7 @@ void DigiInterface::ReadThread()
       for(unsigned int x=0; x<m_vDigitizers.size();x++)  {
 
 	// avoid hammering the vme bus
-	// replace with proper IRQ handling ;-)
-	usleep(1000);
+	// usleep(100);
 
 	// First check if the digitizer is active. If at least
 	// one digitizer is active then keep the thread alive
@@ -295,6 +297,9 @@ void DigiInterface::ReadThread()
 	}
 	// Read from the digitizer and adjust the rates
 	 unsigned int ratecycle=m_vDigitizers[x]->ReadMBLT();	 	 
+
+	 // Check for errors?
+
 	 rate+=ratecycle;
 	 if(ratecycle!=0)
 	   freq++;
@@ -318,38 +323,6 @@ void DigiInterface::ReadThread()
  
 int DigiInterface::StartRun()
 { 
-  /*  
-  //Tell Boards to start acquisition
-    
-  if(m_koOptions->run_start == 1){
-    // Start with S-IN
-  
-    // Set boards as active
-    for(unsigned int x=0;x<m_vDigitizers.size();x++)
-      m_vDigitizers[x]->SetActivated(true);
-
-    // Send s-in
-    if( m_RunStartModule != NULL ){
-      m_koLog->Message( "Sent start signal to run start module ");
-      m_RunStartModule->SendStartSignal();      
-    }	
-    else
-      m_koLog->Message(" No run start module found. Maybe it's on a different reader" );
-  }   
-  else   {	
-    //start by write to software register
-    
-    // Write to registers and activate
-    for(unsigned int x=0;x<m_vDigitizers.size();x++){
-      u_int32_t data;
-      m_vDigitizers[x]->ReadReg32(CBV1724_AcquisitionControlReg,data);
-      data |= 0x4;
-      m_vDigitizers[x]->WriteReg32(CBV1724_AcquisitionControlReg,data);
-      m_vDigitizers[x]->SetActivated(true);
-    }
-  }
-  */
-
   //Spawn read, write, and processing threads
   for(unsigned int x=0; x<m_vProcThreads.size();x++)  {
 

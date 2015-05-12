@@ -92,8 +92,8 @@ DAQRecorder_mongodb::DAQRecorder_mongodb(koLogger *koLog)
 void DAQRecorder_mongodb::CloseConnections()
 {
    for(unsigned int x=0; x<m_vScopedConnections.size(); x++)  {	
-      m_vScopedConnections[x]->done();
-      delete m_vScopedConnections[x];
+     //m_vScopedConnections[x]->done();
+     delete m_vScopedConnections[x];
    }   
    m_vScopedConnections.clear();
    pthread_mutex_destroy(&m_ConnectionMutex);
@@ -114,17 +114,23 @@ int DAQRecorder_mongodb::Initialize(koOptions *options)
 int DAQRecorder_mongodb::RegisterProcessor()
 {
    int retval=-1;
-   mongo::ScopedDbConnection *conn;
+   //mongo::ScopedDbConnection *conn;
+   mongo::DBClientConnection *conn;
    try  {
-     conn = new mongo::ScopedDbConnection(m_options->mongo_address,10000.);
-     
+     //conn = new mongo::ScopedDbConnection(m_options->mongo_address,10000.);
+     conn = new mongo::DBClientConnection();
+     conn->connect( m_options->mongo_address );
+     mongo::client::initialize();
+
      // Set write concern
      if( m_options->mongo_write_concern == 0 ){
-       conn->conn().setWriteConcern( mongo::W_NONE );
-       LogMessage( "MongoDB WriteConcern set to NONE" );
+       //conn->conn().setWriteConcern( mongo::W_NONE );
+       conn->setWriteConcern( mongo::WriteConcern::unacknowledged );
+       LogMessage( "MongoDB WriteConcern set to NONE" );  
      }
      else{
-       conn->conn().setWriteConcern( mongo::W_NORMAL );
+       //       conn->conn().setWriteConcern( mongo::W_NORMAL );
+       conn->setWriteConcern( mongo::WriteConcern::acknowledged );
        LogMessage( "MongoDB WriteConcern set to NORMAL" );
      }
 
@@ -137,8 +143,8 @@ int DAQRecorder_mongodb::RegisterProcessor()
    }
    int lock = pthread_mutex_lock(&m_ConnectionMutex);
    if(lock!=0)  {
-      conn->done();
-      return -1;
+     //conn->done();
+     return -1;
    }
    m_vScopedConnections.push_back(conn);
    retval = m_vScopedConnections.size()-1;
@@ -186,11 +192,11 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
       return -1;
    }
 
-   if ( !m_vScopedConnections[ID]->ok() ){
+   /*   if ( !m_vScopedConnections[ID]->ok() ){
      delete insvec;
      LogError("FATAL - Lost connection to mongoDB on insert. Data lost!");
      return -1;
-   }
+     }*/
 
    try  {
      stringstream cS;
@@ -213,10 +219,10 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
        docBuilder.append( "time_min", minTime );
        docBuilder.append( "time_max", maxTime );
        docBuilder.appendArray( "bulk", subdoc_array.arr() );
-       (*m_vScopedConnections[ID])->insert( cS.str(), docBuilder.obj() );
+       (m_vScopedConnections[ID])->insert( cS.str(), docBuilder.obj() );
      }
      else
-       (*m_vScopedConnections[ID])->insert( cS.str(),(*insvec) );
+       ( m_vScopedConnections[ID])->insert( cS.str(), (*insvec) );
 
    }
    catch(const mongo::DBException &e)  {

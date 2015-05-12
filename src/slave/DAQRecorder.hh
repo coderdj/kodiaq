@@ -130,7 +130,8 @@ class DAQRecorder_mongodb : public DAQRecorder
    void            CloseConnections();
 
    pthread_mutex_t m_ConnectionMutex;
-   vector <mongo::ScopedDbConnection*> m_vScopedConnections;   
+  //vector <mongo::ScopedDbConnection*> m_vScopedConnections;   
+  vector <mongo::DBClientConnection*> m_vScopedConnections;
    
 };
 #endif
