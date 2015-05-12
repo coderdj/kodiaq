@@ -263,8 +263,8 @@ void DataProcessor::SplitChannelsNewFW(vector<u_int32_t*> *&buffvec, vector<u_in
 	  continue;	     
 	u_int32_t channelSize = ((*buffvec)[x][idx]);
 	idx++; //iterate past the size word
-	//u_int32_t channelTime = ((*buffvec)[x][idx])&0x7FFFFFFF;
-	u_int32_t channelTime = ((*buffvec)[x][idx])&0x3FFFFFFF;
+	u_int32_t channelTime = ((*buffvec)[x][idx])&0x7FFFFFFF;
+	//u_int32_t channelTime = ((*buffvec)[x][idx])&0x3FFFFFFF;
 	idx++;
 	//char *keep = new char[(channelSize-2)*4];	     
 
@@ -415,8 +415,9 @@ void DataProcessor::Process()
       // resetCounterStart = how many times has the digitizer clock cycled (it's only 31-bit)
       // at the start of the event
       int resetCounterStart = 0; 
+      u_int32_t headerTime = 0;
 
-      buffvec = digi->ReadoutBuffer( sizevec, resetCounterStart );
+      buffvec = digi->ReadoutBuffer( sizevec, resetCounterStart, headerTime );
       iModule = digi->GetID().id;
       digi->UnlockDataBuffer();
      
@@ -453,6 +454,10 @@ void DataProcessor::Process()
       unsigned int        currentEventIndex = 0;
       int                 protocHandle = -1;
       long long           latestTime64 =0;
+      
+      vector<bool>        SawThisChannelOnce( 8, false );
+      vector<u_int32_t>   ChannelResetCounters( 8, resetCounterStart );
+      vector<bool>        Over15Counter( 8, false );
 
       //Loop through the parsed buffers
       for(unsigned int b = 0; b < buffvec->size(); b++) {
@@ -463,18 +468,40 @@ void DataProcessor::Process()
 	if(m_koOptions->processing_mode==0 || 
 	   m_koOptions->processing_mode==1) {
 	  TimeStamp = GetTimeStamp((*buffvec)[b]);
-	  Channel   = -1;
+	  Channel   = 0;
 	}
 	else {
 	  TimeStamp = (*times)[b];
 	  Channel   = (*channels)[b];
 	}
 	
+	if( Channel < 0 || Channel > 7 ){
+	  cout<<"ERROR in CHANNEL"<<endl;
+	  return;
+	}
+	
+	if( !SawThisChannelOnce[Channel]){
+	  SawThisChannelOnce[Channel] = true;
+	  if( fabs( (int)headerTime - (int)TimeStamp) > 5E8 ){
+	    //times far apart. Probably on other sides of reset counter
+	    if( TimeStamp > headerTime && ChannelResetCounters[Channel]!=0)
+	      ChannelResetCounters[Channel]--;
+	    else
+	      ChannelResetCounters[Channel]++;
+	  }
+	}
+	if( TimeStamp > 15E8 && !Over15Counter[Channel] )
+	  Over15Counter[Channel] = true;
+	else if ( TimeStamp < 5E8 && Over15Counter[Channel] ){
+	  Over15Counter[Channel] = false;
+	  ChannelResetCounters[Channel]++;
+	}
+	
 	//Convert the time to 64-bit
 	// We assume this data is in temporal order for computation using the reset counter
-	int iBitShift = 30; 
+	int iBitShift = 31; 
 
-	long long Time64 = ((unsigned long)resetCounterStart << iBitShift) +TimeStamp;//| TimeStamp;
+	long long Time64 = ((unsigned long)ChannelResetCounters[Channel] << iBitShift) +TimeStamp;//| TimeStamp;
 	
 	//	Time64 += ((unsigned long) 1 << iBitShift);
 	

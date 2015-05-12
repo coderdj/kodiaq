@@ -271,26 +271,32 @@ int CBV1724::RequestDataLock()
 }
 
 vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes, 
-					   int &resetCounter)
+					   int &resetCounter, u_int32_t &headerTime)
 // Note this PASSES OWNERSHIP of the returned vectors to the 
 // calling function! They must be cleared by the caller!
 // The reset counter is computed (did the clock reset during this buffer?) and
 // updated if needed. The value of this counter at the BEGINNING of the buffer
 // is passed by reference to the caller
 {
+  headerTime = 0;
+
   if(fBuffers->size()!=0 ) {
     i64_blt_first_time = koHelper::GetTimeStamp((*fBuffers)[0]);
-   
+    headerTime = koHelper::GetTimeStamp((*fBuffers)[0]);
     i64_blt_second_time = koHelper::GetTimeStamp((*fBuffers)[fBuffers->size()-1]);
-    
+
+    resetCounter = i_clockResetCounter;
+    if( i64_blt_first_time < 5E8 && bOver15 )
+      resetCounter++;
+
     // Is the object's over18 bool set?
-    if( i64_blt_first_time <3E8 && bOver15 ){
+    if( i64_blt_second_time <5E8 && bOver15 ){
       bOver15=false;
       i_clockResetCounter++;
     }
-    else if( i64_blt_first_time > 7E8 && !bOver15 )
+    else if( i64_blt_second_time > 15E8 && !bOver15 )
       bOver15 = true;
-    resetCounter = i_clockResetCounter;
+
     /*
 
     resetCounter = i_clockResetCounter;
