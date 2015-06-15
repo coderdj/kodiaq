@@ -168,11 +168,13 @@ We also want a newer version of mongodb so we can install that as well::
 
       git clone https://github.com/mongodb/mongo-cxx-driver.git mongodb
       cd mongodb
-      git checkout 26compat    #currently for 2.6 compatible driver
-      scons --use-system-boost --full install-mongoclient
+      git checkout legacy
+      scons --sharedclient install 
       cd ..
 
-Since mongo seems to change procedures and requirements with nearly every release you may prefer to check their most recent documentation.
+The 'scons install' line may need a sudo depending on where you install it. For installation information please consult the mongo-cxx-driver github. 
+
+Since mongo seems to change procedures and requirements with nearly every release you may prefer to check their most recent documentation. Right now we use the legacy release, which despite being called "legacy" is actually the stable version as of this writing (June 2015). This version is compatible with MongoDB 3.0. The 26compat branch will NOT work with kodiaq.
 
 Checkout the DAQ code from github as follows::
 
