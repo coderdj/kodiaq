@@ -170,3 +170,19 @@ int koHelper::ProcessLineHex(string line,string option, int &ret)
   return 0;
 }
 
+string koHelper::GetStatusText(int status_enum ){
+  switch(status_enum){
+  case 0:
+    return "Idle";
+  case 1:
+    return "Armed";
+  case 2:
+    return "Running";
+  case 3:
+    return "Mixed";
+  case 4:
+    return "Error";
+  default:
+    return "Unknown";
+  }
+}

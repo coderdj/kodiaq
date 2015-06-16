@@ -14,63 +14,97 @@
 #include <iostream>
 #include <fstream>
 #include <kbhit.hh>
+#include <getopt.h>
 #include <map>
 #include <koHelper.hh>
 #include "DAQMonitor.hh"
 #include "MasterMongodbConnection.hh"
-#include <NCursesUI.hh> // MUST be after MasterMongodbConnection
 
-int ReadIniFile(string filepath, string &monitorDB, string &monitorADDR,
-		map<string, koNetServer*> &dNetworks, 
-		map<string, DAQMonitor*> &dMonitors, koLogger *LocalLog,
-		MasterMongodbConnection *Mongodb);
-
-koStatusPacket_t StatusChecker( string who );
+struct db_options_t {
+  db_def logdb;
+  db_def monitordb;
+  db_def runsdb;
+};
 
 struct timepair_t {
   time_t RatesTime;
   time_t StatusTime;
 };
 
+int ReadIniFile(string filepath, db_options_t db_options,
+		map<string, koNetServer*> &dNetworks, 
+		map<string, DAQMonitor*> &dMonitors, koLogger *LocalLog, 
+		string &default_ini, MasterMongodbConnection *Mongodb);
 
-int main()
+
+
+int main(int argc, char *argv[])
 {
-  // test UI
-  NCursesUI theUI;
-  vector<string> detectors;
-  detectors.push_back("TPC");
-  
-  theUI.Initialize( false, StatusChecker, detectors );
-  char a;
-  cin>>a;
-  return 0;
+  // Get command line options
+  string filepath = "MasterConfig.ini";
+  int c;
+  while(1){
+    static struct option long_options[] =
+      {
+	{"ini_file", required_argument, 0, 'i'},
+	{0,0,0,0}
+      };
+    
+    int option_index = 0;
+    c = getopt_long(argc, argv, "i:", long_options, &option_index);
+    if( c == -1) break;
 
-  // Declare some objects
+    switch(c){
+    case 'i':
+      filepath = optarg;
+      break;
+    default:
+      break;
+    }
+  }
+
+  std::cout<<"Reading .ini file "<<filepath<<"...";
+
+  // Declare some objects    
+  db_options_t db_options; 
   koLogger LocalLog("log/koMaster.log");
-  MasterMongodbConnection Mongodb(&LocalLog);
   map <string, timepair_t> StatusTimes;
   map <string, timepair_t> UpdateTimes;
-
-  // Read an ini file
+  time_t PrintTime = koLogger::GetCurrentTime();
   map <string, koNetServer*> dNetworks;
   map <string, DAQMonitor*> dMonitors;
-  string monitorDB   = "none";
-  string monitorADDR = "none";
-  if( ReadIniFile("MasterConfig.ini", monitorDB, monitorADDR,
-		  dNetworks, dMonitors, &LocalLog, &Mongodb) != 0 ) {
-    cerr<<"Error reading initialization file MasterConfig.ini! Closing."<<endl;
+  string default_ini = "DAQConfig.ini";
+  MasterMongodbConnection Mongodb(&LocalLog);
+
+  int ret = ReadIniFile(filepath, db_options, dNetworks, dMonitors, &LocalLog,
+			default_ini, &Mongodb);
+  if(ret != 0 ){
+    cout<<endl<<"Failed to read ini file. Please check that it exists!"<<endl;
     return -1;
   }
+  cout<<"Done!"<<endl;
+
+  // Start the MongoDB
+  Mongodb.SetDBs( db_options.logdb, db_options.monitordb,
+		  db_options.runsdb);
+  
   for(auto iterator : UpdateTimes) {
     iterator.second.RatesTime = koLogger::GetCurrentTime();
     iterator.second.StatusTime = koLogger::GetCurrentTime();
   }
 
+  // Initialize detector list
+  vector<string> detectors;
+  detectors.push_back("All");
+  int iCurrentDet = 0;
+  for(auto iterator : dNetworks )
+    detectors.push_back(iterator.first);
+
   // Local command interface
   char cCommand = '0';
   
   cout<<"Welcome to the kodiaq dispatcher interface."<<endl;
-  cout<<"(c)onnect (d)isconnect (s)tart sto(p)"<<endl;
+  cout<<"(c)onnect (q)uit"<<endl;//(d)isconnect (s)tart sto(p)"<<endl;
   
   // Main Loop
   while ( cCommand != 'q' ){
@@ -85,12 +119,28 @@ int main()
 	commandString = "Connect";
       if( cCommand == 'd' )
 	commandString = "Disconnect";
+      if( cCommand == 'r' ){
+	// reload inis
+	cout<<"Reloading ini files from config file. Will not reload any other settings!"<<endl;
+	// and do it
+      }
+      if( cCommand == 't' ){
+	// toggle current detector
+	iCurrentDet++;
+	if(iCurrentDet >= (int)detectors.size())
+	  iCurrentDet = 0;
+	cCommand = '0';
+	continue;
+      }
       if( cCommand == 'p' )
 	commandString = "Stop";
       if( cCommand == 's' ) {
 	commandString = "Start";
-	if ( runMode.ReadParameterFile( "DAQOptions.ini" ) != 0 ) {
-	  cout<<"Error reading DAQOptions.ini. Fix to proceed."<<endl;
+	string ini = default_ini;
+	if( detectors[iCurrentDet]!="All")
+	  ini = dMonitors[detectors[iCurrentDet]]->GetIni();
+	if ( runMode.ReadParameterFile( ini ) != 0 ) {
+	  cout<<"Error reading ini file. Fix to proceed."<<endl;
 	  cCommand = '0';
 	  continue;
 	}
@@ -135,21 +185,42 @@ int main()
 	  UpdateTimes[iter.first].RatesTime = CurrentTime;
 	  Mongodb.AddRates( iter.second->GetStatus() );
 	  Mongodb.UpdateDAQStatus( iter.second->GetStatus(),
-				   iter.first );
+				   iter.first );	  
 	}
       }
     } // End status update
+
+    time_t CurrentTime = koLogger::GetCurrentTime();
+    double dTime = difftime( CurrentTime, PrintTime );
+    if( dTime > 10. ){
+      cout<<endl<<"Update: "<<koLogger::GetTimeString()<<endl;
+      cout<<"*********************************************************************"<<endl;
+      for( auto iter : dMonitors ){
+	cout<<"Detector: "<<iter.second->GetName()<<endl;
+	for( unsigned int slave=0; slave<iter.second->GetStatus()->Slaves.size(); 
+	     slave++ ){
+	  cout<<"     "<<iter.second->GetStatus()->Slaves[slave].name<<": "<<
+	    iter.second->GetStatus()->Slaves[slave].Rate<<" MB/s "<<
+	    iter.second->GetStatus()->Slaves[slave].Freq<<" BLT/s "<<
+	    iter.second->GetStatus()->Slaves[slave].nBoards<<" boards "<<
+	    koHelper::GetStatusText(iter.second->GetStatus()->Slaves[slave].status)<<endl;
+	}
+      }
+      cout<<"*********************************************************************"<<endl;
+      cout<<"(c)onnect (d)isconnect (s)tart sto(p) (r)eload inis (t)oggle detector"<<endl;
+      cout<<"(q)uit             Current detector: "<<detectors[iCurrentDet]<<endl;
+      cout<<"*********************************************************************"<<endl;
+      PrintTime =  koLogger::GetCurrentTime();
+    }
 
   } // end while through main loop
   return 0;
 }
 
-int ReadIniFile(
-		string filepath, string &monitorDB, string &monitorADDR,
+int ReadIniFile(string filepath, db_options_t &db_options,
                 map<string, koNetServer*> &dNetworks,
                 map<string, DAQMonitor*> &dMonitors, koLogger *LocalLog,
-		MasterMongodbConnection *Mongodb 
-	       ) 
+		string &default_ini, MasterMongodbConnection *Mongodb)
 // Reads in an initialization file for the master. The following options
 // MUST be provided: MONITOR_DB, MONITOR_ADDR, DETECTOR (min 1)
 {
@@ -157,11 +228,18 @@ int ReadIniFile(
   inifile.open( filepath.c_str() );
   if( !inifile ) return -1;
 
-  monitorDB   = "";
-  monitorADDR = "";  
   vector <string> detnames;
   vector <int>    ports;
   vector <int>    dataports;
+  vector <string> inis;
+  //reset DB options
+  db_options.monitordb.address = db_options.monitordb.db = 
+    db_options.monitordb.collection = "";
+  db_options.logdb.address = db_options.logdb.db =
+    db_options.logdb.collection = "";
+  db_options.runsdb.address = db_options.runsdb.db =
+    db_options.runsdb.collection = "";
+
 
   string line;
   while ( !inifile.eof() ){
@@ -174,23 +252,41 @@ int ReadIniFile(
     copy(istream_iterator<string>(iss),
 	 istream_iterator<string>(),
 	 back_inserter<vector<string> >(words));
-    if(words.size()<2) continue;
+    if( words.size() >= 2 && words[0] == "DEFAULT_INI"){
+      default_ini = words[1];
+      continue;
+    }
+
+    if(words.size() < 4) continue;
     
-    if( words[0] == "MONITOR_DB" )
-      monitorDB = words[1];
-    else if ( words[0] == "MONITOR_ADDR" )
-      monitorADDR = words[1];
-    else if ( words[0] == "DETECTOR" ){
-      if ( words.size() < 4) continue;
+    if( words[0] == "MONITOR_DB"){
+      db_options.monitordb.address = words[1];
+      db_options.monitordb.db = words[2];
+      db_options.monitordb.collection = words[3];
+    }    
+    else if( words[0] == "LOG_DB"){
+      db_options.logdb.address = words[1];
+      db_options.logdb.db = words[2];
+      db_options.logdb.collection = words[3];
+    }
+    else if( words[0] == "RUNS_DB"){
+      db_options.runsdb.address = words[1];
+      db_options.runsdb.db = words[2];
+      db_options.runsdb.collection = words[3];
+    }
+    else if ( words[0] == "DETECTOR" && words.size() >= 5 ){
       detnames.push_back( words[1] );
       ports.push_back( koHelper::StringToInt( words[2] ) );
       dataports.push_back( koHelper::StringToInt( words[3] ) );
+      inis.push_back(words[4]);
     }
   }
   inifile.close();
   // Check to make sure all values are filled
-  if ( monitorDB == "" || monitorADDR == "" || detnames.size() == 0 )
+  if ( detnames.size() == 0 ){
+    cout<<"You didn't define any detectors in your config file. Quitting since nothing to do"<<endl;
     return -1;
+  }
   
   for ( unsigned int x=0; x<detnames.size(); x++ ){
 
@@ -200,16 +296,12 @@ int ReadIniFile(
     dNetworks[detnames[x]] = Network;
       
     // Define the monitor
-    DAQMonitor *Monitor = new DAQMonitor(Network, LocalLog, Mongodb, detnames[x]);
+    DAQMonitor *Monitor = new DAQMonitor(Network, LocalLog, Mongodb, 
+					 detnames[x], inis[x]);
     dMonitors[detnames[x]] = Monitor;
 
   }
   return 0;
 }
 
-koStatusPacket_t StatusChecker( string who )
-{
-  koStatusPacket_t k;
-  koHelper::InitializeStatus(k);
-  return k;
-}
+

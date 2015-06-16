@@ -194,6 +194,10 @@ class koHelper
   // Purpose       : Parse a line containing hex integers
   static int ProcessLineHex(string line,string option, int &ret);
 
+  // Function      : GetStatusText
+  // Purpose       : Converts a kostatus ENUM to text
+  static string GetStatusText( int status_enum );
+
  private:
 };
 #endif

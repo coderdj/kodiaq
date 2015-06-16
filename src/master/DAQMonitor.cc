@@ -25,7 +25,8 @@ DAQMonitor::DAQMonitor()
 }
 
 DAQMonitor::DAQMonitor(koNetServer *DAQNetwork, koLogger *logger,
-		       MasterMongodbConnection *mongodb, string detector)
+		       MasterMongodbConnection *mongodb, string detector,
+		       string ini_file)
 {
    m_DAQNetwork = DAQNetwork;
    m_Log        = logger;
@@ -35,6 +36,7 @@ DAQMonitor::DAQMonitor(koNetServer *DAQNetwork, koLogger *logger,
    pthread_mutex_init(&m_DAQStatusMutex,NULL);
    m_bReady=false;
    m_detector = detector;
+   m_ini_file = ini_file;
 }
 
 

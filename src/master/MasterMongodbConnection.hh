@@ -19,6 +19,13 @@
 #include <koLogger.hh>
 #include "mongo/client/dbclient.h"
 
+
+struct db_def{
+  string address;
+  string db;
+  string collection;
+};
+
 class MasterMongodbConnection
 {
 
@@ -35,6 +42,8 @@ public:
   // 
   int          Initialize(string user, string runMode, string name,
 			  string comment, string detector, koOptions *options);
+  
+  int          SetDBs(db_def logdb, db_def monitordb, db_def runsdb){ return 0;};
   //
   // Name    : UpdateEndTime
   // Purpose : Updates run control document with the time the run ended.

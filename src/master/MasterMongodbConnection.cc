@@ -18,14 +18,12 @@ MasterMongodbConnection::MasterMongodbConnection()
 {
    fLog=NULL;
    fOptions=NULL;
-   //   fLastDocOIDs.clear();
 }
 
 MasterMongodbConnection::MasterMongodbConnection(koLogger *Log)
 {
    fLog=Log;
    fOptions=NULL;
-   //fLastDocOIDs.clear();
    try     {	
       fMongoDB.connect("xedaq01");
    }   
@@ -81,8 +79,8 @@ int MasterMongodbConnection::Initialize(string user, string runMode, string name
 
   string collectionName = options->mongo_database + "." + options->mongo_collection;
   bufferDB.createCollection( collectionName );
-  bufferDB.ensureIndex( collectionName,
-  		      mongo::fromjson( "{ time: -1, module: -1, _id: -1}" ) );
+  bufferDB.createIndex( collectionName,
+			mongo::fromjson( "{ time: -1, module: -1, _id: -1}" ) );
          
   //Create a bson object with the run information
   mongo::BSONObjBuilder builder;
@@ -347,9 +345,9 @@ int MasterMongodbConnection::CheckForCommand(string &command, string &user,
    detector = b.getStringField("detector");
    user=b.getStringField("name");
    fMongoDB.remove("online.daqcommands", 
-		   QUERY("command"<<"Start"<<"detector"<<detector));
+		   MONGO_QUERY("command"<<"Start"<<"detector"<<detector));
    fMongoDB.remove("online.daqcommands",
-		   QUERY("command"<<"Stop"<<"detector"<<detector)); 
+		   MONGO_QUERY("command"<<"Stop"<<"detector"<<detector)); 
    if(command=="Start")
      PullRunMode(mode,options);
    return 0;
