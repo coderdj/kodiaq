@@ -19,13 +19,13 @@
 #include <koHelper.hh>
 #include "DAQMonitor.hh"
 #include "MasterMongodbConnection.hh"
+#include "MasterUI.hh" // has to be after MasterMongodbConnection.hh
 
 struct db_options_t {
   db_def logdb;
   db_def monitordb;
   db_def runsdb;
 };
-
 struct timepair_t {
   time_t RatesTime;
   time_t StatusTime;
@@ -35,7 +35,6 @@ int ReadIniFile(string filepath, db_options_t db_options,
 		map<string, koNetServer*> &dNetworks, 
 		map<string, DAQMonitor*> &dMonitors, koLogger *LocalLog, 
 		string &default_ini, MasterMongodbConnection *Mongodb);
-
 
 
 int main(int argc, char *argv[])
@@ -178,6 +177,7 @@ int main(int argc, char *argv[])
 	  UpdateTimes[iter.first].StatusTime = CurrentTime;
 	  Mongodb.UpdateDAQStatus( iter.second->GetStatus(), 
 				   iter.first );
+	  
 	}
 	double dTimeRates = difftime( CurrentTime,
 				      UpdateTimes[iter.first].RatesTime);
@@ -303,5 +303,4 @@ int ReadIniFile(string filepath, db_options_t &db_options,
   }
   return 0;
 }
-
 

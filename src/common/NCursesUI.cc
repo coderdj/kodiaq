@@ -9,14 +9,16 @@
 
 #include <NCursesUI.hh>
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 
 NCursesUI::NCursesUI(){ 
   bStandalone = true;
   mCurrentDet = "default";
+  mMessID = 0;
 
   // Defaults
-  mSTARTY = 1;
+  mSTARTY = 0;
   mSTARTX = 0;
   mSTATUS_HEIGHT = 8;
   mSTATUS_WIDTH = 80;
@@ -33,18 +35,18 @@ NCursesUI::NCursesUI(){
   mCONTROL_INDEX = mMESSAGE_INDEX + mMESSAGE_HEIGHT;
 
   mMessageIndex = 0;
+  mMongoOnline = false;
 }
 
 NCursesUI::~NCursesUI(){
 }
 
 void NCursesUI::Close(){
+  //  delete kEmpty;
   endwin();
 }
 
-int NCursesUI::Initialize( bool standalone, 
-			   koStatusPacket_t (*f)(string), 
-			   vector <string> detectors )
+int NCursesUI::Initialize( bool standalone )
 {
   initscr();
   getmaxyx(stdscr, mWINDOW_HEIGHT, mWINDOW_WIDTH);
@@ -58,30 +60,21 @@ int NCursesUI::Initialize( bool standalone,
   init_pair(3, COLOR_YELLOW, COLOR_BLACK );
   init_pair(4, COLOR_GREEN, COLOR_BLACK );
   init_pair(5, COLOR_BLACK, COLOR_WHITE );
-  init_pair(6, COLOR_WHITE, COLOR_BLUE );
+  init_pair(6, COLOR_YELLOW, COLOR_BLUE );
   init_pair(7, COLOR_BLUE, COLOR_BLACK );
+  init_pair(8, COLOR_BLUE, COLOR_WHITE );
 
   // set variables
   bStandalone = standalone;
-  koStatusPacket_t kEmpty;
-  koHelper::InitializeStatus( kEmpty );
-  mLatestStatus.clear();
-  mLatestUpdate.clear();
+  //koStatusPacket_t *kEmpty = new koStatusPacket_t;
+  //koHelper::InitializeStatus( *kEmpty );
   mMessages.clear();
-  for ( unsigned int x=0; x<detectors.size(); x++ ){
-    mLatestStatus.emplace( detectors[x], kEmpty );
-    mLatestUpdate.emplace( detectors[x], koLogger::GetCurrentTime() );
-  }
-  mLatestStatus.emplace( "all", kEmpty );
-  mLatestUpdate.emplace( "all", koLogger::GetCurrentTime() );
   mOutputModes.emplace( "all", "none" );
 
-  if( detectors.size() > 0 )
-    mCurrentDet = detectors[0];
 
   // set some ncurses stuff
   noecho();
-  keypad(stdscr, FALSE);
+  keypad(stdscr, TRUE);
   
   mSTATUS_WIDTH = mOUTPUT_WIDTH = mMESSAGE_WIDTH = mCONTROL_WIDTH = 
     mWINDOW_WIDTH;
@@ -92,41 +85,48 @@ int NCursesUI::Initialize( bool standalone,
 			      mOUTPUT_INDEX, mSTARTX );
   mMESSAGE_HEIGHT = mWINDOW_HEIGHT - ( mSTARTY + mSTATUS_HEIGHT + 
 				       mOUTPUT_HEIGHT + mCONTROL_HEIGHT );
-  mCONTROL_INDEX = mMESSAGE_HEIGHT + mMESSAGE_INDEX;
+  mCONTROL_INDEX = mWINDOW_HEIGHT - 1;
   MESSAGE_WIN = create_newwin( mMESSAGE_HEIGHT, mMESSAGE_WIDTH, 
 			       mMESSAGE_INDEX, mSTARTX );
   CONTROL_WIN = create_newwin( mCONTROL_HEIGHT, mCONTROL_WIDTH, 
 			       mCONTROL_INDEX, mSTARTX );
-
-  Refresh();
+  //  WindowResize();
+  //  Refresh();
   return 0;
 }
 
 int NCursesUI::WindowResize() {
 
-  getmaxyx(stdscr, mWINDOW_WIDTH, mWINDOW_HEIGHT);
+  getmaxyx(stdscr, mWINDOW_HEIGHT,mWINDOW_WIDTH);
+
   mSTATUS_WIDTH = mOUTPUT_WIDTH = mMESSAGE_WIDTH = mCONTROL_WIDTH =
-    mWINDOW_WIDTH;
+    mWINDOW_WIDTH;  
   mMESSAGE_HEIGHT = mWINDOW_HEIGHT - ( mSTARTY + mSTATUS_HEIGHT +
                                        mOUTPUT_HEIGHT + mCONTROL_HEIGHT );
-  mCONTROL_INDEX = mMESSAGE_HEIGHT + mMESSAGE_INDEX;
-  
+  if( mMESSAGE_HEIGHT < 0 ) mMESSAGE_HEIGHT = 0;
+  mCONTROL_INDEX = mWINDOW_HEIGHT - 1;   
 
   wresize( STATUS_WIN, mSTATUS_HEIGHT, mSTATUS_WIDTH );
   wresize( OUTPUT_WIN, mOUTPUT_HEIGHT, mOUTPUT_WIDTH );    
   wresize( MESSAGE_WIN, mMESSAGE_HEIGHT, mMESSAGE_WIDTH );
-  wmove ( CONTROL_WIN, mCONTROL_INDEX, mSTARTX );
-  wresize ( CONTROL_WIN, mCONTROL_HEIGHT, mCONTROL_WIDTH );
+  mvwin ( CONTROL_WIN, mCONTROL_INDEX, mSTARTX );
+  wresize ( CONTROL_WIN, mCONTROL_HEIGHT, mCONTROL_WIDTH );  
+
   Refresh();
   return 0;
 }
 
 void NCursesUI::Refresh()
 {
-  DrawBottomBar( );
+  char go;
   DrawOutputBox( );
+  refresh();
   DrawMessageWin( );
+  refresh();
   UpdateRunDisplay( );
+  refresh();
+  DrawBottomBar( );
+  refresh();
   doupdate();
   refresh();
   return;
@@ -139,32 +139,43 @@ int NCursesUI::DrawBottomBar( )
   // 1- running
   string detector = mCurrentDet;
 
-  int  status = mLatestStatus[detector].DAQState;
+  int  status = mLatestStatus[detector]->DAQState;
+
   if( detector == "all" )
     status = 100;
+  if( !mbConnected[mCurrentDet] && !bStandalone )
+    status = 99;
   map <string, string> optionsList;
 
   switch(status){
 
   case KODAQ_IDLE:
-    optionsList.emplace( "F1", "Start DAQ" );
-    optionsList.emplace( "F5", "Change ini");
-    optionsList.emplace( "F9", "Toggle Detector");
-    optionsList.emplace(" F12", "Quit");
+    optionsList.emplace( "1 ", "- Start DAQ" );
+    optionsList.emplace( "4 ", "- Change ini");
+    optionsList.emplace( "5 ", "- Toggle Detector");
+    optionsList.emplace( "7 ", "- Disconnect");
+    optionsList.emplace( "8 ", "- Quit");    
     break;
   case KODAQ_RUNNING:
   case KODAQ_ARMED:
-    optionsList.emplace( "F2", "Stop DAQ" );
-    optionsList.emplace( "F9", "Toggle Detector" );
+    optionsList.emplace( "2 ", "- Stop DAQ" );
+    optionsList.emplace( "5 ", "- Toggle Detector" );
     break;
   case 100:
-    optionsList.emplace( "F1", "Start All" );
-    optionsList.emplace( "F2", "Stop All" );
-    optionsList.emplace( "F9", "Toggle Detector" );
-    optionsList.emplace( "F12", "Quit" );
+    optionsList.emplace( "1 ", "- Start All" );
+    optionsList.emplace( "2 ", "- Stop All" );
+    optionsList.emplace( "4 ", "- Change ini" );
+    optionsList.emplace( "5 ", "- Toggle Detector" );
+    optionsList.emplace( "8 ", "- Quit" );
+    break;
+  case 99:
+    optionsList.emplace( "1 ", "- Connect" );
+    optionsList.emplace( "4 ", "- Change ini" );
+    optionsList.emplace( "5 ", "- Toggle Detector" );
+    optionsList.emplace( "8 ", "- Quit");
     break;
   default:
-    optionsList.emplace( "F12", "Quit" );
+    optionsList.emplace( "8 ", "- Quit" );
     break;
 
   }
@@ -189,6 +200,13 @@ int NCursesUI::DrawBottomBar( )
     wattroff( CONTROL_WIN, A_BOLD );
 
   }
+  if( mCONTROL_WIDTH - index > 0){
+    string blanks(mCONTROL_WIDTH - index, ' ');
+    wattron( CONTROL_WIN, COLOR_PAIR(6) );
+    mvwprintw( CONTROL_WIN, 0, index, blanks.c_str());
+    wattroff( CONTROL_WIN, COLOR_PAIR(6) );
+  }
+
   
   wrefresh( CONTROL_WIN );
 
@@ -208,8 +226,11 @@ int NCursesUI::DrawBottomBar( )
 
 int NCursesUI::AddMessage( string message, int highlight )
 {
-  mMessages.emplace( message, highlight );
-  mMessageIndex = mMessages.size();
+  mMessages.push_back(koLogger::GetTimeString() + message);
+  mHighlights.push_back(highlight);
+  mMessageIndex = mMessages.size() -1;
+  if( mMessageIndex < 0 )
+    mMessageIndex = 0;
   return DrawMessageWin( );
 }
 
@@ -217,44 +238,65 @@ int NCursesUI::DrawMessageWin( )
 {
   wclear( MESSAGE_WIN );
   
+  wattron( MESSAGE_WIN, COLOR_PAIR(1) );
+  wattron( MESSAGE_WIN, A_BOLD );
+  stringstream titlestream;
+
   int endIndex = mMessageIndex - ( mMESSAGE_HEIGHT - 1 );
   if ( endIndex < 0 ) endIndex = 0;
-  
-  int mLine = 1;
-  for ( int x = mMessageIndex; x > endIndex; x-- ){
-    // highlighting here (not yet in)
-    map<string, int>::iterator it = mMessages.begin();
-    advance( it, x );
-    string message = it->first;
 
-    if( (int)message.size() > mMESSAGE_WIDTH - ( mSTARTX + 1 ) ) 
-      message = message.substr( 0, mMESSAGE_WIDTH-( mSTARTX + 1 ) );
-    mvwprintw( MESSAGE_WIN, mLine, mSTARTX + 1, message.c_str() );
-    if( (int)message.size() == mMESSAGE_WIDTH - ( mSTARTX + 1 ) )
-      mvwprintw( MESSAGE_WIN, mLine, mMESSAGE_WIDTH - 3, "..." );
-    //end highlighting here
+  titlestream<<" Messages ("<<mMessageIndex<<" - "<<endIndex<<")";
+  mvwprintw( MESSAGE_WIN, 0, 0, titlestream.str().c_str());
+  string empty( mMESSAGE_WIDTH - titlestream.str().size(), ' '  );
+  mvwprintw( MESSAGE_WIN, 0, titlestream.str().size(), empty.c_str() );	     
+  wattroff( MESSAGE_WIN, A_BOLD );
+  wattroff( MESSAGE_WIN, COLOR_PAIR(1) );
 
-    mLine ++;
-    if( mLine > mMESSAGE_INDEX + mMESSAGE_HEIGHT ) 
-      break;
+  if( mMessages.size() > 0 ){
+    
+    int mLine = 1;
+    for ( int x = mMessageIndex; x >= endIndex; x-- ){
+      // highlighting here (not yet in)
+      //map<string, int>::iterator it = mMessages.begin();
+      //advance( it, x );
+      //string message = it->first;
+      string message = mMessages[x];
+
+      if( (int)message.size() > mMESSAGE_WIDTH - ( mSTARTX + 1 ) ) 
+	message = message.substr( 0, mMESSAGE_WIDTH-( mSTARTX + 1 ) );
+      mvwprintw( MESSAGE_WIN, mLine, mSTARTX + 1, message.c_str() );
+      if( (int)message.size() == mMESSAGE_WIDTH - ( mSTARTX + 1 ) )
+	mvwprintw( MESSAGE_WIN, mLine, mMESSAGE_WIDTH - 3, "..." );
+      //end highlighting here
+      
+      mLine ++;
+      if( mLine > mMESSAGE_INDEX + mMESSAGE_HEIGHT ) 
+	break;
+    }
   }
+  mvwprintw( MESSAGE_WIN, mMESSAGE_HEIGHT - 1, 1, "END MESSAGES");
   wrefresh( MESSAGE_WIN );
   return 0;
 }
 
 void NCursesUI::MoveMessagesUp(){
   mMessageIndex += mMESSAGE_HEIGHT - 1;
-  if( mMessageIndex > (int)mMessages.size() ) {
-    mMessageIndex = mMessages.size();
+  if( mMessageIndex > ((int)mMessages.size()-1 )){// - mMESSAGE_HEIGHT ) ) {
+    //    mMessageIndex = mMessages.size() - mMESSAGE_HEIGHT;
+    mMessageIndex = mMessages.size()-1;
   }
+  if(mMessageIndex < 0)
+    mMessageIndex = 0;
   DrawMessageWin();
   return;
 }
 
 void NCursesUI::MoveMessagesDown(){
   mMessageIndex -= mMESSAGE_HEIGHT - 1;
-  if( mMessageIndex < 0 )
-    mMessageIndex = 0;
+  if( mMessageIndex < mMESSAGE_HEIGHT - 1 )
+    mMessageIndex = mMESSAGE_HEIGHT - 1;
+  if( mMessageIndex > ((int)mMessages.size()-1))
+    mMessageIndex = mMessages.size() - 1;
   DrawMessageWin();
   return;
 }
@@ -276,6 +318,8 @@ int NCursesUI::DrawOutputBox( )
   wattron( OUTPUT_WIN, A_BOLD );
   mvwprintw( OUTPUT_WIN, 1, 1, "Output mode: " );  
   mvwprintw( OUTPUT_WIN, 1, mOUTPUT_WIDTH/2, oMode.c_str() );
+  mvwprintw( OUTPUT_WIN, 2, 1, "Initialization file: ");
+  mvwprintw( OUTPUT_WIN, 2, mOUTPUT_WIDTH/2, mIniFiles[mCurrentDet].c_str() );
   wattroff( OUTPUT_WIN, A_BOLD );
   wrefresh( OUTPUT_WIN );
   return 0;
@@ -284,9 +328,13 @@ int NCursesUI::DrawOutputBox( )
 string NCursesUI::GetFillString( double rate )
 {
   // Our max rate is 80 MB/s nominally
-  int numSlash = (int)((17*rate)/80.);
-  string retstring = "";
-  for ( int x=0; x<17; x++ ){
+  int numSlash = (int)((16*rate)/80.);
+  string retstring;
+  if ( rate!= 0. )
+    retstring = "|";
+  else
+    retstring = " ";
+  for ( int x=0; x<16; x++ ){
     if ( x < numSlash ) 
       retstring += "|";
     else 
@@ -295,37 +343,128 @@ string NCursesUI::GetFillString( double rate )
   return retstring;
 }
 
-int NCursesUI::AddStatusPacket( koStatusPacket_t DAQStatus, string detector ){
+int NCursesUI::AddStatusPacket( koStatusPacket_t *DAQStatus, string detector ){
   mLatestStatus [ detector ] = DAQStatus;
-  mLatestUpdate [ detector ] = koLogger::GetCurrentTime();
+  //mLatestUpdate [ detector ] = koLogger::GetCurrentTime();
   return 0;
 }
 int NCursesUI::UpdateRunDisplay( )
 {  
   wclear( STATUS_WIN );
-  mvwprintw( STATUS_WIN, 0, 0, "TEST");
-  int CurrentLine = 1;
+  int CurrentLine = 2;
+  int col         = -1;
 
+  // Draw which detector is selected
+  wattron( STATUS_WIN, A_BOLD );
+  wattron( STATUS_WIN, COLOR_PAIR(1) );
+  mvwprintw( STATUS_WIN, 0, 0, " Selected Detector:  ");
+  wattroff( STATUS_WIN, COLOR_PAIR(1) );
+  int barindex = 0;
+  for( unsigned int x=0; x<mDetectors.size(); x++ ){
+    string writeString = "  ";
+    if( mDetectors[x] == mCurrentDet )
+      wattron( STATUS_WIN, COLOR_PAIR(8) );
+    writeString += mDetectors[x];
+    writeString += "  ";
+    mvwprintw( STATUS_WIN, 0, 22+barindex, writeString.c_str() );
+    barindex += writeString.size();
+    if( mDetectors[x] == mCurrentDet )
+      wattroff( STATUS_WIN, COLOR_PAIR(8) );
+  }
+  wattroff( STATUS_WIN, A_BOLD );
+  double totalRate = 0.;
   // Nested For Loops, first loop detectors
-  for ( map<string,koStatusPacket_t>::iterator det_it = mLatestStatus.begin(); 
+  for ( map<string,koStatusPacket_t*>::iterator det_it = mLatestStatus.begin(); 
 	det_it != mLatestStatus.end(); det_it++ ) {
-    
+    if( !( mCurrentDet == "all" || mCurrentDet == (*det_it).first ) )
+      continue;
     // second loop nodes within detector
-    for ( unsigned int node = 0; node < (*det_it).second.Slaves.size();
+    for ( unsigned int node = 0; node < (*det_it).second->Slaves.size();
 	  node++ ) {
       
-      if ( node > 6 ) 
-	continue;
+      if( node == 0 )
+	col+=1;
+      if ( node!=0 && node % 6 == 0) {
+	col += 40;
+	CurrentLine = 2;
+      }
       // CurrentLine
-      mvwprintw( STATUS_WIN, CurrentLine, 3, "[");
-      string fill = GetFillString( (*det_it).second.Slaves[node].Rate );
-      mvwprintw( STATUS_WIN, CurrentLine, 4, fill.c_str() );
-      mvwprintw( STATUS_WIN, CurrentLine, 20, ("] " 
-		 + (*det_it).second.Slaves[node].name).c_str() );
+      mvwprintw( STATUS_WIN, CurrentLine, col, "   [");
+      string fill = GetFillString( (*det_it).second->Slaves[node].Rate );
+      totalRate += (*det_it).second->Slaves[node].Rate;
+      mvwprintw( STATUS_WIN, CurrentLine, col+4, fill.c_str() );
+      mvwprintw( STATUS_WIN, CurrentLine, col+20, "] ");
+      // Color det name to indicate status
+      if( (*det_it).second->Slaves[node].status == KODAQ_RUNNING )
+	wattron( STATUS_WIN, COLOR_PAIR(4) );
+      mvwprintw( STATUS_WIN, CurrentLine, col+22, (*det_it).second->Slaves[node].name.c_str() );
+      if( (*det_it).second->Slaves[node].status == KODAQ_RUNNING )
+        wattroff( STATUS_WIN, COLOR_PAIR(4) );
+
       CurrentLine++;
     } // end for through nodes
 
   } // end for through dets
+
+  // Display general run info
+  if( col != -1 )
+    col += 40;
+  else
+    col = 0;
+  wattron( STATUS_WIN, A_BOLD );
+  mvwprintw( STATUS_WIN, 2, col+1, "DAQ Network : ");
+  mvwprintw( STATUS_WIN, 3, col+1, "Mongodb     : ");
+  mvwprintw( STATUS_WIN, 4, col+1, "Status      : ");
+  stringstream ratestream;
+  ratestream<<"Total rate  : "<<setw(2)<<totalRate;
+  mvwprintw( STATUS_WIN, 5, col+1, ratestream.str().c_str() );
+ 
+  if( bStandalone ){
+    mvwprintw( STATUS_WIN, 2, col+1+15, "NA" );
+    mvwprintw( STATUS_WIN, 3, col+1+15, "NA" );
+  }
+  else if( mbConnected[mCurrentDet] && 
+	   mLatestStatus[mCurrentDet]->Slaves.size() != 0 ){
+    wattron( STATUS_WIN, COLOR_PAIR(4) );
+    mvwprintw( STATUS_WIN, 2, col+1+15,"CONNECTED");
+    wattroff( STATUS_WIN, COLOR_PAIR(4) );
+  }
+  else {
+    mbConnected[mCurrentDet] = false;
+    wattron( STATUS_WIN, COLOR_PAIR(2) );
+    mvwprintw( STATUS_WIN, 2, col+1+15,"OFFLINE");
+    wattroff( STATUS_WIN, COLOR_PAIR(2) );
+  }
+  if( !bStandalone && mMongoOnline ){
+    wattron( STATUS_WIN, COLOR_PAIR(4) );
+    mvwprintw( STATUS_WIN, 3, col+1+15,"ONLINE");
+    wattroff( STATUS_WIN, COLOR_PAIR(4) );
+  }
+  else if( !bStandalone ) {
+    wattron( STATUS_WIN, COLOR_PAIR(2) );
+    mvwprintw( STATUS_WIN, 3, col+1+15,"OFFLINE");
+    wattroff( STATUS_WIN, COLOR_PAIR(2) );
+  }
+  if( mLatestStatus[mCurrentDet]->DAQState == KODAQ_RUNNING ){
+    wattron( STATUS_WIN, COLOR_PAIR(4) );
+    mvwprintw( STATUS_WIN, 4, col+1+15,"RUNNING");
+    wattroff( STATUS_WIN, COLOR_PAIR(4) );
+  }
+  else if( mLatestStatus[mCurrentDet]->DAQState == KODAQ_IDLE || 
+	   mLatestStatus[mCurrentDet]->DAQState == KODAQ_ARMED ) {
+    wattron( STATUS_WIN, COLOR_PAIR(3) );
+    mvwprintw( STATUS_WIN, 4, col+1+15,"IDLE");
+    wattroff( STATUS_WIN, COLOR_PAIR(3) );
+  }
+  else{
+    wattron( STATUS_WIN, COLOR_PAIR(2) );
+    mvwprintw( STATUS_WIN, 4, col+1+15,"ERROR");
+    wattroff( STATUS_WIN, COLOR_PAIR(2) );
+  }
+  
+  wattroff( STATUS_WIN, A_BOLD );
+    
+
   
   /*// Run Display. Lines 0-8. 
   // status : 0 = idle, 1 = run, 2 = ERR
