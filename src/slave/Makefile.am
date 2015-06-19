@@ -1,6 +1,6 @@
 bin_PROGRAMS = koSlave
 koSlave_SOURCES =  koSlave.cc CBV1724.cc CBV1724.hh CBV2718.cc CBV2718.hh DigiInterface.cc DigiInterface.hh VMEBoard.cc VMEBoard.hh DAQRecorder.cc DAQRecorder.hh DataProcessor.cc DataProcessor.hh NCursesUI.hh NCursesUI.cc
-koSlave_CPPFLAGS = -I$(top_srcdir)/src/common -Wall -g -DLINUX -fPIC
+koSlave_CPPFLAGS = -I$(top_srcdir)/src/common -Wall -g -DLINUX -fPIC -std=c++11
 
 
 koSlave_LDADD = -L$(top_srcdir)/src/common/.libs -lkodiaq -lCAENVME -lncurses
