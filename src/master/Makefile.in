@@ -101,7 +101,7 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_koMaster_OBJECTS = koMaster-koMaster.$(OBJEXT) \
 	koMaster-MasterMongodbConnection.$(OBJEXT) \
-	koMaster-DAQMonitor.$(OBJEXT) koMaster-MasterUI.$(OBJEXT)
+	koMaster-DAQMonitor.$(OBJEXT) koMaster-MasterControl.$(OBJEXT)
 koMaster_OBJECTS = $(am_koMaster_OBJECTS)
 am__DEPENDENCIES_1 =
 koMaster_DEPENDENCIES = $(am__DEPENDENCIES_1)
@@ -310,7 +310,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-koMaster_SOURCES = koMaster.cc MasterMongodbConnection.cc MasterMongodbConnection.hh DAQMonitor.hh DAQMonitor.cc MasterUI.hh MasterUI.cc
+koMaster_SOURCES = koMaster.cc MasterMongodbConnection.cc MasterMongodbConnection.hh DAQMonitor.hh DAQMonitor.cc MasterControl.hh MasterControl.cc
 koMaster_CPPFLAGS = -I$(top_srcdir)/src/common -Wall -g -DLINUX -fPIC \
 	-std=c++11 $(am__append_2)
 koMaster_LDADD = -L$(top_srcdir)/src/common/.libs -lkodiaq \
@@ -411,8 +411,8 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/koMaster-DAQMonitor.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/koMaster-MasterControl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/koMaster-MasterMongodbConnection.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/koMaster-MasterUI.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/koMaster-koMaster.Po@am__quote@
 
 .cc.o:
@@ -478,19 +478,19 @@ koMaster-DAQMonitor.obj: DAQMonitor.cc
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(koMaster_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o koMaster-DAQMonitor.obj `if test -f 'DAQMonitor.cc'; then $(CYGPATH_W) 'DAQMonitor.cc'; else $(CYGPATH_W) '$(srcdir)/DAQMonitor.cc'; fi`
 
-koMaster-MasterUI.o: MasterUI.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(koMaster_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT koMaster-MasterUI.o -MD -MP -MF $(DEPDIR)/koMaster-MasterUI.Tpo -c -o koMaster-MasterUI.o `test -f 'MasterUI.cc' || echo '$(srcdir)/'`MasterUI.cc
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/koMaster-MasterUI.Tpo $(DEPDIR)/koMaster-MasterUI.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='MasterUI.cc' object='koMaster-MasterUI.o' libtool=no @AMDEPBACKSLASH@
+koMaster-MasterControl.o: MasterControl.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(koMaster_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT koMaster-MasterControl.o -MD -MP -MF $(DEPDIR)/koMaster-MasterControl.Tpo -c -o koMaster-MasterControl.o `test -f 'MasterControl.cc' || echo '$(srcdir)/'`MasterControl.cc
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/koMaster-MasterControl.Tpo $(DEPDIR)/koMaster-MasterControl.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='MasterControl.cc' object='koMaster-MasterControl.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(koMaster_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o koMaster-MasterUI.o `test -f 'MasterUI.cc' || echo '$(srcdir)/'`MasterUI.cc
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(koMaster_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o koMaster-MasterControl.o `test -f 'MasterControl.cc' || echo '$(srcdir)/'`MasterControl.cc
 
-koMaster-MasterUI.obj: MasterUI.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(koMaster_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT koMaster-MasterUI.obj -MD -MP -MF $(DEPDIR)/koMaster-MasterUI.Tpo -c -o koMaster-MasterUI.obj `if test -f 'MasterUI.cc'; then $(CYGPATH_W) 'MasterUI.cc'; else $(CYGPATH_W) '$(srcdir)/MasterUI.cc'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/koMaster-MasterUI.Tpo $(DEPDIR)/koMaster-MasterUI.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='MasterUI.cc' object='koMaster-MasterUI.obj' libtool=no @AMDEPBACKSLASH@
+koMaster-MasterControl.obj: MasterControl.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(koMaster_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT koMaster-MasterControl.obj -MD -MP -MF $(DEPDIR)/koMaster-MasterControl.Tpo -c -o koMaster-MasterControl.obj `if test -f 'MasterControl.cc'; then $(CYGPATH_W) 'MasterControl.cc'; else $(CYGPATH_W) '$(srcdir)/MasterControl.cc'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/koMaster-MasterControl.Tpo $(DEPDIR)/koMaster-MasterControl.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='MasterControl.cc' object='koMaster-MasterControl.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(koMaster_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o koMaster-MasterUI.obj `if test -f 'MasterUI.cc'; then $(CYGPATH_W) 'MasterUI.cc'; else $(CYGPATH_W) '$(srcdir)/MasterUI.cc'; fi`
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(koMaster_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o koMaster-MasterControl.obj `if test -f 'MasterControl.cc'; then $(CYGPATH_W) 'MasterControl.cc'; else $(CYGPATH_W) '$(srcdir)/MasterControl.cc'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

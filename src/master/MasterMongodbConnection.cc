@@ -18,43 +18,134 @@ MasterMongodbConnection::MasterMongodbConnection()
 {
    fLog=NULL;
    fOptions=NULL;
+   fLogDB = NULL;
+   fMonitorDB = NULL;
+   fRunsDB = NULL;
 }
 
 MasterMongodbConnection::MasterMongodbConnection(koLogger *Log)
 {
    fLog=Log;
    fOptions=NULL;
-
-   try     {	
-      fMongoDB.connect("xedaq01");
-   }   
-   catch(const mongo::DBException &e)    {	
-      stringstream ss;
-      ss<<"Problem connecting to mongo. Caught exception "<<e.what();
-      if(fLog!=NULL) fLog->Error(ss.str());
-   }      
-   bConnected = true;
+   fLogDB = NULL;
+   fMonitorDB = NULL;
+   fRunsDB = NULL;
 }
 
 MasterMongodbConnection::~MasterMongodbConnection()
 {
 }
 
-void MasterMongodbConnection::InsertOnline(string collection,mongo::BSONObj bson){
-  if ( !bConnected ) return;
-  try{
-    fMongoDB.insert(collection,bson);
+int MasterMongodbConnection::SetDBs(string logdb, string monitordb, 
+				    string runsdb){
+
+  // Will check success here
+  bool logconnected = true, monitorconnected = true, runsconnected = true;
+
+  // If previously defined then close the old connections
+  if(fLogDB != NULL)
+    delete fLogDB;
+  if(fMonitorDB != NULL)
+    delete fMonitorDB;
+  if(fRunsDB != NULL )
+    delete fRunsDB;
+
+  // Connect logdb
+  if( logdb != "" ){
+    try{
+      fLogDB = new mongo::DBClientConnection( true );
+      fLogDB->connect( logdb );
+    }
+    catch(const mongo::DBException &e){
+      delete fLogDB;
+      fLogDB = NULL;
+      if(fLog!=NULL) fLog->Error("Problem connecting to mongo. Caught exception " + 
+				 string(e.what()));        
+      logconnected = false;
+    }
   }
-  catch(const mongo::DBException &e){
-    //cout<<"Lost connection to web server!"<<endl;
-    bConnected = false;
+  
+  // Connect monitor db
+  if( monitordb != "" ){
+    try{
+      fMonitorDB = new mongo::DBClientConnection( true );
+      fMonitorDB->connect( monitordb );
+    }
+    catch( const mongo::DBException &e ){
+      delete fMonitorDB;
+      fMonitorDB = NULL;
+      if(fLog!=NULL) fLog->Error("Problem connecting to mongo. Caught exception " +
+				 string(e.what()));
+      monitorconnected = false;
+    }
   }
-  return;
+  
+  // Connect to runs db
+  if( runsdb != ""){
+    try{
+      fRunsDB = new mongo::DBClientConnection( true );
+      fRunsDB->connect( runsdb );
+    }
+    catch( const mongo::DBException &e ){
+      delete fRunsDB;
+      fRunsDB = NULL;
+      if(fLog!=NULL) fLog->Error("Problem connecting to mongo. Caught exception " +
+				 string(e.what()) );
+      runsconnected = false;
+    }
+  }  
+  if( logconnected && monitorconnected && runsconnected )
+    return 0;
+  return -1;
+}
+ 
+void MasterMongodbConnection::InsertOnline(string DB, 
+					   string collection,
+					   mongo::BSONObj bson){
+  // Choose proper DB
+  mongo::DBClientConnection *thedb = NULL;
+  if( DB == "monitor" && fMonitorDB != NULL){
+    thedb = fMonitorDB;
+  }
+  else if( DB=="runs" && fRunsDB != NULL ){
+    thedb = fRunsDB;
+  }
+  else if( DB=="log" && fLogDB != NULL){
+    thedb = fLogDB;
+  }
+  
+  // Try for the insertion. If it fails then the DB connection must be bad.
+  // to avoid spamming the log files just bring the DB connection down. 
+  // we can add a 'reconnect' command to the master to bring it up again if the 
+  // problem is solved.
+  if(thedb != NULL){
+    try{
+      thedb->insert(collection,bson);
+    }
+    catch(const mongo::DBException &e){
+      if( fLog!= NULL ){
+	fLog->Error("Failed inserting to DB '" + DB + "'. The DB seems to be down or unreachable. Continuing without that DB.");
+      }
+      if( DB=="monitor"){
+	delete fMonitorDB;
+	fMonitorDB = NULL;
+      }
+      else if(DB=="runs"){
+	delete fRunsDB;
+	fRunsDB = NULL;
+      }
+      else if(DB=="log"){
+	delete fLogDB;
+	fLogDB = NULL;
+      }	  	      
+    }
+  }
 }
 
-int MasterMongodbConnection::Initialize(string user, string runMode, string name,
-					string comment, string detector, 
-					koOptions *options)
+int MasterMongodbConnection::InsertRunDoc(string user, string runMode, string name,
+					  string comment, string detector, 
+					  vector<string> detlist,
+					  koOptions *options)
 /*
   At run start create a new run document and put it into the online.runs database.
   The OID of this document is saved as a private member so the document can be 
@@ -70,19 +161,18 @@ int MasterMongodbConnection::Initialize(string user, string runMode, string name
 		  	     
 */
 {
-  // First create the collection on the buffer db so the event builder doesn't complain
+
+  // First create the collection on the buffer db 
+  // so the event builder can find it. Index by time and module.
   mongo::DBClientConnection bufferDB;
   try     {
     bufferDB.connect( options->mongo_address );
   }
   catch(const mongo::DBException &e)    {
-    stringstream ss;
-    ss<<"Problem connecting to mongo buffer. Caught exception "<<e.what();
-    SendLogMessage( ss.str(), KOMESS_ERROR );
-    bConnected = false;
+    SendLogMessage( "Problem connecting to mongo buffer. Caught exception " + 
+		    string(e.what()), KOMESS_ERROR );
     return -1;
   }
-  bConnected = true;
   string collectionName = options->mongo_database + "." + options->mongo_collection;
   bufferDB.createCollection( collectionName );
   bufferDB.createIndex( collectionName,
@@ -94,7 +184,7 @@ int MasterMongodbConnection::Initialize(string user, string runMode, string name
 
   // event builder sub object
   mongo::BSONObjBuilder trigger_sub; 
-  trigger_sub.append( "mode","bern_test_daq" );    // Hardcoded for now since only 1 mode
+  trigger_sub.append( "mode",options->trigger_mode );
   trigger_sub.append( "ended", false );
   trigger_sub.append( "status", "waiting_to_be_processed" );
   builder.append( "trigger", trigger_sub.obj() );
@@ -112,20 +202,19 @@ int MasterMongodbConnection::Initialize(string user, string runMode, string name
   storageSub.append( "dbcollection", options->mongo_collection );
   storageSub.append( "dbaddr", options->mongo_address );
   reader_sub.append( "storage_buffer", storageSub.obj() );
-
   builder.append( "reader", reader_sub.obj() );
 
   // processor sub object
   mongo::BSONObjBuilder processor_sub;
-  processor_sub.append( "mode", "default" ); // Hardcoded now since only 1 mode
+  processor_sub.append( "mode", "default" ); 
   builder.append( "processor", processor_sub.obj() );
 
   // top-level fields 
   builder.append("runmode",runMode);
   builder.append("user",user);
   builder.append("name",name);  
-  if(detector == "all") detector = "tpc";
-  builder.append("detector", detector);
+  builder.append("detectors", detlist);
+
   builder.append("shorttype",options->nickname);
 
   //put in start time
@@ -148,9 +237,7 @@ int MasterMongodbConnection::Initialize(string user, string runMode, string name
    
   //insert into collection
   mongo::BSONObj bObj = builder.obj();
-  
-  InsertOnline("online.runs",bObj);
-    
+  InsertOnline("online","online.runs",bObj);
 
   // store OID so you can update the end time
   mongo::BSONElement OIDElement;
@@ -163,36 +250,40 @@ int MasterMongodbConnection::Initialize(string user, string runMode, string name
 
 int MasterMongodbConnection::UpdateEndTime(string detector)
 /*
-  When a run is ended we update the run document to indicate that we are finished writing.
+  When a run is ended we update the run document to indicate that we are 
+  finished writing.
   
-             Fields updated: 
-
-		       "endtimestamp": UTC time of end of run
-		       "data_taking_ended": bool to indicate reader is done with the run
+  Fields updated: 
+  
+  "endtimestamp": UTC time of end of run
+  "data_taking_ended": bool to indicate reader is done with the run
  */
 {
-
+  if(fRunsDB == NULL )
+    return -1;
   if(!fLastDocOIDs[detector].isSet())  {
     if(fLog!=NULL) fLog->Error("MasterMongodbConnection::UpdateEndTime - Want to stop run but don't have the _id field of the run info doc");
       return -1;
    }
    try  {
-      time_t nowTime;
-      struct tm *currenttime;
-      time(&nowTime);
-      currenttime = localtime(&nowTime);
-      long offset = currenttime->tm_gmtoff;
-      
-
-      mongo::BSONObj res;
-      string onlinesubstr = "runs";
   
-      mongo::BSONObjBuilder bo;
-      bo << "findandmodify" << onlinesubstr.c_str() << 
-	"query" << BSON("_id" << fLastDocOIDs[detector]) << 
-	"update" << BSON("$set" << BSON("endtimestamp" <<mongo::Date_t(1000*(nowTime+offset)) << "reader.data_taking_ended" << true)); 
-      
-      assert(fMongoDB.runCommand("online",bo.obj(),res));
+     // Get the time in GMT
+     time_t nowTime;
+     struct tm *currenttime;
+     time(&nowTime);
+     currenttime = localtime(&nowTime);
+     long offset = currenttime->tm_gmtoff;      
+     
+     mongo::BSONObj res;
+     string onlinesubstr = "runs";
+     
+     mongo::BSONObjBuilder bo;
+     bo << "findandmodify" << onlinesubstr.c_str() << 
+       "query" << BSON("_id" << fLastDocOIDs[detector]) << 
+       "update" << BSON("$set" << BSON("endtimestamp" <<
+				       mongo::Date_t(1000*(nowTime+offset)) 
+				       << "reader.data_taking_ended" << true));     
+     assert(fRunsDB->runCommand("runs",bo.obj(),res));
    }
    catch (const mongo::DBException &e) {
      if(fLog!=NULL) fLog->Error("MasterMongodbConnection::UpdateEndTime - Error fetching and updating run info doc with end time stamp.");
@@ -219,7 +310,7 @@ void MasterMongodbConnection::SendLogMessage(string message, int priority)
   // For WARNINGS and ERRORS we put an additional entry into the alert DB
   // users then get an immediate alert
   if(priority==KOMESS_WARNING || priority==KOMESS_ERROR){
-    mongo::BSONObj obj = fMongoDB.findOne("online.alerts",
+    mongo::BSONObj obj = fMonitorDB->findOne("online.alerts",
 					  mongo::Query().sort("idnum",-1));    
     if(obj.isEmpty())
       ID=0;
@@ -234,7 +325,7 @@ void MasterMongodbConnection::SendLogMessage(string message, int priority)
     alert.append("sender","dispatcher");
     alert.append("message",message);
     alert.append("addressed",false);
-    InsertOnline("online.alerts",alert.obj());
+    InsertOnline("online", "online.alerts",alert.obj());
   }
 
   stringstream messagestream;
@@ -256,7 +347,7 @@ void MasterMongodbConnection::SendLogMessage(string message, int priority)
    b.append("priority",priority);
    b.appendTimeT("time",currentTime+offset);	
    b.append("sender","dispatcher");
-   InsertOnline("online.log",b.obj());
+   InsertOnline("log", "log.log",b.obj());
   
 }
 
@@ -282,7 +373,7 @@ void MasterMongodbConnection::AddRates(koStatusPacket_t *DAQStatus)
       b.append("runmode",DAQStatus->RunMode);
       b.append("nboards",DAQStatus->Slaves[x].nBoards);
       b.append("timeseconds",(int)currentTime);
-      InsertOnline("online.rates",b.obj());
+      InsertOnline("monitor", "online.rates",b.obj());
    }     
 }
 
@@ -327,7 +418,7 @@ void MasterMongodbConnection::UpdateDAQStatus(koStatusPacket_t *DAQStatus,
    }
    b.append("startTime",datestring);
    b.append("numSlaves",(int)DAQStatus->Slaves.size());
-   InsertOnline("online.daqstatus",b.obj());
+   InsertOnline("monitor", "online.daqstatus",b.obj());
 }
 
 int MasterMongodbConnection::CheckForCommand(string &command, string &user, 
@@ -340,10 +431,11 @@ int MasterMongodbConnection::CheckForCommand(string &command, string &user,
   from the doc.
  */
 {
-  if( !bConnected ) return -1;
-   if(fMongoDB.count("online.daqcommands") ==0)
-     return -1;
-   auto_ptr<mongo::DBClientCursor> cursor = fMongoDB.query("online.daqcommands",mongo::BSONObj());
+  if(fMonitorDB == NULL )
+    return -1;
+  if(fMonitorDB->count("online.daqcommands") ==0)
+    return -1;
+   auto_ptr<mongo::DBClientCursor> cursor = fMonitorDB->query("online.daqcommands",mongo::BSONObj());
    mongo::BSONObj b;
    if(cursor->more())
      b = cursor->next();
@@ -354,9 +446,9 @@ int MasterMongodbConnection::CheckForCommand(string &command, string &user,
    comment = b.getStringField("comment");
    detector = b.getStringField("detector");
    user=b.getStringField("name");
-   fMongoDB.remove("online.daqcommands", 
+   fMonitorDB->remove("online.daqcommands", 
 		   MONGO_QUERY("command"<<"Start"<<"detector"<<detector));
-   fMongoDB.remove("online.daqcommands",
+   fMonitorDB->remove("online.daqcommands",
 		   MONGO_QUERY("command"<<"Stop"<<"detector"<<detector)); 
    if(command=="Start")
      PullRunMode(mode,options);
@@ -376,7 +468,7 @@ void MasterMongodbConnection::SendRunStartReply(int response, string message,
   reply.append("replyenum",response);
   reply.append("mode",mode);
   reply.append("comment",comment);
-  InsertOnline("online.dispatcherreply",reply.obj());
+  InsertOnline("monitor", "online.dispatcherreply",reply.obj());
 }
 
 int MasterMongodbConnection::PullRunMode(string name, koOptions &options)
@@ -386,14 +478,15 @@ int MasterMongodbConnection::PullRunMode(string name, koOptions &options)
   each attribute and set it.
  */
 {
-   if(fMongoDB.count("online.run_modes") ==0)
+  if(fMonitorDB == NULL) return -1;
+   if(fMonitorDB->count("online.run_modes") ==0)
      return -1;
 
    //Find doc corresponding to this run mode
    mongo::BSONObjBuilder query; 
    query.append( "name" , name ); 
    //cout<<"Looking for run mode "<<name<<endl;
-   mongo::BSONObj res = fMongoDB.findOne("online.run_modes" , query.obj() ); 
+   mongo::BSONObj res = fMonitorDB->findOne("online.run_modes" , query.obj() ); 
    if(res.nFields()==0) 
      return -1; //empty object
 
@@ -407,6 +500,8 @@ int MasterMongodbConnection::PullRunMode(string name, koOptions &options)
    options.write_mode=(res.getIntField("write_mode"));
    options.trigger_mode = res.getStringField("trigger_mode");
    options.data_processor_mode = res.getStringField("data_processor_mode");
+   options.run_prefix = res.getStringField("run_prefix");
+   options.noise_spectra = res.getIntField("noise_spectra");
    options.baseline_mode=(res.getIntField("baseline_mode"));
    options.run_start=(res.getIntField("run_start"));
    options.run_start_module=(res.getIntField("run_start_module"));

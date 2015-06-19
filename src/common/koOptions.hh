@@ -132,12 +132,14 @@ public:
   // Run options
   int                        write_mode;
   int                        baseline_mode;
+  int                        noise_spectra;
   int                        run_start;
   int                        run_start_module;
   int                        pulser_freq;
   int                        blt_size;
   int                        compression;
   bool                       dynamic_run_names;
+  string                     run_prefix;
 
   // Processing options
   int                        processing_mode;

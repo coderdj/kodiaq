@@ -228,8 +228,8 @@ int DAQMonitor::Start(string user, string comment, koOptions *options)
     mess<<" : "<<comment;  
   if(m_Mongodb!=NULL){
     m_Mongodb->SendLogMessage(mess.str(),KOMESS_STATE);
-    m_Mongodb->Initialize(user,options->name,m_DAQStatus.RunInfo.RunNumber, 
-			  comment, m_detector, options);
+    //m_Mongodb->Inme(user,options->name,m_DAQStatus.RunInfo.RunNumber, 
+    //			  comment, m_detector, options);
   }
   return 0;
   /*

@@ -39,7 +39,10 @@ public:
   
   void ProcessCommand(string command,string user, 
 		      string comment="", koOptions *options=NULL);
-  
+  void PreProcess(){return;};
+  void Arm(){return;};
+  void Start(){return;};
+  bool PreProcessFinished(){ return true; };
   bool UpdateReady(){
     return m_bReady;
   };
