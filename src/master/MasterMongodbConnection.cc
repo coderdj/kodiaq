@@ -21,6 +21,7 @@ MasterMongodbConnection::MasterMongodbConnection()
    fLogDB = NULL;
    fMonitorDB = NULL;
    fRunsDB = NULL;
+   mongo::client::initialize();
 }
 
 MasterMongodbConnection::MasterMongodbConnection(koLogger *Log)
@@ -30,6 +31,7 @@ MasterMongodbConnection::MasterMongodbConnection(koLogger *Log)
    fLogDB = NULL;
    fMonitorDB = NULL;
    fRunsDB = NULL;
+   mongo::client::initialize();
 }
 
 MasterMongodbConnection::~MasterMongodbConnection()
@@ -316,7 +318,7 @@ void MasterMongodbConnection::SendLogMessage(string message, int priority)
       ID=0;
     else
       ID = obj.getIntField("idnum")+1;
-    //cout<<"ID"<<ID<<endl;
+
     mongo::BSONObjBuilder alert;
     alert.genOID();
     alert.append("idnum",ID);

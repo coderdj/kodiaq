@@ -39,9 +39,9 @@ public:
   
   void ProcessCommand(string command,string user, 
 		      string comment="", koOptions *options=NULL);
-  void PreProcess(){return;};
-  void Arm(){return;};
-  void Start(){return;};
+  int  PreProcess(koOptions* mode);
+  int  Arm(koOptions* mode, string run_name="");
+  int  Start(string user, string comment,koOptions *options);
   bool PreProcessFinished(){ return true; };
   bool UpdateReady(){
     return m_bReady;
@@ -72,8 +72,6 @@ private:
   
   int                      Connect();
   int                      Disconnect();
-  int                      Arm(koOptions* mode);
-  int                      Start(string user, string comment,koOptions *options);
   int                      Stop(string user, string comment);
   int                      Shutdown();
 

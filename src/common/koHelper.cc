@@ -101,19 +101,21 @@ void koHelper::InitializeNode(koNode_t &node)
 void koHelper::ProcessStatus(koStatusPacket_t &Status)
 {
    Status.DAQState=KODAQ_IDLE;
-   unsigned int nArmed=0,nRunning=0, nIdle=0;
+   unsigned int nArmed=0,nRunning=0, nIdle=0, nRdy=0;
    for(unsigned int x=0;x<Status.Slaves.size();x++)  {
       if(Status.Slaves[x].status==KODAQ_ARMED) nArmed++;
       if(Status.Slaves[x].status==KODAQ_RUNNING) nRunning++;
       if(Status.Slaves[x].status==KODAQ_IDLE) nIdle++;
+      if(Status.Slaves[x].status==KODAQ_RDY) nRdy++;
       if(Status.Slaves[x].status==KODAQ_ERROR) {
 	Status.DAQState=KODAQ_ERROR;
 	return;
       }
    }
    if(nRunning==Status.Slaves.size() && Status.Slaves.size()!=0) Status.DAQState=KODAQ_RUNNING;
-   if(nArmed==Status.Slaves.size() && Status.Slaves.size()!=0) Status.DAQState=KODAQ_ARMED;
-   if(nIdle == Status.Slaves.size() && Status.Slaves.size()!=0) Status.DAQState=KODAQ_IDLE;
+   else if(nArmed==Status.Slaves.size() && Status.Slaves.size()!=0) Status.DAQState=KODAQ_ARMED;
+   else if(nIdle == Status.Slaves.size() && Status.Slaves.size()!=0) Status.DAQState=KODAQ_IDLE;
+   else if(nRdy == Status.Slaves.size() && Status.Slaves.size()!=0) Status.DAQState=KODAQ_RDY;
    else if(Status.Slaves.size()!=0 && Status.DAQState==KODAQ_IDLE) Status.DAQState=KODAQ_MIXED;
    return;
 }
@@ -126,10 +128,10 @@ int koHelper::InitializeRunInfo(koRunInfo_t &fRunInfo)
   return 0;
 }
 
-string koHelper::MakeDBName(koRunInfo_t RunInfo, string CollectionName)
+string koHelper::MakeDBName(string run_name, string CollectionName)
 {
    string retstring = CollectionName;
-   retstring+=RunInfo.RunNumber;
+   retstring+=run_name;
    return retstring;
 }
 

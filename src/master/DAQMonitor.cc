@@ -201,6 +201,24 @@ int DAQMonitor::Disconnect()
   return 0;
 }
 
+int DAQMonitor::PreProcess(koOptions* mode){
+  // 
+  // Send preprocess
+  m_DAQStatus.RunMode = m_DAQStatus.RunModeLabel = mode->name;
+  m_DAQNetwork->SendCommand("PREPROCESS");
+
+  // Send options to slaves           
+  stringstream *optionsStream = new stringstream();
+  mode->ToStream(optionsStream);
+  if(m_DAQNetwork->SendOptionsStream(optionsStream)!=0){
+    delete optionsStream;
+    m_Mongodb->SendLogMessage("Error sending options to clients in preprocess.",
+			      KOMESS_WARNING);
+    return -1;
+  }
+  delete optionsStream;
+}
+
 int DAQMonitor::Start(string user, string comment, koOptions *options)
 {
   //Check current state. DAQ must be armed
@@ -214,13 +232,13 @@ int DAQMonitor::Start(string user, string comment, koOptions *options)
     }
   }
       
-  koHelper::UpdateRunInfo(m_DAQStatus.RunInfo,user,m_detector);
+  /*koHelper::UpdateRunInfo(m_DAQStatus.RunInfo,user,m_detector);
   if(options->dynamic_run_names && options->write_mode == WRITEMODE_MONGODB){
     options->mongo_collection = koHelper::MakeDBName(m_DAQStatus.RunInfo,
 						     options->mongo_collection);
     m_DAQNetwork->SendCommand("DBUPDATE");
     m_DAQNetwork->SendCommand(options->mongo_collection);
-  }
+    }*/
   m_DAQNetwork->SendCommand("START");  
   stringstream mess;
   mess<<"Run <b>"<<m_DAQStatus.RunInfo.RunNumber<<"</b> started by "<<user;
@@ -258,12 +276,12 @@ int DAQMonitor::Shutdown()
   return 0;
 }
 
-int DAQMonitor::Arm(koOptions *mode)
+int DAQMonitor::Arm(koOptions *mode, string run_name)
 /*
   Arm the DAQ and configure the DDC-10 HE veto module
 */
 {
-  if(m_DAQStatus.DAQState!=KODAQ_IDLE)
+  if(m_DAQStatus.DAQState!=KODAQ_RDY)
     return -1;
   
   // Configure DDC10 if available
@@ -285,6 +303,14 @@ int DAQMonitor::Arm(koOptions *mode)
     delete optionsStream;
     m_Mongodb->SendLogMessage("Error sending options to clients.",KOMESS_WARNING);
     return -1;
+  }
+
+  
+  if(run_name!="" && mode->write_mode == WRITEMODE_MONGODB){  
+    mode->mongo_collection = koHelper::MakeDBName(run_name,            
+						  mode->mongo_collection); 
+    m_DAQNetwork->SendCommand("DBUPDATE");    
+    m_DAQNetwork->SendCommand(mode->mongo_collection);  
   }
   delete optionsStream;
   
