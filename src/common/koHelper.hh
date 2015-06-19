@@ -33,7 +33,7 @@
 #define KODAQ_RUNNING 2
 #define KODAQ_MIXED   3
 #define KODAQ_ERROR   4
-
+#define KODAQ_RDY     5
 
 //MESSAGE PRIORITY IDENTIFIERS
 #define KOMESS_UPDATE    0
@@ -183,7 +183,7 @@ class koHelper
    // Purpose     : Returns a database name based on the current run number from
    //               the koRunInfo_t object
    // 
-   static string    MakeDBName(koRunInfo_t RunInfo,string CollectionName);
+   static string    MakeDBName(string RunName, string CollectionName);
   
    // Function    : GetTimeStamp
    // Purpose     : Returns the time stamp out the the header of a CAEN block
@@ -193,6 +193,10 @@ class koHelper
   // Function      : ProcessLineHex
   // Purpose       : Parse a line containing hex integers
   static int ProcessLineHex(string line,string option, int &ret);
+
+  // Function      : GetStatusText
+  // Purpose       : Converts a kostatus ENUM to text
+  static string GetStatusText( int status_enum );
 
  private:
 };

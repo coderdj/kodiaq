@@ -29,12 +29,15 @@ public:
   virtual     ~MasterMongodbConnection();
    
   // 
-  // Name    : Initialize
-  // Purpose : Initialize the mongodb connection according to the 
-  //           information in the koOptions object
+  // Name    : InsertRunDoc
+  // Purpose : Insert a run doc for the new run
+  //           Also create the buffer DB with indices on time and module
   // 
-  int          Initialize(string user, string runMode, string name,
-			  string comment, string detector, koOptions *options);
+  int          InsertRunDoc(string user, string runMode, string name,
+			    string comment, string detector, vector<string> detlist,
+			    koOptions *options);
+  
+  int          SetDBs(string logdb, string monitordb, string runsdb);
   //
   // Name    : UpdateEndTime
   // Purpose : Updates run control document with the time the run ended.
@@ -74,16 +77,17 @@ public:
   //           to the XeDAQOptions object. Returns 0 on success.
   int          PullRunMode(string name, koOptions &options);
 
-  void InsertOnline(string collection,mongo::BSONObj bson);
+  void InsertOnline(string name, string collection,mongo::BSONObj bson);
   void Start(koOptions *options,string user,string comment=""){return;};
   void EndRun(string user,string comment=""){return;};
   void SendRunStartReply(int response, string message, string mode, string comment);
 
  private:
   koOptions                 *fOptions;
-  mongo::DBClientConnection  fMongoDB;
   map <string,mongo::OID>    fLastDocOIDs;
   koLogger                  *fLog;
+
+  mongo::DBClientConnection *fLogDB, *fMonitorDB, *fRunsDB;
 };
 
 #endif

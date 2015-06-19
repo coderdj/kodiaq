@@ -34,11 +34,15 @@ public:
   DAQMonitor();
   virtual ~DAQMonitor();
   DAQMonitor(koNetServer *DAQNetwork, koLogger *logger, 
-	     MasterMongodbConnection *mongodb, string detector);
+	     MasterMongodbConnection *mongodb, string detector, 
+	     string ini_file="DAQConfig.ini");
   
   void ProcessCommand(string command,string user, 
 		      string comment="", koOptions *options=NULL);
-  
+  int  PreProcess(koOptions* mode);
+  int  Arm(koOptions* mode, string run_name="");
+  int  Start(string user, string comment,koOptions *options);
+  bool PreProcessFinished(){ return true; };
   bool UpdateReady(){
     return m_bReady;
   };
@@ -52,6 +56,15 @@ public:
     return &m_DAQStatus;
   }; 
 
+  void SetIni( string inipath ){
+    m_ini_file = inipath;
+  };
+  string GetIni(){
+    return m_ini_file;
+  };
+  string GetName(){
+    return m_detector;
+  };
   void PollNetwork();
   static void* UpdateThreadWrapper(void* monitor);
     
@@ -59,8 +72,6 @@ private:
   
   int                      Connect();
   int                      Disconnect();
-  int                      Arm(koOptions* mode);
-  int                      Start(string user, string comment,koOptions *options);
   int                      Stop(string user, string comment);
   int                      Shutdown();
 
@@ -74,6 +85,7 @@ private:
   int                      m_iErrorFlag;
   string                   m_sErrorText;
   string                   m_detector;
+  string                   m_ini_file;
 
   pthread_t                m_NetworkUpdateThread;
   pthread_mutex_t          m_DAQStatusMutex;

@@ -37,7 +37,9 @@ void koOptions::Reset()
   //Reset run options
   write_mode = baseline_mode = run_start = run_start_module = 
     blt_size = compression = -1;
+  noise_spectra = 0;
   dynamic_run_names = false;
+  run_prefix="data";
   pulser_freq = 0;
 
   //Reset mongodb options
@@ -120,6 +122,10 @@ int koOptions::ReadParameterFile(string filename)
 	data_processor_mode = words[1];
       else if(words[0] == "write_mode")
 	write_mode = koHelper::StringToInt(words[1]);
+      else if(words[0] == "noise_spectra")
+	noise_spectra = koHelper::StringToInt(words[1]);
+      else if(words[0] == "run_prefix")
+	run_prefix = words[1];
       else if(words[0] == "baseline_mode")
 	baseline_mode = koHelper::StringToInt(words[1]);
       else if(words[0] == "run_start")
@@ -217,6 +223,8 @@ void koOptions::ToStream(stringstream *retstream)
   (*retstream)<<"creation_date "<<creation_date<<endl;
   (*retstream)<<"write_mode "<<write_mode<<endl;
   (*retstream)<<"trigger_mode "<<trigger_mode<<endl;
+  (*retstream)<<"run_prefix "<<run_prefix<<endl;
+  (*retstream)<<"noise_spectra "<<noise_spectra<<endl;
   (*retstream)<<"data_processor_mode "<<data_processor_mode<<endl;
   (*retstream)<<"baseline_mode "<<baseline_mode<<endl;
   (*retstream)<<"run_start "<<run_start<<endl;
