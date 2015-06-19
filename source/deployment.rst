@@ -169,12 +169,12 @@ We also want a newer version of mongodb so we can install that as well::
       git clone https://github.com/mongodb/mongo-cxx-driver.git mongodb
       cd mongodb
       git checkout legacy
-      scons --sharedclient install 
+      scons --sharedclient --c++11 install 
       cd ..
 
-The 'scons install' line may need a sudo depending on where you install it. For installation information please consult the mongo-cxx-driver github. 
+The 'scons install' line may need a sudo depending on where you install it. For installation information please consult the mongo-cxx-driver github. You have to install with C++11 since kodiaq uses some C++11 functionality.
 
-Since mongo seems to change procedures and requirements with nearly every release you may prefer to check their most recent documentation. Right now we use the legacy release, which despite being called "legacy" is actually the stable version as of this writing (June 2015). This version is compatible with MongoDB 3.0. The 26compat branch will NOT work with kodiaq.
+Since mongo seems to change procedures and requirements with nearly every release you may prefer to check their most recent documentation. Right now we use the legacy release, which despite being called "legacy" is actually the stable version as of this writing (June 2015). This version is compatible with MongoDB 3.0. The 26compat branch will NOT work with kodiaq. 
 
 Checkout the DAQ code from github as follows::
 
