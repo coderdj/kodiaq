@@ -66,10 +66,14 @@ int main(int argc, char *argv[])
       cin.get( cCommand );
       string commandString = "";
             
-      if( cCommand == 'c' )
+      if( cCommand == 'c' ){
+	cout<<"Received command 'CONNECT'"<<endl;
 	controller.Connect();      
-      else if( cCommand == 'd' )
+      }
+      else if( cCommand == 'd' ){
+	cout<<"Received command 'DISCONNECT'"<<endl;
 	controller.Disconnect();
+      }
       else if( cCommand == 'r' ){
 	// reload inis
 	cout<<"Reloading config file "<<filepath<<endl;
@@ -89,10 +93,14 @@ int main(int argc, char *argv[])
 	bForceUpdate = true;
 	continue;
       }
-      else if( cCommand == 'p' )
+      else if( cCommand == 'p' ){
+	cout<<"Sending stop command"<<endl;
 	controller.Stop(detectors[iCurrentDet]);
-      else if( cCommand == 's' ) 
+      }
+      else if( cCommand == 's' ) {
+	cout<<"Sending start command"<<endl;
 	controller.Start();      
+      }
       else if(cCommand == 'q')
 	break;
       cCommand = '0';

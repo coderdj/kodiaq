@@ -41,6 +41,8 @@ void koOptions::Reset()
   dynamic_run_names = false;
   run_prefix="data";
   pulser_freq = 0;
+  noise_spectra_enable = noise_spectra_length = 0;
+  noise_spectra_mongo_addr = noise_spectra_mongo_coll = "";
 
   //Reset mongodb options
   mongo_address = mongo_database = mongo_collection = "";
@@ -128,6 +130,10 @@ int koOptions::ReadParameterFile(string filename)
 	run_prefix = words[1];
       else if(words[0] == "baseline_mode")
 	baseline_mode = koHelper::StringToInt(words[1]);
+      else if(words[0] == "noise_spectra_enable")
+	noise_spectra_enable = koHelper::StringToInt(words[1]);
+      else if(words[0] == "noise_spectra_length")
+	noise_spectra_length = koHelper::StringToInt(words[1]);
       else if(words[0] == "run_start")
 	run_start = koHelper::StringToInt(words[1]);
       else if(words[0] == "run_start_module")
@@ -136,6 +142,10 @@ int koOptions::ReadParameterFile(string filename)
 	pulser_freq = koHelper::StringToInt(words[1]);
       else if(words[0] == "blt_size")
 	blt_size = koHelper::StringToInt(words[1]);
+      else if(words[0] == "noise_spectra_mongo_addr")	
+	noise_spectra_mongo_addr = words[1];
+      else if(words[0] == "noise_spectra_mongo_coll")
+	noise_spectra_mongo_coll = words[1];
       else if(words[0] == "compression")
 	compression = koHelper::StringToInt(words[1]);
       else if(words[0] == "processing_mode")
@@ -229,6 +239,8 @@ void koOptions::ToStream(stringstream *retstream)
   (*retstream)<<"baseline_mode "<<baseline_mode<<endl;
   (*retstream)<<"run_start "<<run_start<<endl;
   (*retstream)<<"run_start_module "<<run_start_module<<endl;
+  (*retstream)<<"noise_spectra_enable "<<noise_spectra_enable<<endl;
+  (*retstream)<<"noise_spectra_length "<<noise_spectra_length<<endl;
   (*retstream)<<"pulser_freq "<<pulser_freq<<endl;
   (*retstream)<<"blt_size "<<blt_size<<endl;
   (*retstream)<<"compression "<<compression<<endl;

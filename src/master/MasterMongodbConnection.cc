@@ -311,9 +311,9 @@ void MasterMongodbConnection::SendLogMessage(string message, int priority)
   int ID=-1;
   // For WARNINGS and ERRORS we put an additional entry into the alert DB
   // users then get an immediate alert
-  if(priority==KOMESS_WARNING || priority==KOMESS_ERROR){
+  if(priority==KOMESS_WARNING || priority==KOMESS_ERROR && fMonitorDB!=NULL ){
     mongo::BSONObj obj = fMonitorDB->findOne("online.alerts",
-					  mongo::Query().sort("idnum",-1));    
+					     mongo::Query().sort("idnum",-1));    
     if(obj.isEmpty())
       ID=0;
     else
@@ -502,6 +502,10 @@ int MasterMongodbConnection::PullRunMode(string name, koOptions &options)
    options.write_mode=(res.getIntField("write_mode"));
    options.trigger_mode = res.getStringField("trigger_mode");
    options.data_processor_mode = res.getStringField("data_processor_mode");
+   options.noise_spectra_enable = res.getIntField("noise_spectra_enable");
+   options.noise_spectra_length = res.getIntField("noise_spectra_length");
+   options.noise_spectra_mongo_addr = res.getStringField("noise_spectra_mongo_addr");
+   options.noise_spectra_mongo_coll = res.getStringField("noise_spectra_mongo_coll");
    options.run_prefix = res.getStringField("run_prefix");
    options.noise_spectra = res.getIntField("noise_spectra");
    options.baseline_mode=(res.getIntField("baseline_mode"));

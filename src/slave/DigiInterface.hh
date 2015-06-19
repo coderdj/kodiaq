@@ -53,8 +53,14 @@ class DigiInterface
    virtual ~DigiInterface();
    DigiInterface(koLogger *logger);
    
-   //General Control
-   //
+  //General Control
+  //
+  // Name      : int DigiInterface::PreProcess
+  // Input     : A 'loaded' koOptions object
+  // Function  : Does baselines, noise spectra, and other preprocessing tasks
+  // Return    : 0 on success, -1 on failure
+  int          PreProcess(koOptions *options);
+  int          Arm(koOptions *options);
    // Name     : int DigiInterface::Initialize
    // Input    : A 'loaded' koOptions object
    // Function : Creates definitions for all electronics. Sets up threads for 
@@ -62,7 +68,7 @@ class DigiInterface
    //            And sets up DAQ recorder. All in that order
    // Return   : 0 on success, -1 on failure
    // 
-   int           Initialize(koOptions *options);
+  int           Initialize(koOptions *options, bool PreProcessing=false);
    //
    // Name     : void DigiInterface::UpdateRecorderCollection
    // Input    : A 'loaded' XeDAQOptionsObject

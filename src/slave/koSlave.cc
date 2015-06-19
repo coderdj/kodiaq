@@ -245,7 +245,8 @@ int main()
    
    string         fOptionsPath = "DAQConfig.ini";
    time_t         fPrevTime = koLogger::GetCurrentTime();
-   bool           bArmed=false,bRunning=false,bConnected=false,bERROR=false;
+   bool           bArmed=false, bRunning=false, bConnected=false,
+     bERROR=false, bRdy=false;
    //
    koLog->Message("Started koSlave module.");
    
@@ -265,17 +266,50 @@ connection_loop:
       string command="0",sender;
       int id;      
       if(fNetworkInterface.ListenForCommand(command,id,sender)==0)	{
+	if(command=="PREPROCESS"){
+	  bRdy = false;
+	  bArmed=false;
+	  bERROR=false;
+	  fElectronics->Close();
+	  if(fNetworkInterface.ReceiveOptions(fOptionsPath)==0)  {
+	    if(fDAQOptions.ReadParameterFile(fOptionsPath)!=0)        {
+	      koLog->Error("koSlave - error loading options");
+	      fNetworkInterface.SlaveSendMessage("Error loading options!");
+	      continue;
+	    }
+	    int ret;
+	    if((ret=fElectronics->PreProcess(&fDAQOptions))==0){
+	      fNetworkInterface.SlaveSendMessage("Board preprocessing done.");
+	      bRdy=true;
+	    }
+	    else{
+	      if(ret==-2)
+		bERROR=true;
+	      fNetworkInterface.SlaveSendMessage("Error preprocessing!");
+	      koLog->Error("koSlave - error in preprocessing.");
+	      continue;
+	    }
+	  }
+	  else   {
+	    koLog->Error("koSlave - error receiving options!");
+	    fNetworkInterface.SlaveSendMessage("Error receiving options!");
+	    continue;
+	  }
+	}	    
 	 if(command=="ARM")  {
-	    bArmed=false;
-	    bERROR=false;
-	    fElectronics->Close();
+	   if(!bRdy || bRunning)
+	     continue;	     
+	   bRdy=false;
+	   bArmed=false;
+	   bERROR=false;
+	   fElectronics->Close();
 	    if(fNetworkInterface.ReceiveOptions(fOptionsPath)==0)  {
-	       if(fDAQOptions.ReadParameterFile(fOptionsPath)!=0)	 {
+	      if(fDAQOptions.ReadParameterFile(fOptionsPath)!=0)	 {
 		  koLog->Error("koSlave - error loading options");
 		  fNetworkInterface.SlaveSendMessage("Error loading options!");
 		  continue;
 	       }
-	       int ret;
+	      int ret;
 	       if((ret=fElectronics->Initialize(&fDAQOptions))==0){
 		  fNetworkInterface.SlaveSendMessage("Boards armed successfully.");
 		  bArmed=true;
@@ -344,6 +378,7 @@ connection_loop:
 	 fPrevTime=fCurrentTime;
 	 int status=KODAQ_IDLE;
 	 if(bArmed && !bRunning) status=KODAQ_ARMED;
+	 if(bRdy && !bArmed && !bRunning) status = KODAQ_RDY;
 	 if(bRunning) status=KODAQ_RUNNING;
 	 if(bERROR) status=KODAQ_ERROR;
 	 double rate=0.,freq=0.,nBoards=fElectronics->GetDigis();
@@ -355,7 +390,13 @@ connection_loop:
 	 rate=rate/tdiff;
 	 rate/=1048576;
 	 freq=freq/tdiff;
-	 cout<<"rate: "<<rate<<" freq: "<<freq<<" iRate: "<<iRate<<" tdiff: "<<tdiff<<endl;
+	 cout<<"rate: "<<rate<<" freq: "<<freq<<" iRate: "<<iRate<<" tdiff: "<<tdiff<<" status: ";
+	 if(status == KODAQ_ARMED) cout<<"ARMED";
+	 else if(status == KODAQ_RUNNING) cout<<"RUNNING";
+	 else if(status == KODAQ_RDY) cout<<"READY";
+	 else if(status == KODAQ_IDLE) cout<<"IDLE";
+	 else cout<<"ERROR";
+	 cout<<endl;
 	 
 	 // Check for errors in threads
 	 string err;
@@ -383,6 +424,7 @@ connection_loop:
      fElectronics->Close();
    bArmed=false;
    bRunning=false;
+   bRdy=false;
    fNetworkInterface.Disconnect();
    bConnected=false;
    goto connection_loop;

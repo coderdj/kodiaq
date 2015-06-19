@@ -217,6 +217,7 @@ int DAQMonitor::PreProcess(koOptions* mode){
     return -1;
   }
   delete optionsStream;
+  return 0;
 }
 
 int DAQMonitor::Start(string user, string comment, koOptions *options)

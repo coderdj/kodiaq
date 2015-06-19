@@ -141,6 +141,12 @@ public:
   bool                       dynamic_run_names;
   string                     run_prefix;
 
+  // Noise
+  int                        noise_spectra_enable;
+  int                        noise_spectra_length;
+  string                     noise_spectra_mongo_addr;
+  string                     noise_spectra_mongo_coll;
+
   // Processing options
   int                        processing_mode;
   int                        processing_num_threads;

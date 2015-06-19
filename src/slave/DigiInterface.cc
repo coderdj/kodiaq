@@ -42,7 +42,65 @@ DigiInterface::DigiInterface(koLogger *logger)
    //Close();
 }
 
-int DigiInterface::Initialize(koOptions *options)
+int DigiInterface::PreProcess(koOptions *options){
+
+  cout<<"Entering preprocessing"<<endl;
+
+  m_koOptions = options;
+  int retval = 0;
+
+  // Options Setting for baselines
+  if(options->baseline_mode == 1){
+    if( Initialize(options, true) != 0 ){
+      if(m_koLog!=NULL)
+        m_koLog->Error("Preprocessing failed at initialization step.");
+      retval = -1;
+    }
+    cout<<"Baselines finished"<<endl;
+  }
+ 
+  // Note: initially (or maybe forever) noise spectra support is only
+  // available if mongoDB is configured
+#ifdef HAVE_LIBMONGOCLIENT
+  if(options->noise_spectra_enable == 1){
+    int length = 1000; //default
+    if(options->noise_spectra_length > 0 && 
+       options->noise_spectra_length<100000)
+      length = options->noise_spectra_length;
+
+    //Arm boards
+    if(options->baseline_mode == 1)
+      options->baseline_mode = 0;
+    if( Initialize(options, true)!=0)
+      retval = -1;
+    else{
+      // Do noise
+      for(unsigned int x=0; x<m_vDigitizers.size();x++)  {
+	if(m_vDigitizers[x]->DoNoiseSpectra(options->noise_spectra_mongo_addr, 
+					    options->noise_spectra_mongo_coll, 
+					    options->noise_spectra_length) !=0 ){
+	  stringstream err;
+	  err<<m_vDigitizers[x]->GetID().id<<" failed noise spectra!";	    
+	  m_koLog->Error( err.str() );
+	  retval = -1;
+	}
+      }
+
+    }        
+  }
+#endif
+  cout<<"Finished Preprocessing"<<endl;
+  return retval;
+}
+
+int DigiInterface::Arm(koOptions *options){
+  // Remove baseline option (should be done in preprocess)
+  if(options->baseline_mode == 1)
+    options->baseline_mode = 0;
+  return Initialize(options);
+}
+
+int DigiInterface::Initialize(koOptions *options, bool PreProcessing)
 {  
   m_koOptions = options;
   
@@ -75,7 +133,7 @@ int DigiInterface::Initialize(koOptions *options)
     }
     
     // LOG FW
-    char *fw = (char*)malloc (100);
+    /*char *fw = (char*)malloc (100);
     CAENVME_BoardFWRelease( tempHandle, fw );
     stringstream logm;
     logm<<"Found V2718 with firmware "<<hex<<fw<<dec;
@@ -83,6 +141,7 @@ int DigiInterface::Initialize(koOptions *options)
     free(fw);
     //FOR DAQ TEST ONLY
     CAENVME_SystemReset( tempHandle );
+    */
     //sleep(1);
     //CAENVME_WriteRegister( tempHandle, cvVMEControlReg, 0x1c);
      
@@ -123,7 +182,7 @@ int DigiInterface::Initialize(koOptions *options)
   }
 
   //Sleep between CC activation and digi
-  sleep(4);
+  //  sleep(4);
 
   //  StopRun();
 
@@ -139,7 +198,9 @@ int DigiInterface::Initialize(koOptions *options)
   }
    
    
-   
+  if(PreProcessing)
+    return 0;
+
   //Set up threads
   m_iReadSize=0;
   m_iReadFreq=0;
@@ -193,7 +254,6 @@ int DigiInterface::Initialize(koOptions *options)
       return -1;
     }
   }
-  sleep(2);
   
   return 0;
 }

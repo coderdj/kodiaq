@@ -16,6 +16,9 @@
 #include <time.h>
 #include "CBV1724.hh"
 #include "DataProcessor.hh"
+#ifdef HAVE_LIBMONGOCLIENT
+#include "mongo/client/dbclient.h"
+#endif
 
 CBV1724::CBV1724()
 {   
@@ -297,22 +300,7 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
     else if( i64_blt_second_time > 15E8 && !bOver15 )
       bOver15 = true;
 
-    /*
-
-    resetCounter = i_clockResetCounter;
-    //Q1: Did the counter reset between the last BLT and now?
-    if( i64_blt_last_time - i64_blt_first_time > 3E9 ){
-      i_clockResetCounter++;
-      resetCounter = i_clockResetCounter;
-      //    i64_blt_second_time += ((unsigned long) 1 << 31);
-    }
-    //Q2: Did the counter reset during this BLT?
-    else if( i64_blt_first_time - i64_blt_second_time > 3E9 ){
-      i_clockResetCounter++;
-      //    i64_blt_second_time += ((unsigned long) 1 << 31);
-    }
-    i64_blt_last_time = i64_blt_first_time = i64_blt_second_time;
-    */  }
+  }
 
    vector<u_int32_t*> *retVec = fBuffers;
    fBuffers = new vector<u_int32_t*>();
@@ -387,6 +375,106 @@ int CBV1724::GetBaselines(vector <int> &baselines, bool bQuiet)
   return 0;      
 }
 
+int CBV1724::InitForPreProcessing(){
+  //Get the firmware revision (for data formats)                                    
+  u_int32_t fwRev=0;
+  ReadReg32(0x118C,fwRev);
+  int fwVERSION = ((fwRev>>8)&0xFF); //0 for old FW, 137 for new FW  
+  int retval = 0;
+  if(fwVERSION!=0)
+    retval += (WriteReg32(CBV1724_ChannelConfReg,0x310) + 
+	       WriteReg32(CBV1724_DPPReg,0x1310000) + 
+	       WriteReg32(CBV1724_BuffOrg,0xA) +
+	       WriteReg32(CBV1724_CustomSize,0xC8));
+  else
+    retval += (WriteReg32(CBV1724_ChannelConfReg,0x10) +
+	       WriteReg32(CBV1724_DPPReg,0x800000));
+
+  retval += (WriteReg32(CBV1724_AcquisitionControlReg,0x0) +
+	     WriteReg32(CBV1724_TriggerSourceReg,0x80000000));
+  if(retval<0) 
+    retval = -1;
+  return retval;
+}
+int CBV1724::DoNoiseSpectra(string mongo_addr, string mongo_coll, u_int32_t length){
+
+  // ONLY compatible with mongodb
+#ifdef HAVE_LIBMONGOCLIENT
+  // Assume already initialized
+  if(InitForPreProcessing()!=0 || WriteReg32(CBV1724_CustomSize,length)!=0){
+    LogError("Can't load registers for preprocessing");
+    return -1;
+  }
+  mongo::DBClientConnection *mongo = NULL;
+  try{
+    mongo::client::initialize();
+    mongo = new mongo::DBClientConnection();
+    mongo->connect(mongo_addr);
+  }
+  catch( ... ){
+    LogError("Failed to connect to mongodb in noise spectra");
+    delete mongo;
+    return -1;
+  }
+  u_int32_t fwRev=0;
+  ReadReg32(0x118C,fwRev);
+  int fwVERSION = ((fwRev>>8)&0xFF); //0 for old FW, 137 for new FW        
+
+  // Enable to board      
+  WriteReg32(CBV1724_AcquisitionControlReg,0x4);
+  //Set Software Trigger            
+  WriteReg32(CBV1724_SoftwareTriggerReg,0x1);
+  //Disable the board                                   
+  WriteReg32(CBV1724_AcquisitionControlReg,0x0);  
+  
+  //Read the data
+  unsigned int readout = ReadMBLT();
+  if(readout ==0 ){
+    LogError("Didn't read any data in noise spectra");
+    return -1;
+  }
+
+  // Use main kodiaq parsing
+  int rc=0;
+  u_int32_t ht=0;
+  vector <u_int32_t> *dsizes;
+  vector<u_int32_t*> *buff= ReadoutBuffer(dsizes, rc, ht);
+
+  vector <u_int32_t> *dchannels = new vector<u_int32_t>;
+  vector <u_int32_t> *dtimes = new vector<u_int32_t>;
+  
+  bool berr; string serr;
+  if(fwVERSION!=0)
+    DataProcessor::SplitChannelsNewFW(buff,dsizes,
+				      dtimes,dchannels,berr,serr);
+  else
+    DataProcessor::SplitChannels(buff,dsizes,dtimes,dchannels,NULL,false);
+
+  // Write to mongodb
+  vector <mongo::BSONObj> *vMongoInsertVec = new vector<mongo::BSONObj>();
+  for(unsigned int x=0; x<buff->size(); x++){
+    mongo::BSONObjBuilder bson;
+    bson.append("module",fBID.id);
+    bson.append("channel", dchannels[x]);
+    bson.append("time", dtimes[x]);
+    bson.append("size", dsizes[x]);
+    bson.appendBinData("data",(int)(*dsizes)[x],mongo::BinDataGeneral,
+		       (const void*)(*buff)[x]);
+  }
+  if(vMongoInsertVec->size()!=0)
+    mongo->insert(mongo_coll, (*vMongoInsertVec));
+  delete vMongoInsertVec;
+  if(mongo!=NULL)
+    delete mongo;
+  delete buff;
+  delete dsizes;
+  delete dchannels;
+  delete dtimes;
+  return 0;
+#else
+  return 0;
+#endif
+}
 
 int CBV1724::DetermineBaselines()
 //Rewrite of baseline routine from Marc S
@@ -405,89 +493,16 @@ int CBV1724::DetermineBaselines()
     return -1;
   }
 
-  // Record all register values before overwriting (will put back later)
-  u_int32_t reg_DPP,reg_ACR,reg_SWTRIG,reg_CConf,reg_BuffOrg,reg_CustomSize,
-    reg_PT;
-
-  // New for DAQ test. Write all the registers. When finished 
-  // reload registers after baselines.
-  int success = -1;
-  int tries = 0;
-  while ( success != 0 && tries<5 ){
-    success = 0;
-    if ( WriteReg32( 0xEF24, 0x1 ) != 0 )
-      success = -1;
-    if ( WriteReg32( 0xEF1C, 0x1 ) != 0 )
-      success = -1;
-    if ( WriteReg32( 0xEF00, 0x10 ) != 0 )
-      success = -1;
-    if ( WriteReg32( 0x8120, 0xFF ) != 0 )
-      success = -1;
-    if ( WriteReg32( 0x8100, 0x0 ) != 0 )
-      success = -1;
-    if ( WriteReg32( 0x800C, 0xA ) != 0 )
-      success = -1;
-    if ( WriteReg32( 0x8000, 0x310 ) != 0 )
-      success = -1;
-    if ( WriteReg32( 0x8080, 0x1310000 ) != 0 )
-      success = -1;
-    if ( WriteReg32( 0x811C, 0x840 ) != 0 )
-      success = -1;
-    if ( WriteReg32( CBV1724_TriggerSourceReg, 0x80000000 ) != 0 )
-      success = -1;
-    if( success != 0 )
-      usleep(1000);
-    tries++;
-  }
-  if( tries == 5 ) {
-    LogError("Error in baseline register setting. Out of tries!");
+  //Get the firmware revision (for data formats)                                    
+  if(InitForPreProcessing()!=0){
+    LogError("Can't load registers for baselines!");
     return -1;
   }
-  
-  //Get the firmware revision (for data formats)                                    
+  //u_int32_t datasize = ( 524288 );  // 4byte/word, 8ch/digi, 16byte head
   u_int32_t fwRev=0;
   ReadReg32(0x118C,fwRev);
-  int fwVERSION = ((fwRev>>8)&0xFF); //0 for old FW, 137 for new FW
-  /*
-  ReadReg32(CBV1724_ChannelConfReg,reg_CConf);
-  
-  if(fwVERSION!=0)
-    WriteReg32(CBV1724_ChannelConfReg,0x310);  
-  else 
-    WriteReg32(CBV1724_ChannelConfReg,0x10);
+  int fwVERSION = ((fwRev>>8)&0xFF); //0 for old FW, 137 for new FW   
 
-  //Acquisition control register 0x8100 - turn off S-IN
-  ReadReg32(CBV1724_AcquisitionControlReg,reg_ACR);
-  WriteReg32(CBV1724_AcquisitionControlReg,0x0);
-  
-  //Trigger source reg - turn off TRIN, turn on SWTRIG
-  ReadReg32(CBV1724_TriggerSourceReg,reg_SWTRIG);
-  WriteReg32(CBV1724_TriggerSourceReg,0x80000000);
-  
-  //Turn off DPP (for old FW should do nothing [no harm either])
-  ReadReg32(0x1080,reg_DPP);
-  if(fwVERSION!=0)
-    WriteReg32(CBV1724_DPPReg,0x1310000);  
-  else 
-    WriteReg32(CBV1724_DPPReg,0x800000);
-  
-  //Change buffer organization so that custom size works 
-  ReadReg32(CBV1724_BuffOrg,reg_BuffOrg);
-  if(fwVERSION!=0)
-    WriteReg32(CBV1724_BuffOrg,0xA);
-  */
-  //Make the acquisition window a reasonable size (400 samples == 4 mus)
-  //ReadReg32(CBV1724_CustomSize,reg_CustomSize);
-  if(fwVERSION!=0)
-    WriteReg32(CBV1724_CustomSize,0xC8);
-  u_int32_t datasize = ( 524288 );  // 4byte/word, 8ch/digi, 16byte head
-
-  //PTWindow can be little
-  ReadReg32(0x1038,reg_PT);
-  if(fwVERSION!=0)
-    WriteReg32(0x8038,0x10);
-  
-  
   //Do the magic
   double idealBaseline = 16000.;
   double maxDev = 2.;
@@ -516,7 +531,7 @@ int CBV1724::DetermineBaselines()
     WriteReg32(CBV1724_AcquisitionControlReg,0x0);
     
     //Read the data in 
-    int ret=0,nb=0;
+    /*    int ret=0,nb=0;
     u_int32_t blt_bytes=0;
     vector<u_int32_t*> *buff=new vector<u_int32_t*>;
     //u_int32_t *tempBuff = new u_int32_t[fBufferSize];
@@ -552,7 +567,31 @@ int CBV1724::DetermineBaselines()
 					dtimes,dchannels,berr,serr);
     else 
       DataProcessor::SplitChannels(buff,dsizes,dtimes,dchannels,NULL,false);
+    */
+    //Read the data         
+    unsigned int readout = ReadMBLT();
+    if(readout ==0 ){
+      LogError("Didn't read any data in noise spectra");
+      return -1;
+    }
 
+    // Use main kodiaq parsing     
+    int rc=0;
+    u_int32_t ht=0;
+    vector <u_int32_t> *dsizes;
+    vector<u_int32_t*> *buff= ReadoutBuffer(dsizes, rc, ht);
+
+    vector <u_int32_t> *dchannels = new vector<u_int32_t>;
+    vector <u_int32_t> *dtimes = new vector<u_int32_t>;
+
+    bool berr; string serr;
+    if(fwVERSION!=0)
+      DataProcessor::SplitChannelsNewFW(buff,dsizes,
+					dtimes,dchannels,berr,serr);
+    else
+      DataProcessor::SplitChannels(buff,dsizes,dtimes,dchannels,NULL,false);
+
+    
     //loop through channels
     for(unsigned int x=0;x<dchannels->size();x++){
       if(channelFinished[(*dchannels)[x]] || (*dsizes)[x]==0) {
@@ -629,17 +668,6 @@ int CBV1724::DetermineBaselines()
   }                                                                                 
   outfile.close();  
 
-  //Put everyhting back to how it was
-
-  // XE100 test. Don't deal with this here. Load regs from scratch after!
-  /*  WriteReg32(CBV1724_ChannelConfReg,reg_CConf);
-  WriteReg32(CBV1724_AcquisitionControlReg,reg_ACR);
-  WriteReg32(CBV1724_TriggerSourceReg,reg_SWTRIG);
-  WriteReg32(CBV1724_DPPReg,reg_DPP);
-  WriteReg32(CBV1724_BuffOrg,reg_BuffOrg);
-  WriteReg32(CBV1724_CustomSize,reg_CustomSize);
-  WriteReg32(0x8038,reg_PT);
-  */
   int retval=0;
   for(unsigned int x=0;x<channelFinished.size();x++){
     if(channelFinished[x]=false) {

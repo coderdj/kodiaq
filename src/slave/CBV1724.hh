@@ -38,6 +38,7 @@ class CBV1724 : public VMEBoard {
 
 
    int Initialize(koOptions *options);                             /*!<  Initialize all VME options using a XeDAQOptions object. Other run parameters are also set.*/
+  int DoNoiseSpectra(string mongo_addr, string mongo_coll, u_int32_t length);
    unsigned int ReadMBLT();                                        /*!<  Performs a read cycle (reads from the buffer until buffer is exhausted or BERR is read) and puts the data into the CBV1724 object buffer. It is assumed that another process is clearing this object's buffer using the ReadoutBuffer function.*/
   board_definition_t GetBoardDef()  {                              /*!   Return the board definition object, which holds the board's parameters as defined from the XeDAQOptions .ini file.*/
       return fBID;
@@ -61,6 +62,7 @@ class CBV1724 : public VMEBoard {
   /* GetBufferSize: get the size of the buffer in this digitizer in bytes. */
   int GetBufferSize(){ return fBufferOccSize; }
  private:
+  int                   InitForPreProcessing();
    int                  LoadDAC(vector <int> baselines);
    int                  LoadBaselines();                       //Load baselines to boards
    int                  GetBaselines(vector <int> &baselines, bool bQuiet=false);  //Get baselines from file 
