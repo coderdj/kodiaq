@@ -41,7 +41,8 @@ public:
 		      string comment="", koOptions *options=NULL);
   int  PreProcess(koOptions* mode);
   int  Arm(koOptions* mode, string run_name="");
-  int  Start(string user, string comment,koOptions *options);
+  int  Start(string run_name, string user, 
+	     string comment,koOptions *options);
   bool PreProcessFinished(){ return true; };
   bool UpdateReady(){
     return m_bReady;

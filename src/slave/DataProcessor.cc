@@ -606,6 +606,28 @@ void DataProcessor::Process()
   return;
 }
 
+int DataProcessor::GetBufferMax( u_int32_t *buffvec, u_int32_t size ){
+
+  int largestWord = 0;
+  int baseline = 0;
+  for ( u_int32_t i = 0; i < size/4; i++ ){
+    int firstWord  = (buffvec[i]&0x3FFF);
+    int secondWord = ((buffvec[i]>>16)&0x3FFF);
+    if ( i <= 3 ){
+      baseline += firstWord;
+      baseline += secondWord;
+      if ( i == 3 )
+        baseline /= 8;
+    }
+    else{
+      if(baseline - firstWord > largestWord )
+	largestWord = baseline - firstWord;
+      if(baseline - secondWord > largestWord )
+	largestWord = baseline - secondWord;
+    }
+  }
+    return largestWord;
+}
 int DataProcessor::GetBufferIntegral( u_int32_t *buffvec, u_int32_t size ){
   
   // Want to loop through buffer and get integral

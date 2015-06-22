@@ -86,6 +86,8 @@ public:
 					   bool &bErrorSet,
 					   string &sErrorText);
 
+  static int GetBufferMax( u_int32_t *buffvec, u_int32_t size );
+
 private:  
   //
   // Name      : void DataProcessor::LogError(string err)

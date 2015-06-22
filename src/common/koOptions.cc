@@ -241,6 +241,8 @@ void koOptions::ToStream(stringstream *retstream)
   (*retstream)<<"run_start_module "<<run_start_module<<endl;
   (*retstream)<<"noise_spectra_enable "<<noise_spectra_enable<<endl;
   (*retstream)<<"noise_spectra_length "<<noise_spectra_length<<endl;
+  (*retstream)<<"noise_spectra_mongo_addr "<<noise_spectra_mongo_addr<<endl;
+  (*retstream)<<"noise_spectra_mongo_coll "<<noise_spectra_mongo_coll<<endl;
   (*retstream)<<"pulser_freq "<<pulser_freq<<endl;
   (*retstream)<<"blt_size "<<blt_size<<endl;
   (*retstream)<<"compression "<<compression<<endl;

@@ -80,6 +80,7 @@ public:
   void InsertOnline(string name, string collection,mongo::BSONObj bson);
   void Start(koOptions *options,string user,string comment=""){return;};
   void EndRun(string user,string comment=""){return;};
+  int  UpdateNoiseDirectory(string run_name);
   void SendRunStartReply(int response, string message, string mode, string comment);
 
  private:

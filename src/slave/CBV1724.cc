@@ -145,15 +145,6 @@ unsigned int CBV1724::ReadMBLT()
 // Performs a FIFOBLT read cycle for this board and reads the
 // data into the buffer of this CBV1724 object
 {
-
-  // Read the VME status register to see if there is an event ready
-  // this avoids hammering attempted BLTs
-  //u_int32_t regValue = 0x0;
-  //if( ReadReg32( 0xEF04, regValue ) != 0 )
-  //  return 0;
-  //if( ! regValue&0x1 )
-  //  return 0;
-  
   // Initialize
   unsigned int blt_bytes=0;
   int nb=0,ret=-5;   
@@ -385,13 +376,17 @@ int CBV1724::InitForPreProcessing(){
     retval += (WriteReg32(CBV1724_ChannelConfReg,0x310) + 
 	       WriteReg32(CBV1724_DPPReg,0x1310000) + 
 	       WriteReg32(CBV1724_BuffOrg,0xA) +
-	       WriteReg32(CBV1724_CustomSize,0xC8));
+	       WriteReg32(CBV1724_CustomSize,0xC8) + 
+	       WriteReg32( 0x811C, 0x840 ) + 
+	       WriteReg32(0x8000,0x310));
   else
     retval += (WriteReg32(CBV1724_ChannelConfReg,0x10) +
 	       WriteReg32(CBV1724_DPPReg,0x800000));
 
   retval += (WriteReg32(CBV1724_AcquisitionControlReg,0x0) +
 	     WriteReg32(CBV1724_TriggerSourceReg,0x80000000));
+  retval += (WriteReg32( 0xEF24, 0x1) + WriteReg32( 0xEF1C, 0x1) + 
+	     WriteReg32( 0xEF00, 0x10) + WriteReg32( 0x8120, 0xFF ));
   if(retval<0) 
     retval = -1;
   return retval;
@@ -400,11 +395,27 @@ int CBV1724::DoNoiseSpectra(string mongo_addr, string mongo_coll, u_int32_t leng
 
   // ONLY compatible with mongodb
 #ifdef HAVE_LIBMONGOCLIENT
+  
+  // Requires C++11
+  vector<vector<int>> valuesPerChannel(8,vector<int>());
+  
   // Assume already initialized
   if(InitForPreProcessing()!=0 || WriteReg32(CBV1724_CustomSize,length)!=0){
     LogError("Can't load registers for preprocessing");
     return -1;
   }
+
+  vector <int> DACValues;
+  if(GetBaselines(DACValues,true)!=0) {
+    DACValues.resize(8,0x1000);
+  }
+
+  //Load the old baselines into the board                                            
+  if(LoadDAC(DACValues)!=0) {
+    LogError("Can't load to DAC!");
+    return -1;
+  }
+
   mongo::DBClientConnection *mongo = NULL;
   try{
     mongo::client::initialize();
@@ -413,6 +424,8 @@ int CBV1724::DoNoiseSpectra(string mongo_addr, string mongo_coll, u_int32_t leng
   }
   catch( ... ){
     LogError("Failed to connect to mongodb in noise spectra");
+    cout<<"Noise spectra failed, could not connect to MongoDB at address "
+	<<mongo_addr<<endl;
     delete mongo;
     return -1;
   }
@@ -420,56 +433,85 @@ int CBV1724::DoNoiseSpectra(string mongo_addr, string mongo_coll, u_int32_t leng
   ReadReg32(0x118C,fwRev);
   int fwVERSION = ((fwRev>>8)&0xFF); //0 for old FW, 137 for new FW        
 
-  // Enable to board      
-  WriteReg32(CBV1724_AcquisitionControlReg,0x4);
-  //Set Software Trigger            
-  WriteReg32(CBV1724_SoftwareTriggerReg,0x1);
-  //Disable the board                                   
-  WriteReg32(CBV1724_AcquisitionControlReg,0x0);  
+  do{
+    // Enable to board      
+    WriteReg32(CBV1724_AcquisitionControlReg,0x4);
+    usleep(5000);
+    //Set Software Trigger            
+    WriteReg32(CBV1724_SoftwareTriggerReg,0x1);
+    usleep(5000);
+    //Disable the board                                   
+    WriteReg32(CBV1724_AcquisitionControlReg,0x0);  
+    
+    //Read the data
+    unsigned int readout = 0, thisread =0, counter=0;
+    do{
+      thisread = 0;
+      thisread = ReadMBLT();
+      readout+=thisread;
+      usleep(1000);
+      counter++;
+    } while( counter < 1000 && (readout == 0 || thisread != 0)); 
+    // Either the timer times out or the readout is non zero but the current read is finished
+    if(readout == 0){
+      LogError("Read failed in noise spectra function.");
+      cout<<"Read failed in noise function."<<endl;
+      if(mongo!=NULL)
+	delete mongo;
+      return -1;
+    }
+    
+    // Use main kodiaq parsing
+    int rc=0;
+    u_int32_t ht=0;
+    vector <u_int32_t> *dsizes;
+    vector<u_int32_t*> *buff= ReadoutBuffer(dsizes, rc, ht);
+    
+    vector <u_int32_t> *dchannels = new vector<u_int32_t>;
+    vector <u_int32_t> *dtimes = new vector<u_int32_t>;
+    
+    bool berr; string serr;
+    if(fwVERSION!=0)
+      DataProcessor::SplitChannelsNewFW(buff,dsizes,
+					dtimes,dchannels,berr,serr);
+    else
+      DataProcessor::SplitChannels(buff,dsizes,dtimes,dchannels,NULL,false);
+    
+    for(unsigned int x=0;x<buff->size(); x++){
+      int max = DataProcessor::GetBufferMax((*buff)[x], (*dsizes)[x]);
+      valuesPerChannel[(*dchannels)[x]].push_back(max);
+    }
+
+    delete buff;
+    delete dsizes;
+    delete dchannels;
+    delete dtimes;
+
+  } while(valuesPerChannel[0].size() < 500 );
+
   
-  //Read the data
-  unsigned int readout = ReadMBLT();
-  if(readout ==0 ){
-    LogError("Didn't read any data in noise spectra");
-    return -1;
-  }
-
-  // Use main kodiaq parsing
-  int rc=0;
-  u_int32_t ht=0;
-  vector <u_int32_t> *dsizes;
-  vector<u_int32_t*> *buff= ReadoutBuffer(dsizes, rc, ht);
-
-  vector <u_int32_t> *dchannels = new vector<u_int32_t>;
-  vector <u_int32_t> *dtimes = new vector<u_int32_t>;
-  
-  bool berr; string serr;
-  if(fwVERSION!=0)
-    DataProcessor::SplitChannelsNewFW(buff,dsizes,
-				      dtimes,dchannels,berr,serr);
-  else
-    DataProcessor::SplitChannels(buff,dsizes,dtimes,dchannels,NULL,false);
-
   // Write to mongodb
-  vector <mongo::BSONObj> *vMongoInsertVec = new vector<mongo::BSONObj>();
-  for(unsigned int x=0; x<buff->size(); x++){
+  string collection = "noise.dump";
+  mongo::BSONObj obj = mongo->findOne(mongo_coll,
+				      mongo::Query().sort("_id",-1));
+  if(!obj.isEmpty())
+    collection = (string)("noise.") + (string)(obj.getStringField("collection"));
+  cout<<"Inserting into noise collection: "<<collection<<endl;
+  // Find the collection to write to 
+  for(unsigned int x=0; x<valuesPerChannel.size(); x++){
     mongo::BSONObjBuilder bson;
     bson.append("module",fBID.id);
-    bson.append("channel", dchannels[x]);
-    bson.append("time", dtimes[x]);
-    bson.append("size", dsizes[x]);
-    bson.appendBinData("data",(int)(*dsizes)[x],mongo::BinDataGeneral,
-		       (const void*)(*buff)[x]);
+    bson.append("channel", x);
+    bson.append("data", valuesPerChannel[x]);
+    stringstream name;
+    name.str(std::string());
+    name<<"Noise m_"<<fBID.id<<"_ch_"<<x;
+    bson.append("name", name.str());
+    mongo->insert(collection, bson.obj());
   }
-  if(vMongoInsertVec->size()!=0)
-    mongo->insert(mongo_coll, (*vMongoInsertVec));
-  delete vMongoInsertVec;
+
   if(mongo!=NULL)
     delete mongo;
-  delete buff;
-  delete dsizes;
-  delete dchannels;
-  delete dtimes;
   return 0;
 #else
   return 0;
@@ -529,49 +571,21 @@ int CBV1724::DetermineBaselines()
     usleep(5000); //
     //Disable the board
     WriteReg32(CBV1724_AcquisitionControlReg,0x0);
-    
-    //Read the data in 
-    /*    int ret=0,nb=0;
-    u_int32_t blt_bytes=0;
-    vector<u_int32_t*> *buff=new vector<u_int32_t*>;
-    //u_int32_t *tempBuff = new u_int32_t[fBufferSize];
-    u_int32_t *tempBuff = new u_int32_t[ datasize*8 ];
-    buff->push_back(tempBuff);
-    
+    usleep(5000); //        
+
+    //Read the data                    
+    unsigned int readout = 0, thisread =0, counter=0;
     do{
-      ret = CAENVME_FIFOBLTReadCycle(fCrateHandle,fBID.vme_address,
-				     ((unsigned char*)(*buff)[0])+blt_bytes,
-				     datasize,cvA32_U_BLT,cvD32,&nb);
-      if(ret!=cvSuccess && ret!=cvBusError) {
-	stringstream errorstr;
-	errorstr<<"CAENVME read error. Baselines. "<<ret;
-	m_koLog->Error(errorstr.str());
-	delete []tempBuff;
-	delete buff;
-	return -2;
-      }
-      blt_bytes+=nb;
-      if(blt_bytes>datasize) 
-	continue;
-    }while(ret!=cvBusError);
-    if(blt_bytes==0)
-      continue;
-    //Use dataprocessor methods to parse data
-    vector <u_int32_t> *dsizes = new vector<u_int32_t>;
-    dsizes->push_back(blt_bytes);
-    vector <u_int32_t> *dchannels = new vector<u_int32_t>;
-    vector <u_int32_t> *dtimes = new vector<u_int32_t>;
-    bool berr; string serr;
-    if(fwVERSION!=0) 
-      DataProcessor::SplitChannelsNewFW(buff,dsizes,
-					dtimes,dchannels,berr,serr);
-    else 
-      DataProcessor::SplitChannels(buff,dsizes,dtimes,dchannels,NULL,false);
-    */
-    //Read the data         
-    unsigned int readout = ReadMBLT();
-    if(readout ==0 ){
-      LogError("Didn't read any data in noise spectra");
+      thisread = 0;
+      thisread = ReadMBLT();
+      readout+=thisread;
+      usleep(1000);
+      counter++;
+    } while( counter < 1000 && (readout == 0 || thisread != 0));
+    // Either the timer times out or the readout is non zero but 
+    //the current read is finished  
+    if(readout == 0){
+      LogError("Read failed in baseline function.");
       return -1;
     }
 
@@ -625,6 +639,7 @@ int CBV1724::DetermineBaselines()
 	stringstream error;
 	error<<"Channel "<<(*dchannels)[x]<<" signal in baseline?";
 	LogMessage( error.str() );	
+	delete[] (*buff)[x];
 	continue; //signal in baseline?
       }
 
@@ -633,6 +648,7 @@ int CBV1724::DetermineBaselines()
       double discrepancy = baseline-idealBaseline;      
       if(fabs(discrepancy)<=maxDev) { 
 	channelFinished[(*dchannels)[x]]=true;
+	delete[] (*buff)[x];
 	continue;
       }
       
@@ -657,15 +673,16 @@ int CBV1724::DetermineBaselines()
     
   }//end while through iterations
   
-  //write baselines to file                                                         
-  ofstream outfile;                                                                 
-  stringstream filename;                                                            
+  //write baselines to file
+  ofstream outfile;
+  stringstream filename; 
   filename<<"baselines/XeBaselines_"<<fBID.id<<".ini";                         
-  outfile.open(filename.str().c_str());                                             
-  outfile<<koHelper::CurrentTimeInt()<<endl;                                        
-  for(unsigned int x=0;x<DACValues.size();x++)  {                                
-    outfile<<x+1<<"  "<<hex<<setw(4)<<setfill('0')<<((DACValues[x])&0xFFFF)<<endl;                                                                                  
-  }                                                                                 
+  outfile.open(filename.str().c_str());
+  outfile<<koHelper::CurrentTimeInt()<<endl;
+  for(unsigned int x=0;x<DACValues.size();x++)  {   
+    outfile<<x+1<<"  "<<hex<<setw(4)<<setfill('0')<<
+      ((DACValues[x])&0xFFFF)<<endl;                  
+  }     
   outfile.close();  
 
   int retval=0;

@@ -60,7 +60,7 @@ void DAQMonitor::ProcessCommand(string command, string user,
     else
       m_Mongodb->SendLogMessage(("DAQ network disconnected by user "+user),KOMESS_NORMAL);
   }
-  else if(command== "Start" || command=="fStart"){
+  /*else if(command== "Start" || command=="fStart"){
     // Step 1: Validate
     if(command=="Start"){
       if(ValidateStartCommand(user,comment,options)!=0)
@@ -71,7 +71,7 @@ void DAQMonitor::ProcessCommand(string command, string user,
 	Start(user,comment,options);
       else Shutdown();
     }
-  }
+    }*/
   else if(command=="Stop"){
     if(m_DAQStatus.DAQState==KODAQ_RUNNING)
       Stop(user,comment);
@@ -220,7 +220,8 @@ int DAQMonitor::PreProcess(koOptions* mode){
   return 0;
 }
 
-int DAQMonitor::Start(string user, string comment, koOptions *options)
+int DAQMonitor::Start(string run_name, string user, 
+		      string comment, koOptions *options)
 {
   //Check current state. DAQ must be armed
   int timer=0;
@@ -242,7 +243,9 @@ int DAQMonitor::Start(string user, string comment, koOptions *options)
     }*/
   m_DAQNetwork->SendCommand("START");  
   stringstream mess;
+  m_DAQStatus.RunInfo.RunNumber = run_name;
   mess<<"Run <b>"<<m_DAQStatus.RunInfo.RunNumber<<"</b> started by "<<user;
+  m_DAQStatus.RunInfo.StartedBy = user;
   if( comment.length() > 0 )
     mess<<" : "<<comment;  
   if(m_Mongodb!=NULL){

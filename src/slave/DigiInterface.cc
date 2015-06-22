@@ -63,6 +63,7 @@ int DigiInterface::PreProcess(koOptions *options){
   // available if mongoDB is configured
 #ifdef HAVE_LIBMONGOCLIENT
   if(options->noise_spectra_enable == 1){
+    cout<<"Determining noise spectra."<<endl;
     int length = 1000; //default
     if(options->noise_spectra_length > 0 && 
        options->noise_spectra_length<100000)
@@ -71,14 +72,16 @@ int DigiInterface::PreProcess(koOptions *options){
     //Arm boards
     if(options->baseline_mode == 1)
       options->baseline_mode = 0;
-    if( Initialize(options, true)!=0)
+    if( Initialize(options, true, true)!=0){
+      cout<<"Initialization failed for noise spectra."<<endl;
       retval = -1;
+    }
     else{
       // Do noise
       for(unsigned int x=0; x<m_vDigitizers.size();x++)  {
 	if(m_vDigitizers[x]->DoNoiseSpectra(options->noise_spectra_mongo_addr, 
 					    options->noise_spectra_mongo_coll, 
-					    options->noise_spectra_length) !=0 ){
+					    length) !=0 ){
 	  stringstream err;
 	  err<<m_vDigitizers[x]->GetID().id<<" failed noise spectra!";	    
 	  m_koLog->Error( err.str() );
@@ -95,92 +98,94 @@ int DigiInterface::PreProcess(koOptions *options){
 
 int DigiInterface::Arm(koOptions *options){
   // Remove baseline option (should be done in preprocess)
+  Close();
   if(options->baseline_mode == 1)
     options->baseline_mode = 0;
   return Initialize(options);
 }
 
-int DigiInterface::Initialize(koOptions *options, bool PreProcessing)
+int DigiInterface::Initialize(koOptions *options, bool PreProcessing, bool skipCAEN)
 {  
   m_koOptions = options;
   
   //Define electronics and initialize
-  for(int ilink=0;ilink<options->GetLinks();ilink++)  {
-    
-    int tempHandle=-1;
-    link_definition_t Link = options->GetLink(ilink);
-    CVBoardTypes BType;
-    if(Link.type=="V1718")
-      BType = cvV1718;
-    else if(Link.type=="V2718")
-      BType = cvV2718;
-    else  	{	   
-      if(m_koLog!=NULL)
-	m_koLog->Error("DigiInterface::Initialize - Invalid link type, check file definition.");
-      return -1;
-    }
+  if(!skipCAEN){
+    for(int ilink=0;ilink<options->GetLinks();ilink++)  {
       
-    int cerr=-1;
-    if((cerr=CAENVME_Init(BType,Link.id,Link.crate,
-			  &tempHandle))!=cvSuccess){
-      //throw exception?
-      stringstream therror;
-      therror<<"DigiInterface::Initialize - Error in CAEN initialization link "
-	     <<Link.id<<" crate "<<Link.crate;
-      if(m_koLog!=NULL)
-	m_koLog->Error(therror.str());
-      return -1;
-    }
-    
-    // LOG FW
-    /*char *fw = (char*)malloc (100);
-    CAENVME_BoardFWRelease( tempHandle, fw );
-    stringstream logm;
-    logm<<"Found V2718 with firmware "<<hex<<fw<<dec;
-    m_koLog->Message( logm.str() );
-    free(fw);
-    //FOR DAQ TEST ONLY
-    CAENVME_SystemReset( tempHandle );
-    */
-    //sleep(1);
-    //CAENVME_WriteRegister( tempHandle, cvVMEControlReg, 0x1c);
-     
-    stringstream logmess;
-    logmess<<"Initialized link ID: "<<Link.id<<" Crate: "<<Link.crate<<" with handle: "<<tempHandle;
-    m_koLog->Message(logmess.str());
-     
-    m_vCrateHandles.push_back(tempHandle);
-     
-    // define modules corresponding to this crate (inefficient
-    // double for loops, but small crate/module vector size)
-    for(int imodule=0; imodule<options->GetBoards(); imodule++)	{
-      board_definition_t Board = options->GetBoard(imodule);
-      if(Board.link!=Link.id || Board.crate!=Link.crate)
-	continue;
-      logmess.str(std::string());
-      logmess<<"Found a board with link "<<Board.link<<" and crate "<<Board.crate;
+      int tempHandle=-1;
+      link_definition_t Link = options->GetLink(ilink);
+      CVBoardTypes BType;
+      if(Link.type=="V1718")
+	BType = cvV1718;
+      else if(Link.type=="V2718")
+	BType = cvV2718;
+      else  	{	   
+	if(m_koLog!=NULL)
+	  m_koLog->Error("DigiInterface::Initialize - Invalid link type, check file definition.");
+	return -1;
+      }
+      
+      int cerr=-1;
+      if((cerr=CAENVME_Init(BType,Link.id,Link.crate,
+			    &tempHandle))!=cvSuccess){
+	//throw exception?
+	stringstream therror;
+	therror<<"DigiInterface::Initialize - Error in CAEN initialization link "
+	       <<Link.id<<" crate "<<Link.crate;
+	if(m_koLog!=NULL)
+	  m_koLog->Error(therror.str());
+	return -1;
+      }
+      
+      // LOG FW
+      /*char *fw = (char*)malloc (100);
+	CAENVME_BoardFWRelease( tempHandle, fw );
+	stringstream logm;
+	logm<<"Found V2718 with firmware "<<hex<<fw<<dec;
+	m_koLog->Message( logm.str() );
+	free(fw);
+	//FOR DAQ TEST ONLY
+	CAENVME_SystemReset( tempHandle );
+      */
+      //sleep(1);
+      //CAENVME_WriteRegister( tempHandle, cvVMEControlReg, 0x1c);
+      
+      stringstream logmess;
+      logmess<<"Initialized link ID: "<<Link.id<<" Crate: "<<Link.crate<<" with handle: "<<tempHandle;
       m_koLog->Message(logmess.str());
       
-      if(Board.type=="V1724"){	      
-	CBV1724 *digitizer = new CBV1724(Board,m_koLog);
-	m_vDigitizers.push_back(digitizer);
-	digitizer->SetCrateHandle(tempHandle);
-      }	 
-      else if(Board.type=="V2718"){	      
-	CBV2718 *digitizer = new CBV2718(Board, m_koLog);
-	m_RunStartModule=digitizer;
-	digitizer->SetCrateHandle(tempHandle);
-	if(digitizer->Initialize(options)!=0)
-	  return -1;
-      }	 
-      else   {
-	if(m_koLog!=NULL)
-	  m_koLog->Error("Undefined board type in .ini file.");
-	continue;
+      m_vCrateHandles.push_back(tempHandle);
+      
+      // define modules corresponding to this crate (inefficient
+      // double for loops, but small crate/module vector size)
+      for(int imodule=0; imodule<options->GetBoards(); imodule++)	{
+	board_definition_t Board = options->GetBoard(imodule);
+	if(Board.link!=Link.id || Board.crate!=Link.crate)
+	  continue;
+	logmess.str(std::string());
+	logmess<<"Found a board with link "<<Board.link<<" and crate "<<Board.crate;
+	m_koLog->Message(logmess.str());
+	
+	if(Board.type=="V1724"){	      
+	  CBV1724 *digitizer = new CBV1724(Board,m_koLog);
+	  m_vDigitizers.push_back(digitizer);
+	  digitizer->SetCrateHandle(tempHandle);
+	}	 
+	else if(Board.type=="V2718"){	      
+	  CBV2718 *digitizer = new CBV2718(Board, m_koLog);
+	  m_RunStartModule=digitizer;
+	  digitizer->SetCrateHandle(tempHandle);
+	  if(digitizer->Initialize(options)!=0)
+	    return -1;
+	}	 
+	else   {
+	  if(m_koLog!=NULL)
+	    m_koLog->Error("Undefined board type in .ini file.");
+	  continue;
+	}
       }
     }
   }
-
   //Sleep between CC activation and digi
   //  sleep(4);
 

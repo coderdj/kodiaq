@@ -144,6 +144,23 @@ void MasterMongodbConnection::InsertOnline(string DB,
   }
 }
 
+int MasterMongodbConnection::UpdateNoiseDirectory(string run_name){
+  if(run_name == "" || fMonitorDB == NULL)
+    return -1;
+
+  // See if it exists
+  mongo::BSONObjBuilder query;
+  query.append("run_name", run_name);
+  mongo::BSONObj res = fMonitorDB->findOne("noise.directory" , query.obj() );
+  if(res.isEmpty()){    
+    mongo::BSONObjBuilder builder;
+    builder.append("run_name", run_name);
+    builder.append("collection", run_name);
+    builder.appendTimeT("date", koLogger::GetCurrentTime() );
+    InsertOnline("monitor","noise.directory",builder.obj());
+  }
+  return 0;
+}
 int MasterMongodbConnection::InsertRunDoc(string user, string runMode, string name,
 					  string comment, string detector, 
 					  vector<string> detlist,
@@ -167,18 +184,22 @@ int MasterMongodbConnection::InsertRunDoc(string user, string runMode, string na
   // First create the collection on the buffer db 
   // so the event builder can find it. Index by time and module.
   mongo::DBClientConnection bufferDB;
-  try     {
-    bufferDB.connect( options->mongo_address );
+
+  if( options->write_mode == 2 ){ // write to mongo
+    try     {
+      bufferDB.connect( options->mongo_address );
+    }
+    catch(const mongo::DBException &e)    {
+      SendLogMessage( "Problem connecting to mongo buffer. Caught exception " + 
+		      string(e.what()), KOMESS_ERROR );
+      return -1;
+    }
+    string collectionName = options->mongo_database + "." + 
+      options->mongo_collection;
+    bufferDB.createCollection( collectionName );
+    bufferDB.createIndex( collectionName,
+			  mongo::fromjson( "{ time: -1, module: -1, _id: -1}" ) );
   }
-  catch(const mongo::DBException &e)    {
-    SendLogMessage( "Problem connecting to mongo buffer. Caught exception " + 
-		    string(e.what()), KOMESS_ERROR );
-    return -1;
-  }
-  string collectionName = options->mongo_database + "." + options->mongo_collection;
-  bufferDB.createCollection( collectionName );
-  bufferDB.createIndex( collectionName,
-			mongo::fromjson( "{ time: -1, module: -1, _id: -1}" ) );
          
   //Create a bson object with the run information
   mongo::BSONObjBuilder builder;
@@ -221,17 +242,17 @@ int MasterMongodbConnection::InsertRunDoc(string user, string runMode, string na
 
   //put in start time
   time_t currentTime;
-  struct tm *starttime;
+  //struct tm *starttime;
   time(&currentTime);
-  starttime = localtime(&currentTime);
-  long offset = starttime->tm_gmtoff;
-  builder.appendTimeT("starttimestamp",currentTime+offset);//mktime(starttime));       
+  //starttime = localtime(&currentTime);
+  //long offset = starttime->tm_gmtoff;
+  builder.appendTimeT("starttimestamp",currentTime);//+offset);//mktime(starttime));       
   // if comment, add comment sub-object                                              
   if(comment != ""){
     mongo::BSONArrayBuilder comment_arr;
     mongo::BSONObjBuilder comment_sub;    
     comment_sub.append( "text", comment);
-    comment_sub.appendTimeT( "date", currentTime+offset );
+    comment_sub.appendTimeT( "date", currentTime);//+offset );
     comment_sub.append( "user", user );
     comment_arr.append( comment_sub.obj() );
     builder.appendArray( "comments", comment_arr.arr() );
@@ -239,7 +260,7 @@ int MasterMongodbConnection::InsertRunDoc(string user, string runMode, string na
    
   //insert into collection
   mongo::BSONObj bObj = builder.obj();
-  InsertOnline("online","online.runs",bObj);
+  InsertOnline("runs","online.runs",bObj);
 
   // store OID so you can update the end time
   mongo::BSONElement OIDElement;
@@ -271,10 +292,11 @@ int MasterMongodbConnection::UpdateEndTime(string detector)
   
      // Get the time in GMT
      time_t nowTime;
-     struct tm *currenttime;
+     //struct tm *currenttime;
      time(&nowTime);
-     currenttime = localtime(&nowTime);
-     long offset = currenttime->tm_gmtoff;      
+     //currenttime = localtime(&nowTime);
+     //currenttime = gmtime(&nowTime);
+     //long offset = currenttime->tm_gmtoff;      
      
      mongo::BSONObj res;
      string onlinesubstr = "runs";
@@ -283,7 +305,7 @@ int MasterMongodbConnection::UpdateEndTime(string detector)
      bo << "findandmodify" << onlinesubstr.c_str() << 
        "query" << BSON("_id" << fLastDocOIDs[detector]) << 
        "update" << BSON("$set" << BSON("endtimestamp" <<
-				       mongo::Date_t(1000*(nowTime+offset)) 
+				       mongo::Date_t(1000*(nowTime))//+offset)) 
 				       << "reader.data_taking_ended" << true));     
      assert(fRunsDB->runCommand("runs",bo.obj(),res));
    }
@@ -303,15 +325,16 @@ void MasterMongodbConnection::SendLogMessage(string message, int priority)
 {      
 
   time_t currentTime;
-  struct tm *starttime;
+  //struct tm *starttime;
   time(&currentTime);
-  starttime = localtime(&currentTime);
-  long offset = starttime->tm_gmtoff;
+  //starttime = localtime(&currentTime);
+  //starttime = gmtime(&currentTime);
+  //long offset = starttime->tm_gmtoff;
 
   int ID=-1;
   // For WARNINGS and ERRORS we put an additional entry into the alert DB
   // users then get an immediate alert
-  if(priority==KOMESS_WARNING || priority==KOMESS_ERROR && fMonitorDB!=NULL ){
+  if((priority==KOMESS_WARNING || priority==KOMESS_ERROR) && fMonitorDB!=NULL ){
     mongo::BSONObj obj = fMonitorDB->findOne("online.alerts",
 					     mongo::Query().sort("idnum",-1));    
     if(obj.isEmpty())
@@ -323,11 +346,11 @@ void MasterMongodbConnection::SendLogMessage(string message, int priority)
     alert.genOID();
     alert.append("idnum",ID);
     alert.append("priority",priority);
-    alert.appendTimeT("timestamp",currentTime+offset);
+    alert.appendTimeT("timestamp",currentTime);//+offset);
     alert.append("sender","dispatcher");
     alert.append("message",message);
     alert.append("addressed",false);
-    InsertOnline("online", "online.alerts",alert.obj());
+    InsertOnline("monitor", "online.alerts",alert.obj());
   }
 
   stringstream messagestream;
@@ -347,7 +370,7 @@ void MasterMongodbConnection::SendLogMessage(string message, int priority)
    b.genOID();
    b.append("message",message);
    b.append("priority",priority);
-   b.appendTimeT("time",currentTime+offset);	
+   b.appendTimeT("time",currentTime);//+offset);	
    b.append("sender","dispatcher");
    InsertOnline("log", "log.log",b.obj());
   
@@ -364,18 +387,19 @@ void MasterMongodbConnection::AddRates(koStatusPacket_t *DAQStatus)
       mongo::BSONObjBuilder b;
       time_t currentTime;
       time(&currentTime);
-      struct tm *starttime;
-      starttime = localtime(&currentTime);
-      long offset = starttime->tm_gmtoff;
+      //struct tm *starttime;
+      //starttime = localtime(&currentTime);
+      //long offset = starttime->tm_gmtoff;
+      //starttime = gmtime(&currentTime);
 
-      b.appendTimeT("createdAt",currentTime+offset);
+      b.appendTimeT("createdAt",currentTime);//+offset);
       b.append("node",DAQStatus->Slaves[x].name);
       b.append("bltrate",DAQStatus->Slaves[x].Freq);
       b.append("datarate",DAQStatus->Slaves[x].Rate);
       b.append("runmode",DAQStatus->RunMode);
       b.append("nboards",DAQStatus->Slaves[x].nBoards);
       b.append("timeseconds",(int)currentTime);
-      InsertOnline("monitor", "online.rates",b.obj());
+      InsertOnline("monitor", "online.daq_rates",b.obj());
    }     
 }
 
@@ -388,11 +412,11 @@ void MasterMongodbConnection::UpdateDAQStatus(koStatusPacket_t *DAQStatus,
    mongo::BSONObjBuilder b;
    time_t currentTime;
    time(&currentTime);
-   struct tm *starttime;
-   starttime = localtime(&currentTime);
-   long offset = starttime->tm_gmtoff;
+   //struct tm *starttime;
+   //starttime = localtime(&currentTime);
+   //long offset = starttime->tm_gmtoff;
 
-   b.appendTimeT("createdAt",currentTime+offset);
+   b.appendTimeT("createdAt",currentTime);//+offset);
    b.append("timeseconds",(int)currentTime);
    b.append("detector", detector);
    b.append("mode",DAQStatus->RunMode);
@@ -420,7 +444,7 @@ void MasterMongodbConnection::UpdateDAQStatus(koStatusPacket_t *DAQStatus,
    }
    b.append("startTime",datestring);
    b.append("numSlaves",(int)DAQStatus->Slaves.size());
-   InsertOnline("monitor", "online.daqstatus",b.obj());
+   InsertOnline("monitor", "online.daq_status",b.obj());
 }
 
 int MasterMongodbConnection::CheckForCommand(string &command, string &user, 
@@ -435,7 +459,7 @@ int MasterMongodbConnection::CheckForCommand(string &command, string &user,
 {
   if(fMonitorDB == NULL )
     return -1;
-  if(fMonitorDB->count("online.daqcommands") ==0)
+  if(fMonitorDB->count("online.daq_commands") ==0)
     return -1;
    auto_ptr<mongo::DBClientCursor> cursor = fMonitorDB->query("online.daqcommands",mongo::BSONObj());
    mongo::BSONObj b;
@@ -448,9 +472,9 @@ int MasterMongodbConnection::CheckForCommand(string &command, string &user,
    comment = b.getStringField("comment");
    detector = b.getStringField("detector");
    user=b.getStringField("name");
-   fMonitorDB->remove("online.daqcommands", 
+   fMonitorDB->remove("online.daq_commands", 
 		   MONGO_QUERY("command"<<"Start"<<"detector"<<detector));
-   fMonitorDB->remove("online.daqcommands",
+   fMonitorDB->remove("online.daq_commands",
 		   MONGO_QUERY("command"<<"Stop"<<"detector"<<detector)); 
    if(command=="Start")
      PullRunMode(mode,options);

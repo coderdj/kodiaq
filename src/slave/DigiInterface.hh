@@ -68,7 +68,8 @@ class DigiInterface
    //            And sets up DAQ recorder. All in that order
    // Return   : 0 on success, -1 on failure
    // 
-  int           Initialize(koOptions *options, bool PreProcessing=false);
+  int           Initialize(koOptions *options, bool PreProcessing=false,
+			   bool skipCAEN=false);
    //
    // Name     : void DigiInterface::UpdateRecorderCollection
    // Input    : A 'loaded' XeDAQOptionsObject
