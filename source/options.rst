@@ -15,11 +15,12 @@ doing. There is only a limited amount of sanity checking done on the
 input of these files and improper editing could break the DAQ. If you
 are fortunate it will break in a way that is obvious, if you are
 unlucky you might not even notice. Particularly the VME options are
-passed to the boards *directly as printed* in the .ini file. Improper
-setting of any of these options is very difficult to debug and there
-is rarely any reason to change them.
+passed to the boards *directly as printed in the order they are printed* 
+in the .ini file. Improper setting of any of these options is very 
+difficult to debug.
 
-That said, read on for an explanation of the options available.
+That said, if you are a power user please read on for an explanation 
+of the options available.
 
 General Syntax
 ----------------
@@ -27,21 +28,23 @@ General Syntax
 The .ini file is mostly passed verbatim to the slaves when a run mode is
 selected. However a limited amount of parsing is done.
 
-Options lines follow the format ::
+Options are given in JSON format. If the ini file is not valid JSON
+it will be rejected. You can check if you write valid JSON by using a 
+JSON validator, for example www.jsonlint.com. 
  
-    OPTION_NAME ARG_1 ARG_2 ... ARG_N
-
-where the OPTION_NAME must exactly match one of the pre-defined
-options (case sensitive). The arguments can be strings or numeric and
-are separated by spaces. If not enough arguments are provided, the
-option is ignored. If too many arguments are provided, only the first
-N arguments are read in, where N is the number of arguments expected.
-The option string is ended with a line break.
+Option names must exactly match one of the pre-defined
+options (case sensitive). The arguments can be strings, bools, or numeric.
+Additionally, nested objects are allowed and are used for register, link, 
+and board definition.
 
 In certain cases there are options that should only go to one slave
 PC. An example of this is the electronics definitions. The readout
 electronics are hard-wired to the slave PCs and the cabling must be
-defined in the options file. In order to send a particular option to
+defined in the options file. Most options allow for this directly 
+within the format. If you are trying to do something special you can also
+consider writing a composite file where different parts are sent to different 
+slaves. Just make sure each part is valid JSON on its own! 
+In order to send a particular file section to
 just one slave, the line should be preceeded by '%n' (without quotes)
 where n is the id of the slave as defined in its own network interface
 constructor. The '%' symbol must be the first symbol in the line as
@@ -52,7 +55,7 @@ not follow them with an integer slave ID. Also, currently only up to
 
 Also of note, commenting can be done with the '#' symbol. Any lines
 preceeded by a '#' will be transmitted to the slaves but ignored by
-the parser.
+the parser. Embedded comments (at the end of a line) are also supported.
 
 Electronics Definitions
 ------------------------
@@ -90,23 +93,34 @@ read out via the crate controller, in which case they share a link.
 
 The syntax for defining a link is ::
 
-     LINK {type string} {optical port int} {crate int}
-
+  {"links": [
+      {"type": "V2718", # or "V1718" if you use USB
+       "reader": Int,   # ID of reader
+       "crate": Int,    # CAEN crate number
+       "link": Int      # Link index (physically on the optical card)
+      },
+      ... #more links
+      ]
+   }
 Keep in mind that the CAEN software was designed first for reading out
 via the crate controller and extended to read out via the V1724
 optical link directly and this will make a bit more sense.
 
-    * LINK is the control word that tells kodiaq what the option is
-    * {type string} is the type of optical link. We will always use
-      'V2718' type links, even when reading out via the V1724.
-    * {optical port int} is the ID of the optical port the cable is
+    * link defines a JSON list field containing a sub-dictionary for 
+      each link definition.
+    * "type" is the type of optical link. We will always use
+      'V2718' type links, even when reading out via the V1724. If you have
+      a system that uses the USB adapter you might want "V1718". 
+    * "link" (in the sub-object) is the ID of the optical port the cable is
       hooked up to. This is always 0 for the A2818 since it just has one
-      port but can be 0-3 for the A3818.
-    * {crate int} is the crate ID. In daisy chain mode each digitizer
+      port but can be 0-3 for the A3818. 
+    * "crate" is the crate ID. In daisy chain mode each digitizer
       gets its own crate ID. Of course when reading out through a
       crate controller this made more sense, since there was one crate
       controller per crate. When reading out via the digitizer itself
-      just think of this as an integral identifier.
+      just think of this as an integral identifier. Note when reading out 
+      via optical link only the link/crate identifier is used by the CAEN
+      drivers to identify the board. The VME address is not queried.
 
 Once a link is defined, the software has to know what type of board is
 hooked up. So far V1724 digitizers and V2718 crate controllers are
@@ -115,43 +129,75 @@ DAQ, though more can be supported if needed.
 
 The syntax for defining a module is ::
 
-     BASE_ADDRESS {type string} {VME Address} {Board ID} {Crate int} {board int}
+  "boards": [
+    {
+      "crate": Int,
+      "serial": String,
+      "reader": Int,
+      "type": Sting,
+      "vme_address": String,
+      "link": Int
+    },
+    ... #more boards
+    ]
+
 
 The definitions of these are as follows.
  
-     * BASE_ADDRESS tells the parser that it found a board definition.
-     * {type string} gives the type of the board. At the moment only 
-       the types 'V1724' or 'V2718' are supported.
-     * {Board ID} is a unique identification number for the board.
+     * "board" is a list field containing sub-dictionaries defining each board.
+     * "crate" is the crate number assigned in the corresponding 'link' command.
+     * "serial" is a unique identification number for the board.
        Each board has a serial number printed on the front and it is
        recommended to use that.
-     * {Crate int} is the crate number assigned in the corresponding LINK command.
-     * {board int} is zero for boards hooked up via daisy chain (since
-       each is defined as its own crate). For readout through the
-       crate controller each board on a crate is given a unique int
-       starting at zero.
+     * "reader" is the ID of the reader to which the board is connected
+     * "type" gives the type of the board. At the moment only 
+       the types 'V1724' or 'V2718' are supported.
+     * "vme_address" is the board's VME address as a string (in hex). You can 
+       set this using radial dials on the board itself. For example if you set
+       a digitizer to "EEFF" then this option is "EEFF0000". 
+     * "link" as before is the link over which the board is connected.
        
-The following is an example initialization using two slave PCs. One
-slave (number two) has two digitizers and a crate controller hooked up
-via separate links on an A3818. The other slave (number one) has a
-single digitizer only. ::
+The following is an example initialization using one slave PCs with ID 2. 
+It has one digitizers and one crate controller hooked up
+via separate links on an A3818. ::
 
-     #Slave ID 2
-     %2LINK V2718 0 1 # -- Digitizer Link
-     %2LINK V2718 0 0 # -- Digitizer Link
-     %2LINK V2718 1 0 # -- Crate Controller Link
-     %2BASE_ADDRESS  V1724 32100000 876 1 0 # -- Digitizer 
-     %2BASE_ADDRESS  V1724 22230000 770 0 0 # -- Digitizer
-     %2BASE_ADDRESS  V2718 EE000000 1868 0 1 # -- Crate Controller
-    
-     #Slave ID 1
-     %1LINK V2718 0 0 # -- Digitizer Link
-     %1BASE_ADDRESS V1724 22240000 749 0 0 # -- Digitizer
+     "boards": [
+     {
+      "crate": 0,
+      "serial": "2374",
+      "reader": 2,
+      "type": "V2718",
+      "vme_address": "DC000000",
+      "link": 0
+     },
+     {
+      "crate": 0,
+      "serial": "1254",
+      "reader": 2,
+      "type": "V1724",
+      "vme_address": "800D0000",
+      "link": 1
+     }
+     ],
+     "links":[
+     {
+      "type": "V2718",
+      "reader": 2,
+      "crate": 0,
+      "link": 0
+     },
+     {
+      "crate": 0,
+      "type": "V2718",
+      "reader": 2,
+      "link": 1
+     }
+     ],
 
-For standalone deployments containing only one slave, the '%n'
-identifier must be removed. This is because for a standalone
-deployment the options file is not run through the parser that removes
-and strips this identifier.
+For standalone deployments containing only one slave, the "reader" identifier
+is not used. Additionally any "%n" lines must be removed. 
+This is because for a standalone deployment the options file 
+is not run through the parser that removes and strips this identifier.
 
 Run Options
 ------------
@@ -160,10 +206,10 @@ The user can define several options related to the run. These are
 options for kodiaq itself. To control the board internal options, see
 the section on board options.
 
-   * **BLT_SIZE {int}** 
+   * **blt_size {int}** 
      Size of a block transfer. The default is the maximum size of
      524288 bytes. There is probably no reason to change this.
-   * **RUN_START {int} {int}**
+   * **run_start {int} {int}**
      Define how a run is started. 0 means via VME register and 1 means
      via s-in. Option 1 should always be used if you have multiple
      digitizers as it synchronizes the clocks of the digitizers. The
@@ -171,7 +217,7 @@ the section on board options.
      still be provided). If the first argument is set to one the board
      ID of the crate controller that will be used to start the run
      must be provided as the second argument.
-   * **BASELINE_MODE {int}**
+   * **baseline_mode {int}**
      kodiaq contains an automated routine to adjust the
      baselines so that the full dynamic range of each input channel is
      used. This option lets the user set when that should happen.
@@ -182,15 +228,7 @@ the section on board options.
      is forseen to add an option to have the baselines recalibrated every
      hour or so without stopping the run, however this option does not
      exist yet.
-   * **SUM_MODULE {int}**
-     It is anticipated to run with one digitizer recording the
-     attenuated sum of all channels, a clock, and some NIM signals.
-     These channels should be flagged for special processing by the
-     event builder. This is done with this option. Note if you want to
-     flag more than one digitizer, just put a second SUM_MODULE option
-     in (do not make one with two arguments as the second will be
-     ignored).
-   * **DDC10_OPTIONS {string} {int0} {int1} ... {int 14}**
+   * **ddc10_options {string} {int0} {int1} ... {int 14}**
      If a DDC10 high energy veto module is used, this line lets you
      define the options. There is one string followed by fifteen
      integer arguments. A detailed explanation of the arguments
