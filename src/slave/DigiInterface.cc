@@ -50,7 +50,7 @@ int DigiInterface::PreProcess(koOptions *options){
   int retval = 0;
 
   // Options Setting for baselines
-  if(options->baseline_mode == 1){
+  if(options->GetInt("baseline_mode") == 1){
     if( Initialize(options, true) != 0 ){
       if(m_koLog!=NULL)
         m_koLog->Error("Preprocessing failed at initialization step.");
@@ -62,16 +62,18 @@ int DigiInterface::PreProcess(koOptions *options){
   // Note: initially (or maybe forever) noise spectra support is only
   // available if mongoDB is configured
 #ifdef HAVE_LIBMONGOCLIENT
-  if(options->noise_spectra_enable == 1){
+  if(options->GetInt("noise_spectra_enable") == 1){
     cout<<"Determining noise spectra."<<endl;
+    if(m_koLog!=NULL)
+      m_koLog->Error("Producing noise spectra.");
     int length = 1000; //default
-    if(options->noise_spectra_length > 0 && 
-       options->noise_spectra_length<100000)
-      length = options->noise_spectra_length;
+    if(options->GetInt("noise_spectra_length") > 0 && 
+       options->GetInt("noise_spectra_length")<100000)
+      length = options->GetInt("noise_spectra_length");
 
     //Arm boards
-    if(options->baseline_mode == 1)
-      options->baseline_mode = 0;
+    if(options->GetInt("baseline_mode") == 1)
+      options->SetInt("baseline_mode", 0);
     if( Initialize(options, true, true)!=0){
       cout<<"Initialization failed for noise spectra."<<endl;
       retval = -1;
@@ -79,9 +81,10 @@ int DigiInterface::PreProcess(koOptions *options){
     else{
       // Do noise
       for(unsigned int x=0; x<m_vDigitizers.size();x++)  {
-	if(m_vDigitizers[x]->DoNoiseSpectra(options->noise_spectra_mongo_addr, 
-					    options->noise_spectra_mongo_coll, 
-					    length) !=0 ){
+	if(m_vDigitizers[x]->DoNoiseSpectra
+	   (options->GetString("noise_spectra_mongo_addr"), 
+	    options->GetString("noise_spectra_mongo_coll"), 
+	    length) !=0 ){
 	  stringstream err;
 	  err<<m_vDigitizers[x]->GetID().id<<" failed noise spectra!";	    
 	  m_koLog->Error( err.str() );
@@ -91,6 +94,9 @@ int DigiInterface::PreProcess(koOptions *options){
 
     }        
   }
+  else
+    cout<<"Skipping noise spectra!"<<endl;
+
 #endif
   cout<<"Finished Preprocessing"<<endl;
   return retval;
@@ -99,8 +105,8 @@ int DigiInterface::PreProcess(koOptions *options){
 int DigiInterface::Arm(koOptions *options){
   // Remove baseline option (should be done in preprocess)
   Close();
-  if(options->baseline_mode == 1)
-    options->baseline_mode = 0;
+  if(options->GetInt("baseline_mode") == 1)
+    options->SetInt("baseline_mode", 0);
   return Initialize(options);
 }
 
@@ -121,7 +127,7 @@ int DigiInterface::Initialize(koOptions *options, bool PreProcessing, bool skipC
 	BType = cvV2718;
       else  	{	   
 	if(m_koLog!=NULL)
-	  m_koLog->Error("DigiInterface::Initialize - Invalid link type, check file definition.");
+	  m_koLog->Error(("DigiInterface::Initialize - Invalid link type, " + Link.type + "check file definition."));
 	return -1;
       }
       
@@ -210,8 +216,8 @@ int DigiInterface::Initialize(koOptions *options, bool PreProcessing, bool skipC
   m_iReadSize=0;
   m_iReadFreq=0;
 
-  if(options->processing_num_threads>0)
-    m_vProcThreads.resize(options->processing_num_threads);
+  if(options->GetInt("processing_num_threads")>0)
+    m_vProcThreads.resize(options->GetInt("processing_num_threads"));
   else 
     m_vProcThreads.resize(1);
   
@@ -223,32 +229,32 @@ int DigiInterface::Initialize(koOptions *options, bool PreProcessing, bool skipC
   //Set up daq recorder
   m_DAQRecorder = NULL;
    
-  if(options->write_mode==WRITEMODE_FILE){
+  if(options->GetInt("write_mode")==WRITEMODE_FILE){
 #ifdef HAVE_LIBPBF
     m_DAQRecorder = new DAQRecorder_protobuff(m_koLog);
 
 #else    
     if( m_koLog != NULL )
       m_koLog->Error("DigitInterface::Initialize - Your chosen write mode is not available in this installation");
-    m_koOptions->write_mode = WRITEMODE_NONE;
+    m_koOptions->SetInt("write_mode", WRITEMODE_NONE);
 
 #endif
   }   
 
-  else if ( options->write_mode == WRITEMODE_MONGODB ){
+  else if ( options->GetInt("write_mode") == WRITEMODE_MONGODB ){
 #ifdef HAVE_LIBMONGOCLIENT
     m_DAQRecorder = new DAQRecorder_mongodb(m_koLog);
 
 #else
     if( m_koLog != NULL ) 
       m_koLog->Error("DigitInterface::Initialize - Your chosen write mode is not available in this installation");
-    m_koOptions->write_mode = WRITEMODE_NONE;
+    m_koOptions->SetInt("write_mode", WRITEMODE_NONE);
 
 #endif
   }
   
   else
-    m_koOptions->write_mode = WRITEMODE_NONE;
+    m_koOptions->SetInt("write_mode", WRITEMODE_NONE);
   
    // Initialize recorder
   if(m_DAQRecorder!=NULL){
@@ -421,7 +427,7 @@ int DigiInterface::StartRun()
   m_ReadThread.IsOpen=true;
 
   //Tell Boards to start acquisition   
-  if(m_koOptions->run_start == 1){
+  if(m_koOptions->GetInt("run_start") == 1){
     // Start with S-IN
     
     // Set boards as active  

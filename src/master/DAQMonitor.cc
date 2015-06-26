@@ -105,7 +105,7 @@ int DAQMonitor::ValidateStartCommand(string user, string comment,
 
   //create DB entry
   if(m_Mongodb!=NULL)
-    m_Mongodb->SendRunStartReply(reply,message,options->name,comment);
+    m_Mongodb->SendRunStartReply(reply,message,options->GetString("name"),comment);
   if(reply==0) return 0;
   return -1;
 }
@@ -204,7 +204,7 @@ int DAQMonitor::Disconnect()
 int DAQMonitor::PreProcess(koOptions* mode){
   // 
   // Send preprocess
-  m_DAQStatus.RunMode = m_DAQStatus.RunModeLabel = mode->name;
+  m_DAQStatus.RunMode = m_DAQStatus.RunModeLabel = mode->GetString("name");
   m_DAQNetwork->SendCommand("PREPROCESS");
 
   // Send options to slaves           
@@ -297,7 +297,7 @@ int DAQMonitor::Arm(koOptions *mode, string run_name)
 #endif
 
   // Send arm command
-  m_DAQStatus.RunMode = m_DAQStatus.RunModeLabel = mode->name;
+  m_DAQStatus.RunMode = m_DAQStatus.RunModeLabel = mode->GetString("name");
   m_DAQNetwork->SendCommand("ARM");
   
   // Send options to slaves
@@ -310,11 +310,11 @@ int DAQMonitor::Arm(koOptions *mode, string run_name)
   }
 
   
-  if(run_name!="" && mode->write_mode == WRITEMODE_MONGODB){  
-    mode->mongo_collection = koHelper::MakeDBName(run_name,            
-						  mode->mongo_collection); 
+  if(run_name!="" && mode->GetInt("write_mode") == WRITEMODE_MONGODB){      
+    mode->SetString("mongo_collection", koHelper::MakeDBName
+		    (run_name, mode->GetString("mongo_collection"))); 
     m_DAQNetwork->SendCommand("DBUPDATE");    
-    m_DAQNetwork->SendCommand(mode->mongo_collection);  
+    m_DAQNetwork->SendCommand(mode->GetString("mongo_collection"));  
   }
   delete optionsStream;
   

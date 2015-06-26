@@ -22,6 +22,7 @@
 #include <iterator>
 #include <algorithm>
 #include <sys/types.h>
+#include "config.h"
 
 #include <unistd.h>
 #include "koLogger.hh"

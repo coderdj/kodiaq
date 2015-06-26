@@ -176,7 +176,8 @@ int koNet::ReceiveFile(int socket, string path)
 	   x=ReceiveAck(socket);
 	 return -1;
       }      
-      outfile<<line<<endl;
+      if(line!="@")
+	outfile<<line<<endl;
    }
    outfile.close();
    if(SendAck(socket)!=0) {

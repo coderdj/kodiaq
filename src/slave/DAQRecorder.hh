@@ -16,6 +16,7 @@
 
 #include <koLogger.hh>
 #include <koOptions.hh>
+#include <koHelper.hh>
 #include <pthread.h>
 #include <iomanip>
 

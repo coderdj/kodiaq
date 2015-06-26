@@ -119,11 +119,11 @@ int DAQRecorder_mongodb::RegisterProcessor()
    try  {
      //conn = new mongo::ScopedDbConnection(m_options->mongo_address,10000.);
      conn = new mongo::DBClientConnection();
-     conn->connect( m_options->mongo_address );
+     conn->connect( m_options->GetString("mongo_address") );
      mongo::client::initialize();
 
      // Set write concern
-     if( m_options->mongo_write_concern == 0 ){
+     if( m_options->GetInt("mongo_write_concern") == 0 ){
        //conn->conn().setWriteConcern( mongo::W_NONE );
        conn->setWriteConcern( mongo::WriteConcern::unacknowledged );
        LogMessage( "MongoDB WriteConcern set to NONE" );  
@@ -200,10 +200,11 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
 
    try  {
      stringstream cS;
-     cS<<m_options->mongo_database<<"."<<m_options->mongo_collection;
+     cS<<m_options->GetString("mongo_database")<<"."<<
+       m_options->GetString("mongo_collection");
      
      // New insert format. Put insvec into sub-docs of the main BSON
-     if(m_options->mongo_output_format == "trigger") {
+     if(m_options->GetString("mongo_output_format") == "trigger") {
        long long minTime = 0x7FFFFFFFFFFFFFFF, maxTime = -1; 
        mongo::BSONArrayBuilder subdoc_array;
        for( unsigned int x = 0; x < insvec->size(); x++ ) {

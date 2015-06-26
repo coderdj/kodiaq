@@ -11,6 +11,7 @@
 // **********************************************************
 
 #include <iostream>
+#include <koHelper.hh>
 #include "CBV2718.hh"
 
 CBV2718::CBV2718()
@@ -52,20 +53,20 @@ int CBV2718::Initialize(koOptions *options)
   i_pulserHz = 0;
   
   unsigned int data = 0x7C00; //new
-  if(options->led_trigger){
+  if(options->GetInt("led_trigger")==1){
     b_led_on = true;
     data+=0x30;//new
   }
-  if(options->muon_veto){
+  if(options->GetInt("muon_veto")==1){
     b_muonveto_on = true;
     data+=0xC;
   }
-  if(options->run_start==1){ //all new if
+  if(options->GetInt("run_start")==1){ //all new if
     b_startwithsin = true;
     data+=0x3;
   }
-  if(options->pulser_freq>0){ //all new if
-    i_pulserHz = options->pulser_freq;
+  if(options->GetInt("pulser_freq")>0){ //all new if
+    i_pulserHz = options->GetInt("pulser_freq");
     data+=0x80;
   }
 

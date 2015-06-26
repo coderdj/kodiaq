@@ -1,285 +1,158 @@
-// *************************************************************
-//
-// kodiaq Data Acquisition Software
-//  
-// File   : koOptions.cc
-// Author : Daniel Coderre, LHEP, Universitaet Bern
-// Date   : 27.06.2013
-// Update : 27.03.2014
-// 
-// Brief  : Options handler for Xenon-1t DAQ software
-// 
-// *************************************************************
-
+#include "koOptions.hh"
+#include "koHelper.hh"
+#include "mongo/db/json.h"
+#include <fstream>
 #include <iostream>
 
-#include "koOptions.hh"
+koOptions::koOptions(){}
 
-koOptions::koOptions()
-{
-   Reset();   
-}
+koOptions::~koOptions(){}
 
-koOptions::~koOptions()
-{
-}
+int koOptions::ReadParameterFile(string filename){
 
-void koOptions::Reset()
-{
-  m_links.clear();
-  m_boards.clear();
-  m_registers.clear();
+  // open file
+  std::ifstream infile;
+  infile.open(filename.c_str());
+  if(!infile)
+    return -1;
   
-  //Reset general
-  name=nickname=creator=creation_date="";
-  trigger_mode = data_processor_mode = "none";
+  // Pull data and put into string
+  string json_string = "", str;
+  while(getline(infile,str))
+    json_string += str;
+  infile.close();
+
+  // Make the bson object from the string
+  try{
+    m_bson = mongo::fromjson(json_string);
+  }
+  catch(...){
+    std::cout<<"Error parsing file. Is it valid json?"<<std::endl;
+    return -1;
+  }
+  return 0;
+}
+
+int koOptions::GetArraySize(string key){
+  try{
+    return m_bson[key].Array().size();
+  }
+  catch(...){
+    return 0;
+  }
+}
+
+mongo::BSONElement koOptions::GetField(string key){
+  try{
+    return m_bson[key];
+  }
+  catch(...){
+    std::cout<<"Error fetching option. Key doesn't seem to exist."<<std::endl;
+    return mongo::BSONElement();
+  }
+}
+
+void koOptions::SetString(string field_name, string value){
   
-  //Reset run options
-  write_mode = baseline_mode = run_start = run_start_module = 
-    blt_size = compression = -1;
-  noise_spectra = 0;
-  dynamic_run_names = false;
-  run_prefix="data";
-  pulser_freq = 0;
-  noise_spectra_enable = noise_spectra_length = 0;
-  noise_spectra_mongo_addr = noise_spectra_mongo_coll = "";
+  // This is not very beautiful, but you can't modify a BSONObj
+  // So we will create a new BSON object that is a copy of the 
+  // Current one and update the field
+  mongo::BSONObjBuilder builder;
+  builder.appendElements(m_bson);
+  builder.append(field_name, value);
+  m_bson = builder.obj();
 
-  //Reset mongodb options
-  mongo_address = mongo_database = mongo_collection = "";
-  mongo_write_concern = mongo_min_insert_size = -1;
-  mongo_output_format = "default";
-
-  //Reset processing options
-  processing_mode = processing_num_threads = processing_readout_threshold = -1;
-  occurrence_integral = false;
-
-  //Reset file options
-  file_path = "";
-  file_events_per_file = -1;
-
-  //Extra options
-  muon_veto = false;
-  led_trigger = false;
-  
-  buffer_size_kill = -1;
- 
-#ifdef HAS_DDC
-  //Reset ddc10 options
-  fDDC10Options.Initialized=false;
-#endif
+}
+void koOptions::SetInt(string field_name, int value){
+  mongo::BSONObjBuilder builder;
+  builder.appendElements(m_bson);
+  builder.append(field_name, value);
+  m_bson = builder.obj();
 }
 
-int koOptions::ProcessLine(string line, string option,int &ret)
-{
-   istringstream iss(line);
-   vector<string> words;
-   copy(istream_iterator<string>(iss),
-	istream_iterator<string>(),
-	back_inserter<vector<string> >(words));
-   if(words.size()<2 || words[0]!=option) return -1;
-   ret=koHelper::StringToInt(words[1]);
-   
-   return 0;
+link_definition_t koOptions::GetLink(int index){
+
+  // Return dummy link if dne
+  link_definition_t dummy;
+  dummy.type="NULL";
+  dummy.id=-1000;
+  dummy.crate=-1000;
+  dummy.node='N';
+  if(index < 0 || index > GetArraySize("links") || GetArraySize("links")==0){
+      return dummy;
+    }
+
+  // Fill object
+  link_definition_t retlink;
+  try{
+    mongo::BSONObj link_obj = m_bson["links"].Array()[index].Obj();
+    retlink.type = link_obj["type"].String();
+    retlink.crate = link_obj["crate"].Int();
+    retlink.id = link_obj["link"].Int();
+    retlink.node = '0' + link_obj["reader"].Int();
+  }
+  catch(...){
+    return dummy;
+  }
+  return retlink;
 }
 
-int koOptions::ReadParameterFile(string filename)
-{
-   Reset();
-   ifstream initFile;
-   initFile.open(filename.c_str());
-   if(!initFile){
-      cout<<"init file not found."<<endl;
-      return -1;
-   }   
-   string line;
-   while(!initFile.eof())  {
-      getline(initFile,line);
-      if(line[0]=='#') continue; //ignore comments
-      char node='x';
-      if(line[0]=='%') {
-	node=line[1];
-	line.erase(0,2);
-      }
-      //parse
-      istringstream iss(line);
-      vector<string> words;
-      copy(istream_iterator<string>(iss),
-	   istream_iterator<string>(),
-	   back_inserter<vector<string> >(words));
-      if(words.size()<2) continue;
+board_definition_t koOptions::GetBoard(int index){
 
-      // Ugly if/else but what else to do in C++?
+  // Return dummy board if dne 
+  board_definition_t dummy;
+  dummy.type="NULL";
+  dummy.vme_address=-1000;
+  dummy.id=-1000;
+  dummy.crate=-1000;
+  dummy.link=-1000;
+  dummy.node='N';  
+  if(index < 0 || index > GetArraySize("boards") || GetArraySize("boards")==0){
+    return dummy;
+  }
 
-      if(words[0] == "name")
-	name = words[1];
-      else if(words[0] == "nickname")
-	nickname = words[1];
-      else if(words[0] == "creator")
-	creator = words[1];
-      else if(words[0] == "creation_date")
-	creation_date = words[1];
-      else if(words[0] == "trigger_mode")
-	trigger_mode = words[1];
-      else if(words[0] == "data_processor_mode")
-	data_processor_mode = words[1];
-      else if(words[0] == "write_mode")
-	write_mode = koHelper::StringToInt(words[1]);
-      else if(words[0] == "noise_spectra")
-	noise_spectra = koHelper::StringToInt(words[1]);
-      else if(words[0] == "run_prefix")
-	run_prefix = words[1];
-      else if(words[0] == "baseline_mode")
-	baseline_mode = koHelper::StringToInt(words[1]);
-      else if(words[0] == "noise_spectra_enable")
-	noise_spectra_enable = koHelper::StringToInt(words[1]);
-      else if(words[0] == "noise_spectra_length")
-	noise_spectra_length = koHelper::StringToInt(words[1]);
-      else if(words[0] == "run_start")
-	run_start = koHelper::StringToInt(words[1]);
-      else if(words[0] == "run_start_module")
-	run_start_module = koHelper::StringToInt(words[1]);
-      else if(words[0] == "pulser_freq")
-	pulser_freq = koHelper::StringToInt(words[1]);
-      else if(words[0] == "blt_size")
-	blt_size = koHelper::StringToInt(words[1]);
-      else if(words[0] == "noise_spectra_mongo_addr")	
-	noise_spectra_mongo_addr = words[1];
-      else if(words[0] == "noise_spectra_mongo_coll")
-	noise_spectra_mongo_coll = words[1];
-      else if(words[0] == "compression")
-	compression = koHelper::StringToInt(words[1]);
-      else if(words[0] == "processing_mode")
-	processing_mode = koHelper::StringToInt(words[1]);
-      else if(words[0] == "processing_num_threads")
-	processing_num_threads = koHelper::StringToInt(words[1]);
-      else if(words[0] == "processing_readout_threshold")
-	processing_readout_threshold = koHelper::StringToInt(words[1]);
-      else if( words[0] == "occurrence_integral" )
-	occurrence_integral = !!koHelper::StringToInt(words[1]);
-      else if(words[0] == "mongo_address")
-	mongo_address = words[1];
-      else if(words[0] == "mongo_output_format")
-	mongo_output_format = words[1];
-      else if(words[0] == "mongo_collection"){
-	mongo_collection = words[1];
-	if(mongo_collection[mongo_collection.size()-1] == '*' ) {
-	  dynamic_run_names = true;
-	  mongo_collection = mongo_collection.substr
-	    (0, mongo_collection.size() - 1 );
-	}
-      }
-      else if(words[0] == "mongo_database")
-	mongo_database = words[1];
-      else if(words[0] == "mongo_write_concern")
-	mongo_write_concern = koHelper::StringToInt(words[1]);
-      else if(words[0] == "mongo_min_insert_size")
-	mongo_min_insert_size = koHelper::StringToInt(words[1]);
-      else if(words[0] == "file_path")
-	file_path = words[1];
-      else if(words[0] == "file_events_per_file")
-	file_events_per_file = koHelper::StringToInt(words[1]);
-      else if(words[0] == "led_trigger")
-	led_trigger = koHelper::StringToInt(words[1]);
-      else if(words[0] == "muon_veto")
-	muon_veto = koHelper::StringToInt(words[1]);
-      else if(words[0] == "buffer_size_kill")
-	buffer_size_kill = koHelper::StringToInt(words[1]);
-      else if(words[0] == "register") {
-	vme_option_t reg;
-	if(words.size()<3) break;
-	reg.address = koHelper::StringToHex(words[1]);
-	reg.value   = koHelper::StringToHex(words[2]);
-	if(words.size()>=4 && words[3][0]!='#')
-	  reg.board = koHelper::StringToInt(words[3]);
-	else reg.board=-1;
-	reg.node=node;
-	m_registers.push_back(reg);
-      }
-      else if(words[0] == "link"){
-	link_definition_t link;
-	if(words.size()<4) break;
-	link.type = words[1];
-	link.id   = koHelper::StringToInt(words[2]);
-	link.crate= koHelper::StringToInt(words[3]);
-	link.node=node;
-	m_links.push_back(link);
-      }
-      else if(words[0] == "board"){
-	board_definition_t board;
-	if(words.size()<6) break;
-	board.type = words[1];
-	board.vme_address = koHelper::StringToHex(words[2]);
-	board.id = koHelper::StringToInt(words[3]);
-	board.link = koHelper::StringToInt(words[4]);
-	board.crate = koHelper::StringToInt(words[5]);	
-	board.node=node;
-	m_boards.push_back(board);
-      }
-      else if(words[0].substr(0,5) == "ddc10"){
-	for(unsigned int x=0;x<words.size();x++)
-	  m_ddc10_options_stream<<words[x]<<" ";
-	m_ddc10_options_stream<<endl;
-      }
-   }   
-   initFile.close();
-   return 0;   
-} 
-
-void koOptions::ToStream(stringstream *retstream)
-{
-  (*retstream)<<"name "<<name<<endl;
-  (*retstream)<<"nickname "<<nickname<<endl;
-  (*retstream)<<"creator "<<creator<<endl;
-  (*retstream)<<"creation_date "<<creation_date<<endl;
-  (*retstream)<<"write_mode "<<write_mode<<endl;
-  (*retstream)<<"trigger_mode "<<trigger_mode<<endl;
-  (*retstream)<<"run_prefix "<<run_prefix<<endl;
-  (*retstream)<<"noise_spectra "<<noise_spectra<<endl;
-  (*retstream)<<"data_processor_mode "<<data_processor_mode<<endl;
-  (*retstream)<<"baseline_mode "<<baseline_mode<<endl;
-  (*retstream)<<"run_start "<<run_start<<endl;
-  (*retstream)<<"run_start_module "<<run_start_module<<endl;
-  (*retstream)<<"noise_spectra_enable "<<noise_spectra_enable<<endl;
-  (*retstream)<<"noise_spectra_length "<<noise_spectra_length<<endl;
-  (*retstream)<<"noise_spectra_mongo_addr "<<noise_spectra_mongo_addr<<endl;
-  (*retstream)<<"noise_spectra_mongo_coll "<<noise_spectra_mongo_coll<<endl;
-  (*retstream)<<"pulser_freq "<<pulser_freq<<endl;
-  (*retstream)<<"blt_size "<<blt_size<<endl;
-  (*retstream)<<"compression "<<compression<<endl;
-  (*retstream)<<"processing_mode "<<processing_mode<<endl;
-  (*retstream)<<"processing_num_threads "<<processing_num_threads<<endl;
-  (*retstream)<<"processing_readout_threshold "<<processing_readout_threshold<<endl;
-  (*retstream)<<"occurrence_integral "<<occurrence_integral<<endl;
-  (*retstream)<<"mongo_address "<<mongo_address<<endl;
-  (*retstream)<<"mongo_collection "<<mongo_collection;
-  if(dynamic_run_names) (*retstream)<<"*";
-  (*retstream)<<endl;
-  (*retstream)<<"mongo_output_format "<<mongo_output_format<<endl;
-  (*retstream)<<"mongo_database "<<mongo_database<<endl;
-  (*retstream)<<"mongo_write_concern "<<mongo_write_concern<<endl;
-  (*retstream)<<"mongo_min_insert_size "<<mongo_min_insert_size<<endl;
-  (*retstream)<<"file_path "<<file_path<<endl;
-  (*retstream)<<"file_events_per_file "<<file_events_per_file<<endl;
-  (*retstream)<<"led_trigger "<<led_trigger<<endl;
-  (*retstream)<<"muon_veto "<<muon_veto<<endl;  
-  for(unsigned int x=0;x<m_registers.size();x++){
-    if(m_registers[x].node!='x')
-      (*retstream)<<"%"<<m_registers[x].node;
-    (*retstream)<<"register "<<hex<<m_registers[x].address<<" "
-		<<m_registers[x].value<<dec<<" "<<m_registers[x].board<<endl;
+  // Fill object 
+  board_definition_t retboard;
+  try{
+    mongo::BSONObj board_obj = m_bson["boards"].Array()[index].Obj();
+    retboard.type = board_obj["type"].String();
+    retboard.vme_address = koHelper::StringToHex(board_obj["vme_address"].String());
+    retboard.id = koHelper::StringToInt(board_obj["serial"].String());
+    retboard.crate = board_obj["crate"].Int();
+    retboard.link = board_obj["link"].Int();
+    retboard.node = '0' + board_obj["reader"].Int();
   }
-  for(unsigned int x=0;x<m_links.size();x++){
-    if(m_links[x].node!='x')
-      (*retstream)<<"%"<<m_links[x].node;  
-    (*retstream)<<"link "<<m_links[x].type<<" "<<m_links[x].id<<" "<<
-      m_links[x].crate<<endl;
+  catch(...){
+    return dummy;
   }
-  for(unsigned int x=0;x<m_boards.size();x++){
-    if(m_boards[x].node!='x')
-      (*retstream)<<"%"<<m_boards[x].node;
-    (*retstream)<<"board "<<m_boards[x].type<<" "<<hex<<m_boards[x].vme_address<<
-      dec<<" "<<m_boards[x].id<<" "<<m_boards[x].link<<" "<<
-      m_boards[x].crate<<" "<<endl;
-  }
-  (*retstream)<<m_ddc10_options_stream.str()<<endl;
+  return retboard;
 }
+
+vme_option_t koOptions::GetVMEOption(int index){
+
+  // Return dummy link if dne     
+  vme_option_t dummy;
+  dummy.address=0;
+  dummy.value=0;
+  dummy.board=-1000;
+  dummy.node='x';
+  if(index < 0 || index > GetArraySize("registers") 
+     || GetArraySize("registers")==0){
+    return dummy;
+  }
+
+  // Fill object                                                                    
+  vme_option_t retreg;
+  try{
+    mongo::BSONObj vme_obj = m_bson["registers"].Array()[index].Obj();
+    retreg.address = koHelper::StringToHex(vme_obj["register"].String());
+    retreg.value = koHelper::StringToHex(vme_obj["value"].String());
+    retreg.board = koHelper::StringToInt(vme_obj["board"].String());
+    retreg.node = 'x';
+  }
+  catch(...){
+    return dummy;
+  }
+  return retreg;
+}
+

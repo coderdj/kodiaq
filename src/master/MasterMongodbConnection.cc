@@ -185,17 +185,17 @@ int MasterMongodbConnection::InsertRunDoc(string user, string runMode, string na
   // so the event builder can find it. Index by time and module.
   mongo::DBClientConnection bufferDB;
 
-  if( options->write_mode == 2 ){ // write to mongo
+  if( options->GetInt("write_mode") == 2 ){ // write to mongo
     try     {
-      bufferDB.connect( options->mongo_address );
+      bufferDB.connect( options->GetString("mongo_address") );
     }
     catch(const mongo::DBException &e)    {
       SendLogMessage( "Problem connecting to mongo buffer. Caught exception " + 
 		      string(e.what()), KOMESS_ERROR );
       return -1;
     }
-    string collectionName = options->mongo_database + "." + 
-      options->mongo_collection;
+    string collectionName = options->GetString("mongo_database") + "." + 
+      options->GetString("mongo_collection");
     bufferDB.createCollection( collectionName );
     bufferDB.createIndex( collectionName,
 			  mongo::fromjson( "{ time: -1, module: -1, _id: -1}" ) );
@@ -207,23 +207,21 @@ int MasterMongodbConnection::InsertRunDoc(string user, string runMode, string na
 
   // event builder sub object
   mongo::BSONObjBuilder trigger_sub; 
-  trigger_sub.append( "mode",options->trigger_mode );
+  trigger_sub.append( "mode",options->GetString("trigger_mode") );
   trigger_sub.append( "ended", false );
   trigger_sub.append( "status", "waiting_to_be_processed" );
   builder.append( "trigger", trigger_sub.obj() );
 
   // reader sub object
-  stringstream optionsStream;
-  options->ToStream( &optionsStream );
   mongo::BSONObjBuilder reader_sub;
-  reader_sub.append( "compressed", options->compression );
+  reader_sub.append( "compressed", options->GetInt("compression") );
   reader_sub.append( "starttime", 0 );
   reader_sub.append( "data_taking_ended", false );
-  reader_sub.append( "options", optionsStream.str() );  
+  reader_sub.append( "options", options->ExportBSON() );  
   mongo::BSONObjBuilder storageSub;
-  storageSub.append( "dbname", options->mongo_database );
-  storageSub.append( "dbcollection", options->mongo_collection );
-  storageSub.append( "dbaddr", options->mongo_address );
+  storageSub.append( "dbname", options->GetString("mongo_database") );
+  storageSub.append( "dbcollection", options->GetString("mongo_collection") );
+  storageSub.append( "dbaddr", options->GetString("mongo_address") );
   reader_sub.append( "storage_buffer", storageSub.obj() );
   builder.append( "reader", reader_sub.obj() );
 
@@ -238,7 +236,7 @@ int MasterMongodbConnection::InsertRunDoc(string user, string runMode, string na
   builder.append("name",name);  
   builder.append("detectors", detlist);
 
-  builder.append("shorttype",options->nickname);
+  builder.append("shorttype",options->GetString("nickname"));
 
   //put in start time
   time_t currentTime;
@@ -515,8 +513,9 @@ int MasterMongodbConnection::PullRunMode(string name, koOptions &options)
    mongo::BSONObj res = fMonitorDB->findOne("online.run_modes" , query.obj() ); 
    if(res.nFields()==0) 
      return -1; //empty object
-
-
+   options.SetBSON(res);
+   return 0;
+   /*
    //Set Options From Mongo
    //cout<<"Retrieved mongo run mode "<<name<<endl;
    options.name=(res.getStringField("name"));
@@ -617,4 +616,5 @@ int MasterMongodbConnection::PullRunMode(string name, koOptions &options)
      options.AddBoard(board);
    }
    return 0;
+   */
 }

@@ -17,6 +17,7 @@
 
 #include <koOptions.hh>
 #include <koLogger.hh>
+#include <koHelper.hh>
 #include "mongo/client/dbclient.h"
 
 class MasterMongodbConnection

@@ -16,6 +16,7 @@
 #include <time.h>
 #include "CBV1724.hh"
 #include "DataProcessor.hh"
+#include <koHelper.hh>
 #ifdef HAVE_LIBMONGOCLIENT
 #include "mongo/client/dbclient.h"
 #endif
@@ -81,17 +82,17 @@ int CBV1724::Initialize(koOptions *options)
   u_int32_t eventSize = (u_int32_t)((((memorySize*pow(2,20))/
 				      (u_int32_t)pow(2,data))*8+16)/4);
   ReadReg32(CBV1724_BltEvNumReg,data);
-  fBLTSize=options->blt_size;
+  fBLTSize=options->GetInt("blt_size");
   fBufferSize = data*eventSize*(u_int32_t)4+(fBLTSize);
   fBufferSize = eventSize*data + fBLTSize;
-  fReadoutThresh = options->processing_readout_threshold;
+  fReadoutThresh = options->GetInt("processing_readout_threshold");
    
   // Data is stored in these two vectors
   fBuffers = new vector<u_int32_t*>();
   fSizes   = new vector<u_int32_t>();
 
   // Determine baselines if required
-  if(options->baseline_mode==1)    {	
+  if(options->GetInt("baseline_mode")==1)    {	
     m_koLog->Message("Determining baselines ");
     int tries = 0;
     int ret=-1;
@@ -121,7 +122,7 @@ int CBV1724::Initialize(koOptions *options)
   }
 
   // Load baselines
-  if(options->baseline_mode != 2){
+  if(options->GetInt("baseline_mode") != 2){
     LoadBaselines();
     m_koLog->Message("Baselines loaded from file");
   }

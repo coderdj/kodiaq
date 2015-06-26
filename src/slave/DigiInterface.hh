@@ -16,6 +16,7 @@
 
 #include <koLogger.hh>
 #include <pthread.h>
+#include <koHelper.hh>
 #include "CBV1724.hh"
 #include "CBV2718.hh"
 #include "DataProcessor.hh"

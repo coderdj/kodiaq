@@ -343,8 +343,8 @@ connection_loop:
 	    }	    
 	    //change the write collection
 	    cout<<"CHANGING COLLECTION"<<endl;
-	    if(fDAQOptions.write_mode==WRITEMODE_MONGODB) {
-	      fDAQOptions.mongo_collection = newCollection;
+	    if(fDAQOptions.GetInt("write_mode")==WRITEMODE_MONGODB) {
+	      fDAQOptions.SetString("mongo_collection", newCollection);
 	      fElectronics->UpdateRecorderCollection(&fDAQOptions);	    
 	    }	      
 	    cout<<"DONE CHANGING COLLECTION"<<endl;
