@@ -93,7 +93,8 @@ read out via the crate controller, in which case they share a link.
 
 The syntax for defining a link is ::
 
-  {"links": [
+  {
+   "links": [
       {"type": "V2718", # or "V1718" if you use USB
        "reader": Int,   # ID of reader
        "crate": Int,    # CAEN crate number
@@ -129,7 +130,8 @@ DAQ, though more can be supported if needed.
 
 The syntax for defining a module is ::
 
-  "boards": [
+ {
+   "boards": [
     {
       "crate": Int,
       "serial": String,
@@ -140,7 +142,7 @@ The syntax for defining a module is ::
     },
     ... #more boards
     ]
-
+  }
 
 The definitions of these are as follows.
  
@@ -160,7 +162,8 @@ The definitions of these are as follows.
 The following is an example initialization using one slave PCs with ID 2. 
 It has one digitizers and one crate controller hooked up
 via separate links on an A3818. ::
-
+  
+  {
      "boards": [
      {
       "crate": 0,
@@ -193,6 +196,7 @@ via separate links on an A3818. ::
       "link": 1
      }
      ],
+  }
 
 For standalone deployments containing only one slave, the "reader" identifier
 is not used. Additionally any "%n" lines must be removed. 
@@ -228,56 +232,52 @@ the section on board options.
      is forseen to add an option to have the baselines recalibrated every
      hour or so without stopping the run, however this option does not
      exist yet.
-   * **ddc10_options {string} {int0} {int1} ... {int 14}**
+   * **ddc10_options**
      If a DDC10 high energy veto module is used, this line lets you
      define the options. There is one string followed by fifteen
      integer arguments. A detailed explanation of the arguments
      appears in the documentation for the custom ddc10 firmware. The arguments are:
-     * string: address of the module (ip)
-     * int0: sign
-     * int1: integration window
-     * int2: veto delay
-     * int3: signal threshold
-     * int4: integration threshold
-     * int5: width cut
-     * int6: rise time cut
-     * int7: component status
-     * int8-int11: 4 parameters for veto function (see ddc10 docs)
-     * int12: outer ring factor
-     * int13: inner ring factor
-     * int14: prescaling
+     * address: address of the module (ip)
+     * sign: sign
+     * window: integration window
+     * delay: veto delay
+     * signal_threshold: signal threshold
+     * integration_threshold: integration threshold
+     * width_cut: width cut
+     * rise_time_cut: rise time cut
+     * component_status: component status
+     * parameter_n: where n = 0, 1, 2, or 3. 4 parameters for veto 
+       function (see ddc10 docs)
+     * outer_ring_factor: outer ring factor
+     * inner_ring_factor: inner ring factor
+     * prescaling: prescaling
 
 An example of how these options appears in the .ini file is shown below. ::
-
-     ## BLT_SIZE {int}
-     ##     Usage: define block transfer size
-     BLT_SIZE 524288
-     
-     ## RUN_START {int} {int}
-     ##      Usage: define run start mode (0 - board internal 1-s-in)
-     ##             and run start module by ID (module must be defined)
-     RUN_START 1 1868
-     
-     ## SUM_MODULE {int}
-     ##      Usage: define a sum module by ID. This module will always be
-     ##             digitized and will not be included in the event builder
-     SUM_MODULE 991
-
-     ## DDC10_Options {string0} {int0} ... {int 14}
-     ##      Usage: Define options for the ddc10 veto module
-     ##             {string0}:  ADDRESS
-     ##             {int0} Sign {int1} Integration Window {int2} VETO DELAY
-     ##             {int3} Signal Threshold {int4} Integration Threshold
-     ##             {int5} Width Cut {int6} Rise time cut {int7} Component status
-     ##             {int8-11} Par[0-3] {int12} Outer ring factor
-     ##             {int13} Inner ring factor {int14} Prescaling
-     DDC10_OPTIONS 130.92.139.240  1 100 200 150 20000 50 30 1 0 0 0 50 2 1 1000
-     
-     ## BASELINE_MODE {int}
-     ##     Usage: 0 - no baselines determined. read from file if available.
-     ##            1 - try to automatically determine baselines each time
-     ##                boards are armed
-     BASELINE_MODE 1
+  
+  {     
+     "blt_size": 524288,
+     "run_start_module": 2374,
+     "run_start": 1,
+     "DDC-10": {
+       "signal_threshold": 150,
+       "address": "130.92.139.240",
+       "prescaling": 1000,
+       "delay": 200,
+       "component_status": 1,
+       "inner_ring_factor": 1,
+       "rise_time_cut": 30,
+       "parameter_0": 0,
+       "window": 100,
+       "parameter_1": 0,
+       "outer_ring_factor": 2,
+       "integration_threshold": 20000,
+       "parameter_3": 50,
+       "sign": 1,
+       "width_cut": 50,
+       "parameter_2": 0
+     },
+     "baseline_mode": 1
+  }
 
 
 Output Options
@@ -287,54 +287,79 @@ The output options all relate to where the data is pushed to. Not all
 of these options are required, but be sure to include the options
 related to your chosen write mode.
 
-   * **WRITE_MODE {int}**
+   * **write_mode {int}**
      Define what is done with the data. 0 - no writing (test mode). 1
      - write to file (not yet supported). 2 - write to mongodb. If you
      choose mode '2', make sure the MONGO_OPTIONS are defined.
-   * **MONGO_OPTIONS {string1} {string2} {int1} {int2}**
-     Define the mongo linkage. This one is a bit more complicated and
-     will be explained in detail.
-     
-     * {string1} gives the address of the PC running the mongodb database. 
-       This can be either a hostname or an ip address.
-     * {string2} defines a collection name for the data. The format of this 
-       is {dbname}.{collectionname}. The database name must be provided. 
-       If you provide a static collection name all data will be
-       written to the same collection. Replacing the collection name with 
-       a '*' character will put each run in its own collection,
-       dynamically named based and the date and time the run is started.
-       *Example:* 'data.pmtdata' puts the data in database 'data' and
-       collection 'pmtdata' while 'data.*' puts the data in database
-       'data' but creates a new collection every run with form
-       data_YYMMDD_HHMM.
-     * {int1} gives the min insert size. kodiaq uses bulk inserts to
-       put data into mongodb. This means each insert is actually a vector of
-       BSON documents. An insert must exceed this size before being
-       put in the database. Size is in bytes.
-     * {int2} defines the write concern for mongo. Putting this to
-       normal mode (set 0) turns write concern on. This means the client will
-       wait for a reply from the mongo database after writing. On the
-       one hand, this is very good since it confirms an insert made it to
-       mongo. On the other hand it is very slow. Turning the option of (value
-       1) is required for high-rate data-taking.
+   * **compression {int}** turns compression on (1) or off (0). Compression
+     is done with Google's snappy algorithm.
+   * **mongo_address {string}** gives the address of the PC running the 
+     mongodb database. This can be either a hostname or an ip address.
+   * **mongo_database {string}** defines a database name for output.
+   * **mongo_collection {string}** defines a collection name. If you end
+     the collection name with a wildcard (for example data*) the software
+     will automatically assign a date/time string for the end of the collection
+     name of form: data_YYMMDD_HHMM.
+   * **mongo_min_insert_size {int}** gives the minimum number of BSON documents
+     that must be collected before an insert is performed. kodiaq uses 
+     bulk inserts to put data into mongodb. This means each insert is 
+     actually a vector of  BSON documents.
+   * **mongo_write_concern {int}** defines the write concern for mongo. 
+     Putting this to  normal mode (set 1) turns write concern on. This 
+     means the client will  wait for a reply from the mongo database after 
+     writing. On the one hand, this is very good since it confirms an 
+     insert made it to mongo. On the other hand it is very slow. Turning 
+     the option of (value 0) is required for high-rate data-taking.
        
-  * **PROCESSING_OPTIONS {int} {int} {int}**
-    The first int defines how many parallel threads should be used for data
-    processing. It isn't suggested to make this a ridiculous number. The
-    boards can only be read one at a time (there is a mutex-protected call
-    to the CAEN block transfer function). The goal at high rates is to
-    have the boards always being read. Therefore enough processing threads
-    (and processing power) must exist to do all of the data parsing, BSON
-    creation, and data input. As a rule this number is usually set based
-    on the number of threads in the processor on the computer.
-    The second int defines the block splitting mode. This is a
+  * **processing_mode {int}** defines the block splitting mode. This is a
     reformatting of the data before it is put into the database. The
-    options are:     
-    * 0 - No block splitting. Each mongodb document will contain an entire block transfer which could contain one or many event headers.
-    * 1 - coarse block splitting. Splits the block into separate events. This is for the default board firmware where each event is a trigger. One mongodb document contains data from all the channels for this trigger.
-    * 2 - fine block splitting. Splits the block into separate events. Then further splits the events into occurrences (only works if zero length encoding is set on via VME option). This means each zero-length-encoded chunk of data is its own doc. This mode only works with the default firmware and is meant to emulate the custom firmware.
-    * 3 - header extraction for custom firmware. Not yet implemented. The third int is the readout threshold. This defines a minimum number of documents that must be read before being inserted into mongodb. Can be tuned to achieve maximum write speeds in cases where rates fluctuate. At the end of a run the entire buffer will be written out regardless of whether this threshold was reached or not.
+    options are:
+    * 0 - No block splitting. Each mongodb document will contain an 
+      entire block transfer which could contain one or many event headers.
+    * 1 - coarse block splitting. Splits the block into separate events. 
+      This is for the default board firmware where each event is a trigger. 
+      One mongodb document contains data from all the channels for this trigger.
+    * 2 - fine block splitting. Splits the block into separate events with one
+      event per channel. 
+    * 3 - Same as 2 but even further splits channels into occurrences. Only 
+      works with the default firmware with zero-length-encoding enabled. 
+      In this mode each zero-length-encoded chunk of data is its own doc. 
+      This meant to emulate the custom firmware.
+    * 4 - header extraction for custom firmware. Parses custom firmware events
+      and puts each channel into its own document. The document timestamp is 
+      taken from the channel in this case (note the header as in the other modes).
 
+  * **processing_readout_threshold {int}** is the readout threshold. 
+    This defines a minimum number of documents that must be read before 
+    being processed. Can be tuned to achieve maximum write speeds in cases 
+    where rates fluctuate. At the end of a run the entire buffer will be 
+    written out regardless of whether this threshold was reached or not.
+
+  * **processing_num_threads {int}** defines how many parallel threads 
+    should be used for data parsing. It isn't suggested to make this 
+    a ridiculous number. The boards can only be read one at a time (there 
+    is a mutex-protected call to the CAEN block transfer function). The 
+    goal at high rates is to have the boards always being read. Therefore 
+    enough processing threads (and processing power) must exist to do all 
+    of the data parsing, BSON creation, and data input. As a rule this 
+    number is usually set based on the number of threads in the processor 
+    on the computer. 
+
+  * **noise_spectra_enable {int}** defines whether to take noise spectra (1) or
+    not (0) in the pre-processing stage of each run. 
+
+  * **noise_spectra_length {int}** length of the noise spectra in words. 
+    
+  * **noise_spectra_mongo_addr {string}** the IP or hostname of the MongoDB server
+    where the noise spectra should be written. They will bet written to 
+    the collection "noise.{run_name}". 
+  * **noise_spectra_mongo_coll {string}** defines the mongo collection where the
+    noise spectrum directory is created by the master. It is recommended to 
+    set this to "noise.directory". 
+  * **file_path {string}** in case of file output defines the output file path.
+  * **file_events_per_file {int}** in case of file output defines the number of
+    events per file. Once this number is reached a new file will be created with
+    an incremented file name and acquisition will continue.
   * **OUTFILE_OPTIONS {string} {int} {int}**
     This defines options for file output. The string argument defines
     the path. Using a wildcard (*) at the end of the string only will
@@ -344,44 +369,32 @@ related to your chosen write mode.
     The software only supports up to 10,000 files per run so don't
     make this too huge (the last file will just get all the data if
     this number is overrun). Writing -1 means all data in one file.
-    
-  * **COMPRESSION** {int}
-    Turn compression on (1) or off (0). Applies to mongodb and file output. Compression done with the google snappy package.
 
 An example of how these options appear in the .ini file is shown
 below. ::
 
-     ## WRITE_MODE {int}
-     ##     Usage: define write mode. 0-no writing 1-to file 2-mongodb
-     WRITE_MODE 2
-     
-     ## MONGO_OPTIONS {string} {string} {int} {int} 
-     ##     Usage: first string mongodb address
-     ##            second string collection name
-     ##            first int {int} max insert size
-     ##            second int {int} write concern (0-normal 1-off)
-     MONGO_OPTIONS lheppc42 data.test 5000 1 
-     
-     ## PROCESSING_OPTIONSS {int} {int} {int}
-     ##     Usage: define the number of processing threads. program will
-     ##            assign one by default if this number is not set or is garbage
-     ##            second int defined the processing mode (0-none, 1-coarse,
-     ##            2-occurrence building old fw)
-     ##            third int is readout threshold (how many BLTs before
-     ##            board says it is ready to be read)
-     PROCESSING_OPTIONS 6 2 1
-     
-     ## OUTFILE_OPTIONS {string} {int} 
-     ##     Usage: define options for file output. The first string argument
-     ##            is the path. A wildcard means to end the file name with
-     ##            a number determined by the current date/time.
-     ##            The int defines the number of events per file. -1
-     ##            means unlimited.
-     OUTFILE_OPTIONS koData* 5000
+  {
+      "write_mode": 0,
 
-     ## COMPRESSION {int}                                                      
-     ##     Usage: 0 - no compression 1 - compression with snappy              
-     COMPRESSION 1 
+      "mongo_collection": "data*",
+      "mongo_write_concern": 0,
+      "mongo_min_insert_size": 1,
+      "mongo_database": "raw",
+      "mongo_address": "xedaq00"
+
+      "file_events_per_file": 1000000,
+      "file_path": "../data/myfile",
+
+      "processing_readout_threshold": 0,
+      "processing_num_threads": 8,
+
+      "noise_spectra_enable": 1,
+      "noise_spectra_mongo_addr": "xedaq00",
+      "noise_spectra_mongo_coll": "noise.directory",
+      
+      "compression": 1
+  }
+
 
 VME Options
 ------------------
@@ -404,38 +417,51 @@ Two things should be kept in mind:
       
 The general format of a VME option setting is as follows: ::
 
-    WRITE_REGISTER {reg} {val} {boardID} {crateID} {linkID}
-
+  "registers": [
+    {
+      "board": String,
+      "comment": String,
+      "value": String,
+      "register": String
+    },
+  ... #more options
+  ]
+    
 Where the values of the parameters are:
 
-    * **WRITE_REGISTER** is the lag that tells the file parser that
-      this is a VME setting.
-    * **{reg}** is a hexidecimal value of the register to set. These
+    * **registers** is the lag that identifies a list of register settings.      
+    * **register** is a hexidecimal value of the register to set. These
       are sixteen-bit (four word) values and are added to the board
       VME address to write to a specific memory register of a specific board.
-    * **{boardID}** is an ID number of a board in case it is desired
+    * **board** is an ID number of a board in case it is desired
       to write the option just to a single board. -1 means all boards.
-    * **{crateID}** is an ID number of a crate, should be combined
-      with linkID to write to all boards with a specific link and crate. -1
-      means all.
-    * **{linkID}** is an ID number of a link. Should be combined with
-      crateID to write to all boards with a specific link and crate. -1 for
-      all.
+    * **value** is the register value in hex.
+    * **comment** is a user comment that can be helpful for keeping things straight.
+
+Note that 'register' and 'value' are hex numbers but should be given as strings. 
+The strings are parsed into unsigned integers in the code.
 
 Here are a few examples of how to use the command. 
 
 To write the value of 10 to register EF00 for all boards: ::
 
-     WRITE_REGISTER EF00 10 -1 -1 -1
+  {
+      "board": "-1",
+      "comment": "BERR register, 10=enable BERR",
+      "value": "10",
+      "register": "EF00"
+   },
+
      
 To write the same value to the same register only for board 800: ::
 
-     WRITE_REGISTER EF00 10 800 -1 -1
+  {
+      "board": "800",
+      "comment": "BERR register, 10=enable BERR",
+      "value": "10",
+      "register": "EF00"
+  },
 
-To write the same value to the same register for crate 2 on link 0 of
-slave number one: ::
-
-     %1WRITE_REGISTER EF00 10 -1 2 0
 
 Generally, the same options should be written to all digitizers so
 setting the board, crate, and link IDs to -1 is advisable. The
