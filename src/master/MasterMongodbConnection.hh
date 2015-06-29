@@ -70,7 +70,7 @@ public:
   // Purpose : Checks the mongodb command db for remote commands (from web)
   int          CheckForCommand(string &command, string &user,
 			       string &comment, string &detector,
-			       koOptions &options);
+			       bool &override, map<string,koOptions*> &options);
   
   //
   // Name    : PullRunMode
@@ -82,7 +82,7 @@ public:
   void Start(koOptions *options,string user,string comment=""){return;};
   void EndRun(string user,string comment=""){return;};
   int  UpdateNoiseDirectory(string run_name);
-  void SendRunStartReply(int response, string message, string mode, string comment);
+  void SendRunStartReply(int response, string message);//, string mode, string comment);
 
  private:
   koOptions                 *fOptions;

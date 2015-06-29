@@ -447,7 +447,10 @@ void MasterMongodbConnection::UpdateDAQStatus(koStatusPacket_t *DAQStatus,
 
 int MasterMongodbConnection::CheckForCommand(string &command, string &user, 
 					     string &comment, string &detector,
-					     koOptions &options)
+					     bool &override, 
+					     map<string, koOptions*> &options)
+//string &detector,
+//					     koOptions &options)
 /*
   DAQ commands can be written to the online.daqcommand db. These usually come from the web
   interface but they can actually come from anywhere. The only commands recognized are 
@@ -457,41 +460,82 @@ int MasterMongodbConnection::CheckForCommand(string &command, string &user,
 {
   if(fMonitorDB == NULL )
     return -1;
-  if(fMonitorDB->count("online.daq_commands") ==0)
+  if(fMonitorDB->count("online.daq_control") ==0)
     return -1;
-   auto_ptr<mongo::DBClientCursor> cursor = fMonitorDB->query("online.daqcommands",mongo::BSONObj());
+   auto_ptr<mongo::DBClientCursor> cursor = fMonitorDB->query("online.daq_control",
+							      mongo::BSONObj());
    mongo::BSONObj b;
    if(cursor->more())
      b = cursor->next();
    else
      return -1;
+
+   // Strip data from the doc
    command=b.getStringField("command");
-   string mode=b.getStringField("mode");
+   string modeTPC=b.getStringField("run_mode_tpc");
+   string modeMV = b.getStringField("run_mode_mv");
    comment = b.getStringField("comment");
    detector = b.getStringField("detector");
-   user=b.getStringField("name");
-   fMonitorDB->remove("online.daq_commands", 
+   override =  b.getBoolField("override");
+   user=b.getStringField("user");
+
+   cout<<"Got query: "<<b.toString()<<endl;
+   cout<<"Run mode TPC: "<<modeTPC<<" "<<b.getStringField("run_mode_tpc")<<endl;
+   cout<<"Detector: "<<detector<<endl;
+   // Remove any command docs in the DB. We can only do one at a time
+   fMonitorDB->remove("online.daq_control", 
 		   MONGO_QUERY("command"<<"Start"<<"detector"<<detector));
-   fMonitorDB->remove("online.daq_commands",
+   fMonitorDB->remove("online.daq_control",
 		   MONGO_QUERY("command"<<"Stop"<<"detector"<<detector)); 
-   if(command=="Start")
-     PullRunMode(mode,options);
+
+   // If start then get the modes
+   if(command=="Start"){
+     // Get the run modes
+     if( detector == "all" ){
+       options["tpc"] = new koOptions();
+       options["muon_veto"] = new koOptions();
+       if(PullRunMode(modeTPC, *(options["tpc"]))!=0 ||     
+	  PullRunMode(modeMV, *(options["muon_veto"])) !=0){
+	 delete options["tpc"];
+	 delete options["muon_veto"];
+	 return -1;
+       }
+     }
+     else{
+       options[detector] = new koOptions();
+       if(detector=="tpc" && PullRunMode(modeTPC, (*options[detector])) !=0){
+	 cout<<"Failed to pull tpc run mode "<<modeTPC<<endl;
+	 delete options[detector];
+	 return -1;	 
+       }
+       else if(detector=="muon_veto" &&
+	       PullRunMode(modeMV, (*options[detector]))!=0){
+	 cout<<"Failed to pull mv run mode "<<modeMV<<endl;
+	 delete options[detector];
+	 return -1;
+       }
+       stringstream pp;
+       options[detector]->ToStream(&pp);
+       cout<<pp.str()<<endl;
+     }
+   }
+     
    return 0;
 }
 
-void MasterMongodbConnection::SendRunStartReply(int response, string message, 
-						string mode, string comment)
+void MasterMongodbConnection::SendRunStartReply(int response, string message)
 /*
   When starting a run a plausibility check is performed. The result of this 
   check is sent using this function. The web interface will wait for an 
   entry in this DB and notify the user if something goes wrong.
  */
+// replyenum : 11 - ack 12 - action 13 - start 19 - done 18 - err
 {
   mongo::BSONObjBuilder reply;
   reply.append("message",message);
   reply.append("replyenum",response);
-  reply.append("mode",mode);
-  reply.append("comment",comment);
+  //reply.append("mode",mode);
+  //reply.append("comment",comment);
   InsertOnline("monitor", "online.dispatcherreply",reply.obj());
 }
 
@@ -503,17 +547,20 @@ int MasterMongodbConnection::PullRunMode(string name, koOptions &options)
  */
 {
   if(fMonitorDB == NULL) return -1;
-   if(fMonitorDB->count("online.run_modes") ==0)
-     return -1;
+  if(fMonitorDB->count("online.run_modes") ==0){
+    cout<<"No run modes in online db"<<endl;
+    return -1;
+  }
 
    //Find doc corresponding to this run mode
    mongo::BSONObjBuilder query; 
    query.append( "name" , name ); 
    //cout<<"Looking for run mode "<<name<<endl;
    mongo::BSONObj res = fMonitorDB->findOne("online.run_modes" , query.obj() ); 
-   if(res.nFields()==0) 
+   if(res.nFields()==0) {
+     cout<<"Empty run mode obj"<<endl;
      return -1; //empty object
+   }
    options.SetBSON(res);
    return 0;
-
 }

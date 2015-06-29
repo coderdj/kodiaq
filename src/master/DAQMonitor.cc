@@ -104,8 +104,8 @@ int DAQMonitor::ValidateStartCommand(string user, string comment,
   }
 
   //create DB entry
-  if(m_Mongodb!=NULL)
-    m_Mongodb->SendRunStartReply(reply,message,options->GetString("name"),comment);
+  //if(m_Mongodb!=NULL)
+  //m_Mongodb->SendRunStartReply(reply,message,options->GetString("name"),comment);
   if(reply==0) return 0;
   return -1;
 }
