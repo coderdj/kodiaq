@@ -219,9 +219,9 @@ int MasterMongodbConnection::InsertRunDoc(string user, string runMode, string na
   reader_sub.append( "data_taking_ended", false );
   reader_sub.append( "options", options->ExportBSON() );  
   mongo::BSONObjBuilder storageSub;
-  storageSub.append( "dbname", options->GetString("mongo_database") );
-  storageSub.append( "dbcollection", options->GetString("mongo_collection") );
-  storageSub.append( "dbaddr", options->GetString("mongo_address") );
+  storageSub.append( "name", options->GetString("mongo_database") );
+  storageSub.append( "collection", options->GetString("mongo_collection") );
+  storageSub.append( "address", options->GetString("mongo_address") );
   reader_sub.append( "storage_buffer", storageSub.obj() );
   builder.append( "reader", reader_sub.obj() );
 
