@@ -472,11 +472,18 @@ int MasterMongodbConnection::CheckForCommand(string &command, string &user,
 
    // Strip data from the doc
    command=b.getStringField("command");
-   string modeTPC=b.getStringField("run_mode_tpc");
-   string modeMV = b.getStringField("run_mode_mv");
+   string modeTPC = "";
+   string modeMV = "";
+   if( command == "Start" ){
+     modeTPC = b.getStringField("run_mode_tpc");
+     modeMV  = b.getStringField("run_mode_mv");
+     override =  b.getBoolField("override");
+
+   }
+   else
+     override = false;
    comment = b.getStringField("comment");
    detector = b.getStringField("detector");
-   override =  b.getBoolField("override");
    user=b.getStringField("user");
 
    cout<<"Got query: "<<b.toString()<<endl;
@@ -537,6 +544,16 @@ void MasterMongodbConnection::SendRunStartReply(int response, string message)
   //reply.append("mode",mode);
   //reply.append("comment",comment);
   InsertOnline("monitor", "online.dispatcherreply",reply.obj());
+}
+
+void MasterMongodbConnection::ClearDispatcherReply()
+/* 
+Clears the dispatcher reply db. Run when starting a new run
+ */
+{
+  if(fMonitorDB == NULL) return;
+  fMonitorDB->dropCollection("online.dispatcherreply");
+  return;
 }
 
 int MasterMongodbConnection::PullRunMode(string name, koOptions &options)

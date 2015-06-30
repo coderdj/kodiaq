@@ -83,6 +83,7 @@ public:
   void EndRun(string user,string comment=""){return;};
   int  UpdateNoiseDirectory(string run_name);
   void SendRunStartReply(int response, string message);//, string mode, string comment);
+  void ClearDispatcherReply();
 
  private:
   koOptions                 *fOptions;
