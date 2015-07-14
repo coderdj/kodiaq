@@ -31,13 +31,14 @@ DigiInterface::~DigiInterface()
    Close();
 }
 
-DigiInterface::DigiInterface(koLogger *logger)
+DigiInterface::DigiInterface(koLogger *logger, int ID)
 {
    m_ReadThread.IsOpen  = false;
    m_WriteThread.IsOpen = false;
    m_koLog              = logger;
    m_DAQRecorder        = NULL;
    m_RunStartModule     = NULL;
+   m_slaveID            = ID;
    pthread_mutex_init(&m_RateMutex,NULL);
    //Close();
 }
@@ -120,6 +121,8 @@ int DigiInterface::Initialize(koOptions *options, bool PreProcessing, bool skipC
       
       int tempHandle=-1;
       link_definition_t Link = options->GetLink(ilink);
+      if(Link.node != m_slaveID && m_slaveID!=-1)
+	continue;
       CVBoardTypes BType;
       if(Link.type=="V1718")
 	BType = cvV1718;
@@ -166,6 +169,8 @@ int DigiInterface::Initialize(koOptions *options, bool PreProcessing, bool skipC
       // double for loops, but small crate/module vector size)
       for(int imodule=0; imodule<options->GetBoards(); imodule++)	{
 	board_definition_t Board = options->GetBoard(imodule);
+	if(Board.node != m_slaveID && m_slaveID != -1)
+	  continue;
 	if(Board.link!=Link.id || Board.crate!=Link.crate)
 	  continue;
 	logmess.str(std::string());

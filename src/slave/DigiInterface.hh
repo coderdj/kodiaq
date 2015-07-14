@@ -52,7 +52,7 @@ class DigiInterface
  public:
    DigiInterface();
    virtual ~DigiInterface();
-   DigiInterface(koLogger *logger);
+  DigiInterface(koLogger *logger, int ID=-1);
    
   //General Control
   //
@@ -167,6 +167,8 @@ class DigiInterface
    //kodiaq objects
    koOptions           *m_koOptions;
    koLogger            *m_koLog;
+  int                  m_slaveID;
+  
 };
 
 #endif
