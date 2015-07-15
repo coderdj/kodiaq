@@ -20,7 +20,7 @@ koNetServer::koNetServer()
 {
    fPORT=2000;
    fDATAPORT=2001;
-   fNUMCLIENTS=0;
+   //fNUMCLIENTS=0;
    m_koBroadcastLog=NULL;
 }
 
@@ -34,14 +34,14 @@ koNetServer::koNetServer(koLogger *logger, koLogger *broadcastlogger)
    m_koBroadcastLog=broadcastlogger;
    fPORT=2000;
    fDATAPORT=2001;
-   fNUMCLIENTS=0;
+   //   fNUMCLIENTS=0;
 }
 
-void koNetServer::Initialize(int PORT, int DATAPORT, int NUMCLIENTS)
+void koNetServer::Initialize(int PORT, int DATAPORT)//, int NUMCLIENTS)
 {
    fPORT=PORT;
    fDATAPORT=DATAPORT;
-   fNUMCLIENTS=NUMCLIENTS;
+   //fNUMCLIENTS=NUMCLIENTS;
 }
 
 //int XeNetServer::Connect()

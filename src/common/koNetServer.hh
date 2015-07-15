@@ -43,7 +43,7 @@ class koNetServer : public koNet
    // Name    : Initialize 
    // Purpose : Set connection info for network interface
    // 
-   void         Initialize(int PORT, int DATAPORT, int NUMCLIENTS);
+  void         Initialize(int PORT, int DATAPORT);//, int NUMCLIENTS);
    //
    // Connection management
    //
@@ -156,7 +156,7 @@ class koNetServer : public koNet
    koLogger *m_koBroadcastLog;
    
    //Connection info
-   int fPORT,fDATAPORT,fNUMCLIENTS;
+  int fPORT,fDATAPORT;//,fNUMCLIENTS;
    vector <koSocket_t> fSockets;
    vector <koSocket_t> fDataSockets;
    int fConnectionSocket, fConnectionDataSocket;

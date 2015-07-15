@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
     if( dTime > 9. || bForceUpdate){
       if(bForceUpdate)
 	bForceUpdate = false;
-      cout<<controller.GetStatusString(detectors[iCurrentDet])<<endl;
+      cout<<controller.GetStatusString()<<endl;
       PrintTime =  koLogger::GetCurrentTime();
     }
 

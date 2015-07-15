@@ -43,6 +43,10 @@ DAQMonitor::DAQMonitor(koNetServer *DAQNetwork, koLogger *logger,
 DAQMonitor::~DAQMonitor()
 {
   pthread_mutex_destroy(&m_DAQStatusMutex);
+  if(m_DAQNetwork != NULL){
+    delete m_DAQNetwork;
+    m_DAQNetwork=NULL;
+  }
 }
 
 void DAQMonitor::ProcessCommand(string command, string user, 
