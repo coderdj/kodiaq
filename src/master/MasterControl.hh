@@ -42,7 +42,8 @@ public:
   string GetStatusString();
 
 private:
-  map<string, DAQMonitor> mDetectors;
+  map<string, DAQMonitor*> mDetectors;
+  map<string, koNetServer*> mMonitors;
   MasterMongodbConnection *mMongoDB;
   koLogger *mLog;
 
