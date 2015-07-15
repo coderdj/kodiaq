@@ -176,6 +176,31 @@ void MasterControl::Start(string detector, string user, string comment,
     return;
   }
   cout<<"Success!"<<endl;
+  
+  cout<<"Waiting for ready condition."<<endl;
+  time_t start_wait = koLogger::GetCurrentTime();
+  bool ready=false;
+  while(!ready){
+    ready = true;
+    for(auto iterator:mDetectors){
+      if(iterator.first==detector || detector=="all"){
+	if(iterator.second->GetStatus()->DAQState != KODAQ_RDY)
+	  ready=false;
+      }
+    }
+    sleep(1);
+    time_t current_time = koLogger::GetCurrentTime();
+    double tdiff =difftime( current_time, start_wait );
+    if(tdiff>30)
+      break;
+  }
+  if(!ready){
+    cout<<"Processing timed out! Aborting run start.";
+    if(web)
+      mMongoDB->SendRunStartReply(18, "Processing timed out! Aborting.");
+    return;
+  }
+    
 
   // This might actually work. Let's assign a run name.
   string run_name = koHelper::GetRunNumber(options->GetString("run_prefix"));
@@ -220,7 +245,7 @@ void MasterControl::Start(string detector, string user, string comment,
   cout<<"Success!"<<endl;
   
   if(web)
-    mMongoDB->SendRunStartReply(18, "Successfully completed run start procedure.");
+    mMongoDB->SendRunStartReply(19, "Successfully completed run start procedure.");
   return;
 }
 

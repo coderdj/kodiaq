@@ -17,7 +17,7 @@ struct link_definition_t{
   string type;
   int id;
   int crate;
-  char node;
+  int node;
 };
 
 /*! \brief Stores configuration information for one VME module.
@@ -28,7 +28,7 @@ struct board_definition_t{
   int id;
   int crate;
   int link;
-  char node;
+  int node;
 };
 
 /*! \brief Generic storage container for a VME option.
@@ -37,7 +37,7 @@ struct vme_option_t{
   u_int32_t address;
   u_int32_t value;
   int board;
-  char node;
+  int node;
 };
 
 

@@ -66,7 +66,7 @@ int DigiInterface::PreProcess(koOptions *options){
   if(options->GetInt("noise_spectra_enable") == 1){
     cout<<"Determining noise spectra."<<endl;
     if(m_koLog!=NULL)
-      m_koLog->Error("Producing noise spectra.");
+      m_koLog->Message("Producing noise spectra.");
     int length = 1000; //default
     if(options->GetInt("noise_spectra_length") > 0 && 
        options->GetInt("noise_spectra_length")<100000)
@@ -121,8 +121,9 @@ int DigiInterface::Initialize(koOptions *options, bool PreProcessing, bool skipC
       
       int tempHandle=-1;
       link_definition_t Link = options->GetLink(ilink);
-      if(Link.node != m_slaveID && m_slaveID!=-1)
+      if(Link.node != m_slaveID && m_slaveID!=-1){
 	continue;
+      }
       CVBoardTypes BType;
       if(Link.type=="V1718")
 	BType = cvV1718;

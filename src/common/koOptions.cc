@@ -77,7 +77,7 @@ link_definition_t koOptions::GetLink(int index){
   dummy.type="NULL";
   dummy.id=-1000;
   dummy.crate=-1000;
-  dummy.node='N';
+  dummy.node=-1;
   if(index < 0 || index > GetArraySize("links") || GetArraySize("links")==0){
       return dummy;
     }
@@ -89,7 +89,7 @@ link_definition_t koOptions::GetLink(int index){
     retlink.type = link_obj["type"].String();
     retlink.crate = link_obj["crate"].Int();
     retlink.id = link_obj["link"].Int();
-    retlink.node = '0' + link_obj["reader"].Int();
+    retlink.node = link_obj["reader"].Int();
   }
   catch(...){
     return dummy;
@@ -106,7 +106,7 @@ board_definition_t koOptions::GetBoard(int index){
   dummy.id=-1000;
   dummy.crate=-1000;
   dummy.link=-1000;
-  dummy.node='N';  
+  dummy.node=-1;  
   if(index < 0 || index > GetArraySize("boards") || GetArraySize("boards")==0){
     return dummy;
   }
@@ -120,7 +120,7 @@ board_definition_t koOptions::GetBoard(int index){
     retboard.id = koHelper::StringToInt(board_obj["serial"].String());
     retboard.crate = board_obj["crate"].Int();
     retboard.link = board_obj["link"].Int();
-    retboard.node = '0' + board_obj["reader"].Int();
+    retboard.node = board_obj["reader"].Int();
   }
   catch(...){
     return dummy;
@@ -135,7 +135,7 @@ vme_option_t koOptions::GetVMEOption(int index){
   dummy.address=0;
   dummy.value=0;
   dummy.board=-1000;
-  dummy.node='x';
+  dummy.node=-1;
   if(index < 0 || index > GetArraySize("registers") 
      || GetArraySize("registers")==0){
     return dummy;
@@ -148,7 +148,7 @@ vme_option_t koOptions::GetVMEOption(int index){
     retreg.address = koHelper::StringToHex(vme_obj["register"].String());
     retreg.value = koHelper::StringToHex(vme_obj["value"].String());
     retreg.board = koHelper::StringToInt(vme_obj["board"].String());
-    retreg.node = 'x';
+    retreg.node = -1;
   }
   catch(...){
     return dummy;
