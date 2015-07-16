@@ -58,15 +58,15 @@ void koOptions::SetString(string field_name, string value){
   // So we will create a new BSON object that is a copy of the 
   // Current one and update the field
   mongo::BSONObjBuilder builder;
-  builder.appendElements(m_bson);
   builder.append(field_name, value);
+  builder.appendElementsUnique(m_bson);
   m_bson = builder.obj();
 
 }
 void koOptions::SetInt(string field_name, int value){
   mongo::BSONObjBuilder builder;
-  builder.appendElements(m_bson);
   builder.append(field_name, value);
+  builder.appendElementsUnique(m_bson);
   m_bson = builder.obj();
 }
 

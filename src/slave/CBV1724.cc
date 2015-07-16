@@ -61,19 +61,13 @@ CBV1724::CBV1724(board_definition_t BoardDef, koLogger *kLog)
 int CBV1724::Initialize(koOptions *options)
 {
   // Initialize and ready the board according to the options object
-  
+
   // Set private members
   int retVal=0;
   i_clockResetCounter=0;
   bActivated=false;
   UnlockDataBuffer();
   
-  // Load options. This must be done again after the baseline
-  // and noise procedures to reset the board's internal counters
-  //  if( LoadVMEOptions( options ) != 0 )
-  //retVal = -1;
-   
-   
   //Get size of BLT read using board data and options
   u_int32_t data;
   ReadReg32(CBV1724_BoardInfoReg,data);
@@ -116,7 +110,7 @@ int CBV1724::Initialize(koOptions *options)
   int tries = 0;
   while( LoadVMEOptions( options ) != 0 && tries < 5) {
     tries ++;
-    usleep(1000);
+    usleep(100);
     if( tries == 5 )
       retVal = -1;
   }
@@ -396,7 +390,7 @@ int CBV1724::DoNoiseSpectra(string mongo_addr, string mongo_coll, u_int32_t leng
 
   // ONLY compatible with mongodb
 #ifdef HAVE_LIBMONGOCLIENT
-  
+
   // Requires C++11
   vector<vector<int>> valuesPerChannel(8,vector<int>());
   
@@ -406,17 +400,17 @@ int CBV1724::DoNoiseSpectra(string mongo_addr, string mongo_coll, u_int32_t leng
     return -1;
   }
 
+  // Load baselines from local file into board
   vector <int> DACValues;
   if(GetBaselines(DACValues,true)!=0) {
     DACValues.resize(8,0x1000);
   }
-
-  //Load the old baselines into the board                                            
   if(LoadDAC(DACValues)!=0) {
     LogError("Can't load to DAC!");
     return -1;
   }
 
+  // Initialize connection to mongodb
   mongo::DBClientConnection *mongo = NULL;
   try{
     mongo::client::initialize();
@@ -430,17 +424,20 @@ int CBV1724::DoNoiseSpectra(string mongo_addr, string mongo_coll, u_int32_t leng
     delete mongo;
     return -1;
   }
+
+  // Get the firmware revision
   u_int32_t fwRev=0;
   ReadReg32(0x118C,fwRev);
   int fwVERSION = ((fwRev>>8)&0xFF); //0 for old FW, 137 for new FW        
 
   do{
+
     // Enable to board      
     WriteReg32(CBV1724_AcquisitionControlReg,0x4);
-    usleep(5000);
+    usleep(100);
     //Set Software Trigger            
     WriteReg32(CBV1724_SoftwareTriggerReg,0x1);
-    usleep(5000);
+    usleep(100);
     //Disable the board                                   
     WriteReg32(CBV1724_AcquisitionControlReg,0x0);  
     
@@ -450,10 +447,11 @@ int CBV1724::DoNoiseSpectra(string mongo_addr, string mongo_coll, u_int32_t leng
       thisread = 0;
       thisread = ReadMBLT();
       readout+=thisread;
-      usleep(1000);
+      usleep(100);
       counter++;
-    } while( counter < 1000 && (readout == 0 || thisread != 0)); 
-    // Either the timer times out or the readout is non zero but the current read is finished
+    } while( counter < 1000 && (readout == 0));// || thisread != 0)); 
+    // Either the timer times out or the readout is non zero 
+    // but the current read is finished
     if(readout == 0){
       LogError("Read failed in noise spectra function.");
       cout<<"Read failed in noise function."<<endl;
@@ -467,7 +465,6 @@ int CBV1724::DoNoiseSpectra(string mongo_addr, string mongo_coll, u_int32_t leng
     u_int32_t ht=0;
     vector <u_int32_t> *dsizes;
     vector<u_int32_t*> *buff= ReadoutBuffer(dsizes, rc, ht);
-    
     vector <u_int32_t> *dchannels = new vector<u_int32_t>;
     vector <u_int32_t> *dtimes = new vector<u_int32_t>;
     
@@ -483,7 +480,7 @@ int CBV1724::DoNoiseSpectra(string mongo_addr, string mongo_coll, u_int32_t leng
       int max = DataProcessor::GetBufferMax((*buff)[x], (*dsizes)[x]);
       valuesPerChannel[(*dchannels)[x]].push_back(max);
     }
-
+    
     delete buff;
     delete dsizes;
     delete dchannels;
@@ -491,7 +488,6 @@ int CBV1724::DoNoiseSpectra(string mongo_addr, string mongo_coll, u_int32_t leng
 
   } while(valuesPerChannel[0].size() < 500 );
 
-  
   // Write to mongodb
   string collection = "noise.dump";
   mongo::BSONObj obj = mongo->findOne(mongo_coll,
@@ -638,9 +634,9 @@ int CBV1724::DetermineBaselines()
       }
       baseline/=bdiv;
       if(maxval-minval > 500) {
-	stringstream error;
-	error<<"Channel "<<(*dchannels)[x]<<" signal in baseline?";
-	LogMessage( error.str() );	
+	//stringstream error;
+	//error<<"Channel "<<(*dchannels)[x]<<" signal in baseline?";
+	//LogMessage( error.str() );	
 	delete[] (*buff)[x];
 	continue; //signal in baseline?
       }

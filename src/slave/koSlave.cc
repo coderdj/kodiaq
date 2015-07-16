@@ -102,8 +102,12 @@ program_start:
    }   
    //start digi interface
    cout<<koLogger::GetTimeString()<<" Initializing electronics"<<endl;
-  
-   if(fElectronics->Initialize(&fDAQOptions)!=0)  {	
+
+   if(fElectronics->PreProcess(&fDAQOptions)!=0)  {
+     cout<<koLogger::GetTimeString()<<" Error preprocessing electronics"<<endl;
+     goto program_start;
+   }
+   if(fElectronics->Arm(&fDAQOptions)!=0)  {	
      cout<<koLogger::GetTimeString()<<" Error initializing electronics"<<endl;
      goto program_start;
    }   

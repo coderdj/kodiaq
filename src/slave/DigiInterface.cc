@@ -198,11 +198,6 @@ int DigiInterface::Initialize(koOptions *options, bool PreProcessing, bool skipC
       }
     }
   }
-  //Sleep between CC activation and digi
-  //  sleep(4);
-
-  //  StopRun();
-
 
   // initialize digitizers
   for(unsigned int x=0; x<m_vDigitizers.size();x++)  {
@@ -213,7 +208,6 @@ int DigiInterface::Initialize(koOptions *options, bool PreProcessing, bool skipC
       return -1;
     }
   }
-   
    
   if(PreProcessing)
     return 0;
