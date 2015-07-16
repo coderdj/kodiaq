@@ -36,6 +36,12 @@ from the console or by the XENON1T online monitoring web interface.
 
 Please see the full documentation at http://xenon1t.github.io/kodiaq/
 
+2.0 Installtion - The super easy way
+-------------------------------------
+
+The easiest way to install kodiaq is to use the install script. This will automatically check out the newest version of everything and install it onto your PC. It only works in Ubuntu and has only been tested on 14.04 server. If you are using a different distribution you will have to install manually.
+
+
 2. Installation - Lite Version
 -----------------------------------------
 
@@ -56,11 +62,11 @@ Steps to build and run the standalone module:
    3. cd src/slave
    4. ./koSlave
    
-Note that the file DAQConfig.ini must be present in src/slave/DAQConfig.ini. If you haven't done this yet you can use the following line::
+Note that the file DAQConfig.ini must be present in src/slave/DAQConfig.ini. If it is anywhere else you can specify the location with the '-i' option, like ./koSlave -i "myconfig.ini". An example config file sits at::
    
-    cp src/master/data/RunModes/DAQOptionsMaster.ini src/slave/DAQConfig.ini
+    cp src/master/data/RunModes/DAQOptionsMaster.ini 
 
-Then edit this file with your settings.
+Edit this file with the settings specific to your setup. Note that an expert should edit this file while a normal user should simply choose between several pre-made files depending on the operation mode.
 
 3. Installation - Full version
 ---------------------------------------------
