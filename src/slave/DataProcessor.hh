@@ -35,7 +35,7 @@ public:
   DataProcessor();
   virtual   ~DataProcessor();
   explicit   DataProcessor(DigiInterface *digi, DAQRecorder *recorder,
-			   koOptions *options);
+			   koOptions *options, int id);
   static void* WProcess(void* data);
   void       Process();
   //
@@ -121,7 +121,7 @@ private:
   DAQRecorder      *m_DAQRecorder;
   bool              m_bErrorSet;
   string            m_sErrorText;
-  
+  int               m_id;
 };
 
 #endif

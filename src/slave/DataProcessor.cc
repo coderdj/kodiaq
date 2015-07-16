@@ -26,6 +26,7 @@ DataProcessor::DataProcessor()
    m_DAQRecorder   = NULL;
    m_koOptions     = NULL;
    m_bErrorSet     = false;   
+   m_id            = -1;
 }
 
 DataProcessor::~DataProcessor()
@@ -40,12 +41,13 @@ void* DataProcessor::WProcess(void* data)
 }
 
 DataProcessor::DataProcessor(DigiInterface *digi, DAQRecorder *recorder,
-			     koOptions *options)
+			     koOptions *options, int id)
 {
   m_DigiInterface   = digi; 
   m_DAQRecorder     = recorder;
   m_koOptions       = options;
   m_bErrorSet       = false;
+  m_id              = id;
 }
 
 void DataProcessor::LogError(string err)
@@ -397,7 +399,8 @@ void DataProcessor::Process()
 
   while(!bExitCondition){
     //
-    // This loop will be processed until the DigiInterface switches all digitizers to inactive.
+    // This loop will be processed until the DigiInterface 
+    // switches all digitizers to inactive.
     // 
     bExitCondition = true;
 
@@ -405,15 +408,15 @@ void DataProcessor::Process()
       CBV1724 *digi = m_DigiInterface->GetDigi(x);
       
       if(digi->Activated()) bExitCondition=false;
-
+      else continue;
       usleep(10); //avoid 100% cpu
 
       // Check if the digitizer has data and is not associated 
       // with another processor
       if(digi->RequestDataLock()!=0) continue;
 
-      // resetCounterStart = how many times has the digitizer clock cycled (it's only 31-bit)
-      // at the start of the event
+      // resetCounterStart = how many times has the digitizer clock cycled 
+      // (it's only 31-bit) at the start of the event
       int resetCounterStart = 0; 
       u_int32_t headerTime = 0;
 
@@ -427,7 +430,8 @@ void DataProcessor::Process()
 	//simple block parsing. 
 	SplitBlocks(buffvec,sizevec);
       }
-      else if(m_koOptions->GetInt("processing_mode") !=0 ){ // all other modes separate channels
+      else if(m_koOptions->GetInt("processing_mode") !=0 ){ 
+	// all other modes separate channels
 	channels = new vector<u_int32_t>();
 	times = new vector<u_int32_t>();
 
@@ -501,33 +505,27 @@ void DataProcessor::Process()
 	  ChannelResetCounters[Channel]++;
 	}
 	
-	//Convert the time to 64-bit
-	// We assume this data is in temporal order for computation using the reset counter
+	// Convert the time to 64-bit
+	// We assume this data is in temporal order for 
+	// computation using the reset counter
+	
 	int iBitShift = 31; 
-
-	long long Time64 = ((unsigned long)ChannelResetCounters[Channel] << iBitShift) +TimeStamp;//| TimeStamp;
-	
-	//	Time64 += ((unsigned long) 1 << iBitShift);
-	
-	/*if( latestTime64 - Time64 < -3E9 )
-	  resetCounterStart++;
-	if( latestTime64 > Time64 )
-	  Time64 += ((unsigned long) 1 << iBitShift);
-	*/
+	long long Time64 = ((unsigned long)ChannelResetCounters[Channel] << 
+			    iBitShift) +TimeStamp;
 	latestTime64 = Time64;
 
 	// Get integral if required (do before zipping)
 	int integral = 0;
 	if( m_koOptions->GetInt("occurrence_integral") )
-	  integral = GetBufferIntegral( (*buffvec)[b], (*sizevec)[b] );
-	
+	  integral = GetBufferIntegral( (*buffvec)[b], (*sizevec)[b] );	
 	
 	//zip data if required
 	char* buff=NULL;
 	size_t eventSize=0;
 	if(m_koOptions->GetInt("compression") == 1){
 	  buff = new char[snappy::MaxCompressedLength((*sizevec)[b])];
-	  snappy::RawCompress((const char*)(*buffvec)[b], (*sizevec)[b], buff, &eventSize);
+	  snappy::RawCompress((const char*)(*buffvec)[b], 
+			      (*sizevec)[b], buff, &eventSize);
 	  delete[] (*buffvec)[b];
 	}
 	else{
@@ -550,30 +548,30 @@ void DataProcessor::Process()
 	    bson.appendTimeT("starttimestamp",mktime(starttime));
 	  }
 	  //end remove later
-
+	  
 	  bson.append("module",iModule);
 	  bson.append("channel",Channel);
 	  bson.append("time",Time64);
 	  bson.append("endtime", Time64 + (long long)eventSize);
-
 	  bson.append("raw_time", TimeStamp);
 	  bson.append("time_reset_counter", resetCounterStart );
-
+	  
 	  if( m_koOptions->GetInt("occurrence_integral") )
 	    bson.append("integral", integral);
 
-	  bson.appendBinData("data",(int)eventSize,mongo::BinDataGeneral,(const void*)buff);
+	  bson.appendBinData("data",(int)eventSize,mongo::BinDataGeneral,
+			     (const void*)buff);
 	  vMongoInsertVec->push_back(bson.obj());
 	  
 	  if((int)vMongoInsertVec->size() >
 	     m_koOptions->GetInt("mongo_min_insert_size")){
-	    if(DAQRecorder_mdb->InsertThreaded(vMongoInsertVec,mongoID)==0){ //success
+	    if(DAQRecorder_mdb->InsertThreaded(vMongoInsertVec,mongoID)==0){ 
+	      //success
 	      vMongoInsertVec = new vector<mongo::BSONObj>();
 	    }
 	    else{
 	      LogError("MongoDB insert error from processor thread.");
 	      bExitCondition=true;
-	      //delete vMongoInsertVec;
 	      break;
 	    }
 	  }
@@ -588,7 +586,8 @@ void DataProcessor::Process()
 	    DAQRecorder_pb->GetOutfile()->create_event(TimeStamp,protocHandle);
 	    if(eventIndices!=NULL) currentEventIndex++;
 	  }
-	  DAQRecorder_pb->GetOutfile()->add_data(protocHandle,Channel,iModule,buff,eventSize,Time64);
+	  DAQRecorder_pb->GetOutfile()->add_data(protocHandle,Channel,
+						 iModule,buff,eventSize,Time64);
 	  //special case for last event
 	  if(b==buffvec->size()-1 && protocHandle!=-1)
 	    DAQRecorder_pb->GetOutfile()->close_event(protocHandle,true);

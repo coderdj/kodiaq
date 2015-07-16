@@ -357,7 +357,7 @@ void DigiInterface::ReadThread()
       for(unsigned int x=0; x<m_vDigitizers.size();x++)  {
 
 	// avoid hammering the vme bus
-	// usleep(100);
+	usleep(100);
 
 	// First check if the digitizer is active. If at least
 	// one digitizer is active then keep the thread alive
@@ -386,12 +386,17 @@ void DigiInterface::ReadThread()
       m_iReadSize+=rate;      
       m_iReadFreq+=freq;
       UnlockRateMutex();
+
+      // End of run logic. If no digitizers seem to be activated
+      // Try a few times (100) to see if any are active. If not end run.
       if( !RanOnce ){
 	usleep(1000);
 	counter++;
-	if( counter < 1000 )
+	if( counter < 100 )
 	  ExitCondition = false;
       }
+      else
+	counter=0;
    }
    
    
@@ -414,7 +419,7 @@ int DigiInterface::StartRun()
      
     // Spawning of processing threads. depends on readout options.
     m_vProcThreads[x].Processor = new DataProcessor(this,m_DAQRecorder,
-						    m_koOptions);
+						    m_koOptions, x);
     pthread_create(&m_vProcThreads[x].Thread,NULL,DataProcessor::WProcess,
 		   static_cast<void*>(m_vProcThreads[x].Processor));
     m_vProcThreads[x].IsOpen=true;
@@ -494,7 +499,9 @@ int DigiInterface::StartRun()
 	 m_vDigitizers[x]->SetActivated(false);
       }      
    }   
+   cout<<"Deactivated digitizers. Closing threads."<<endl;
    CloseThreads();
+   cout<<"Shutting down recorder."<<endl;
    if(m_DAQRecorder != NULL)
      m_DAQRecorder->Shutdown();
    cout<<"Leaving stoprun"<<endl;
@@ -512,7 +519,7 @@ void DigiInterface::CloseThreads(bool Completely)
       cout<<" done!"<<endl;
    }
    for(unsigned int x=0;x<m_vProcThreads.size();x++)  {
-     cout<<"Closing processing thread "<<x<<"...";
+     cout<<"Closing processing thread "<<x<<"..."<<flush;
       if(m_vProcThreads[x].IsOpen==false) continue;
       m_vProcThreads[x].IsOpen=false;
       pthread_join(m_vProcThreads[x].Thread,NULL);
