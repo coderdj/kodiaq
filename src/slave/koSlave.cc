@@ -13,6 +13,7 @@
 #include <koLogger.hh>
 #include <iostream>
 #include <fstream>
+#include <getopt.h>
 #include <iomanip>
 #include <koNetClient.hh>
 #include "DigiInterface.hh"
@@ -36,13 +37,12 @@ int ReadIniFile(string filepath, string &SERVERADDR, int &PORT,
 // *******************************************************************************
 #include "NCursesUI.hh"
 
-int StandaloneMain()
+int StandaloneMain(string fOptionsPath)
 {   
    koLogger fLog("log/slave.log");
    fLog.Message("Started standalone reader");
    DigiInterface *fElectronics = new DigiInterface(&fLog);
-   koOptions fDAQOptions;
-   string fOptionsPath = "DAQConfig.ini";
+   koOptions fDAQOptions;   
 
 program_start:
    
@@ -188,17 +188,37 @@ program_start:
 //           NETWORKED DAQ SLAVE CODE
 //           
 // *******************************************************************************
-int main()
+int main(int argc, char *argv[])
 {
+  string filepath = "DAQConfig.ini";
 #ifdef KLITE
-   return StandaloneMain();
+  // Get command line option 
+  int c;
+  while(1){
+    static struct option long_options[] =
+      {
+        {"ini_file", required_argument, 0, 'i'},
+        {0,0,0,0}
+      };    
+    int option_index = 0;
+    c = getopt_long(argc, argv, "i:", long_options, &option_index);
+    if( c == -1) break;    
+    switch(c){
+    case 'i':
+      filepath = optarg;
+      break;
+    default:
+      break;
+    }
+  }  
+  return StandaloneMain(filepath);
 #endif
          
    //Set up objects
    koLogger      *koLog = new koLogger("log/slave.log");
    koNetClient    fNetworkInterface(koLog);
    
-   string filepath = "SlaveConfig.ini";
+   filepath = "SlaveConfig.ini";
    string SERVERADDR = "xedaq02";
    int PORT = 2002, DATAPORT = 2003, ID = 1;
    string NODENAME = "DAQ01";
