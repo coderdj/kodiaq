@@ -355,6 +355,8 @@ connection_loop:
 	   //if(bIdle) continue;
 	   fElectronics->StopRun();
 	    bRunning=false;
+	    bArmed=false;
+	    bRdy = false;
 	 }
 	 
 	 

@@ -294,8 +294,10 @@ void MasterControl::CheckRemoteCommand(){
       delete options["muon_veto"];
     }
     else {
-      if(Start(detector,user,comment,options[detector],true)==-1)
+      if(Start(detector,user,comment,options[detector],true)==-1){
+	cout<<"Sending stop command."<<endl;
 	Stop(detector, "AUTO_DISPATCHER", "ABORTED: RUN START FAILED");
+      }
       delete options[detector];
     }
   }

@@ -73,8 +73,8 @@ void DAQMonitor::ProcessCommand(string command, string user,
     }
     }*/
   else if(command=="Stop"){
-    if(m_DAQStatus.DAQState==KODAQ_RUNNING)
-      Stop(user,comment);
+    //if(m_DAQStatus.DAQState==KODAQ_RUNNING)
+    Stop(user,comment);
     Shutdown();
   }
 }
@@ -267,7 +267,7 @@ int DAQMonitor::Stop(string user,string comment)
   mess<<"Run <b>"<<m_DAQStatus.RunInfo.RunNumber<<"</b> stopped by "<<user;
   if(comment.length() > 0 )
     mess<<" : "<<comment;
-  if(m_Mongodb!=NULL){
+  if(m_Mongodb!=NULL && m_DAQStatus.DAQState==KODAQ_RUNNING){
     m_Mongodb->SendLogMessage(mess.str(),KOMESS_STATE);
     m_Mongodb->UpdateEndTime(m_detector);
   }
