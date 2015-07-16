@@ -133,10 +133,16 @@ void MasterControl::Stop(string detector, string user, string comment){
   }
 }
 
-void MasterControl::Start(string detector, string user, string comment, 
+int MasterControl::Start(string detector, string user, string comment, 
 			  koOptions *options, bool web){
+  // Return values:
+  //                 0 - Success
+  //                -1 - Failed, reset the DAQ
+  //                -2 - Failed, no need to reset the DAQ
+  //
+
   if(options==NULL)
-    return;
+    return -2;
 
   // We have a staged start. Let's move through the stages. 
   if(web)
@@ -156,7 +162,7 @@ void MasterControl::Start(string detector, string user, string comment,
     cout<<"Error during command validation! Aborting run start.";
     if(web)
       mMongoDB->SendRunStartReply(18, "Error during command validation! Aborting.");
-    return;
+    return -2;
   }
   cout<<"Success!"<<endl;
   
@@ -173,7 +179,7 @@ void MasterControl::Start(string detector, string user, string comment,
     cout<<"Error during preprocessing! Aborting run start.";
     if(web)
       mMongoDB->SendRunStartReply(18, "Error during preprocessing! Aborting.");
-    return;
+    return -1;
   }
   cout<<"Success!"<<endl;
   
@@ -198,7 +204,7 @@ void MasterControl::Start(string detector, string user, string comment,
     cout<<"Processing timed out! Aborting run start.";
     if(web)
       mMongoDB->SendRunStartReply(18, "Processing timed out! Aborting.");
-    return;
+    return -1;
   }
     
 
@@ -222,10 +228,25 @@ void MasterControl::Start(string detector, string user, string comment,
     if(web)
       mMongoDB->SendRunStartReply(18, "Error arming boards. Run " + run_name + 
 				  " has been aborted.");
-    return;
+    return -1;
   }
   cout<<"Success!"<<endl;
-  
+
+  // Insert the run doc and update the noise directory
+  if(web && options->GetInt("noise_spectra_enable")==1)
+    mMongoDB->UpdateNoiseDirectory(run_name);
+  if(web){
+    // build a list of detectors participating
+    vector<string> detlist;
+    if(detector != "all")
+      detlist.push_back(detector);
+    else{
+      for(auto iterator:mDetectors)
+	detlist.push_back(iterator.first);
+    }
+    mMongoDB->InsertRunDoc(user, options->GetString("name"), 
+			   run_name, comment, detector, detlist, options);
+  }
   // Start the actual run
   cout<<"Sending start command..."<<flush;
   if(web)
@@ -240,13 +261,13 @@ void MasterControl::Start(string detector, string user, string comment,
     if(web)
       mMongoDB->SendRunStartReply(18, "Error starting run. Run " + run_name +
                                   " has been aborted.");
-    return;
+    return -1;
   }
   cout<<"Success!"<<endl;
   
   if(web)
     mMongoDB->SendRunStartReply(19, "Successfully completed run start procedure.");
-  return;
+  return 0;
 }
 
 void MasterControl::CheckRemoteCommand(){
@@ -273,7 +294,8 @@ void MasterControl::CheckRemoteCommand(){
       delete options["muon_veto"];
     }
     else {
-      Start(detector,user,comment,options[detector],true);
+      if(Start(detector,user,comment,options[detector],true)==-1)
+	Stop(detector, "AUTO_DISPATCHER", "ABORTED: RUN START FAILED");
       delete options[detector];
     }
   }

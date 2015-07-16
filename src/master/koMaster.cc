@@ -99,7 +99,9 @@ int main(int argc, char *argv[])
       }
       else if( cCommand == 's' ) {
 	cout<<"Sending start command"<<endl;
-	controller.Start();      
+	if(controller.Start(detectors[iCurrentDet])==-1){
+	  controller.Stop(detectors[iCurrentDet]);
+	}
       }
       else if(cCommand == 'q')
 	break;

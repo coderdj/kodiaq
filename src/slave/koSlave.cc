@@ -352,8 +352,8 @@ connection_loop:
 	    cout<<"STARTED"<<endl;
 	 }
 	 if(command=="STOP")  {
-	    if(!bRunning) continue;
-	    fElectronics->StopRun();
+	   //if(bIdle) continue;
+	   fElectronics->StopRun();
 	    bRunning=false;
 	 }
 	 

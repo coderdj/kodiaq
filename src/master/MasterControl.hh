@@ -31,7 +31,7 @@ public:
   void Disconnect(string detector="all");
   void Close();
   
-  void Start(string detector="all", string user="dispatcher_console", 
+  int  Start(string detector="all", string user="dispatcher_console", 
 	     string comment="", koOptions *options = NULL, bool web=false);
   void Stop(string detector="all", string user="dispatcher_console", 
 	    string comment="");
