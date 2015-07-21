@@ -108,7 +108,7 @@ int DigiInterface::Arm(koOptions *options){
   Close();
   if(options->GetInt("baseline_mode") == 1)
     options->SetInt("baseline_mode", 0);
-  return Initialize(options);
+  return Initialize(options, false, true);
 }
 
 int DigiInterface::Initialize(koOptions *options, bool PreProcessing, bool skipCAEN)
