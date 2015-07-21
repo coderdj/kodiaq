@@ -282,36 +282,47 @@ int MasterMongodbConnection::UpdateEndTime(string detector)
 {
   if(fRunsDB == NULL )
     return -1;
-  if(!fLastDocOIDs[detector].isSet())  {
-    if(fLog!=NULL) fLog->Error("MasterMongodbConnection::UpdateEndTime - Want to stop run but don't have the _id field of the run info doc");
-      return -1;
-   }
-   try  {
   
-     // Get the time in GMT
-     time_t nowTime;
-     //struct tm *currenttime;
-     time(&nowTime);
-     //currenttime = localtime(&nowTime);
-     //currenttime = gmtime(&nowTime);
-     //long offset = currenttime->tm_gmtoff;      
-     
-     mongo::BSONObj res;
-     string onlinesubstr = "runs";
-     
-     mongo::BSONObjBuilder bo;
-     bo << "findandmodify" << onlinesubstr.c_str() << 
-       "query" << BSON("_id" << fLastDocOIDs[detector]) << 
-       "update" << BSON("$set" << BSON("endtimestamp" <<
-				       mongo::Date_t(1000*(nowTime))//+offset)) 
-				       << "reader.data_taking_ended" << true));     
-     assert(fRunsDB->runCommand("runs",bo.obj(),res));
-   }
-   catch (const mongo::DBException &e) {
-     if(fLog!=NULL) fLog->Error("MasterMongodbConnection::UpdateEndTime - Error fetching and updating run info doc with end time stamp.");
-     return -1;
-   }   
-   return 0;
+  try  {
+
+    for( auto iterator : fLastDocOIDs ){
+      cout<<"Searching for detector "<<detector<<" in "<<iterator.first<<endl;
+      if( iterator.first != detector && detector != "all")
+	continue;
+      cout<<"Matched!"<<endl;
+      if( !iterator.second.isSet() ){
+	cout<<"No OID set for detector "<<iterator.first<<endl;
+	if(fLog!=NULL) fLog->Error("MasterMongodbConnection::UpdateEndTime - Want to stop run but don't have the _id field of the run info doc");
+	continue;
+      }
+      cout<<"OID is set"<<endl;
+
+      // Get the time in GMT
+      time_t nowTime;
+      time(&nowTime);
+      
+      mongo::BSONObj res;
+      string onlinesubstr = "runs";
+      
+      mongo::BSONObjBuilder bo;
+      bo << "findandmodify" << onlinesubstr.c_str() << 
+	"query" << BSON("_id" << iterator.second )<<
+	"update" << BSON("$set" << BSON("endtimestamp" <<
+					mongo::Date_t(1000*(nowTime))
+					<< "reader.data_taking_ended" << true));     
+
+      mongo::BSONObj comnd = bo.obj();
+      assert(fRunsDB->runCommand("online",comnd,res));
+
+      // Set to a new random oid so we don't update end times twice
+      iterator.second.init();
+    }
+  }
+  catch (const mongo::DBException &e) {
+    if(fLog!=NULL) fLog->Error("MasterMongodbConnection::UpdateEndTime - Error fetching and updating run info doc with end time stamp.");
+    return -1;
+  }   
+  return 0;
 }
 
 void MasterMongodbConnection::SendLogMessage(string message, int priority)
@@ -323,11 +334,7 @@ void MasterMongodbConnection::SendLogMessage(string message, int priority)
 {      
 
   time_t currentTime;
-  //struct tm *starttime;
   time(&currentTime);
-  //starttime = localtime(&currentTime);
-  //starttime = gmtime(&currentTime);
-  //long offset = starttime->tm_gmtoff;
 
   int ID=-1;
   // For WARNINGS and ERRORS we put an additional entry into the alert DB
@@ -410,9 +417,6 @@ void MasterMongodbConnection::UpdateDAQStatus(koStatusPacket_t *DAQStatus,
    mongo::BSONObjBuilder b;
    time_t currentTime;
    time(&currentTime);
-   //struct tm *starttime;
-   //starttime = localtime(&currentTime);
-   //long offset = starttime->tm_gmtoff;
 
    b.appendTimeT("createdAt",currentTime);//+offset);
    b.append("timeseconds",(int)currentTime);
@@ -432,9 +436,6 @@ void MasterMongodbConnection::UpdateDAQStatus(koStatusPacket_t *DAQStatus,
    b.append("currentRun",DAQStatus->RunInfo.RunNumber);
    b.append("startedBy",DAQStatus->RunInfo.StartedBy);
    
-   //start time
-   //   struct tm timeobj;
-   //strptime(DAQStatus->RunInfo.StartDate.c_str(), "%Y.%m.%d [%H:%M:%S]", &timeobj);
    string datestring = DAQStatus->RunInfo.StartDate;
    if(datestring.size()!=0){
      datestring.pop_back();
@@ -452,10 +453,11 @@ int MasterMongodbConnection::CheckForCommand(string &command, string &user,
 //string &detector,
 //					     koOptions &options)
 /*
-  DAQ commands can be written to the online.daqcommand db. These usually come from the web
-  interface but they can actually come from anywhere. The only commands recognized are 
-  "Start" and "Stop". The run mode (for "Start") and comments (for both) are also pulled
-  from the doc.
+  DAQ commands can be written to the online.daqcommand db. 
+  These usually come from the web interface but they can actually 
+  come from anywhere. The only commands recognized are 
+  "Start" and "Stop". The run mode (for "Start") and comments 
+  (for both) are also pulled from the doc.
  */
 {
   if(fMonitorDB == NULL )
@@ -541,8 +543,6 @@ void MasterMongodbConnection::SendRunStartReply(int response, string message)
   mongo::BSONObjBuilder reply;
   reply.append("message",message);
   reply.append("replyenum",response);
-  //reply.append("mode",mode);
-  //reply.append("comment",comment);
   InsertOnline("monitor", "online.dispatcherreply",reply.obj());
 }
 
@@ -558,9 +558,8 @@ Clears the dispatcher reply db. Run when starting a new run
 
 int MasterMongodbConnection::PullRunMode(string name, koOptions &options)
 /*
-  Converts a mongodb run mode document to a koOptions object. Would be easier
-  in python since we could just save the dict. C++ requires we loop through 
-  each attribute and set it.
+  Get a run mode from the options DB. Return 0 on success (and set the options
+  argument). Return -1 on failure.
  */
 {
   if(fMonitorDB == NULL) return -1;

@@ -131,6 +131,8 @@ void MasterControl::Stop(string detector, string user, string comment){
     if(iterator.first==detector || detector=="all")
       iterator.second->ProcessCommand("Stop", user, comment);
   }
+
+  mMongoDB->UpdateEndTime(detector);
 }
 
 int MasterControl::Start(string detector, string user, string comment, 
