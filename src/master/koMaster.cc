@@ -98,10 +98,11 @@ int main(int argc, char *argv[])
 	controller.Stop(detectors[iCurrentDet]);
       }
       else if( cCommand == 's' ) {
+	cout<<"Staring from command line currently disabled."<<endl;/*
 	cout<<"Sending start command"<<endl;
 	if(controller.Start(detectors[iCurrentDet])==-1){
 	  controller.Stop(detectors[iCurrentDet]);
-	}
+	  }*/
       }
       else if(cCommand == 'q')
 	break;

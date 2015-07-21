@@ -161,10 +161,9 @@ int MasterMongodbConnection::UpdateNoiseDirectory(string run_name){
   }
   return 0;
 }
-int MasterMongodbConnection::InsertRunDoc(string user, string runMode, string name,
-					  string comment, string detector, 
-					  vector<string> detlist,
-					  koOptions *options)
+int MasterMongodbConnection::InsertRunDoc(string user, string name, 
+					  string comment, 
+					  map<string,koOptions*> options_list)
 /*
   At run start create a new run document and put it into the online.runs database.
   The OID of this document is saved as a private member so the document can be 
@@ -181,71 +180,77 @@ int MasterMongodbConnection::InsertRunDoc(string user, string runMode, string na
 */
 {
 
-  // First create the collection on the buffer db 
-  // so the event builder can find it. Index by time and module.
-  mongo::DBClientConnection bufferDB;
-
-  if( options->GetInt("write_mode") == 2 ){ // write to mongo
-    try     {
-      bufferDB.connect( options->GetString("mongo_address") );
-    }
-    catch(const mongo::DBException &e)    {
-      SendLogMessage( "Problem connecting to mongo buffer. Caught exception " + 
-		      string(e.what()), KOMESS_ERROR );
-      return -1;
-    }
-    string collectionName = options->GetString("mongo_database") + "." + 
-      options->GetString("mongo_collection");
-    bufferDB.createCollection( collectionName );
-    bufferDB.createIndex( collectionName,
-			  mongo::fromjson( "{ time: -1, module: -1, _id: -1}" ) );
-  }
-         
   //Create a bson object with the run information
   mongo::BSONObjBuilder builder;
   builder.genOID();
 
-  // event builder sub object
-  mongo::BSONObjBuilder trigger_sub; 
-  trigger_sub.append( "mode",options->GetString("trigger_mode") );
-  trigger_sub.append( "ended", false );
-  trigger_sub.append( "status", "waiting_to_be_processed" );
-  builder.append( "trigger", trigger_sub.obj() );
-
-  // reader sub object
-  mongo::BSONObjBuilder reader_sub;
-  reader_sub.append( "compressed", options->GetInt("compression") );
-  reader_sub.append( "starttime", 0 );
-  reader_sub.append( "data_taking_ended", false );
-  reader_sub.append( "options", options->ExportBSON() );  
-  mongo::BSONObjBuilder storageSub;
-  storageSub.append( "name", options->GetString("mongo_database") );
-  storageSub.append( "collection", options->GetString("mongo_collection") );
-  storageSub.append( "address", options->GetString("mongo_address") );
-  reader_sub.append( "storage_buffer", storageSub.obj() );
-  builder.append( "reader", reader_sub.obj() );
-
-  // processor sub object
-  mongo::BSONObjBuilder processor_sub;
-  processor_sub.append( "mode", "default" ); 
-  builder.append( "processor", processor_sub.obj() );
-
-  // top-level fields 
-  builder.append("runmode",runMode);
+  // Top level stuff
+  builder.append("name",name);
   builder.append("user",user);
-  builder.append("name",name);  
-  builder.append("detectors", detlist);
-
-  builder.append("shorttype",options->GetString("nickname"));
-
-  //put in start time
   time_t currentTime;
-  //struct tm *starttime;
   time(&currentTime);
-  //starttime = localtime(&currentTime);
-  //long offset = starttime->tm_gmtoff;
-  builder.appendTimeT("starttimestamp",currentTime);//+offset);//mktime(starttime));       
-  // if comment, add comment sub-object                                              
+  builder.appendTimeT("starttimestamp",currentTime);
+
+  string type="";
+
+  mongo::BSONObjBuilder detlist;
+  vector<string> detectors;
+
+  for ( auto iterator: options_list){
+
+    koOptions *options = iterator.second;
+    
+    // First create the collection on the buffer db 
+    // so the event builder can find it. Index by time and module.
+    mongo::DBClientConnection bufferDB;
+    if( options->GetInt("write_mode") == 2 ){ // write to mongo
+      try     {
+	bufferDB.connect( options->GetString("mongo_address") );
+      }
+      catch(const mongo::DBException &e)    {
+	SendLogMessage( "Problem connecting to mongo buffer. Caught exception " + 
+			string(e.what()), KOMESS_ERROR );
+	return -1;
+      }
+      string collectionName = options->GetString("mongo_database") + "." + 
+	options->GetString("mongo_collection");
+      bufferDB.createCollection( collectionName );
+      bufferDB.createIndex( collectionName,
+			    mongo::fromjson( "{ time: -1, module: -1, _id: -1}" ) );
+    }
+
+    mongo::BSONObjBuilder det_sub;
+
+    det_sub.append("reader_options", options->ExportBSON() );
+    mongo::BSONObjBuilder storageSub;
+    storageSub.append( "db", options->GetString("mongo_database") );
+    storageSub.append( "coll", options->GetString("mongo_collection") );
+    storageSub.append( "addr", options->GetString("mongo_address") );
+    storageSub.append( "compressed", options->GetInt("compression"));
+    det_sub.append( "mongo_buffer", storageSub.obj() );
+
+    // TPC ONLY - trigger info
+    if(iterator.first == "tpc"){
+      // event builder sub object
+      mongo::BSONObjBuilder trigger_sub; 
+      trigger_sub.append( "mode",options->GetString("trigger_mode") );
+      trigger_sub.append( "ended", false );
+      trigger_sub.append( "status", "waiting_to_be_processed" );
+      det_sub.append( "trigger", trigger_sub.obj() );
+    }
+
+    if(iterator.first == "tpc" || type == "")
+      type = options->GetString("source_type");
+    
+    detlist.append(iterator.first, det_sub.obj());
+    detectors.push_back(iterator.first);
+
+  } // end iterator
+      
+  builder.append("detectors", detlist.obj());
+  builder.append("runmode", type);
+
+  // if comment, add comment sub-object                                             
   if(comment != ""){
     mongo::BSONArrayBuilder comment_arr;
     mongo::BSONObjBuilder comment_sub;    
@@ -263,7 +268,10 @@ int MasterMongodbConnection::InsertRunDoc(string user, string runMode, string na
   // store OID so you can update the end time
   mongo::BSONElement OIDElement;
   bObj.getObjectID(OIDElement);
-  fLastDocOIDs[detector]=OIDElement.__oid();
+  if(detectors.size()==1)
+    fLastDocOIDs[detectors[0]]=OIDElement.__oid();
+  else
+    fLastDocOIDs["all"] = OIDElement.__oid();
 
   return 0;   
 }
@@ -351,7 +359,7 @@ void MasterMongodbConnection::SendLogMessage(string message, int priority)
     alert.genOID();
     alert.append("idnum",ID);
     alert.append("priority",priority);
-    alert.appendTimeT("timestamp",currentTime);//+offset);
+    alert.appendTimeT("timestamp",currentTime);
     alert.append("sender","dispatcher");
     alert.append("message",message);
     alert.append("addressed",false);
@@ -375,7 +383,7 @@ void MasterMongodbConnection::SendLogMessage(string message, int priority)
    b.genOID();
    b.append("message",message);
    b.append("priority",priority);
-   b.appendTimeT("time",currentTime);//+offset);	
+   b.appendTimeT("time",currentTime);
    b.append("sender","dispatcher");
    InsertOnline("log", "log.log",b.obj());
   
@@ -392,12 +400,8 @@ void MasterMongodbConnection::AddRates(koStatusPacket_t *DAQStatus)
       mongo::BSONObjBuilder b;
       time_t currentTime;
       time(&currentTime);
-      //struct tm *starttime;
-      //starttime = localtime(&currentTime);
-      //long offset = starttime->tm_gmtoff;
-      //starttime = gmtime(&currentTime);
 
-      b.appendTimeT("createdAt",currentTime);//+offset);
+      b.appendTimeT("createdAt",currentTime);
       b.append("node",DAQStatus->Slaves[x].name);
       b.append("bltrate",DAQStatus->Slaves[x].Freq);
       b.append("datarate",DAQStatus->Slaves[x].Rate);
@@ -418,7 +422,7 @@ void MasterMongodbConnection::UpdateDAQStatus(koStatusPacket_t *DAQStatus,
    time_t currentTime;
    time(&currentTime);
 
-   b.appendTimeT("createdAt",currentTime);//+offset);
+   b.appendTimeT("createdAt",currentTime);
    b.append("timeseconds",(int)currentTime);
    b.append("detector", detector);
    b.append("mode",DAQStatus->RunMode);
