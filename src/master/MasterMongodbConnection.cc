@@ -161,10 +161,9 @@ int MasterMongodbConnection::UpdateNoiseDirectory(string run_name){
   }
   return 0;
 }
-int MasterMongodbConnection::InsertRunDoc(string user, string runMode, string name,
-					  string comment, string detector, 
-					  vector<string> detlist,
-					  koOptions *options)
+int MasterMongodbConnection::InsertRunDoc(string user, string name, 
+					  string comment, 
+					  map<string,koOptions*> options_list)
 /*
   At run start create a new run document and put it into the online.runs database.
   The OID of this document is saved as a private member so the document can be 
@@ -181,71 +180,77 @@ int MasterMongodbConnection::InsertRunDoc(string user, string runMode, string na
 */
 {
 
-  // First create the collection on the buffer db 
-  // so the event builder can find it. Index by time and module.
-  mongo::DBClientConnection bufferDB;
-
-  if( options->GetInt("write_mode") == 2 ){ // write to mongo
-    try     {
-      bufferDB.connect( options->GetString("mongo_address") );
-    }
-    catch(const mongo::DBException &e)    {
-      SendLogMessage( "Problem connecting to mongo buffer. Caught exception " + 
-		      string(e.what()), KOMESS_ERROR );
-      return -1;
-    }
-    string collectionName = options->GetString("mongo_database") + "." + 
-      options->GetString("mongo_collection");
-    bufferDB.createCollection( collectionName );
-    bufferDB.createIndex( collectionName,
-			  mongo::fromjson( "{ time: -1, module: -1, _id: -1}" ) );
-  }
-         
   //Create a bson object with the run information
   mongo::BSONObjBuilder builder;
   builder.genOID();
 
-  // event builder sub object
-  mongo::BSONObjBuilder trigger_sub; 
-  trigger_sub.append( "mode",options->GetString("trigger_mode") );
-  trigger_sub.append( "ended", false );
-  trigger_sub.append( "status", "waiting_to_be_processed" );
-  builder.append( "trigger", trigger_sub.obj() );
-
-  // reader sub object
-  mongo::BSONObjBuilder reader_sub;
-  reader_sub.append( "compressed", options->GetInt("compression") );
-  reader_sub.append( "starttime", 0 );
-  reader_sub.append( "data_taking_ended", false );
-  reader_sub.append( "options", options->ExportBSON() );  
-  mongo::BSONObjBuilder storageSub;
-  storageSub.append( "name", options->GetString("mongo_database") );
-  storageSub.append( "collection", options->GetString("mongo_collection") );
-  storageSub.append( "address", options->GetString("mongo_address") );
-  reader_sub.append( "storage_buffer", storageSub.obj() );
-  builder.append( "reader", reader_sub.obj() );
-
-  // processor sub object
-  mongo::BSONObjBuilder processor_sub;
-  processor_sub.append( "mode", "default" ); 
-  builder.append( "processor", processor_sub.obj() );
-
-  // top-level fields 
-  builder.append("runmode",runMode);
+  // Top level stuff
+  builder.append("name",name);
   builder.append("user",user);
-  builder.append("name",name);  
-  builder.append("detectors", detlist);
-
-  builder.append("shorttype",options->GetString("nickname"));
-
-  //put in start time
   time_t currentTime;
-  //struct tm *starttime;
   time(&currentTime);
-  //starttime = localtime(&currentTime);
-  //long offset = starttime->tm_gmtoff;
-  builder.appendTimeT("starttimestamp",currentTime);//+offset);//mktime(starttime));       
-  // if comment, add comment sub-object                                              
+  builder.appendTimeT("starttimestamp",currentTime);
+
+  string type="";
+
+  mongo::BSONObjBuilder detlist;
+  vector<string> detectors;
+
+  for ( auto iterator: options_list){
+
+    koOptions *options = iterator.second;
+    
+    // First create the collection on the buffer db 
+    // so the event builder can find it. Index by time and module.
+    mongo::DBClientConnection bufferDB;
+    if( options->GetInt("write_mode") == 2 ){ // write to mongo
+      try     {
+	bufferDB.connect( options->GetString("mongo_address") );
+      }
+      catch(const mongo::DBException &e)    {
+	SendLogMessage( "Problem connecting to mongo buffer. Caught exception " + 
+			string(e.what()), KOMESS_ERROR );
+	return -1;
+      }
+      string collectionName = options->GetString("mongo_database") + "." + 
+	options->GetString("mongo_collection");
+      bufferDB.createCollection( collectionName );
+      bufferDB.createIndex( collectionName,
+			    mongo::fromjson( "{ time: -1, module: -1, _id: -1}" ) );
+    }
+
+    mongo::BSONObjBuilder det_sub;
+
+    det_sub.append("reader_options", options->ExportBSON() );
+    mongo::BSONObjBuilder storageSub;
+    storageSub.append( "db", options->GetString("mongo_database") );
+    storageSub.append( "coll", options->GetString("mongo_collection") );
+    storageSub.append( "addr", options->GetString("mongo_address") );
+    storageSub.append( "compressed", options->GetInt("compression"));
+    det_sub.append( "mongo_buffer", storageSub.obj() );
+
+    // TPC ONLY - trigger info
+    if(iterator.first == "tpc"){
+      // event builder sub object
+      mongo::BSONObjBuilder trigger_sub; 
+      trigger_sub.append( "mode",options->GetString("trigger_mode") );
+      trigger_sub.append( "ended", false );
+      trigger_sub.append( "status", "waiting_to_be_processed" );
+      det_sub.append( "trigger", trigger_sub.obj() );
+    }
+
+    if(iterator.first == "tpc" || type == "")
+      type = options->GetString("source_type");
+    
+    detlist.append(iterator.first, det_sub.obj());
+    detectors.push_back(iterator.first);
+
+  } // end iterator
+      
+  builder.append("detectors", detlist.obj());
+  builder.append("runmode", type);
+
+  // if comment, add comment sub-object                                             
   if(comment != ""){
     mongo::BSONArrayBuilder comment_arr;
     mongo::BSONObjBuilder comment_sub;    
@@ -263,7 +268,10 @@ int MasterMongodbConnection::InsertRunDoc(string user, string runMode, string na
   // store OID so you can update the end time
   mongo::BSONElement OIDElement;
   bObj.getObjectID(OIDElement);
-  fLastDocOIDs[detector]=OIDElement.__oid();
+  if(detectors.size()==1)
+    fLastDocOIDs[detectors[0]]=OIDElement.__oid();
+  else
+    fLastDocOIDs["all"] = OIDElement.__oid();
 
   return 0;   
 }
@@ -282,36 +290,47 @@ int MasterMongodbConnection::UpdateEndTime(string detector)
 {
   if(fRunsDB == NULL )
     return -1;
-  if(!fLastDocOIDs[detector].isSet())  {
-    if(fLog!=NULL) fLog->Error("MasterMongodbConnection::UpdateEndTime - Want to stop run but don't have the _id field of the run info doc");
-      return -1;
-   }
-   try  {
   
-     // Get the time in GMT
-     time_t nowTime;
-     //struct tm *currenttime;
-     time(&nowTime);
-     //currenttime = localtime(&nowTime);
-     //currenttime = gmtime(&nowTime);
-     //long offset = currenttime->tm_gmtoff;      
-     
-     mongo::BSONObj res;
-     string onlinesubstr = "runs";
-     
-     mongo::BSONObjBuilder bo;
-     bo << "findandmodify" << onlinesubstr.c_str() << 
-       "query" << BSON("_id" << fLastDocOIDs[detector]) << 
-       "update" << BSON("$set" << BSON("endtimestamp" <<
-				       mongo::Date_t(1000*(nowTime))//+offset)) 
-				       << "reader.data_taking_ended" << true));     
-     assert(fRunsDB->runCommand("runs",bo.obj(),res));
-   }
-   catch (const mongo::DBException &e) {
-     if(fLog!=NULL) fLog->Error("MasterMongodbConnection::UpdateEndTime - Error fetching and updating run info doc with end time stamp.");
-     return -1;
-   }   
-   return 0;
+  try  {
+
+    for( auto iterator : fLastDocOIDs ){
+      cout<<"Searching for detector "<<detector<<" in "<<iterator.first<<endl;
+      if( iterator.first != detector && detector != "all")
+	continue;
+      cout<<"Matched!"<<endl;
+      if( !iterator.second.isSet() ){
+	cout<<"No OID set for detector "<<iterator.first<<endl;
+	if(fLog!=NULL) fLog->Error("MasterMongodbConnection::UpdateEndTime - Want to stop run but don't have the _id field of the run info doc");
+	continue;
+      }
+      cout<<"OID is set"<<endl;
+
+      // Get the time in GMT
+      time_t nowTime;
+      time(&nowTime);
+      
+      mongo::BSONObj res;
+      string onlinesubstr = "runs";
+      
+      mongo::BSONObjBuilder bo;
+      bo << "findandmodify" << onlinesubstr.c_str() << 
+	"query" << BSON("_id" << iterator.second )<<
+	"update" << BSON("$set" << BSON("endtimestamp" <<
+					mongo::Date_t(1000*(nowTime))
+					<< "reader.data_taking_ended" << true));     
+
+      mongo::BSONObj comnd = bo.obj();
+      assert(fRunsDB->runCommand("online",comnd,res));
+
+      // Set to a new random oid so we don't update end times twice
+      iterator.second.init();
+    }
+  }
+  catch (const mongo::DBException &e) {
+    if(fLog!=NULL) fLog->Error("MasterMongodbConnection::UpdateEndTime - Error fetching and updating run info doc with end time stamp.");
+    return -1;
+  }   
+  return 0;
 }
 
 void MasterMongodbConnection::SendLogMessage(string message, int priority)
@@ -323,11 +342,7 @@ void MasterMongodbConnection::SendLogMessage(string message, int priority)
 {      
 
   time_t currentTime;
-  //struct tm *starttime;
   time(&currentTime);
-  //starttime = localtime(&currentTime);
-  //starttime = gmtime(&currentTime);
-  //long offset = starttime->tm_gmtoff;
 
   int ID=-1;
   // For WARNINGS and ERRORS we put an additional entry into the alert DB
@@ -344,7 +359,7 @@ void MasterMongodbConnection::SendLogMessage(string message, int priority)
     alert.genOID();
     alert.append("idnum",ID);
     alert.append("priority",priority);
-    alert.appendTimeT("timestamp",currentTime);//+offset);
+    alert.appendTimeT("timestamp",currentTime);
     alert.append("sender","dispatcher");
     alert.append("message",message);
     alert.append("addressed",false);
@@ -368,7 +383,7 @@ void MasterMongodbConnection::SendLogMessage(string message, int priority)
    b.genOID();
    b.append("message",message);
    b.append("priority",priority);
-   b.appendTimeT("time",currentTime);//+offset);	
+   b.appendTimeT("time",currentTime);
    b.append("sender","dispatcher");
    InsertOnline("log", "log.log",b.obj());
   
@@ -385,12 +400,8 @@ void MasterMongodbConnection::AddRates(koStatusPacket_t *DAQStatus)
       mongo::BSONObjBuilder b;
       time_t currentTime;
       time(&currentTime);
-      //struct tm *starttime;
-      //starttime = localtime(&currentTime);
-      //long offset = starttime->tm_gmtoff;
-      //starttime = gmtime(&currentTime);
 
-      b.appendTimeT("createdAt",currentTime);//+offset);
+      b.appendTimeT("createdAt",currentTime);
       b.append("node",DAQStatus->Slaves[x].name);
       b.append("bltrate",DAQStatus->Slaves[x].Freq);
       b.append("datarate",DAQStatus->Slaves[x].Rate);
@@ -410,11 +421,8 @@ void MasterMongodbConnection::UpdateDAQStatus(koStatusPacket_t *DAQStatus,
    mongo::BSONObjBuilder b;
    time_t currentTime;
    time(&currentTime);
-   //struct tm *starttime;
-   //starttime = localtime(&currentTime);
-   //long offset = starttime->tm_gmtoff;
 
-   b.appendTimeT("createdAt",currentTime);//+offset);
+   b.appendTimeT("createdAt",currentTime);
    b.append("timeseconds",(int)currentTime);
    b.append("detector", detector);
    b.append("mode",DAQStatus->RunMode);
@@ -432,9 +440,6 @@ void MasterMongodbConnection::UpdateDAQStatus(koStatusPacket_t *DAQStatus,
    b.append("currentRun",DAQStatus->RunInfo.RunNumber);
    b.append("startedBy",DAQStatus->RunInfo.StartedBy);
    
-   //start time
-   //   struct tm timeobj;
-   //strptime(DAQStatus->RunInfo.StartDate.c_str(), "%Y.%m.%d [%H:%M:%S]", &timeobj);
    string datestring = DAQStatus->RunInfo.StartDate;
    if(datestring.size()!=0){
      datestring.pop_back();
@@ -452,23 +457,32 @@ int MasterMongodbConnection::CheckForCommand(string &command, string &user,
 //string &detector,
 //					     koOptions &options)
 /*
-  DAQ commands can be written to the online.daqcommand db. These usually come from the web
-  interface but they can actually come from anywhere. The only commands recognized are 
-  "Start" and "Stop". The run mode (for "Start") and comments (for both) are also pulled
-  from the doc.
+  DAQ commands can be written to the online.daqcommand db. 
+  These usually come from the web interface but they can actually 
+  come from anywhere. The only commands recognized are 
+  "Start" and "Stop". The run mode (for "Start") and comments 
+  (for both) are also pulled from the doc.
  */
 {
   if(fMonitorDB == NULL )
     return -1;
   if(fMonitorDB->count("online.daq_control") ==0)
     return -1;
-   auto_ptr<mongo::DBClientCursor> cursor = fMonitorDB->query("online.daq_control",
-							      mongo::BSONObj());
+
+  // See if something is in the DB
    mongo::BSONObj b;
-   if(cursor->more())
-     b = cursor->next();
-   else
+   try{
+     auto_ptr<mongo::DBClientCursor> cursor = 
+       fMonitorDB->query("online.daq_control", mongo::BSONObj());
+     if(cursor->more())
+       b = cursor->next();
+     else
+       return -1;
+   }
+   catch(...){
      return -1;
+   }
+
 
    // Strip data from the doc
    command=b.getStringField("command");
@@ -541,8 +555,6 @@ void MasterMongodbConnection::SendRunStartReply(int response, string message)
   mongo::BSONObjBuilder reply;
   reply.append("message",message);
   reply.append("replyenum",response);
-  //reply.append("mode",mode);
-  //reply.append("comment",comment);
   InsertOnline("monitor", "online.dispatcherreply",reply.obj());
 }
 
@@ -558,9 +570,8 @@ Clears the dispatcher reply db. Run when starting a new run
 
 int MasterMongodbConnection::PullRunMode(string name, koOptions &options)
 /*
-  Converts a mongodb run mode document to a koOptions object. Would be easier
-  in python since we could just save the dict. C++ requires we loop through 
-  each attribute and set it.
+  Get a run mode from the options DB. Return 0 on success (and set the options
+  argument). Return -1 on failure.
  */
 {
   if(fMonitorDB == NULL) return -1;

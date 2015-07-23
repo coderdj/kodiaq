@@ -34,9 +34,8 @@ public:
   // Purpose : Insert a run doc for the new run
   //           Also create the buffer DB with indices on time and module
   // 
-  int          InsertRunDoc(string user, string runMode, string name,
-			    string comment, string detector, vector<string> detlist,
-			    koOptions *options);
+  int          InsertRunDoc(string user, string name,
+			    string comment, map<string,koOptions*> options);
   
   int          SetDBs(string logdb, string monitordb, string runsdb);
   //

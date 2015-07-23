@@ -30,9 +30,9 @@ public:
   void Connect(string detector="all");
   void Disconnect(string detector="all");
   void Close();
-  
-  int  Start(string detector="all", string user="dispatcher_console", 
-	     string comment="", koOptions *options = NULL, bool web=false);
+
+  int  Start(string detector, string user, string comment,
+	     map<string,koOptions*> options, bool web);
   void Stop(string detector="all", string user="dispatcher_console", 
 	    string comment="");
 

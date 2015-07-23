@@ -131,18 +131,21 @@ void MasterControl::Stop(string detector, string user, string comment){
     if(iterator.first==detector || detector=="all")
       iterator.second->ProcessCommand("Stop", user, comment);
   }
+
+  mMongoDB->UpdateEndTime(detector);
 }
 
+
 int MasterControl::Start(string detector, string user, string comment, 
-			  koOptions *options, bool web){
+			 map<string,koOptions*> options, bool web){
   // Return values:
   //                 0 - Success
   //                -1 - Failed, reset the DAQ
   //                -2 - Failed, no need to reset the DAQ
   //
 
-  if(options==NULL)
-    return -2;
+  //if(options==NULL)
+  //return -2;
 
   // We have a staged start. Let's move through the stages. 
   if(web)
@@ -156,7 +159,8 @@ int MasterControl::Start(string detector, string user, string comment,
   int valid_success=0;
   for(auto iterator:mDetectors){
     if(iterator.first==detector || detector=="all")
-      valid_success+=iterator.second->ValidateStartCommand(user,comment,options);
+      valid_success+=iterator.second->ValidateStartCommand(user, comment,
+							   options[iterator.first]);
   }
   if(valid_success!=0){
     cout<<"Error during command validation! Aborting run start.";
@@ -173,7 +177,7 @@ int MasterControl::Start(string detector, string user, string comment,
   int preprocess_success=0;
   for(auto iterator:mDetectors){
     if(iterator.first==detector || detector=="all")
-      preprocess_success+=iterator.second->PreProcess(options);
+      preprocess_success+=iterator.second->PreProcess(options[iterator.first]);
   }
   if(preprocess_success!=0){
     cout<<"Error during preprocessing! Aborting run start.";
@@ -209,7 +213,11 @@ int MasterControl::Start(string detector, string user, string comment,
     
 
   // This might actually work. Let's assign a run name.
-  string run_name = koHelper::GetRunNumber(options->GetString("run_prefix"));
+  string run_name = "";
+  if(detector == "all" || detector == "tpc")
+    run_name = koHelper::GetRunNumber(options["tpc"]->GetString("run_prefix"));
+  else 
+    run_name = koHelper::GetRunNumber(options[detector]->GetString("run_prefix"));
   cout<<"This run will be called "<<run_name<<endl;
   if(web)
     mMongoDB->SendRunStartReply(12, "Assigning run name: " + run_name);
@@ -221,7 +229,7 @@ int MasterControl::Start(string detector, string user, string comment,
   int arm_success=0;
   for(auto iterator:mDetectors){
     if(iterator.first==detector || detector=="all")
-      arm_success+=iterator.second->Arm(options, run_name);
+      arm_success+=iterator.second->Arm(options[iterator.first], run_name);
   }
   if(arm_success!=0){
     cout<<"Error arming the boards. Run "<<run_name<<" has been aborted."<<endl;
@@ -233,19 +241,14 @@ int MasterControl::Start(string detector, string user, string comment,
   cout<<"Success!"<<endl;
 
   // Insert the run doc and update the noise directory
-  if(web && options->GetInt("noise_spectra_enable")==1)
-    mMongoDB->UpdateNoiseDirectory(run_name);
   if(web){
-    // build a list of detectors participating
-    vector<string> detlist;
-    if(detector != "all")
-      detlist.push_back(detector);
-    else{
-      for(auto iterator:mDetectors)
-	detlist.push_back(iterator.first);
-    }
-    mMongoDB->InsertRunDoc(user, options->GetString("name"), 
-			   run_name, comment, detector, detlist, options);
+    if(((detector == "all" || detector == "tpc") && 
+	options["tpc"]->GetInt("noise_spectra_enable")==1) || 
+       (detector != "all" && 
+	options[detector]->GetInt("noise_spectra_enable")==1))
+      mMongoDB->UpdateNoiseDirectory(run_name);
+    
+    mMongoDB->InsertRunDoc(user, run_name, comment, options);
   }
   // Start the actual run
   cout<<"Sending start command..."<<flush;
@@ -254,7 +257,8 @@ int MasterControl::Start(string detector, string user, string comment,
   int start_success=0;
   for(auto iterator:mDetectors){
     if(iterator.first==detector || detector=="all")
-      start_success+=iterator.second->Start(run_name, user, comment,options);
+      start_success+=iterator.second->Start(run_name, user, 
+					    comment,options[iterator.first]);
   }
   if(start_success!=0){
     cout<<"Error starting the run. Run "<<run_name<<" has been aborted."<<endl;
@@ -267,6 +271,7 @@ int MasterControl::Start(string detector, string user, string comment,
   
   if(web)
     mMongoDB->SendRunStartReply(19, "Successfully completed run start procedure.");
+  
   return 0;
 }
 
@@ -285,20 +290,15 @@ void MasterControl::CheckRemoteCommand(){
   if(command == "Stop")
     Stop(detector, user, comment);
   else if(command=="Start"){
-    if(detector == "all"){
-      // In case of both start TPC second since it sends S-IN
-      Start("muon_veto", user, comment, options["muon_veto"], true);
-      Start("tpc", user, comment, options["tpc"], true);
-      // Delete options
+    if(Start(detector,user,comment,options,true)==-1){
+      cout<<"Sending stop command."<<endl;
+      Stop(detector, "AUTO_DISPATCHER", "ABORTED: RUN START FAILED");
+    }
+    if( detector != "all" )
+      delete options[detector];
+    else{
       delete options["tpc"];
       delete options["muon_veto"];
-    }
-    else {
-      if(Start(detector,user,comment,options[detector],true)==-1){
-	cout<<"Sending stop command."<<endl;
-	Stop(detector, "AUTO_DISPATCHER", "ABORTED: RUN START FAILED");
-      }
-      delete options[detector];
     }
   }
   return;
