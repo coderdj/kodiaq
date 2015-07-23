@@ -104,11 +104,14 @@ int DigiInterface::PreProcess(koOptions *options){
 }
 
 int DigiInterface::Arm(koOptions *options){
+  // Get everything ready for the start command
+
   // Remove baseline option (should be done in preprocess)
   Close();
   if(options->GetInt("baseline_mode") == 1)
     options->SetInt("baseline_mode", 0);
-  return Initialize(options, false, true);
+
+  return Initialize(options, false);
 }
 
 int DigiInterface::Initialize(koOptions *options, bool PreProcessing, bool skipCAEN)
@@ -135,13 +138,13 @@ int DigiInterface::Initialize(koOptions *options, bool PreProcessing, bool skipC
 	return -1;
       }
       
-      int cerr=-1;
-      if((cerr=CAENVME_Init(BType,Link.id,Link.crate,
+      int cerror=-1;
+      if((cerror=CAENVME_Init(BType,Link.id,Link.crate,
 			    &tempHandle))!=cvSuccess){
 	//throw exception?
 	stringstream therror;
 	therror<<"DigiInterface::Initialize - Error in CAEN initialization link "
-	       <<Link.id<<" crate "<<Link.crate;
+	       <<Link.id<<" crate "<<Link.crate<<": "<<cerror;
 	if(m_koLog!=NULL)
 	  m_koLog->Error(therror.str());
 	return -1;
@@ -256,7 +259,7 @@ int DigiInterface::Initialize(koOptions *options, bool PreProcessing, bool skipC
   else
     m_koOptions->SetInt("write_mode", WRITEMODE_NONE);
   
-   // Initialize recorder
+  // Initialize recorder
   if(m_DAQRecorder!=NULL){
     int tret =  m_DAQRecorder->Initialize(options);
     if( tret !=0 ){
@@ -410,7 +413,12 @@ int DigiInterface::StartRun()
 
     // Get rid of the processor if it still exists
     if(m_vProcThreads[x].Processor!=NULL) delete m_vProcThreads[x].Processor;
-     
+
+    // Have to activate boards before spawning processing threads.
+    // Set boards as active                                                         
+    for(unsigned int x=0;x<m_vDigitizers.size();x++)
+      m_vDigitizers[x]->SetActivated(true);
+
     // Spawning of processing threads. depends on readout options.
     m_vProcThreads[x].Processor = new DataProcessor(this,m_DAQRecorder,
 						    m_koOptions, x);
@@ -443,13 +451,11 @@ int DigiInterface::StartRun()
       data |= 0x4;
       cout<<"Write data as"<<hex<<data<<dec<<endl;
       m_vDigitizers[x]->WriteReg32(CBV1724_AcquisitionControlReg,data);
-      m_vDigitizers[x]->SetActivated(true);
     }
     
-    cout<<"Waiting!"<<endl;
-    sleep(3);
     // Send s-in    
     if( m_RunStartModule != NULL ){
+      sleep(3);
       cout<<"Sending S-IN!"<<endl;
       m_koLog->Message( "Sent start signal to run start module ");
       m_RunStartModule->SendStartSignal();
@@ -464,7 +470,7 @@ int DigiInterface::StartRun()
     for(unsigned int x=0;x<m_vDigitizers.size();x++){
       u_int32_t data;
       m_vDigitizers[x]->ReadReg32(CBV1724_AcquisitionControlReg,data);
-      data |= 0x4;
+      data = 0x4;
       m_vDigitizers[x]->WriteReg32(CBV1724_AcquisitionControlReg,data);
       m_vDigitizers[x]->SetActivated(true);
     }

@@ -479,6 +479,7 @@ int CBV1724::DoNoiseSpectra(string mongo_addr, string mongo_coll, u_int32_t leng
       if((*dsizes)[x]>100) (*dsizes)[x]=100;
       int max = DataProcessor::GetBufferMax((*buff)[x], (*dsizes)[x]);
       valuesPerChannel[(*dchannels)[x]].push_back(max);
+      delete [] (*buff)[x];
     }
     
     delete buff;

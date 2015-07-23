@@ -42,7 +42,7 @@ int StandaloneMain(string fOptionsPath)
    koLogger fLog("log/slave.log");
    fLog.Message("Started standalone reader");
    DigiInterface *fElectronics = new DigiInterface(&fLog);
-   koOptions fDAQOptions;   
+   koOptions *fDAQOptions = new koOptions();   
 
 program_start:
    
@@ -52,18 +52,21 @@ program_start:
    while(!kbhit())
      usleep(100);
    cin.get(input);
+
    if(input=='q') {     
+     delete fElectronics;
+     delete fDAQOptions;
      return 0;
    }
    else if(input=='b')  {
-      if(fDAQOptions.ReadParameterFile(fOptionsPath)!=0)
+      if(fDAQOptions->ReadParameterFile(fOptionsPath)!=0)
 	return -1;
 
       // Count how many times it cycles
       int n=0;
 
       while(input!='q' && input != 'p')	{
-	if(fElectronics->Initialize(&fDAQOptions)==0)
+	if(fElectronics->Initialize(fDAQOptions)==0)
 	  cout<<fLog.GetTimeString()<<"Initialized. Counter = "<<n<<"."<<endl;
 	else{
 	  cout<<koLogger::GetTimeString()<<" Initialization failed!"<<endl;	  
@@ -91,23 +94,24 @@ program_start:
    // theGUI.DrawBottomBar(0);
    //goto program_start;
    //}
+
    else if(input!='s')  goto program_start;
    
    //load options
    cout<<"Reading file "<<fOptionsPath<<endl;
 
-   if(fDAQOptions.ReadParameterFile(fOptionsPath)!=0)   {	
+   if(fDAQOptions->ReadParameterFile(fOptionsPath)!=0)   {	
      cout<<koLogger::GetTimeString()<<" Error opening .ini file!"<<endl;
      goto program_start; 
    }   
    //start digi interface
    cout<<koLogger::GetTimeString()<<" Initializing electronics"<<endl;
 
-   if(fElectronics->PreProcess(&fDAQOptions)!=0)  {
+   if(fElectronics->PreProcess(fDAQOptions)!=0)  {
      cout<<koLogger::GetTimeString()<<" Error preprocessing electronics"<<endl;
      goto program_start;
    }
-   if(fElectronics->Arm(&fDAQOptions)!=0)  {	
+   if(fElectronics->Arm(fDAQOptions)!=0)  {	
      cout<<koLogger::GetTimeString()<<" Error initializing electronics"<<endl;
      goto program_start;
    }   
@@ -178,6 +182,8 @@ program_start:
       }      
    }      
    cout<<koLogger::GetTimeString()<<" End of run."<<endl;
+   delete fElectronics;
+   delete fDAQOptions;
    exit(0);//return 0;
 }
 

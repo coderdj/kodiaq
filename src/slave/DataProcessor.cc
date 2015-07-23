@@ -218,8 +218,12 @@ void DataProcessor::SplitChannels(vector<u_int32_t*> *&buffvec, vector<u_int32_t
   return;
 }
 
-void DataProcessor::SplitChannelsNewFW(vector<u_int32_t*> *&buffvec, vector<u_int32_t> *&sizevec, 
-				       vector<u_int32_t> *timeStamps, vector<u_int32_t> *channels, bool &bErrorSet, string &sErrorText )
+void DataProcessor::SplitChannelsNewFW(vector<u_int32_t*> *&buffvec, 
+				       vector<u_int32_t> *&sizevec, 
+				       vector<u_int32_t> *timeStamps, 
+				       vector<u_int32_t> *channels, 
+				       bool &bErrorSet, 
+				       string &sErrorText )
 {
   bErrorSet = false;
   sErrorText = "";
@@ -346,11 +350,14 @@ void DataProcessor::SplitChannelsNewFW(vector<u_int32_t*> *&buffvec, vector<u_in
 void DataProcessor::Process()
 {
 
-  // General processing class. Parses data then passes on to the appropriate recorder object
+  // General processing class. Parses data then passes on to the 
+  // appropriate recorder object. In the case that we are not recording
+  // (writemode_none) then we still run through all parsing etc but just
+  // delete the buffer.
   
   // If no boards are active set this to true to exit
   bool bExitCondition = false; 
-  
+
   // Check if objects have been initialized properly
   if(m_DigiInterface == NULL || m_koOptions == NULL) 
     return;
@@ -367,7 +374,8 @@ void DataProcessor::Process()
   
   if( m_koOptions->GetInt("write_mode") == WRITEMODE_MONGODB ){
 
-    // We trust that we are being sent a mongoDB recorder, so we can safely dynamic cast
+    // We trust that we are being sent a mongoDB recorder, 
+    // so we can safely dynamic cast
     DAQRecorder_mdb = dynamic_cast <DAQRecorder_mongodb*> ( m_DAQRecorder );
     
     if((mongoID = m_DAQRecorder->RegisterProcessor())==-1) {
