@@ -299,10 +299,12 @@ int DAQMonitor::Arm(koOptions *mode, string run_name)
   // Send arm command
   m_DAQStatus.RunMode = m_DAQStatus.RunModeLabel = mode->GetString("name");
   m_DAQNetwork->SendCommand("ARM");
-  
-  // Send options to slaves
+
   stringstream *optionsStream = new stringstream();
-  mode->ToStream(optionsStream);
+  if(run_name != "" && mode->GetInt("write_mode") == WRITEMODE_MONGODB)
+    mode->ToStream_MongoUpdate(run_name, optionsStream);
+  else
+    mode->ToStream(optionsStream);   
   if(m_DAQNetwork->SendOptionsStream(optionsStream)!=0){
     delete optionsStream;
     m_Mongodb->SendLogMessage("Error sending options to clients.",KOMESS_WARNING);
@@ -310,12 +312,12 @@ int DAQMonitor::Arm(koOptions *mode, string run_name)
   }
 
   
-  if(run_name!="" && mode->GetInt("write_mode") == WRITEMODE_MONGODB){      
+  /*  if(run_name!="" && mode->GetInt("write_mode") == WRITEMODE_MONGODB){      
     mode->SetString("mongo_collection", koHelper::MakeDBName
 		    (run_name, mode->GetString("mongo_collection"))); 
     m_DAQNetwork->SendCommand("DBUPDATE");    
     m_DAQNetwork->SendCommand(mode->GetString("mongo_collection"));  
-  }
+    }*/
   delete optionsStream;
   
   return 0;

@@ -111,7 +111,67 @@ int DigiInterface::Arm(koOptions *options){
   if(options->GetInt("baseline_mode") == 1)
     options->SetInt("baseline_mode", 0);
 
-  return Initialize(options, false);
+  // Initialize boards
+  if(Initialize(options, false) != 0){
+    Close();
+    return -1;
+  }
+
+  // Prepare threads
+
+  // Have to activate boards before spawning processing threads. 
+  for(unsigned int x=0;x<m_vDigitizers.size();x++)
+    m_vDigitizers[x]->SetActivated(true);
+
+  //Spawn read, write, and processing threads
+  for(unsigned int x=0; x<m_vProcThreads.size();x++)  {
+    // All threads should be closed. Otherwise close them and fail
+    if(m_vProcThreads[x].IsOpen) {
+      StopRun();
+      return -1;
+    }
+
+    // Get rid of the processor if it still exists
+    if(m_vProcThreads[x].Processor!=NULL) delete m_vProcThreads[x].Processor;
+
+    // Spawning of processing threads. depends on readout options.
+    m_vProcThreads[x].Processor = new DataProcessor(this,m_DAQRecorder,
+                                                    m_koOptions, x);
+    pthread_create(&m_vProcThreads[x].Thread,NULL,DataProcessor::WProcess,
+                   static_cast<void*>(m_vProcThreads[x].Processor));
+    m_vProcThreads[x].IsOpen=true;
+  }
+
+  // If the read thread is already open there must have been a problem 
+  // Closing the last run. So fail send the stop command. 
+  if(m_ReadThread.IsOpen)  {
+    StopRun();
+    if(m_koLog!=NULL)
+      m_koLog->Error("DigiInterface::StartRun - Read thread was already open.");
+    return -1;
+  }
+
+  //Create read thread and indicate that it's open 
+  pthread_create(&m_ReadThread.Thread,NULL,DigiInterface::ReadThreadWrapper,
+                 static_cast<void*>(this));
+  m_ReadThread.IsOpen=true;
+
+  // Tell Boards to start acquisition 
+  // First case for S-IN start  
+  if(m_koOptions->GetInt("run_start") == 1){
+    // Set boards as active     
+    for(unsigned int x=0;x<m_vDigitizers.size();x++){
+      u_int32_t data;
+      m_vDigitizers[x]->ReadReg32( CBV1724_AcquisitionControlReg,data);
+      cout<<"Read data as"<<hex<<data<<endl;
+      data |= 0x4;
+      //data = 0x5;
+      cout<<"Write data as"<<hex<<data<<dec<<endl;
+      m_vDigitizers[x]->WriteReg32(CBV1724_AcquisitionControlReg,data);
+    }
+  }
+
+  return 0;
 }
 
 int DigiInterface::Initialize(koOptions *options, bool PreProcessing, bool skipCAEN)
@@ -402,57 +462,11 @@ void DigiInterface::ReadThread()
  
 int DigiInterface::StartRun()
 { 
-  //Spawn read, write, and processing threads
-  for(unsigned int x=0; x<m_vProcThreads.size();x++)  {
 
-    // All threads should be closed. Otherwise close them and fail
-    if(m_vProcThreads[x].IsOpen) {
-      StopRun();
-      return -1;
-    }
-
-    // Get rid of the processor if it still exists
-    if(m_vProcThreads[x].Processor!=NULL) delete m_vProcThreads[x].Processor;
-
-    // Have to activate boards before spawning processing threads.
-    // Set boards as active                                                         
-    for(unsigned int x=0;x<m_vDigitizers.size();x++)
-      m_vDigitizers[x]->SetActivated(true);
-
-    // Spawning of processing threads. depends on readout options.
-    m_vProcThreads[x].Processor = new DataProcessor(this,m_DAQRecorder,
-						    m_koOptions, x);
-    pthread_create(&m_vProcThreads[x].Thread,NULL,DataProcessor::WProcess,
-		   static_cast<void*>(m_vProcThreads[x].Processor));
-    m_vProcThreads[x].IsOpen=true;
-  }
-   
-  if(m_ReadThread.IsOpen)  {
-    StopRun();
-    if(m_koLog!=NULL) 
-      m_koLog->Error("DigiInterface::StartRun - Read thread was already open.");
-    return -1;
-  }
-   
-  //Create read thread even if not writing
-  pthread_create(&m_ReadThread.Thread,NULL,DigiInterface::ReadThreadWrapper,
-		 static_cast<void*>(this));
-  m_ReadThread.IsOpen=true;
-
-  //Tell Boards to start acquisition   
+  // Tell Boards to start acquisition   
+  // First case for S-IN start
   if(m_koOptions->GetInt("run_start") == 1){
-    // Start with S-IN
-    
-    // Set boards as active  
-    for(unsigned int x=0;x<m_vDigitizers.size();x++){
-      u_int32_t data;
-      m_vDigitizers[x]->ReadReg32( CBV1724_AcquisitionControlReg,data);
-      cout<<"Read data as"<<hex<<data<<endl;
-      data |= 0x4;
-      cout<<"Write data as"<<hex<<data<<dec<<endl;
-      m_vDigitizers[x]->WriteReg32(CBV1724_AcquisitionControlReg,data);
-    }
-    
+        
     // Send s-in    
     if( m_RunStartModule != NULL ){
       sleep(3);

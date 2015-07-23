@@ -84,6 +84,8 @@ public:
   void ToStream(stringstream *retstream){
     (*retstream)<<m_bson.jsonString();
   };
+  
+  void ToStream_MongoUpdate(string run_name, stringstream *retstream);
 
 private:
   int GetArraySize(string key);

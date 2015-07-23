@@ -52,6 +52,18 @@ mongo::BSONElement koOptions::GetField(string key){
   }
 }
 
+void koOptions::ToStream_MongoUpdate(string run_name, 
+				     stringstream *retstream){
+
+  // For dynamic collection names
+  mongo::BSONObjBuilder builder;
+  builder.append("mongo_collection", 
+		 koHelper::MakeDBName(run_name, 
+				      m_bson["mongo_collection"].String()));
+  (*retstream)<<builder.obj().jsonString();
+}
+
+
 void koOptions::SetString(string field_name, string value){
   
   // This is not very beautiful, but you can't modify a BSONObj
