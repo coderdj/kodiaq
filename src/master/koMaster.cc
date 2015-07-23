@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
   bool bForceUpdate = true;
   // Main Loop
   while ( cCommand != 'q' ){
-    sleep(1); //prevent high CPU
+    usleep(100); //prevent high CPU
     
     if ( kbhit() ) {
       cin.get( cCommand );
