@@ -347,9 +347,21 @@ void MasterMongodbConnection::SendLogMessage(string message, int priority)
   int ID=-1;
   // For WARNINGS and ERRORS we put an additional entry into the alert DB
   // users then get an immediate alert
-  if((priority==KOMESS_WARNING || priority==KOMESS_ERROR) && fMonitorDB!=NULL ){
-    mongo::BSONObj obj = fMonitorDB->findOne("online.alerts",
-					     mongo::Query().sort("idnum",-1));    
+  if((priority==KOMESS_WARNING || priority==KOMESS_ERROR) 
+     && fMonitorDB!=NULL ){
+    
+    mongo::BSONObj obj;
+    try{
+      obj = fMonitorDB->findOne("online.alerts",
+				mongo::Query().
+				sort("idnum",-1));    
+    }
+    catch( ... ){
+      cout<<"Failed to send log message. Maybe mongo is down."<<endl;
+      fLog->Error("Failed to send log message to mongodb");
+      return;
+    }
+
     if(obj.isEmpty())
       ID=0;
     else
