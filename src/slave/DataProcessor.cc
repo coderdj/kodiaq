@@ -357,13 +357,13 @@ void DataProcessor::Process()
   
   // If no boards are active set this to true to exit
   bool bExitCondition = false; 
-
+  cout<<"OPEN PROC THREAD"<<endl;
   // Check if objects have been initialized properly
   if(m_DigiInterface == NULL || m_koOptions == NULL) 
     return;
   if(m_DAQRecorder==NULL && m_koOptions->GetInt("write_mode")!=WRITEMODE_NONE)
     return;
-
+ 
  
 #ifdef HAVE_LIBMONGOCLIENT
   // MongoDB-specific variables
@@ -404,17 +404,16 @@ void DataProcessor::Process()
   vector<u_int32_t > *eventIndices = NULL;  // Event
   int                 iModule      = 0;     // Fill with ID of current module
 
-
+  cout<<"ENTER LOOP"<<endl;
   while(!bExitCondition){
     //
     // This loop will be processed until the DigiInterface 
     // switches all digitizers to inactive.
     // 
     bExitCondition = true;
-
     for(unsigned int x = 0; x < m_DigiInterface->GetDigis(); x++)  {
+
       CBV1724 *digi = m_DigiInterface->GetDigi(x);
-      
       if(digi->Activated()) bExitCondition=false;
       else continue;
       usleep(10); //avoid 100% cpu

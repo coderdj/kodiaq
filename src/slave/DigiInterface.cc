@@ -104,30 +104,82 @@ int DigiInterface::PreProcess(koOptions *options){
 }
 
 int DigiInterface::Arm(koOptions *options){
-  // Get everything ready for the start command
+  cout<<"Arming!"<<endl;
 
+  // Get everything ready for the start command
   // Remove baseline option (should be done in preprocess)
   Close();
   if(options->GetInt("baseline_mode") == 1)
     options->SetInt("baseline_mode", 0);
 
-  // Initialize boards
+  m_koOptions = options;
+  //Initialize boards
   if(Initialize(options, false) != 0){
     Close();
     return -1;
   }
 
   // Prepare threads
-
+  cout<<"Prepping threads"<<endl;
   // Have to activate boards before spawning processing threads. 
   for(unsigned int x=0;x<m_vDigitizers.size();x++)
     m_vDigitizers[x]->SetActivated(true);
 
+  //Set up threads
+  m_iReadSize=0;
+  m_iReadFreq=0;
+
+  if(options->GetInt("processing_num_threads")>0)
+    m_vProcThreads.resize(options->GetInt("processing_num_threads"));
+  else
+    m_vProcThreads.resize(1);
+  for(unsigned int x=0;x<m_vProcThreads.size();x++)  {
+    m_vProcThreads[x].IsOpen=false;
+    m_vProcThreads[x].Processor=NULL;
+  }
+
+  //Set up daq recorder 
+  cout<<"Setting up recorder"<<endl;
+  m_DAQRecorder = NULL;
+  if(options->GetInt("write_mode")==WRITEMODE_FILE){
+#ifdef HAVE_LIBPBF
+    m_DAQRecorder = new DAQRecorder_protobuff(m_koLog);
+#else
+    if( m_koLog != NULL )
+      m_koLog->Error("DigitInterface::Initialize - Your chosen write mode is not available in this installation");
+    options->SetInt("write_mode", WRITEMODE_NONE);
+#endif
+  }
+  else if ( options->GetInt("write_mode") == WRITEMODE_MONGODB ){
+#ifdef HAVE_LIBMONGOCLIENT
+    m_DAQRecorder = new DAQRecorder_mongodb(m_koLog);
+#else
+    if( m_koLog != NULL )
+      m_koLog->Error("DigitInterface::Initialize - Your chosen write mode is not available in this installation");
+    options->SetInt("write_mode", WRITEMODE_NONE);
+#endif
+  }
+  else
+    options->SetInt("write_mode", WRITEMODE_NONE);
+  
+  // Initialize recorder
+  if(m_DAQRecorder!=NULL){
+    int tret =  m_DAQRecorder->Initialize(options);
+    if( tret !=0 ){
+      if(m_koLog!=NULL)
+        m_koLog->Error("DigiInterface::Initialize - Couldn't initialize DAQ recorder");
+      Close();
+      return -1;
+    }
+  }
+
   //Spawn read, write, and processing threads
+  cout<<"Spawning threads"<<endl;
   for(unsigned int x=0; x<m_vProcThreads.size();x++)  {
+
     // All threads should be closed. Otherwise close them and fail
     if(m_vProcThreads[x].IsOpen) {
-      StopRun();
+      Close();
       return -1;
     }
 
@@ -145,20 +197,21 @@ int DigiInterface::Arm(koOptions *options){
   // If the read thread is already open there must have been a problem 
   // Closing the last run. So fail send the stop command. 
   if(m_ReadThread.IsOpen)  {
-    StopRun();
     if(m_koLog!=NULL)
       m_koLog->Error("DigiInterface::StartRun - Read thread was already open.");
+    Close();
     return -1;
   }
 
   //Create read thread and indicate that it's open 
+  cout<<"Making read thread"<<endl;
   pthread_create(&m_ReadThread.Thread,NULL,DigiInterface::ReadThreadWrapper,
                  static_cast<void*>(this));
   m_ReadThread.IsOpen=true;
 
   // Tell Boards to start acquisition 
   // First case for S-IN start  
-  if(m_koOptions->GetInt("run_start") == 1){
+  if(options->GetInt("run_start") == 1){
     // Set boards as active     
     for(unsigned int x=0;x<m_vDigitizers.size();x++){
       u_int32_t data;
@@ -170,7 +223,7 @@ int DigiInterface::Arm(koOptions *options){
       m_vDigitizers[x]->WriteReg32(CBV1724_AcquisitionControlReg,data);
     }
   }
-
+  cout<<"DONE WITH ARM PROCEDURE"<<endl;
   return 0;
 }
 
@@ -276,7 +329,7 @@ int DigiInterface::Initialize(koOptions *options, bool PreProcessing, bool skipC
     return 0;
 
   //Set up threads
-  m_iReadSize=0;
+  /*  m_iReadSize=0;
   m_iReadFreq=0;
 
   if(options->GetInt("processing_num_threads")>0)
@@ -287,10 +340,10 @@ int DigiInterface::Initialize(koOptions *options, bool PreProcessing, bool skipC
   for(unsigned int x=0;x<m_vProcThreads.size();x++)  {
     m_vProcThreads[x].IsOpen=false;
     m_vProcThreads[x].Processor=NULL;
-  }
+    }*/
    
   //Set up daq recorder
-  m_DAQRecorder = NULL;
+  /*  m_DAQRecorder = NULL;
    
   if(options->GetInt("write_mode")==WRITEMODE_FILE){
 #ifdef HAVE_LIBPBF
@@ -315,8 +368,8 @@ int DigiInterface::Initialize(koOptions *options, bool PreProcessing, bool skipC
 
 #endif
   }
-  
-  else
+  */
+  /*  else
     m_koOptions->SetInt("write_mode", WRITEMODE_NONE);
   
   // Initialize recorder
@@ -327,7 +380,7 @@ int DigiInterface::Initialize(koOptions *options, bool PreProcessing, bool skipC
 	m_koLog->Error("DigiInterface::Initialize - Couldn't initialize DAQ recorder");
       return -1;
     }
-  }
+    }*/
   
   return 0;
 }

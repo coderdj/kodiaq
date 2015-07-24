@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
    fNetworkInterface.Initialize(SERVERADDR,PORT,DATAPORT,ID,NODENAME); 
 
    DigiInterface  *fElectronics = new DigiInterface(koLog, ID);
-   koOptions   fDAQOptions;
+   koOptions   *fDAQOptions  = new koOptions();;
    koRunInfo_t    fRunInfo;
    
    string         fOptionsPath = "DAQConfig.ini";
@@ -267,13 +267,13 @@ connection_loop:
 	  bERROR=false;
 	  fElectronics->Close();
 	  if(fNetworkInterface.ReceiveOptions(fOptionsPath)==0)  {
-	    if(fDAQOptions.ReadParameterFile(fOptionsPath)!=0)        {
+	    if(fDAQOptions->ReadParameterFile(fOptionsPath)!=0)        {
 	      koLog->Error("koSlave - error loading options");
 	      fNetworkInterface.SlaveSendMessage("Error loading options!");
 	      continue;
 	    }
 	    int ret;
-	    if((ret=fElectronics->PreProcess(&fDAQOptions))==0){
+	    if((ret=fElectronics->PreProcess(fDAQOptions))==0){
 	      fNetworkInterface.SlaveSendMessage("Board preprocessing done.");
 	      bRdy=true;
 	    }
@@ -291,39 +291,39 @@ connection_loop:
 	    continue;
 	  }
 	}	    
-	 if(command=="ARM")  {
-	   if(!bRdy || bRunning)
-	     continue;	     
-	   bRdy=false;
-	   bArmed=false;
-	   bERROR=false;
-	   fElectronics->Close();
-	    if(fNetworkInterface.ReceiveOptions(fOptionsPath)==0)  {
-	      if(fDAQOptions.ReadParameterFile(fOptionsPath)!=0)	 {
-		  koLog->Error("koSlave - error loading options");
-		  fNetworkInterface.SlaveSendMessage("Error loading options!");
-		  continue;
-	       }
-	      int ret;
-	       if((ret=fElectronics->Initialize(&fDAQOptions))==0){
-		  fNetworkInterface.SlaveSendMessage("Boards armed successfully.");
-		  bArmed=true;
-	       }	       
-	       else{
-		  if(ret==-2)
-		    bERROR=true;
-		  fNetworkInterface.SlaveSendMessage("Error initializing electronics!");
-		  koLog->Error("koSlave - error initializing electronics.");		  
-		  continue;
-	       }	       
+	if(command=="ARM")  {
+	  if(!bRdy || bRunning)
+	    continue;	     
+	  bRdy=false;
+	  bArmed=false;
+	  bERROR=false;
+	  fElectronics->Close();
+	  if(fNetworkInterface.ReceiveOptions(fOptionsPath)==0)  {
+	    if(fDAQOptions->ReadParameterFile(fOptionsPath)!=0)	 {
+	      koLog->Error("koSlave - error loading options");
+	      fNetworkInterface.SlaveSendMessage("Error loading options!");
+	      continue;
 	    }
-	    else   {
-	       koLog->Error("koSlave - error receiving options!");
-	       fNetworkInterface.SlaveSendMessage("Error receiving options!");
-	       continue;
-	    }	    
+	    int ret;
+	    if((ret=fElectronics->Arm(fDAQOptions))==0){
+	      fNetworkInterface.SlaveSendMessage("Boards armed successfully.");
+	      bArmed=true;
+	    }	       
+	    else{
+	      if(ret==-2)
+		bERROR=true;
+	      fNetworkInterface.SlaveSendMessage("Error initializing electronics!");
+	      koLog->Error("koSlave - error initializing electronics.");		  
+	      continue;
+	    }	       
+	  }
+	  else   {
+	    koLog->Error("koSlave - error receiving options!");
+	    fNetworkInterface.SlaveSendMessage("Error receiving options!");
+	    continue;
+	  }	    
 	 }	 
-	 if(command=="DBUPDATE") { //Change the write database. Done in case of dynamic write modes
+	if(command=="DBUPDATE") { //Change the write database. Done in case of dynamic write modes
 	    string newCollection="none";	    
 	    int count=0;
 	    while(fNetworkInterface.ListenForCommand(newCollection,id,sender)!=0)  {
@@ -336,11 +336,12 @@ connection_loop:
 	       koLog->Error("koSlave - error receiving new mongodb collection.");
 	       continue;
 	    }	    
+	    continue;
 	    //change the write collection
 	    cout<<"CHANGING COLLECTION"<<endl;
-	    if(fDAQOptions.GetInt("write_mode")==WRITEMODE_MONGODB) {
-	      fDAQOptions.SetString("mongo_collection", newCollection);
-	      fElectronics->UpdateRecorderCollection(&fDAQOptions);	    
+	    if(fDAQOptions->GetInt("write_mode")==WRITEMODE_MONGODB) {
+	      fDAQOptions->SetString("mongo_collection", newCollection);
+	      fElectronics->UpdateRecorderCollection(fDAQOptions);	    
 	    }	      
 	    cout<<"DONE CHANGING COLLECTION"<<endl;
 	 }	 
@@ -428,6 +429,7 @@ connection_loop:
    
    delete koLog;
    delete fElectronics;
+   delete fDAQOptions;
    return 0;
    
    
