@@ -478,12 +478,13 @@ int MasterMongodbConnection::CheckForCommand(string &command, string &user,
 {
   if(fMonitorDB == NULL )
     return -1;
-  if(fMonitorDB->count("online.daq_control") ==0)
-    return -1;
 
   // See if something is in the DB
    mongo::BSONObj b;
    try{
+     if(fMonitorDB->count("online.daq_control") ==0)
+       return -1;
+
      auto_ptr<mongo::DBClientCursor> cursor = 
        fMonitorDB->query("online.daq_control", mongo::BSONObj());
      if(cursor->more())
