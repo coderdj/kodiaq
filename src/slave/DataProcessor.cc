@@ -585,7 +585,7 @@ void DataProcessor::Process()
 	}
 #endif
 #ifdef HAVE_LIBPBF
-	if(m_koOptions->write_mode == WRITEMODE_FILE){
+	if(m_koOptions->GetInt("write_mode") == WRITEMODE_FILE){
 	  if(eventIndices == NULL || ( currentEventIndex<eventIndices->size()
 				       && (*eventIndices)[currentEventIndex]==b) ){
 	    if(protocHandle!=-1)

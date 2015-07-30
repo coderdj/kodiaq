@@ -192,12 +192,6 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
       return -1;
    }
 
-   /*   if ( !m_vScopedConnections[ID]->ok() ){
-     delete insvec;
-     LogError("FATAL - Lost connection to mongoDB on insert. Data lost!");
-     return -1;
-     }*/
-
    try  {
      stringstream cS;
      cS<<m_options->GetString("mongo_database")<<"."<<
@@ -267,25 +261,25 @@ int DAQRecorder_protobuff::Initialize(koOptions *options)
   m_options=options;
    
    // get a file name
-   if(m_options->dynamic_run_names == 1)  { //if we have time-based filenames
-     std::size_t pos;
-     pos = m_options->file_path.find_first_of("*",0);   
-     if(pos>0 && pos<=m_options->file_path.size())
-       m_SWritePath = m_options->file_path.substr(0,pos);
-     else
-       m_SWritePath = m_options->file_path;
-     if(m_SWritePath[m_SWritePath.size()]!='/' && 
-	m_SWritePath[m_SWritePath.size()]!='_')
-       m_SWritePath+="_";
-     m_SWritePath+=koHelper::GetRunNumber();
-   }
-   else
-     m_SWritePath = m_options->file_path;
+  if(m_options->GetInt("dynamic_run_names") == 1)  { //if we have time-based filenames
+    std::size_t pos;
+    pos = m_options->GetString("file_path").find_first_of("*",0);   
+    if(pos>0 && pos<=m_options->GetString("file_path").size())
+      m_SWritePath = m_options->GetString("file_path").substr(0,pos);
+    else
+      m_SWritePath = m_options->GetString("file_path");
+    if(m_SWritePath[m_SWritePath.size()]!='/' && 
+       m_SWritePath[m_SWritePath.size()]!='_')
+      m_SWritePath+="_";
+    m_SWritePath+=koHelper::GetRunNumber();
+  }
+  else
+     m_SWritePath = m_options->GetString("file_path");
    
    stringstream sstream;
-   if(m_options->compression==1)
+   if(m_options->GetInt("compression")==1)
      sstream<<"pz:";
-   sstream<<"n"<<m_options->file_events_per_file;
+   sstream<<"n"<<m_options->GetInt("file_events_per_file");
    
    if(m_outfile.open_file(m_SWritePath,sstream.str())!=0) return -1;
    
