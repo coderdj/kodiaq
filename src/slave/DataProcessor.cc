@@ -155,7 +155,6 @@ void DataProcessor::SplitChannels(vector<u_int32_t*> *&buffvec, vector<u_int32_t
       if(((*buffvec)[x][idx]>>20)!=0xA00){idx++; continue;} // stop if you found a header
 
       // Read header
-
       // Proper computation of channel size needs channel mask
       u_int32_t mask = ((*buffvec)[x][idx+1])&0xFF;
       // need Hamming weight of mask
@@ -404,12 +403,13 @@ void DataProcessor::Process()
   vector<u_int32_t > *eventIndices = NULL;  // Event
   int                 iModule      = 0;     // Fill with ID of current module
 
-  cout<<"ENTER LOOP"<<endl;
+  //cout<<"ENTER LOOP"<<endl;
   while(!bExitCondition){
     //
     // This loop will be processed until the DigiInterface 
     // switches all digitizers to inactive.
     // 
+
     bExitCondition = true;
     for(unsigned int x = 0; x < m_DigiInterface->GetDigis(); x++)  {
 
@@ -540,8 +540,9 @@ void DataProcessor::Process()
 	  eventSize = (*sizevec)[b];
 	}
 
-	//Now fill the actual data depending on write mode
+	//Now fill the actual data depending on write mode	
 #ifdef HAVE_LIBMONGOCLIENT
+
 	if(m_koOptions->GetInt("write_mode") == WRITEMODE_MONGODB){
 	  mongo::BSONObjBuilder bson;
 	  
@@ -555,7 +556,6 @@ void DataProcessor::Process()
 	    bson.appendTimeT("starttimestamp",mktime(starttime));
 	  }
 	  //end remove later
-	  
 	  bson.append("module",iModule);
 	  bson.append("channel",Channel);
 	  bson.append("time",Time64);
@@ -572,6 +572,7 @@ void DataProcessor::Process()
 	  
 	  if((int)vMongoInsertVec->size() >
 	     m_koOptions->GetInt("mongo_min_insert_size")){
+
 	    if(DAQRecorder_mdb->InsertThreaded(vMongoInsertVec,mongoID)==0){ 
 	      //success
 	      vMongoInsertVec = new vector<mongo::BSONObj>();
@@ -614,6 +615,7 @@ void DataProcessor::Process()
 #ifdef HAVE_LIBMONGOCLIENT
   delete vMongoInsertVec;
 #endif
+  cout<<"LEAVING PROCESSING THREAD"<<endl;
   return;
 }
 

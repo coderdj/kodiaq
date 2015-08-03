@@ -127,11 +127,13 @@ int DAQRecorder_mongodb::RegisterProcessor()
        //conn->conn().setWriteConcern( mongo::W_NONE );
        conn->setWriteConcern( mongo::WriteConcern::unacknowledged );
        LogMessage( "MongoDB WriteConcern set to NONE" );  
+       LogMessage( m_options->GetString("mongo_address"));
      }
      else{
        //       conn->conn().setWriteConcern( mongo::W_NORMAL );
        conn->setWriteConcern( mongo::WriteConcern::acknowledged );
        LogMessage( "MongoDB WriteConcern set to NORMAL" );
+       LogMessage( m_options->GetString("mongo_address") );
      }
 
    }
@@ -196,7 +198,8 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
      stringstream cS;
      cS<<m_options->GetString("mongo_database")<<"."<<
        m_options->GetString("mongo_collection");
-     
+
+
      // New insert format. Put insvec into sub-docs of the main BSON
      if(m_options->GetString("mongo_output_format") == "trigger") {
        long long minTime = 0x7FFFFFFFFFFFFFFF, maxTime = -1; 

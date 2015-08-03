@@ -139,7 +139,8 @@ int DigiInterface::Arm(koOptions *options){
   }
 
   //Set up daq recorder 
-  cout<<"Setting up recorder"<<endl;
+  cout<<"Setting up recorder with write mode "<<
+    options->GetInt("write_mode")<<endl;
   m_DAQRecorder = NULL;
   if(options->GetInt("write_mode")==WRITEMODE_FILE){
 #ifdef HAVE_LIBPBF
@@ -216,10 +217,10 @@ int DigiInterface::Arm(koOptions *options){
     for(unsigned int x=0;x<m_vDigitizers.size();x++){
       u_int32_t data;
       m_vDigitizers[x]->ReadReg32( CBV1724_AcquisitionControlReg,data);
-      cout<<"Read data as"<<hex<<data<<endl;
+      //cout<<"Read data as"<<hex<<data<<endl;
       data |= 0x4;
       //data = 0x5;
-      cout<<"Write data as"<<hex<<data<<dec<<endl;
+      //cout<<"Write data as"<<hex<<data<<dec<<endl;
       m_vDigitizers[x]->WriteReg32(CBV1724_AcquisitionControlReg,data);
     }
   }
@@ -436,7 +437,7 @@ void DigiInterface::Close()
    }      
    
    //Didn't create these objects, so just reset pointers
-   m_koOptions=NULL;
+   //m_koOptions=NULL;
    
    //Created the DAQ recorder, so must destroy it
    if(m_DAQRecorder!=NULL) delete m_DAQRecorder;
