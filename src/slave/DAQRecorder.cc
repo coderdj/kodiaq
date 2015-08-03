@@ -194,14 +194,13 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
       return -1;
    }
 
-   try  {
-     stringstream cS;
-     cS<<m_options->GetString("mongo_database")<<"."<<
-       m_options->GetString("mongo_collection");
-
-
+   stringstream cS;
+   cS<<m_options->GetString("mongo_database")<<"."<<
+     m_options->GetString("mongo_collection");
+   
+   try{
      // New insert format. Put insvec into sub-docs of the main BSON
-     if(m_options->GetString("mongo_output_format") == "trigger") {
+     /*if(m_options->GetString("mongo_output_format") == "trigger") {
        long long minTime = 0x7FFFFFFFFFFFFFFF, maxTime = -1; 
        mongo::BSONArrayBuilder subdoc_array;
        for( unsigned int x = 0; x < insvec->size(); x++ ) {
@@ -219,13 +218,14 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
        docBuilder.appendArray( "bulk", subdoc_array.arr() );
        (m_vScopedConnections[ID])->insert( cS.str(), docBuilder.obj() );
      }
-     else
-       ( m_vScopedConnections[ID])->insert( cS.str(), (*insvec) );
+     else*/
+     ( m_vScopedConnections[ID])->insert( cS.str(), (*insvec) );
 
    }
    catch(const mongo::DBException &e)  {
      stringstream elog;
-     elog<<"DAQRecorder_mongodb - Caught mongodb exception "<<e.what();
+     elog<<"DAQRecorder_mongodb - Caught mongodb exception writing to "
+	 <<cS.str()<<" : "<<e.what()<<endl;
      LogError(elog.str());
       delete insvec;
       return -1;
