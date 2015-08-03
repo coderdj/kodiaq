@@ -194,7 +194,7 @@ int MasterControl::Start(string detector, string user, string comment,
     ready = true;
     for(auto iterator:mDetectors){
       if(iterator.first==detector || detector=="all"){
-	if(iterator.second->GetStatus()->DAQState != KODAQ_RDY)
+	if(iterator.second->GetStatus().DAQState != KODAQ_RDY)
 	  ready=false;
       }
     }
@@ -336,23 +336,23 @@ string MasterControl::GetStatusString(){
   ss<<"***************************************************************"<<endl;
   for(auto iter : mDetectors) {
     ss<<"Detector: "<<iter.first;
-    if( iter.second->GetStatus()->DAQState == KODAQ_IDLE)
+    if( iter.second->GetStatus().DAQState == KODAQ_IDLE)
       ss<<" IDLE"<<endl;
-    else if( iter.second->GetStatus()->DAQState == KODAQ_ARMED)
-      ss<<" ARMED in mode "<<iter.second->GetStatus()->RunMode<<endl;
-    else if( iter.second->GetStatus()->DAQState == KODAQ_RUNNING)
-      ss<<" RUNNING in mode "<<iter.second->GetStatus()->RunMode<<endl;
-    else if( iter.second->GetStatus()->DAQState == KODAQ_RDY)
-      ss<<" READY in mode "<<iter.second->GetStatus()->RunMode<<endl;
-    else if( iter.second->GetStatus()->DAQState == KODAQ_ERROR)
+    else if( iter.second->GetStatus().DAQState == KODAQ_ARMED)
+      ss<<" ARMED in mode "<<iter.second->GetStatus().RunMode<<endl;
+    else if( iter.second->GetStatus().DAQState == KODAQ_RUNNING)
+      ss<<" RUNNING in mode "<<iter.second->GetStatus().RunMode<<endl;
+    else if( iter.second->GetStatus().DAQState == KODAQ_RDY)
+      ss<<" READY in mode "<<iter.second->GetStatus().RunMode<<endl;
+    else if( iter.second->GetStatus().DAQState == KODAQ_ERROR)
       ss<<" ERROR"<<endl;
     else
       ss<<" UNDEFINED"<<endl;
-    for(unsigned int x=0; x<iter.second->GetStatus()->Slaves.size(); x++){
-      ss<<"        "<<iter.second->GetStatus()->Slaves[x].name<<": "<<
-	iter.second->GetStatus()->Slaves[x].nBoards<<" boards. Rate: "<<
-	iter.second->GetStatus()->Slaves[x].Rate<<" (MB/s) @ "<<
-	iter.second->GetStatus()->Slaves[x].Freq<<" Hz"<<endl;
+    for(unsigned int x=0; x<iter.second->GetStatus().Slaves.size(); x++){
+      ss<<"        "<<iter.second->GetStatus().Slaves[x].name<<": "<<
+	iter.second->GetStatus().Slaves[x].nBoards<<" boards. Rate: "<<
+	iter.second->GetStatus().Slaves[x].Rate<<" (MB/s) @ "<<
+	iter.second->GetStatus().Slaves[x].Freq<<" Hz"<<endl;
     }
   }
   ss<<"***************************************************************"<<endl;

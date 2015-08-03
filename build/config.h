@@ -70,7 +70,7 @@
 #define HAVE_UNISTD_H 1
 
 /* Compile standalone slave */
-#define KLITE 1
+/* #undef KLITE */
 
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */
@@ -107,7 +107,7 @@
 /* #undef WITH_DDC10 */
 
 /* Compile master module */
-/* #undef WITH_MASTER */
+#define WITH_MASTER /**/
 
 /* Compile slave module */
-/* #undef WITH_SLAVE */
+#define WITH_SLAVE /**/

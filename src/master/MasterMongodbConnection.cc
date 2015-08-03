@@ -401,30 +401,30 @@ void MasterMongodbConnection::SendLogMessage(string message, int priority)
   
 }
 
-void MasterMongodbConnection::AddRates(koStatusPacket_t *DAQStatus)
+void MasterMongodbConnection::AddRates(koStatusPacket_t DAQStatus)
 /*
   Update the rates in the online db. 
   Idea: combine all rates into one doc to cut down on queries?
   The online.rates collection should be a TTL collection.
 */
 {   
-  for(unsigned int x = 0; x < DAQStatus->Slaves.size(); x++)  {
+  for(unsigned int x = 0; x < DAQStatus.Slaves.size(); x++)  {
       mongo::BSONObjBuilder b;
       time_t currentTime;
       time(&currentTime);
 
       b.appendTimeT("createdAt",currentTime);
-      b.append("node",DAQStatus->Slaves[x].name);
-      b.append("bltrate",DAQStatus->Slaves[x].Freq);
-      b.append("datarate",DAQStatus->Slaves[x].Rate);
-      b.append("runmode",DAQStatus->RunMode);
-      b.append("nboards",DAQStatus->Slaves[x].nBoards);
+      b.append("node",DAQStatus.Slaves[x].name);
+      b.append("bltrate",DAQStatus.Slaves[x].Freq);
+      b.append("datarate",DAQStatus.Slaves[x].Rate);
+      b.append("runmode",DAQStatus.RunMode);
+      b.append("nboards",DAQStatus.Slaves[x].nBoards);
       b.append("timeseconds",(int)currentTime);
       InsertOnline("monitor", "online.daq_rates",b.obj());
    }     
 }
 
-void MasterMongodbConnection::UpdateDAQStatus(koStatusPacket_t *DAQStatus,
+void MasterMongodbConnection::UpdateDAQStatus(koStatusPacket_t DAQStatus,
 					      string detector)
 /*
   Insert DAQ status doc. The online.daqstatus should be a TTL collection.
@@ -437,28 +437,28 @@ void MasterMongodbConnection::UpdateDAQStatus(koStatusPacket_t *DAQStatus,
    b.appendTimeT("createdAt",currentTime);
    b.append("timeseconds",(int)currentTime);
    b.append("detector", detector);
-   b.append("mode",DAQStatus->RunMode);
-   if(DAQStatus->DAQState==KODAQ_ARMED)
+   b.append("mode",DAQStatus.RunMode);
+   if(DAQStatus.DAQState==KODAQ_ARMED)
      b.append("state","Armed");
-   else if(DAQStatus->DAQState==KODAQ_RUNNING)
+   else if(DAQStatus.DAQState==KODAQ_RUNNING)
      b.append("state","Running");
-   else if(DAQStatus->DAQState==KODAQ_IDLE)
+   else if(DAQStatus.DAQState==KODAQ_IDLE)
      b.append("state","Idle");
-   else if(DAQStatus->DAQState==KODAQ_ERROR)
+   else if(DAQStatus.DAQState==KODAQ_ERROR)
      b.append("state","Error");
    else
      b.append("state","Undefined");
-   b.append("network",DAQStatus->NetworkUp);
-   b.append("currentRun",DAQStatus->RunInfo.RunNumber);
-   b.append("startedBy",DAQStatus->RunInfo.StartedBy);
+   b.append("network",DAQStatus.NetworkUp);
+   b.append("currentRun",DAQStatus.RunInfo.RunNumber);
+   b.append("startedBy",DAQStatus.RunInfo.StartedBy);
    
-   string datestring = DAQStatus->RunInfo.StartDate;
+   string datestring = DAQStatus.RunInfo.StartDate;
    if(datestring.size()!=0){
      datestring.pop_back();
      datestring+="+01:00";
    }
    b.append("startTime",datestring);
-   b.append("numSlaves",(int)DAQStatus->Slaves.size());
+   b.append("numSlaves",(int)DAQStatus.Slaves.size());
    InsertOnline("monitor", "online.daq_status",b.obj());
 }
 

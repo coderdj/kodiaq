@@ -60,6 +60,7 @@ void koOptions::ToStream_MongoUpdate(string run_name,
   builder.append("mongo_collection", 
 		 koHelper::MakeDBName(run_name, 
 				      m_bson["mongo_collection"].String()));
+  builder.appendElementsUnique(m_bson);
   (*retstream)<<builder.obj().jsonString();
 }
 
