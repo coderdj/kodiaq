@@ -57,9 +57,9 @@ void koOptions::ToStream_MongoUpdate(string run_name,
 
   // For dynamic collection names
   mongo::BSONObjBuilder builder;
-  builder.append("mongo_collection", 
-		 koHelper::MakeDBName(run_name, 
-				      m_bson["mongo_collection"].String()));
+  builder.append("mongo_collection", run_name );
+		 //		 koHelper::MakeDBName(run_name, 
+		 //		      m_bson["mongo_collection"].String()));
   builder.appendElementsUnique(m_bson);
   (*retstream)<<builder.obj().jsonString();
 }

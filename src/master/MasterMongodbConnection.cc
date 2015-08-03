@@ -163,7 +163,8 @@ int MasterMongodbConnection::UpdateNoiseDirectory(string run_name){
 }
 int MasterMongodbConnection::InsertRunDoc(string user, string name, 
 					  string comment, 
-					  map<string,koOptions*> options_list)
+					  map<string,koOptions*> options_list,
+					  string collection)
 /*
   At run start create a new run document and put it into the online.runs database.
   The OID of this document is saved as a private member so the document can be 
@@ -212,8 +213,11 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
 			string(e.what()), KOMESS_ERROR );
 	return -1;
       }
-      string collectionName = options->GetString("mongo_database") + "." + 
-	options->GetString("mongo_collection");
+      string collectionName = options->GetString("mongo_database") + ".";
+      if(collection == "DEFAULT") 
+	collectionName += options->GetString("mongo_collection");
+      else 
+	collectionName += collection;
       bufferDB.createCollection( collectionName );
       bufferDB.createIndex( collectionName,
 			    mongo::fromjson( "{ time: -1, module: -1, _id: -1}" ) );
@@ -223,9 +227,12 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
 
     det_sub.append("reader_options", options->ExportBSON() );
     mongo::BSONObjBuilder storageSub;
-    storageSub.append( "db", options->GetString("mongo_database") );
-    storageSub.append( "coll", options->GetString("mongo_collection") );
-    storageSub.append( "addr", options->GetString("mongo_address") );
+    storageSub.append( "database", options->GetString("mongo_database") );
+    if(collection == "DEFAULT")
+      storageSub.append( "collection", options->GetString("mongo_collection") );
+    else
+      storageSub.append( "collection", collection );
+    storageSub.append( "address", options->GetString("mongo_address") );
     storageSub.append( "compressed", options->GetInt("compression"));
     det_sub.append( "mongo_buffer", storageSub.obj() );
 
@@ -235,7 +242,9 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
       mongo::BSONObjBuilder trigger_sub; 
       trigger_sub.append( "mode",options->GetString("trigger_mode") );
       trigger_sub.append( "ended", false );
-      trigger_sub.append( "status", "waiting_to_be_processed" );
+      if(options->GetString("trigger_mode") != "ignore")
+	trigger_sub.append( "status", "waiting_to_be_processed" );
+      
       det_sub.append( "trigger", trigger_sub.obj() );
     }
 

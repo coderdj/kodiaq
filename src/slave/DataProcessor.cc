@@ -580,6 +580,7 @@ void DataProcessor::Process()
 	    else{
 	      LogError("MongoDB insert error from processor thread.");
 	      bExitCondition=true;
+	      vMongoInsertVec = NULL;
 	      break;
 	    }
 	  }
@@ -613,7 +614,8 @@ void DataProcessor::Process()
     }//end loop through digis
   }//end while loop
 #ifdef HAVE_LIBMONGOCLIENT
-  delete vMongoInsertVec;
+  if(vMongoInsertVec != NULL)
+    delete vMongoInsertVec;
 #endif
   cout<<"LEAVING PROCESSING THREAD"<<endl;
   return;

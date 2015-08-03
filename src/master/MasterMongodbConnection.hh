@@ -35,7 +35,8 @@ public:
   //           Also create the buffer DB with indices on time and module
   // 
   int          InsertRunDoc(string user, string name,
-			    string comment, map<string,koOptions*> options);
+			    string comment, map<string,koOptions*> options,
+			    string collection="DEFAULT");
   
   int          SetDBs(string logdb, string monitordb, string runsdb);
   //

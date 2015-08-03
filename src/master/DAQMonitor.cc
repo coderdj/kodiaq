@@ -301,10 +301,14 @@ int DAQMonitor::Arm(koOptions *mode, string run_name)
   m_DAQNetwork->SendCommand("ARM");
 
   stringstream *optionsStream = new stringstream();
-  if(run_name != "" && mode->GetInt("write_mode") == WRITEMODE_MONGODB)
+  if(run_name != "" && mode->GetInt("write_mode") == WRITEMODE_MONGODB){
+    cout<<"Sending options stream with run name "<<run_name<<endl;
     mode->ToStream_MongoUpdate(run_name, optionsStream);
-  else
+  }
+  else{
+    cout<<"Sending options stream"<<endl;
     mode->ToStream(optionsStream);   
+  }
   if(m_DAQNetwork->SendOptionsStream(optionsStream)!=0){
     delete optionsStream;
     m_Mongodb->SendLogMessage("Error sending options to clients.",KOMESS_WARNING);

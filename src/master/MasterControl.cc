@@ -248,7 +248,7 @@ int MasterControl::Start(string detector, string user, string comment,
 	options[detector]->GetInt("noise_spectra_enable")==1))
       mMongoDB->UpdateNoiseDirectory(run_name);
     
-    mMongoDB->InsertRunDoc(user, run_name, comment, options);
+    mMongoDB->InsertRunDoc(user, run_name, comment, options, run_name);
   }
   // Start the actual run
   cout<<"Sending start command..."<<flush;
