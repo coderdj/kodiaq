@@ -260,6 +260,12 @@ void DataProcessor::SplitChannelsNewFW(vector<u_int32_t*> *&buffvec,
 	    
       //Read information from header. Need channel mask and header time
       u_int32_t mask = ((*buffvec)[x][idx+1])&0xFF;
+
+      // Initial test. Do something reasonable with this later
+      u_int32_t board_fail = ((*buffvec)[x][idx+1])&0x4000000;
+      if(board_fail == 1)
+	cout<<"BOARD FAIL FLAG SET!"<<endl;
+
       idx+=4;    //skip header, we have what we need
       
       for(int channel=0; channel<8;channel++){
@@ -563,7 +569,7 @@ void DataProcessor::Process()
 	  bson.append("raw_time", TimeStamp);
 	  bson.append("time_reset_counter", resetCounterStart );
 	  
-	  if( m_koOptions->GetInt("occurrence_integral") )
+	  if( m_koOptions->GetInt("occurrence_integral") == 1 )
 	    bson.append("integral", integral);
 
 	  bson.appendBinData("data",(int)eventSize,mongo::BinDataGeneral,

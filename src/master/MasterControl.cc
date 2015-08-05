@@ -171,7 +171,7 @@ int MasterControl::Start(string detector, string user, string comment,
   cout<<"Success!"<<endl;
   
   // Preprocess Step
-  cout<<"Performing run preprocessing..."<<flush;
+  /*cout<<"Performing run preprocessing..."<<flush;
   if(web)
     mMongoDB->SendRunStartReply(12, "Performing run preprocessing.");
   int preprocess_success=0;
@@ -210,7 +210,7 @@ int MasterControl::Start(string detector, string user, string comment,
       mMongoDB->SendRunStartReply(18, "Processing timed out! Aborting.");
     return -1;
   }
-    
+  */
 
   // This might actually work. Let's assign a run name.
   string run_name = "";

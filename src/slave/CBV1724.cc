@@ -363,6 +363,7 @@ int CBV1724::GetBaselines(vector <int> &baselines, bool bQuiet)
 
 int CBV1724::InitForPreProcessing(){
   //Get the firmware revision (for data formats)                                    
+  cout<<"PREPROCESS INIT"<<endl;
   u_int32_t fwRev=0;
   ReadReg32(0x118C,fwRev);
   int fwVERSION = ((fwRev>>8)&0xFF); //0 for old FW, 137 for new FW  

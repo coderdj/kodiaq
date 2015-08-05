@@ -41,6 +41,8 @@ int main(int argc, char *argv[])
       break;
     }
   }
+
+  // Set up DAQ control objects and initialize variables
   std::cout<<"Reading .ini file "<<filepath<<"...";
   MasterControl controller;
   int ret = controller.Initialize( filepath );
@@ -102,7 +104,7 @@ int main(int argc, char *argv[])
 	cout<<"Sending start command"<<endl;
 	if(controller.Start(detectors[iCurrentDet])==-1){
 	  controller.Stop(detectors[iCurrentDet]);
-	  }*/
+	}*/
       }
       else if(cCommand == 'q')
 	break;

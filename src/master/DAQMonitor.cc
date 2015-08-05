@@ -285,8 +285,8 @@ int DAQMonitor::Arm(koOptions *mode, string run_name)
   Arm the DAQ and configure the DDC-10 HE veto module
 */
 {
-  if(m_DAQStatus.DAQState!=KODAQ_RDY)
-    return -1;
+  if(m_DAQStatus.DAQState!=KODAQ_IDLE)
+      return -1;
   
   // Configure DDC10 if available
 #ifdef WITH_DDC10

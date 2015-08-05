@@ -62,6 +62,7 @@ class CBV1724 : public VMEBoard {
   /* GetBufferSize: get the size of the buffer in this digitizer in bytes. */
   int GetBufferSize(){ return fBufferOccSize; }
  private:
+
   int                   InitForPreProcessing();
    int                  LoadDAC(vector <int> baselines);
    int                  LoadBaselines();                       //Load baselines to boards

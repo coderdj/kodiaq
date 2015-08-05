@@ -241,7 +241,7 @@ int main(int argc, char *argv[])
    string         fOptionsPath = "DAQConfig.ini";
    time_t         fPrevTime = koLogger::GetCurrentTime();
    bool           bArmed=false, bRunning=false, bConnected=false,
-     bERROR=false, bRdy=false;
+     bERROR=false;//, bRdy=false;
    //
    koLog->Message("Started koSlave module.");
    
@@ -261,7 +261,8 @@ connection_loop:
       string command="0",sender;
       int id;      
       if(fNetworkInterface.ListenForCommand(command,id,sender)==0)	{
-	if(command=="PREPROCESS"){
+	cout<<"GOT COMMAND "<<command<<endl;
+	/*if(command=="PREPROCESS"){
 	  bRdy = false;
 	  bArmed=false;
 	  bERROR=false;
@@ -290,11 +291,12 @@ connection_loop:
 	    fNetworkInterface.SlaveSendMessage("Error receiving options!");
 	    continue;
 	  }
-	}	    
+	  }*/	    
 	if(command=="ARM")  {
-	  if(!bRdy || bRunning)
+	  //if(!bRdy || bRunning)
+	  if(bRunning)
 	    continue;	     
-	  bRdy=false;
+	  //bRdy=false;
 	  bArmed=false;
 	  bERROR=false;
 	  fElectronics->Close();
@@ -323,7 +325,7 @@ connection_loop:
 	    continue;
 	  }	    
 	 }	 
-	if(command=="DBUPDATE") { //Change the write database. Done in case of dynamic write modes
+	/*if(command=="DBUPDATE") { //Change the write database. Done in case of dynamic write modes
 	    string newCollection="none";	    
 	    int count=0;
 	    while(fNetworkInterface.ListenForCommand(newCollection,id,sender)!=0)  {
@@ -344,7 +346,7 @@ connection_loop:
 	      fElectronics->UpdateRecorderCollection(fDAQOptions);	    
 	    }	      
 	    cout<<"DONE CHANGING COLLECTION"<<endl;
-	 }	 
+	    }*/	 
 	 if(command=="SLEEP")  {
 	    if(bRunning) continue;
 	    bArmed=false;
@@ -354,6 +356,7 @@ connection_loop:
 	   cout<<"GOT START"<<endl;
 	    if(!bArmed || bRunning) continue;
 	    cout<<"STARTING"<<endl;
+	    //sleep(10);
 	    fElectronics->StartRun();
 	    bRunning=true;
 	    cout<<"STARTED"<<endl;
@@ -361,28 +364,29 @@ connection_loop:
 	 if(command=="STOP")  {
 	   //if(bIdle) continue;
 	   fElectronics->StopRun();
+	   //fElectronics->Close();
 	    bRunning=false;
 	    bArmed=false;
-	    bRdy = false;
+	    //	    bRdy = false;
 	 }
 	 
 	 
       }//end if listen for command      
       
-      //Send status
+      //Send status updates
       double tdiff;
       time_t fCurrentTime=koLogger::GetCurrentTime();
       if((tdiff=difftime(fCurrentTime,fPrevTime))>=1.0){
 	 fPrevTime=fCurrentTime;
 	 int status=KODAQ_IDLE;
 	 if(bArmed && !bRunning) status=KODAQ_ARMED;
-	 if(bRdy && !bArmed && !bRunning) status = KODAQ_RDY;
+	 //if(bRdy && !bArmed && !bRunning) status = KODAQ_RDY;
 	 if(bRunning) status=KODAQ_RUNNING;
 	 if(bERROR) status=KODAQ_ERROR;
 	 double rate=0.,freq=0.,nBoards=fElectronics->GetDigis();
 	 unsigned int iFreq=0;	 
 	 unsigned int iRate=fElectronics->GetRate(iFreq);
-	 cout<<"Got rate as "<<iRate<<endl;
+	 //cout<<"Got rate as "<<iRate<<endl;
 	 rate=(double)iRate;
 	 freq=(double)iFreq;
 	 rate=rate/tdiff;
@@ -422,7 +426,7 @@ connection_loop:
      fElectronics->Close();
    bArmed=false;
    bRunning=false;
-   bRdy=false;
+   //bRdy=false;
    fNetworkInterface.Disconnect();
    bConnected=false;
    goto connection_loop;

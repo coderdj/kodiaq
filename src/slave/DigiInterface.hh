@@ -60,7 +60,7 @@ class DigiInterface
   // Input     : A 'loaded' koOptions object
   // Function  : Does baselines, noise spectra, and other preprocessing tasks
   // Return    : 0 on success, -1 on failure
-  int          PreProcess(koOptions *options);
+  //int          PreProcess(koOptions *options);
   int          Arm(koOptions *options);
    // Name     : int DigiInterface::Initialize
    // Input    : A 'loaded' koOptions object
@@ -69,15 +69,14 @@ class DigiInterface
    //            And sets up DAQ recorder. All in that order
    // Return   : 0 on success, -1 on failure
    // 
-  int           Initialize(koOptions *options, bool PreProcessing=false,
-			   bool skipCAEN=false);
+  int           Initialize(koOptions *options);
    //
    // Name     : void DigiInterface::UpdateRecorderCollection
    // Input    : A 'loaded' XeDAQOptionsObject
    // Function : Changes the mongoDB collection or file name for the DAQ recorder
    // Output   : None. Success is assumed in this case.
    // 
-   void          UpdateRecorderCollection(koOptions *options);
+  //void          UpdateRecorderCollection(koOptions *options);
    //
    // Name     : int DigiInterface::StartRun()
    // Input    : None, but precondition is that "initialize" was called

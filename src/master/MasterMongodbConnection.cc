@@ -522,7 +522,7 @@ int MasterMongodbConnection::CheckForCommand(string &command, string &user,
    detector = b.getStringField("detector");
    user=b.getStringField("user");
 
-   cout<<"Got query: "<<b.toString()<<endl;
+   //cout<<"Got query: "<<b.toString()<<endl;
    cout<<"Run mode TPC: "<<modeTPC<<" "<<b.getStringField("run_mode_tpc")<<endl;
    cout<<"Detector: "<<detector<<endl;
    // Remove any command docs in the DB. We can only do one at a time

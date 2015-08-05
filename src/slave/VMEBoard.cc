@@ -57,6 +57,12 @@ int VMEBoard::WriteReg32(u_int32_t address, u_int32_t data)
   //str<<"Board: "<<fBID.id<<" writes register "<<hex<<address<<" with "<<data<<dec;
   //LogMessage( str.str() );
 
+  //  if(address == 0x8100){
+  stringstream str;                                                             
+  str<<"Board: "<<fBID.id<<" writes register "<<hex<<address<<" with "<<data<<dec;
+  LogMessage( str.str() ); 
+  //    }
+
   int ret = CAENVME_WriteCycle(fCrateHandle,fBID.vme_address+address,
 			       &data,cvA32_U_DATA,cvD32);
   if( ret!=cvSuccess ){
