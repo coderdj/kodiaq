@@ -42,27 +42,41 @@ DigiInterface::DigiInterface(koLogger *logger, int ID)
 }
 
 int DigiInterface::Arm(koOptions *options){
-
+  //
+  // Arm Function
+  //
+  // Beginning State: DAQ is idle. No threads open. No electronics declared.
+  //
+  // End State:    Use options file to declare all electronics modules
+  //               Open read, write, and processing threads
+  //               Declare a proper DAQRecorder and attach to processors
+  //               Put boards into 'ready' state (in case of start with Sin)
+  
   cout<<"Arming!"<<endl;
 
-  // Get everything ready for the start command
-  //Close();
+  // Ensure mutiple 'Arm' commands in sequence don't declare too many 
+  // objects by closing first.
+  Close();
+
+  // This must be set since later commands use it
   m_koOptions = options;
 
-  //Initialize boards
-  if(Initialize(options) != 0){
+  // Initialize boards. This reads options, builds electronics objects, 
+  // and runs CAEN initialization procedure.
+  if(InitializeHardware(options) != 0){
     Close();
     return -1;
   }
 
-  // Prepare threads
-  cout<<"Prepping threads"<<endl;
-  // Have to activate boards before spawning processing threads. 
+  // Have to activate boards before spawning processing threads
+  // otherwise threads will immediately exit.
   for(unsigned int x=0;x<m_vDigitizers.size();x++)
     m_vDigitizers[x]->SetActivated(true);
   
 
-  if(options->GetInt("run_start") == 1){                                         
+  // If we are starting with S-IN we arm the acquisition control
+  // with 0b101 = activated, start on NIM high on S-IN.
+  if(options->GetInt("run_start") == 1){                                       
     for(unsigned int x=0;x<m_vDigitizers.size();x++){
       u_int32_t data;
       data = 0x5; 
@@ -70,7 +84,7 @@ int DigiInterface::Arm(koOptions *options){
     }
   }
 
-  //Set up processing threads
+  //Set up processing threads containers
   m_iReadSize=0;
   m_iReadFreq=0;
   if(options->GetInt("processing_num_threads")>0)
@@ -83,7 +97,8 @@ int DigiInterface::Arm(koOptions *options){
   }
 
 
-  //Set up daq recorder 
+  // Set up daq recorder. Use preprocessor logic to determine if a
+  // user compiled with the options he is requesting in his .ini file.
   cout<<"Setting up recorder with write mode "<<
     options->GetInt("write_mode")<<endl;
   m_DAQRecorder = NULL;
@@ -119,7 +134,7 @@ int DigiInterface::Arm(koOptions *options){
     }
   }
 
-  //Spawn read, write, and processing threads
+  // Spawn the actual threads
   cout<<"Spawning threads"<<endl;
   for(unsigned int x=0; x<m_vProcThreads.size();x++)  {
 
@@ -155,35 +170,18 @@ int DigiInterface::Arm(koOptions *options){
                  static_cast<void*>(this));
   m_ReadThread.IsOpen=true;
 
-  // Tell Boards to start acquisition 
-  // First case for S-IN start  
-  /*  if(options->GetInt("run_start") == 1){    
-    // Turn boards off first
-    //for(unsigned int x=0; x<m_vDigitizers.size(); x++) {
-    //  m_vDigitizers[x]->WriteReg32(CBV1724_AcquisitionControlReg, 0x0);
-    //}
-    //sleep(3);
-    // Set boards as active     
-    for(unsigned int x=0;x<m_vDigitizers.size();x++){
-      u_int32_t data;
-      //m_vDigitizers[x]->ReadReg32( CBV1724_AcquisitionControlReg,data);
-      //cout<<"Read data as"<<hex<<data<<endl;
-      //data |= 0x4;
-      data = 0x5;
-      //cout<<"Write data as"<<hex<<data<<dec<<endl;
-      //m_vDigitizers[x]->WriteReg32(CBV1724_AcquisitionControlReg, 0x0);
-      m_vDigitizers[x]->WriteReg32(CBV1724_AcquisitionControlReg,data);
-    }
-    }*/
   cout<<"DONE WITH ARM PROCEDURE"<<endl;
   return 0;
 }
 
-int DigiInterface::Initialize(koOptions *options)
+int DigiInterface::InitializeHardware(koOptions *options)
 {  
+  // This function defines all electronics and calls their 
+  // initialization procedures.
+
   m_koOptions = options;
   
-  //Define electronics and initialize
+  //Define electronic links from options object
   for(int ilink=0;ilink<options->GetLinks();ilink++)  {
     
     int tempHandle=-1;
@@ -205,12 +203,11 @@ int DigiInterface::Initialize(koOptions *options)
     int cerror=-1;
     if((cerror=CAENVME_Init(BType,Link.id,Link.crate,
 			    &tempHandle))!=cvSuccess){
-      //throw exception?
       stringstream therror;
       therror<<"DigiInterface::Initialize - Error in CAEN initialization link "
 	     <<Link.id<<" crate "<<Link.crate<<": "<<cerror;
       if(m_koLog!=NULL)
-	m_koLog->Error(therror.str());
+	m_koLog->Error(therror.str());      
       return -1;
     }
     
@@ -227,22 +224,29 @@ int DigiInterface::Initialize(koOptions *options)
     //sleep(1);
     //CAENVME_WriteRegister( tempHandle, cvVMEControlReg, 0x1c);
     
+    // Success. Put into log.
     stringstream logmess;
-    logmess<<"Initialized link ID: "<<Link.id<<" Crate: "<<Link.crate<<" with handle: "<<tempHandle;
+    logmess<<"Initialized link ID: "<<Link.id<<" Crate: "<<
+      Link.crate<<" with handle: "<<tempHandle;
     m_koLog->Message(logmess.str());
       
     m_vCrateHandles.push_back(tempHandle);
     
-    // define modules corresponding to this crate (inefficient
-    // double for loops, but small crate/module vector size)
+    // define modules corresponding to this crate 
     for(int imodule=0; imodule<options->GetBoards(); imodule++)	{
+      
       board_definition_t Board = options->GetBoard(imodule);
+      
+      // Make sure this board corresponds to this PC and this link
       if(Board.node != m_slaveID && m_slaveID != -1)
 	continue;
       if(Board.link!=Link.id || Board.crate!=Link.crate)
 	continue;
+
+      // Success. Log it.
       logmess.str(std::string());
-      logmess<<"Found a board with link "<<Board.link<<" and crate "<<Board.crate;
+      logmess<<"Found a board with link "<<Board.link<<
+	" and crate "<<Board.crate;
       m_koLog->Message(logmess.str());
       
       if(Board.type=="V1724"){	      
@@ -266,14 +270,20 @@ int DigiInterface::Initialize(koOptions *options)
   }
 
 
-  // initialize digitizers
+  // Initialize digitizers. This sets up their internal data structures
+  // and loads all registers to the boards. 
   for(unsigned int x=0; x<m_vDigitizers.size();x++)  {
     if(m_vDigitizers[x]->Initialize(options)!=0){
       stringstream err;
-      err<<"Digtizer "<<m_vDigitizers[x]->GetID().id<<" failed initialization!";
+      err<<"Digtizer "<<m_vDigitizers[x]->GetID().id<<
+	" failed initialization!";
       m_koLog->Error( err.str() );
       return -1;
     }
+    else 
+      m_koLog->Message("Successfully initialized digitizer " + 
+		       koHelper::IntToString(m_vDigitizers[x]->GetID().id) +
+		       ".");
   }
    
   return 0;
@@ -297,16 +307,8 @@ int DigiInterface::GetBufferOccupancy( vector<int> &digis, vector<int> &sizes)
 void DigiInterface::Close()
 {
    StopRun();
-   
-   //pthread_mutex_destroy(&m_RateMutex);
-   
-   //deactivate digis
-   /*for(unsigned int x=0;x<m_vDigitizers.size();x++)
-     m_vDigitizers[x]->SetActivated(false);
-   
-   CloseThreads(true);
-   */
-   
+      
+   // Close crates
    for(unsigned int x=0;x<m_vCrateHandles.size();x++){
       if(CAENVME_End(m_vCrateHandles[x])!=cvSuccess)	{
 	cout<<"Failed to end crate "<<x<<endl;
@@ -318,6 +320,7 @@ void DigiInterface::Close()
    }   
    m_vCrateHandles.clear();
    
+   // Clear digitizers
    for(unsigned int x=0;x<m_vDigitizers.size();x++)  
       delete m_vDigitizers[x];
    m_vDigitizers.clear();
@@ -325,14 +328,11 @@ void DigiInterface::Close()
       delete m_RunStartModule;
       m_RunStartModule=NULL;
    }      
-   
-   //Didn't create these objects, so just reset pointers
-   //m_koOptions=NULL;
-   
+      
    //Created the DAQ recorder, so must destroy it
    if(m_DAQRecorder!=NULL) delete m_DAQRecorder;
-   m_DAQRecorder=NULL;
-   
+   m_DAQRecorder = NULL;
+   m_koOptions   = NULL;
    return;
 }
 
@@ -349,7 +349,9 @@ void DigiInterface::ReadThread()
   bool ExitCondition=false;
   int counter = 0;
 
-  // Use this to make sure you read each digitizer once even once the run finishes
+  // Use this to make sure you read each digitizer once 
+  // even once the run finishes. This way the object is not clears
+  // while there's still data in the board's buffer.
   vector<bool> EndOfRunClear( m_vDigitizers.size(), false );
 
    while(!ExitCondition)  {
@@ -357,7 +359,8 @@ void DigiInterface::ReadThread()
       unsigned int rate=0,freq=0;
       for(unsigned int x=0; x<m_vDigitizers.size();x++)  {
 
-	// avoid hammering the vme bus
+	// avoid hammering the vme bus. Debatable if this is needed but
+	// it doesn't hurt.
 	usleep(100);
 
 	// First check if the digitizer is active. If at least
@@ -376,8 +379,6 @@ void DigiInterface::ReadThread()
 
 	// Read from the digitizer and adjust the rates
 	 unsigned int ratecycle=m_vDigitizers[x]->ReadMBLT();	 	 
-
-	 // Check for errors?
 
 	 rate+=ratecycle;
 	 if(ratecycle!=0)

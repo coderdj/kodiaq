@@ -62,21 +62,6 @@ class DigiInterface
   // Return    : 0 on success, -1 on failure
   //int          PreProcess(koOptions *options);
   int          Arm(koOptions *options);
-   // Name     : int DigiInterface::Initialize
-   // Input    : A 'loaded' koOptions object
-   // Function : Creates definitions for all electronics. Sets up threads for 
-   //            data processing. Sets run start conditions. Initialized electronics.
-   //            And sets up DAQ recorder. All in that order
-   // Return   : 0 on success, -1 on failure
-   // 
-  int           Initialize(koOptions *options);
-   //
-   // Name     : void DigiInterface::UpdateRecorderCollection
-   // Input    : A 'loaded' XeDAQOptionsObject
-   // Function : Changes the mongoDB collection or file name for the DAQ recorder
-   // Output   : None. Success is assumed in this case.
-   // 
-  //void          UpdateRecorderCollection(koOptions *options);
    //
    // Name     : int DigiInterface::StartRun()
    // Input    : None, but precondition is that "initialize" was called
@@ -139,33 +124,33 @@ class DigiInterface
   int GetBufferOccupancy( vector<int> &digis, vector<int> &sizes);
    
  private:   
-   void          ReadThread();       // Only need 1 read thread since V1724
-                                     // reads can't be parallelized
-   void          CloseThreads(bool Completely=false);
-   bool          LockRateMutex();    // Need a mutex for the rate since reads are
-   bool          UnlockRateMutex();  // done in a separate thread but readout of
-                                     // the rate is done in the main thread
-				     
+  void          ReadThread();       // Only need 1 read thread since V1724
+                                    // reads can't be parallelized
+  void          CloseThreads(bool Completely=false);
+  bool          LockRateMutex();    // Need a mutex for the rate since reads are
+  bool          UnlockRateMutex();  // done in a separate thread but readout of
+                                    // the rate is done in the main thread
+  int           InitializeHardware(koOptions *options);
+
    //Threads
    vector<ProcThread>   m_vProcThreads;  
    PThreadType          m_ReadThread;
    PThreadType          m_WriteThread;
    
-   //Electronics
-//   vector <VMECrate*>   m_vCrates;
-
-   vector<CBV1724*>     m_vDigitizers;
-   vector<int>         m_vCrateHandles;
-   VMEBoard            *m_RunStartModule; //NULL if no run start module defined
-   DAQRecorder         *m_DAQRecorder;
-   
-   unsigned int         m_iReadSize;
-   unsigned int         m_iReadFreq;
-   pthread_mutex_t      m_RateMutex;
-   
-   //kodiaq objects
-   koOptions           *m_koOptions;
-   koLogger            *m_koLog;
+  // Electronics
+  vector<CBV1724*>     m_vDigitizers;
+  vector<int>         m_vCrateHandles;
+  VMEBoard            *m_RunStartModule;
+  DAQRecorder         *m_DAQRecorder;
+  
+  // Rate info
+  unsigned int         m_iReadSize;
+  unsigned int         m_iReadFreq;
+  pthread_mutex_t      m_RateMutex;
+  
+  //kodiaq objects
+  koOptions           *m_koOptions;
+  koLogger            *m_koLog;
   int                  m_slaveID;
   
 };
