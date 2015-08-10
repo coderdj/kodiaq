@@ -21,8 +21,10 @@ koLogger::koLogger()
 koLogger::~koLogger()
 {
    //close file if open!  
-   if(fLogfile.is_open())
-     fLogfile.close();
+  if(fLogfile.is_open()){
+    Message("Program closed log file.");
+    fLogfile.close();
+  }
    pthread_mutex_destroy(&fLogMutex);
 }
 
@@ -37,7 +39,7 @@ void koLogger::SetLogfile(string logpath)
    //close file if open, then open new file at logpath
    if(fLogfile.is_open()) fLogfile.close();
    fLogfile.open(logpath.c_str(),ios::app);
-   //   Message("Program (re)opened log file.");
+   Message("Program (re)opened log file.");
 }
 
 void koLogger::Message(string message)
@@ -56,7 +58,9 @@ void koLogger::Error(string message)
    string logmessage = GetTimeString();
    string error = " [!ERROR!] ";
    logmessage+=error; logmessage+=message;
+   pthread_mutex_lock(&fLogMutex);
    fLogfile<<logmessage<<endl;
+   pthread_mutex_unlock(&fLogMutex);
 }
 
 string koLogger::GetTimeString()

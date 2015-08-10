@@ -13,6 +13,7 @@
 
 MasterControl::MasterControl(){
   mLog = new koLogger("log/master.log");
+  mMongoDB = NULL;
 }
 
 MasterControl::~MasterControl(){
@@ -20,11 +21,12 @@ MasterControl::~MasterControl(){
   delete mLog;
   //for(auto iter: mMonitors)
   //delete iter.second; 
-  mMonitors.clear();
+  //mMonitors.clear();
   //for(auto iter: mDetectors)
   //delete iter.second;
   mDetectors.clear();
-
+  if(mMongoDB!=NULL)
+    delete mMongoDB;
 }
 
 int MasterControl::Initialize(string filepath){
@@ -75,14 +77,15 @@ int MasterControl::Initialize(string filepath){
 
       // This object gets created here. The DAQ Monitor then owns it.
       //koNetServer *server = new koNetServer(mLog);
-      koNetServer server(mLog);
-      server.Initialize(port,dport);
+      mLog->Message("Passing log to server");
+      //koNetServer server(mLog);
+      //server.Initialize(port,dport);
       
       // Declare the detector
-      DAQMonitor monitor(&server, mLog, mMongoDB, name, ini);
+      DAQMonitor monitor(port, dport, mLog, mMongoDB, name, ini);
       //DAQMonitor *monitor = new DAQMonitor(server, mLog, mMongoDB, name, ini);
       mDetectors[name] = monitor;
-      mMonitors[name] = server;
+      //mMonitors[name] = server;
     }
   }
   cout<<"Found "<<mDetectors.size()<<" detectors."<<endl;
@@ -109,9 +112,11 @@ void MasterControl::Close(){
 
   //for(auto iter: mMonitors)
   //delete iter.second;
-  mMonitors.clear();
+  //mMonitors.clear();
 
-  delete mMongoDB;
+  if(mMongoDB!=NULL)
+    delete mMongoDB;
+  mMongoDB = NULL;
 }
 
 void MasterControl::Connect(string detector){

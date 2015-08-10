@@ -22,27 +22,48 @@ DAQMonitor::DAQMonitor()
    pthread_mutex_init(&m_DAQStatusMutex,NULL);
    m_bReady=false;
    m_detector = "";
+   m_port = m_dport = -1;
 }
 
-DAQMonitor::DAQMonitor(koNetServer *DAQNetwork, koLogger *logger,
+DAQMonitor::DAQMonitor(int port, int dport, koLogger *logger,
 		       MasterMongodbConnection *mongodb, string detector,
 		       string ini_file)
 {
-   m_DAQNetwork = DAQNetwork;
-   m_Log        = logger;
-   m_Mongodb    = mongodb;
-   koHelper::InitializeStatus(m_DAQStatus);
-   koHelper::InitializeRunInfo(m_RunInfo);
-   pthread_mutex_init(&m_DAQStatusMutex,NULL);
-   m_bReady=false;
-   m_detector = detector;
-   m_ini_file = ini_file;
+  m_DAQNetwork = new koNetServer(logger);
+  m_DAQNetwork->Initialize(port, dport);
+  m_Log        = logger;
+  m_Mongodb    = mongodb;
+  koHelper::InitializeStatus(m_DAQStatus);
+  koHelper::InitializeRunInfo(m_RunInfo);
+  pthread_mutex_init(&m_DAQStatusMutex,NULL);
+  m_bReady=false;
+  m_detector = detector;
+  m_ini_file = ini_file;
+  m_port = port;
+  m_dport = dport;
 }
 
+//Copy
+DAQMonitor::DAQMonitor(const DAQMonitor &rhs){
+  m_Log = rhs.GetLog();
+  m_Mongodb = rhs.GetMongoDB();
+  m_DAQNetwork = new koNetServer(m_Log);
+  m_port = rhs.GetPort();
+  m_dport = rhs.GetDPort();
+  m_DAQNetwork->Initialize(m_port, m_dport);
+  koHelper::InitializeStatus(m_DAQStatus);
+  koHelper::InitializeRunInfo(m_RunInfo);
+  pthread_mutex_init(&m_DAQStatusMutex,NULL);
+  m_bReady=false;
+  m_detector = rhs.GetName();
+  m_ini_file = rhs.GetIni();
+}
 
 DAQMonitor::~DAQMonitor()
 {
   pthread_mutex_destroy(&m_DAQStatusMutex);
+  if(m_DAQNetwork!=NULL)
+    delete m_DAQNetwork;
 }
 
 void DAQMonitor::ProcessCommand(string command, string user, 
