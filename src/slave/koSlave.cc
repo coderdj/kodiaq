@@ -66,7 +66,7 @@ program_start:
       int n=0;
 
       while(input!='q' && input != 'p')	{
-	if(fElectronics->Initialize(fDAQOptions)==0)
+	if(fElectronics->Arm(fDAQOptions)==0)
 	  cout<<fLog.GetTimeString()<<"Initialized. Counter = "<<n<<"."<<endl;
 	else{
 	  cout<<koLogger::GetTimeString()<<" Initialization failed!"<<endl;	  
@@ -107,10 +107,10 @@ program_start:
    //start digi interface
    cout<<koLogger::GetTimeString()<<" Initializing electronics"<<endl;
 
-   if(fElectronics->PreProcess(fDAQOptions)!=0)  {
+   /*if(fElectronics->PreProcess(fDAQOptions)!=0)  {
      cout<<koLogger::GetTimeString()<<" Error preprocessing electronics"<<endl;
      goto program_start;
-   }
+     }*/
    if(fElectronics->Arm(fDAQOptions)!=0)  {	
      cout<<koLogger::GetTimeString()<<" Error initializing electronics"<<endl;
      goto program_start;
