@@ -27,7 +27,6 @@ koNet::~koNet()
 koNet::koNet(koLogger *fLogger)
 {
    m_koLog=fLogger;
-   m_koLog->Message("koNet registered logger");
 }
 
 void koNet::LogError(string error)

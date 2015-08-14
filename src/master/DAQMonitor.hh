@@ -33,11 +33,11 @@ class DAQMonitor
 public:
   DAQMonitor();
   virtual ~DAQMonitor();
-  DAQMonitor(const DAQMonitor &rhs);
+  //DAQMonitor(const DAQMonitor &rhs);
   DAQMonitor(int port, int dport, koLogger *logger, 
 	     MasterMongodbConnection *mongodb, string detector, 
 	     string ini_file="DAQConfig.ini");
-  
+
   void ProcessCommand(string command,string user, 
 		      string comment="", koOptions *options=NULL);
   int  PreProcess(koOptions* mode);
@@ -57,7 +57,15 @@ public:
     m_bReady=false;
     return m_DAQStatus;
   }; 
-
+  koStatusPacket_t GetStatusC() const{
+    return m_DAQStatus;
+  };
+  koRunInfo_t GetRunInfo() const{
+    return m_RunInfo;
+  };
+  koNetServer *GetServerObject() const{
+    return m_DAQNetwork;
+  };
   void SetIni( string inipath ){
     m_ini_file = inipath;
   };

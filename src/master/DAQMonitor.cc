@@ -44,20 +44,21 @@ DAQMonitor::DAQMonitor(int port, int dport, koLogger *logger,
 }
 
 //Copy
-DAQMonitor::DAQMonitor(const DAQMonitor &rhs){
+/*DAQMonitor::DAQMonitor(const DAQMonitor &rhs){
   m_Log = rhs.GetLog();
   m_Mongodb = rhs.GetMongoDB();
-  m_DAQNetwork = new koNetServer(m_Log);
+  m_DAQNetwork = rhs.GetServerObject();
   m_port = rhs.GetPort();
   m_dport = rhs.GetDPort();
   m_DAQNetwork->Initialize(m_port, m_dport);
-  koHelper::InitializeStatus(m_DAQStatus);
-  koHelper::InitializeRunInfo(m_RunInfo);
+  //  koHelper::InitializeRunInfo(m_RunInfo);
   pthread_mutex_init(&m_DAQStatusMutex,NULL);
   m_bReady=false;
   m_detector = rhs.GetName();
   m_ini_file = rhs.GetIni();
-}
+  m_DAQStatus = rhs.GetStatusC();
+  m_RunInfo = rhs.GetRunInfo();
+  }*/
 
 DAQMonitor::~DAQMonitor()
 {
@@ -158,6 +159,7 @@ int DAQMonitor::Connect()
   //Finished. Take down listening interface (stop listening for new slaves)
   stringstream errstring;
   errstring<<"DAQ network online with "<<nSlaves<<" slaves.";
+  m_Log->Message(errstring.str());
   m_Mongodb->SendLogMessage(errstring.str(),KOMESS_NORMAL);
   m_DAQNetwork->TakeDownNetwork();
   m_DAQStatus.NetworkUp=true;
@@ -195,7 +197,7 @@ void DAQMonitor::PollNetwork()
 	ThrowFatalError(true,errtxt.str());
       }
     }
-
+    
     if(difftime(fCurrentTime,fPrevTime)>100.){
       m_DAQNetwork->SendCommand("KEEPALIVE");
       fPrevTime=fCurrentTime;

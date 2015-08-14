@@ -39,7 +39,10 @@ class koNet
                  koNet();                  //logging not available
    virtual      ~koNet();   
    explicit      koNet(koLogger *fLogger); //use this one
-   
+
+   void          SetLog(koLogger *logger){
+     m_koLog = logger;
+   };
  protected:   
 
    int        MessageOnPipe(int pipe);
