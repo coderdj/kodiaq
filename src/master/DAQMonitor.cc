@@ -22,7 +22,6 @@ DAQMonitor::DAQMonitor()
    pthread_mutex_init(&m_DAQStatusMutex,NULL);
    m_bReady=false;
    m_detector = "";
-   m_port = m_dport = -1;
 }
 
 DAQMonitor::DAQMonitor(int port, int dport, koLogger *logger,
@@ -38,27 +37,7 @@ DAQMonitor::DAQMonitor(int port, int dport, koLogger *logger,
   pthread_mutex_init(&m_DAQStatusMutex,NULL);
   m_bReady=false;
   m_detector = detector;
-  m_ini_file = ini_file;
-  m_port = port;
-  m_dport = dport;
 }
-
-//Copy
-/*DAQMonitor::DAQMonitor(const DAQMonitor &rhs){
-  m_Log = rhs.GetLog();
-  m_Mongodb = rhs.GetMongoDB();
-  m_DAQNetwork = rhs.GetServerObject();
-  m_port = rhs.GetPort();
-  m_dport = rhs.GetDPort();
-  m_DAQNetwork->Initialize(m_port, m_dport);
-  //  koHelper::InitializeRunInfo(m_RunInfo);
-  pthread_mutex_init(&m_DAQStatusMutex,NULL);
-  m_bReady=false;
-  m_detector = rhs.GetName();
-  m_ini_file = rhs.GetIni();
-  m_DAQStatus = rhs.GetStatusC();
-  m_RunInfo = rhs.GetRunInfo();
-  }*/
 
 DAQMonitor::~DAQMonitor()
 {
@@ -82,20 +61,7 @@ void DAQMonitor::ProcessCommand(string command, string user,
     else
       m_Mongodb->SendLogMessage(("DAQ network disconnected by user "+user),KOMESS_NORMAL);
   }
-  /*else if(command== "Start" || command=="fStart"){
-    // Step 1: Validate
-    if(command=="Start"){
-      if(ValidateStartCommand(user,comment,options)!=0)
-	return;
-    }
-    if(m_DAQStatus.NetworkUp && m_DAQStatus.DAQState==KODAQ_IDLE){
-      if(Arm(options)==0)
-	Start(user,comment,options);
-      else Shutdown();
-    }
-    }*/
   else if(command=="Stop"){
-    //if(m_DAQStatus.DAQState==KODAQ_RUNNING)
     Stop(user,comment);
     Shutdown();
   }
@@ -125,9 +91,6 @@ int DAQMonitor::ValidateStartCommand(string user, string comment,
     message="Dispatcher refuses to start the DAQ with no readers connected.";
   }
 
-  //create DB entry
-  //if(m_Mongodb!=NULL)
-  //m_Mongodb->SendRunStartReply(reply,message,options->GetString("name"),comment);
   if(reply==0) return 0;
   return -1;
 }
@@ -334,17 +297,11 @@ int DAQMonitor::Arm(koOptions *mode, string run_name)
   }
   if(m_DAQNetwork->SendOptionsStream(optionsStream)!=0){
     delete optionsStream;
-    m_Mongodb->SendLogMessage("Error sending options to clients.",KOMESS_WARNING);
+    m_Mongodb->SendLogMessage("Error sending options to clients.",
+			      KOMESS_WARNING);
     return -1;
   }
 
-  
-  /*  if(run_name!="" && mode->GetInt("write_mode") == WRITEMODE_MONGODB){      
-    mode->SetString("mongo_collection", koHelper::MakeDBName
-		    (run_name, mode->GetString("mongo_collection"))); 
-    m_DAQNetwork->SendCommand("DBUPDATE");    
-    m_DAQNetwork->SendCommand(mode->GetString("mongo_collection"));  
-    }*/
   delete optionsStream;
   
   return 0;
