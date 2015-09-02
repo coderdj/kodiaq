@@ -38,7 +38,7 @@ class koNetServer : public koNet
                 koNetServer();
    virtual     ~koNetServer();
    explicit     koNetServer(koLogger *logger, koLogger *broadcastlogger=NULL);
-   
+
    //
    // Name    : Initialize 
    // Purpose : Set connection info for network interface

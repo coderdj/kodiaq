@@ -24,25 +24,26 @@ DAQMonitor::DAQMonitor()
    m_detector = "";
 }
 
-DAQMonitor::DAQMonitor(koNetServer *DAQNetwork, koLogger *logger,
+DAQMonitor::DAQMonitor(int port, int dport, koLogger *logger,
 		       MasterMongodbConnection *mongodb, string detector,
 		       string ini_file)
 {
-   m_DAQNetwork = DAQNetwork;
-   m_Log        = logger;
-   m_Mongodb    = mongodb;
-   koHelper::InitializeStatus(m_DAQStatus);
-   koHelper::InitializeRunInfo(m_RunInfo);
-   pthread_mutex_init(&m_DAQStatusMutex,NULL);
-   m_bReady=false;
-   m_detector = detector;
-   m_ini_file = ini_file;
+  m_DAQNetwork = new koNetServer(logger);
+  m_DAQNetwork->Initialize(port, dport);
+  m_Log        = logger;
+  m_Mongodb    = mongodb;
+  koHelper::InitializeStatus(m_DAQStatus);
+  koHelper::InitializeRunInfo(m_RunInfo);
+  pthread_mutex_init(&m_DAQStatusMutex,NULL);
+  m_bReady=false;
+  m_detector = detector;
 }
-
 
 DAQMonitor::~DAQMonitor()
 {
   pthread_mutex_destroy(&m_DAQStatusMutex);
+  if(m_DAQNetwork!=NULL)
+    delete m_DAQNetwork;
 }
 
 void DAQMonitor::ProcessCommand(string command, string user, 
@@ -60,20 +61,7 @@ void DAQMonitor::ProcessCommand(string command, string user,
     else
       m_Mongodb->SendLogMessage(("DAQ network disconnected by user "+user),KOMESS_NORMAL);
   }
-  /*else if(command== "Start" || command=="fStart"){
-    // Step 1: Validate
-    if(command=="Start"){
-      if(ValidateStartCommand(user,comment,options)!=0)
-	return;
-    }
-    if(m_DAQStatus.NetworkUp && m_DAQStatus.DAQState==KODAQ_IDLE){
-      if(Arm(options)==0)
-	Start(user,comment,options);
-      else Shutdown();
-    }
-    }*/
   else if(command=="Stop"){
-    //if(m_DAQStatus.DAQState==KODAQ_RUNNING)
     Stop(user,comment);
     Shutdown();
   }
@@ -103,9 +91,6 @@ int DAQMonitor::ValidateStartCommand(string user, string comment,
     message="Dispatcher refuses to start the DAQ with no readers connected.";
   }
 
-  //create DB entry
-  //if(m_Mongodb!=NULL)
-  //m_Mongodb->SendRunStartReply(reply,message,options->GetString("name"),comment);
   if(reply==0) return 0;
   return -1;
 }
@@ -137,6 +122,7 @@ int DAQMonitor::Connect()
   //Finished. Take down listening interface (stop listening for new slaves)
   stringstream errstring;
   errstring<<"DAQ network online with "<<nSlaves<<" slaves.";
+  m_Log->Message(errstring.str());
   m_Mongodb->SendLogMessage(errstring.str(),KOMESS_NORMAL);
   m_DAQNetwork->TakeDownNetwork();
   m_DAQStatus.NetworkUp=true;
@@ -174,7 +160,7 @@ void DAQMonitor::PollNetwork()
 	ThrowFatalError(true,errtxt.str());
       }
     }
-
+    
     if(difftime(fCurrentTime,fPrevTime)>100.){
       m_DAQNetwork->SendCommand("KEEPALIVE");
       fPrevTime=fCurrentTime;
@@ -311,17 +297,11 @@ int DAQMonitor::Arm(koOptions *mode, string run_name)
   }
   if(m_DAQNetwork->SendOptionsStream(optionsStream)!=0){
     delete optionsStream;
-    m_Mongodb->SendLogMessage("Error sending options to clients.",KOMESS_WARNING);
+    m_Mongodb->SendLogMessage("Error sending options to clients.",
+			      KOMESS_WARNING);
     return -1;
   }
 
-  
-  /*  if(run_name!="" && mode->GetInt("write_mode") == WRITEMODE_MONGODB){      
-    mode->SetString("mongo_collection", koHelper::MakeDBName
-		    (run_name, mode->GetString("mongo_collection"))); 
-    m_DAQNetwork->SendCommand("DBUPDATE");    
-    m_DAQNetwork->SendCommand(mode->GetString("mongo_collection"));  
-    }*/
   delete optionsStream;
   
   return 0;

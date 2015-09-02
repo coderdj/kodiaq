@@ -69,6 +69,8 @@ int koNet::ReceiveString(int socket,string &buff)
       char cbuff='a';      
       int a;
       if((a=ReceiveChar(socket,cbuff))<0) {
+	LogError("koNet::ReceiveString - receive char failed");
+
 	 buff=retstring;
 	 return -1;
       }      
@@ -76,6 +78,7 @@ int koNet::ReceiveString(int socket,string &buff)
       if(cbuff=='~') break;
       retstring.push_back(cbuff);
       if(retstring.size()>100000) {
+	LogError("koNet::ReceiveString - data overflow");
 	 buff=retstring;
 	 return -1; //crazy loop
       }      

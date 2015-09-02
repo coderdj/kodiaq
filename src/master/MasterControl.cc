@@ -13,6 +13,7 @@
 
 MasterControl::MasterControl(){
   mLog = new koLogger("log/master.log");
+  mMongoDB = NULL;
 }
 
 MasterControl::~MasterControl(){
@@ -20,11 +21,12 @@ MasterControl::~MasterControl(){
   delete mLog;
   //for(auto iter: mMonitors)
   //delete iter.second; 
-  mMonitors.clear();
-  //for(auto iter: mDetectors)
-  //delete iter.second;
+  //mMonitors.clear();
+  for(auto iter: mDetectors)
+    delete iter.second;
   mDetectors.clear();
-
+  if(mMongoDB!=NULL)
+    delete mMongoDB;
 }
 
 int MasterControl::Initialize(string filepath){
@@ -75,14 +77,15 @@ int MasterControl::Initialize(string filepath){
 
       // This object gets created here. The DAQ Monitor then owns it.
       //koNetServer *server = new koNetServer(mLog);
-      koNetServer server(mLog);
-      server.Initialize(port,dport);
+      mLog->Message("Passing log to server");
+      //koNetServer server(mLog);
+      //server.Initialize(port,dport);
       
       // Declare the detector
-      DAQMonitor monitor(&server, mLog, mMongoDB, name, ini);
+      DAQMonitor *monitor = new DAQMonitor(port, dport, mLog, mMongoDB, name, ini);
       //DAQMonitor *monitor = new DAQMonitor(server, mLog, mMongoDB, name, ini);
       mDetectors[name] = monitor;
-      mMonitors[name] = server;
+      //mMonitors[name] = server;
     }
   }
   cout<<"Found "<<mDetectors.size()<<" detectors."<<endl;
@@ -103,35 +106,37 @@ void MasterControl::Close(){
   Stop();
   Disconnect();
 
-  //for(auto iter: mDetectors)
-  //delete iter.second;
+  for(auto iter: mDetectors)
+    delete iter.second;
   mDetectors.clear();
 
   //for(auto iter: mMonitors)
   //delete iter.second;
-  mMonitors.clear();
+  //mMonitors.clear();
 
-  delete mMongoDB;
+  if(mMongoDB!=NULL)
+    delete mMongoDB;
+  mMongoDB = NULL;
 }
 
 void MasterControl::Connect(string detector){
   for(auto iterator:mDetectors){
     if(iterator.first==detector || detector=="all")
-      iterator.second.ProcessCommand("Connect", "dispatcher_console");
+      iterator.second->ProcessCommand("Connect", "dispatcher_console");
   }  
 }
 
 void MasterControl::Disconnect(string detector){
   for(auto iterator:mDetectors){
     if(iterator.first==detector || detector=="all")
-      iterator.second.ProcessCommand("Disconnect", "dispatcher_console");
+      iterator.second->ProcessCommand("Disconnect", "dispatcher_console");
   }
 }
 
 void MasterControl::Stop(string detector, string user, string comment){
   for(auto iterator:mDetectors){
     if(iterator.first==detector || detector=="all")
-      iterator.second.ProcessCommand("Stop", user, comment);
+      iterator.second->ProcessCommand("Stop", user, comment);
   }
 
   mMongoDB->UpdateEndTime(detector);
@@ -161,7 +166,7 @@ int MasterControl::Start(string detector, string user, string comment,
   int valid_success=0;
   for(auto iterator:mDetectors){
     if(iterator.first==detector || detector=="all")
-      valid_success+=iterator.second.ValidateStartCommand(user, comment,
+      valid_success+=iterator.second->ValidateStartCommand(user, comment,
 							   options[iterator.first]);
   }
   if(valid_success!=0){
@@ -231,7 +236,7 @@ int MasterControl::Start(string detector, string user, string comment,
   int arm_success=0;
   for(auto iterator:mDetectors){
     if(iterator.first==detector || detector=="all")
-      arm_success+=iterator.second.Arm(options[iterator.first], run_name);
+      arm_success+=iterator.second->Arm(options[iterator.first], run_name);
   }
   if(arm_success!=0){
     cout<<"Error arming the boards. Run "<<run_name<<" has been aborted."<<endl;
@@ -259,7 +264,7 @@ int MasterControl::Start(string detector, string user, string comment,
   int start_success=0;
   for(auto iterator:mDetectors){
     if(iterator.first==detector || detector=="all")
-      start_success+=iterator.second.Start(run_name, user, 
+      start_success+=iterator.second->Start(run_name, user, 
 					    comment,options[iterator.first]);
   }
   if(start_success!=0){
@@ -309,20 +314,20 @@ void MasterControl::CheckRemoteCommand(){
 void MasterControl::StatusUpdate(){
 
   for(auto iter : mDetectors) {
-    if( iter.second.UpdateReady() ) {
+    if( iter.second->UpdateReady() ) {
       time_t CurrentTime = koLogger::GetCurrentTime();
       double dTimeStatus = difftime( CurrentTime, 
 				     mStatusUpdateTimes[iter.first] );
       if ( dTimeStatus > 5. ) { //don't flood DB with updates
 	mStatusUpdateTimes[iter.first] = CurrentTime;
-	mMongoDB->UpdateDAQStatus( iter.second.GetStatus(), 
+	mMongoDB->UpdateDAQStatus( iter.second->GetStatus(), 
 				 iter.first );
       }
       double dTimeRates = difftime( CurrentTime,
 				    mRatesUpdateTimes[iter.first]);
       if ( dTimeRates > 10. ) { //send rates
 	mRatesUpdateTimes[iter.first] = CurrentTime;
-	mMongoDB->AddRates( iter.second.GetStatus() );
+	mMongoDB->AddRates( iter.second->GetStatus() );
 	//	mMongoDB->UpdateDAQStatus( iter.second->GetStatus(),
 	//			 iter.first );
       }
@@ -338,23 +343,24 @@ string MasterControl::GetStatusString(){
   ss<<"***************************************************************"<<endl;
   for(auto iter : mDetectors) {
     ss<<"Detector: "<<iter.first;
-    if( iter.second.GetStatus().DAQState == KODAQ_IDLE)
+    if( iter.second->GetStatus().DAQState == KODAQ_IDLE)
       ss<<" IDLE"<<endl;
-    else if( iter.second.GetStatus().DAQState == KODAQ_ARMED)
-      ss<<" ARMED in mode "<<iter.second.GetStatus().RunMode<<endl;
-    else if( iter.second.GetStatus().DAQState == KODAQ_RUNNING)
-      ss<<" RUNNING in mode "<<iter.second.GetStatus().RunMode<<endl;
-    else if( iter.second.GetStatus().DAQState == KODAQ_RDY)
-      ss<<" READY in mode "<<iter.second.GetStatus().RunMode<<endl;
-    else if( iter.second.GetStatus().DAQState == KODAQ_ERROR)
+    else if( iter.second->GetStatus().DAQState == KODAQ_ARMED)
+      ss<<" ARMED in mode "<<iter.second->GetStatus().RunMode<<endl;
+    else if( iter.second->GetStatus().DAQState == KODAQ_RUNNING)
+      ss<<" RUNNING in mode "<<iter.second->GetStatus().RunMode<<endl;
+    else if( iter.second->GetStatus().DAQState == KODAQ_RDY)
+      ss<<" READY in mode "<<iter.second->GetStatus().RunMode<<endl;
+    else if( iter.second->GetStatus().DAQState == KODAQ_ERROR)
       ss<<" ERROR"<<endl;
     else
       ss<<" UNDEFINED"<<endl;
-    for(unsigned int x=0; x<iter.second.GetStatus().Slaves.size(); x++){
-      ss<<"        "<<iter.second.GetStatus().Slaves[x].name<<": "<<
-	iter.second.GetStatus().Slaves[x].nBoards<<" boards. Rate: "<<
-	iter.second.GetStatus().Slaves[x].Rate<<" (MB/s) @ "<<
-	iter.second.GetStatus().Slaves[x].Freq<<" Hz"<<endl;
+    cout<<iter.second->GetStatus().Slaves.size()<<" nslaves"<<endl;
+    for(unsigned int x=0; x<iter.second->GetStatus().Slaves.size(); x++){
+      ss<<"        "<<iter.second->GetStatus().Slaves[x].name<<": "<<
+	iter.second->GetStatus().Slaves[x].nBoards<<" boards. Rate: "<<
+	iter.second->GetStatus().Slaves[x].Rate<<" (MB/s) @ "<<
+	iter.second->GetStatus().Slaves[x].Freq<<" Hz"<<endl;
     }
   }
   ss<<"***************************************************************"<<endl;
