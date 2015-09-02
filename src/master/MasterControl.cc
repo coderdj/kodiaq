@@ -249,7 +249,7 @@ int MasterControl::Start(string detector, string user, string comment,
   // This should be done within a certain timeout.
   bool all_armed=false;
   int armedCounter = 0;
-  while(all_armed == false && armedCounter <100){
+  while(all_armed == false && armedCounter <200){
     for(auto iterator:mDetectors){
       if(iterator.first==detector || detector=="all"){
 	if(iterator.second->GetStatus().DAQState != KODAQ_ARMED)
@@ -257,8 +257,17 @@ int MasterControl::Start(string detector, string user, string comment,
       }
     }
     if(!all_armed)
-      usleep(100000);
+      usleep(100000);    
     armedCounter++;
+    if(armedCounter % 20 == 0)
+      cout<<"Waiting for boards to arm..."<<armedCounter/10<<endl;
+  }
+  if(!all_armed){
+    cout<<"Error arming the boards. Run "<<run_name<<" has been aborted."<<endl;
+    if(web)
+      mMongoDB->SendRunStartReply(18, "Error arming boards. Run " + run_name +
+                                  " has been aborted.");
+    return -1;
   }
   cout<<"Success!"<<endl;
 
