@@ -89,11 +89,6 @@ program_start:
      cout<<koLogger::GetTimeString()<<" Firmware check not yet implemented"<<endl;
      goto program_start;
    }
-   //else if(input == 'i'){
-     // theGUI.InputBox("Input your .ini file path:", fOptionsPath);
-   // theGUI.DrawBottomBar(0);
-   //goto program_start;
-   //}
 
    else if(input!='s')  goto program_start;
    
@@ -107,23 +102,11 @@ program_start:
    //start digi interface
    cout<<koLogger::GetTimeString()<<" Initializing electronics"<<endl;
 
-   /*if(fElectronics->PreProcess(fDAQOptions)!=0)  {
-     cout<<koLogger::GetTimeString()<<" Error preprocessing electronics"<<endl;
-     goto program_start;
-     }*/
    if(fElectronics->Arm(fDAQOptions)!=0)  {	
      cout<<koLogger::GetTimeString()<<" Error initializing electronics"<<endl;
      goto program_start;
    }   
    
-   // Set output to display
-   /*if(fDAQOptions.write_mode == 0)
-     theGUI.UpdateOutput("none","");
-   else if(fDAQOptions.write_mode == 1)
-     theGUI.UpdateOutput("file", fDAQOptions.file_path);
-   else if(fDAQOptions.write_mode == 2)
-   theGUI.UpdateOutput("MongoDB:", fDAQOptions.mongo_address + ":" + fDAQOptions.mongo_database + "." + fDAQOptions.mongo_collection);*/
-
    //start run
    if(fElectronics->StartRun()!=0)    {	
      cout<<koLogger::GetTimeString()<<"Error starting run"<<endl;

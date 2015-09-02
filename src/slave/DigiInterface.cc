@@ -415,7 +415,7 @@ int DigiInterface::StartRun()
         
     // Send s-in    
     if( m_RunStartModule != NULL ){
-      sleep(3);
+      //sleep(3);
       cout<<"Sending S-IN!"<<endl;
       m_koLog->Message( "Sent start signal to run start module ");
       m_RunStartModule->SendStartSignal();

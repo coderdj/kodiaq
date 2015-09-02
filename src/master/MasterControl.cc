@@ -245,6 +245,21 @@ int MasterControl::Start(string detector, string user, string comment,
 				  " has been aborted.");
     return -1;
   }
+  // Now you have to check that the boards actually go into arm state.
+  // This should be done within a certain timeout.
+  bool all_armed=false;
+  int armedCounter = 0;
+  while(all_armed == false && armedCounter <100){
+    for(auto iterator:mDetectors){
+      if(iterator.first==detector || detector=="all"){
+	if(iterator.second->GetStatus().DAQState != KODAQ_ARMED)
+	  all_armed = false;
+      }
+    }
+    if(!all_armed)
+      usleep(100000);
+    armedCounter++;
+  }
   cout<<"Success!"<<endl;
 
   // Insert the run doc and update the noise directory
