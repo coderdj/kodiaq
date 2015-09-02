@@ -387,7 +387,7 @@ int CBV1724::InitForPreProcessing(){
     retval = -1;
   return retval;
 }
-int CBV1724::DoNoiseSpectra(string mongo_addr, string mongo_coll, u_int32_t length){
+/*int CBV1724::DoNoiseSpectra(string mongo_addr, string mongo_coll, u_int32_t length){
 
   // ONLY compatible with mongodb
 #ifdef HAVE_LIBMONGOCLIENT
@@ -517,11 +517,14 @@ int CBV1724::DoNoiseSpectra(string mongo_addr, string mongo_coll, u_int32_t leng
   return 0;
 #endif
 }
+*/
 
 int CBV1724::DetermineBaselines()
 //Rewrite of baseline routine from Marc S
 //Updates to C++, makes compatible with new FW
 {
+  // First thing's first: Reset the board
+  WriteReg32(CBV1724_BoardResetReg, 0x1);
 
   // If there are old baselines we can use them as a starting point
   vector <int> DACValues;  
@@ -544,6 +547,7 @@ int CBV1724::DetermineBaselines()
   u_int32_t fwRev=0;
   ReadReg32(0x118C,fwRev);
   int fwVERSION = ((fwRev>>8)&0xFF); //0 for old FW, 137 for new FW   
+  LogMessage("Baselines for firmware version " + koHelper::IntToString(fwVERSION) );
 
   //Do the magic
   double idealBaseline = 16000.;
@@ -626,6 +630,8 @@ int CBV1724::DetermineBaselines()
 	    dbase=(((*buff)[x][y])&0xFFFF);
 	  else 
 	    dbase=(((*buff)[x][y]>>16)&0xFFFF);
+	  if(dbase == 0 ) 
+	    continue;
 	  baseline+=dbase;
 	  bdiv+=1.;
 	  if(dbase>maxval) 
@@ -639,6 +645,8 @@ int CBV1724::DetermineBaselines()
 	//stringstream error;
 	//error<<"Channel "<<(*dchannels)[x]<<" signal in baseline?";
 	//LogMessage( error.str() );	
+	LogMessage("maxval - minval is " + koHelper::IntToString(maxval-minval) + " " + koHelper::IntToString(maxval) + " " 
+		   + koHelper::IntToString(minval) + " maybe there's a signal in the baseline.");
 	delete[] (*buff)[x];
 	continue; //signal in baseline?
       }
@@ -646,6 +654,7 @@ int CBV1724::DetermineBaselines()
       // shooting for 16000. best is if we UNDERshoot 
       // and then can more accurately adjust DAC
       double discrepancy = baseline-idealBaseline;      
+      //LogMessage("Discrepancy is " + koHelper::IntToString(discrepancy));
       if(fabs(discrepancy)<=maxDev) { 
 	channelFinished[(*dchannels)[x]]=true;
 	delete[] (*buff)[x];
@@ -775,8 +784,12 @@ int CBV1724::LoadDAC(vector<int> baselines){
       }
       break;
       stringstream goodstr;
-      goodstr<<"Baseline for channel "<<x<<" written";
+      goodstr<<"Baseline for channel "<<x<<" written as "<<hex<<data<<dec;
       LogMessage(goodstr.str());
+    }
+    if(counter==100){
+      LogError("Failed to set baseline for channel " + koHelper::IntToString(x));
+      return -1;
     }
     
   } //end for

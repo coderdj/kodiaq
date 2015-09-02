@@ -27,6 +27,7 @@
 #define CBV1724_BuffOrg                   0x800C
 #define CBV1724_CustomSize                0x8020
 #define CBV1724_SoftwareTriggerReg        0x8108
+#define CBV1724_BoardResetReg             0xEF24
 
 /*! \brief Control class for CAEN V1724 digitizers.
  */ 
