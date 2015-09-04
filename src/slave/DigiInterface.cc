@@ -178,7 +178,6 @@ int DigiInterface::InitializeHardware(koOptions *options)
 {  
   // This function defines all electronics and calls their 
   // initialization procedures.
-
   m_koOptions = options;
   
   //Define electronic links from options object
@@ -417,7 +416,7 @@ int DigiInterface::StartRun()
     if( m_RunStartModule != NULL ){
       //sleep(3);
       cout<<"Sending S-IN!"<<endl;
-      m_koLog->Message( "Sent start signal to run start module ");
+      m_koLog->Message( "Sent start signal to run start module ");      
       m_RunStartModule->SendStartSignal();
     }
     else
@@ -443,25 +442,21 @@ int DigiInterface::StartRun()
  {
      
    cout<<"Entering stoprun"<<endl;
-   if(m_RunStartModule!=NULL){
-     
+   if(m_RunStartModule!=NULL)  
      m_RunStartModule->SendStopSignal();
-     usleep(1000);
-
-      for(unsigned int x=0;x<m_vDigitizers.size();x++)
-	m_vDigitizers[x]->SetActivated(false);
-   }   
-   else   {
-      for(unsigned int x=0;x<m_vDigitizers.size();x++)	{
-	 u_int32_t data;
-	 m_vDigitizers[x]->ReadReg32(CBV1724_AcquisitionControlReg,data);
-	 cout<<"READ REG AT STOP "<<hex<<data<<endl;
-	 data &= 0xFFFFFFFB;
-	 m_vDigitizers[x]->WriteReg32(CBV1724_AcquisitionControlReg,data);
-	 cout<<"WRITE REG AT STOP "<<hex<<data<<endl;
-	 m_vDigitizers[x]->SetActivated(false);
-      }      
-   }   
+ 
+   usleep(1000);
+   
+   for(unsigned int x=0;x<m_vDigitizers.size();x++)	{
+     u_int32_t data;
+     m_vDigitizers[x]->ReadReg32(CBV1724_AcquisitionControlReg,data);
+     cout<<"READ REG AT STOP "<<hex<<data<<endl;
+     data &= 0xFFFFFFFB;
+     m_vDigitizers[x]->WriteReg32(CBV1724_AcquisitionControlReg,data);
+     cout<<"WRITE REG AT STOP "<<hex<<data<<endl;
+     m_vDigitizers[x]->SetActivated(false);
+   }      
+      
    cout<<"Deactivated digitizers. Closing threads."<<endl;
    CloseThreads();
    cout<<"Shutting down recorder."<<endl;
