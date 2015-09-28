@@ -247,9 +247,10 @@ int MasterControl::Start(string detector, string user, string comment,
   }
   // Now you have to check that the boards actually go into arm state.
   // This should be done within a certain timeout.
-  bool all_armed=false;
+  bool all_armed=true;
   int armedCounter = 0;
-  while(all_armed == false && armedCounter <200){
+  do{
+    all_armed=true;
     for(auto iterator:mDetectors){
       if(iterator.first==detector || detector=="all"){
 	if(iterator.second->GetStatus().DAQState != KODAQ_ARMED)
@@ -261,7 +262,7 @@ int MasterControl::Start(string detector, string user, string comment,
     armedCounter++;
     if(armedCounter % 20 == 0)
       cout<<"Waiting for boards to arm..."<<armedCounter/10<<endl;
-  }
+  }while(all_armed == false && armedCounter <200);
   if(!all_armed){
     cout<<"Error arming the boards. Run "<<run_name<<" has been aborted."<<endl;
     if(web)

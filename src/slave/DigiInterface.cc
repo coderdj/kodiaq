@@ -444,18 +444,24 @@ int DigiInterface::StartRun()
    cout<<"Entering stoprun"<<endl;
    if(m_RunStartModule!=NULL)  
      m_RunStartModule->SendStopSignal();
- 
-   usleep(1000);
+
+   if(m_koOptions->GetInt("run_start") == 1){
+     for(unsigned int x=0;x<m_vDigitizers.size();x++)   
+       m_vDigitizers[x]->SetActivated(false);
+   }
+   else{
+     usleep(1000);
    
-   for(unsigned int x=0;x<m_vDigitizers.size();x++)	{
-     u_int32_t data;
-     m_vDigitizers[x]->ReadReg32(CBV1724_AcquisitionControlReg,data);
-     cout<<"READ REG AT STOP "<<hex<<data<<endl;
-     data &= 0xFFFFFFFB;
-     m_vDigitizers[x]->WriteReg32(CBV1724_AcquisitionControlReg,data);
-     cout<<"WRITE REG AT STOP "<<hex<<data<<endl;
-     m_vDigitizers[x]->SetActivated(false);
-   }      
+     for(unsigned int x=0;x<m_vDigitizers.size();x++)	{
+       u_int32_t data;
+       m_vDigitizers[x]->ReadReg32(CBV1724_AcquisitionControlReg,data);
+       cout<<"READ REG AT STOP "<<hex<<data<<endl;
+       data &= 0xFFFFFFFB;
+       m_vDigitizers[x]->WriteReg32(CBV1724_AcquisitionControlReg,data);
+       cout<<"WRITE REG AT STOP "<<hex<<data<<endl;
+       m_vDigitizers[x]->SetActivated(false);
+     }      
+   }
       
    cout<<"Deactivated digitizers. Closing threads."<<endl;
    CloseThreads();

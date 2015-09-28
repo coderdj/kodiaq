@@ -282,7 +282,7 @@ connection_loop:
 	  //bRdy=false;
 	  bArmed=false;
 	  bERROR=false;
-	  fElectronics->Close();
+	  //fElectronics->Close();
 	  if(fNetworkInterface.ReceiveOptions(fOptionsPath)==0)  {
 	    if(fDAQOptions->ReadParameterFile(fOptionsPath)!=0)	 {
 	      koLog->Error("koSlave - error loading options");
@@ -292,6 +292,7 @@ connection_loop:
 	    int ret;
 	    if((ret=fElectronics->Arm(fDAQOptions))==0){
 	      fNetworkInterface.SlaveSendMessage("Boards armed successfully.");
+	      koLog->Message("Armed boards successfully");
 	      bArmed=true;
 	    }	       
 	    else{
@@ -337,6 +338,7 @@ connection_loop:
 	 }	 
 	 if(command=="START")  {
 	   cout<<"GOT START"<<endl;
+	   koLog->Message("Starting run");
 	    if(!bArmed || bRunning) continue;
 	    cout<<"STARTING"<<endl;
 	    //sleep(10);

@@ -284,6 +284,9 @@ int DAQMonitor::Arm(koOptions *mode, string run_name)
 
   // Send arm command
   m_DAQStatus.RunMode = m_DAQStatus.RunModeLabel = mode->GetString("name");
+
+  // Get time
+  m_DAQStatus.RunInfo.StartDate = koLogger::GetTimeString();
   m_DAQNetwork->SendCommand("ARM");
 
   stringstream *optionsStream = new stringstream();

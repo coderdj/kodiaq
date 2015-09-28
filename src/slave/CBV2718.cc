@@ -20,6 +20,7 @@ CBV2718::CBV2718()
   b_led_on = false;
   b_muonveto_on = false;
   i_pulserHz = 0;
+  bStarted=false;
 }
 
 CBV2718::~CBV2718()
@@ -33,6 +34,7 @@ CBV2718::CBV2718(board_definition_t BID, koLogger *kLog)
   b_led_on = false;
   b_muonveto_on = false;
   i_pulserHz = 0;
+  bStarted=false;
 }
 
 int CBV2718::Initialize(koOptions *options)
@@ -61,9 +63,10 @@ int CBV2718::Initialize(koOptions *options)
   if(options->GetInt("pulser_freq")>0)
     i_pulserHz = options->GetInt("pulser_freq");
   
-
-   if(SendStopSignal()!=0)
-     m_koLog->Error("Sending stop signal failed in CBV2718");
+  
+  //CAENVME_SystemReset(fCrateHandle);
+  if(SendStopSignal()!=0)
+    m_koLog->Error("Sending stop signal failed in CBV2718");
    //cout<<"Stop signal failed."<<endl;
    return 0;
 }
@@ -72,15 +75,19 @@ int CBV2718::SendStartSignal()
 {
 
   // Set the output lines
-  
+
   // Line 0 : S-IN. 
-  CAENVME_SetOutputConf(fCrateHandle, cvOutput0, cvDirect, cvActiveHigh, cvManualSW);
+  CAENVME_SetOutputConf(fCrateHandle, cvOutput0, cvDirect, 
+			cvActiveHigh, cvManualSW);
   // Line 1 : MV S-IN Logic
-  CAENVME_SetOutputConf(fCrateHandle, cvOutput1, cvDirect, cvActiveHigh, cvManualSW);
+  CAENVME_SetOutputConf(fCrateHandle, cvOutput1, cvDirect, 
+			cvActiveHigh, cvManualSW);
   // Line 2 : LED Logic
-  CAENVME_SetOutputConf(fCrateHandle, cvOutput2, cvDirect, cvActiveHigh, cvManualSW);
+  CAENVME_SetOutputConf(fCrateHandle, cvOutput2, cvDirect, 
+			cvActiveHigh, cvManualSW);
   // Line 3 : LED Pulser
-  CAENVME_SetOutputConf(fCrateHandle, cvOutput3, cvDirect, cvActiveHigh, cvMiscSignals);
+  CAENVME_SetOutputConf(fCrateHandle, cvOutput3, cvDirect, 
+			cvActiveHigh, cvMiscSignals);
 
   // Set the output register
   unsigned int data = 0x0;
@@ -100,6 +107,7 @@ int CBV2718::SendStartSignal()
     m_koLog->Error("Could't set output register. Crate Controller not found.");
     return -1;
   }
+  bStarted=true;
   //Configure the LED pulser
   if(i_pulserHz > 0){
     // We allow a range from 1Hz to 1MHz, but this is not continuous!
@@ -144,15 +152,36 @@ int CBV2718::SendStartSignal()
 
 int CBV2718::SendStopSignal()
 {
+  bStarted = false;
   // Stop the pulser if it's running
   CAENVME_StopPulser(fCrateHandle, cvPulserB);
 
-  u_int16_t data = 0x7C8;
+  //u_int16_t data = 0x7C8;
   //u_int16_t data = 0x7FF;
   //cout<<"Writing cvOutRegClear with: "<<data<<endl;
+
+  // Line 0 : S-IN.
+  CAENVME_SetOutputConf(fCrateHandle, cvOutput0, cvDirect, cvActiveHigh, cvManualSW);
+  // Line 1 : MV S-IN Logic 
+  CAENVME_SetOutputConf(fCrateHandle, cvOutput1, cvDirect, cvActiveHigh, cvManualSW);
+  // Line 2 : LED Logic
+  CAENVME_SetOutputConf(fCrateHandle, cvOutput2, cvDirect, cvActiveHigh, cvManualSW);
+  // Line 3 : LED Pulser
+  CAENVME_SetOutputConf(fCrateHandle, cvOutput3, cvDirect, cvActiveHigh, cvMiscSignals);
+
+  // Set the output register                                                                                                                       
+  unsigned int data = 0x0;
+  if(b_led_on)
+    data+=cvOut2Bit;
+  if(b_muonveto_on)
+    data+=cvOut1Bit;
+  if(b_startwithsin)
+    data+=cvOut0Bit;
+
+  CAENVME_ClearOutputRegister(fCrateHandle,data);
   
-   if(CAENVME_WriteRegister(fCrateHandle,cvOutRegClear,data)!=0)  
-     return -1;
+  //   if(CAENVME_WriteRegister(fCrateHandle,cvOutRegClear,data)!=0)  
+  //     return -1;
    return 0;   
 }
 
