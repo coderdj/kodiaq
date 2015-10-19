@@ -218,7 +218,7 @@ int main(int argc, char *argv[])
    fNetworkInterface.Initialize(SERVERADDR,PORT,DATAPORT,ID,NODENAME); 
 
    DigiInterface  *fElectronics = new DigiInterface(koLog, ID);
-   koOptions   *fDAQOptions  = new koOptions();;
+   koOptions   *fDAQOptions  = new koOptions();
    koRunInfo_t    fRunInfo;
    
    string         fOptionsPath = "DAQConfig.ini";

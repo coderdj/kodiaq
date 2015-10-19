@@ -52,14 +52,14 @@ int DigiInterface::Arm(koOptions *options){
   //               Declare a proper DAQRecorder and attach to processors
   //               Put boards into 'ready' state (in case of start with Sin)
   
+  
   cout<<"Arming!"<<endl;
+
+  m_koOptions = options;
 
   // Ensure mutiple 'Arm' commands in sequence don't declare too many 
   // objects by closing first.
   Close();
-
-  // This must be set since later commands use it
-  m_koOptions = options;
 
   // Initialize boards. This reads options, builds electronics objects, 
   // and runs CAEN initialization procedure.
@@ -331,7 +331,7 @@ void DigiInterface::Close()
    //Created the DAQ recorder, so must destroy it
    if(m_DAQRecorder!=NULL) delete m_DAQRecorder;
    m_DAQRecorder = NULL;
-   m_koOptions   = NULL;
+   //m_koOptions   = NULL;
    return;
 }
 
