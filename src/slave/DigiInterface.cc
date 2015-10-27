@@ -170,6 +170,13 @@ int DigiInterface::Arm(koOptions *options){
                  static_cast<void*>(this));
   m_ReadThread.IsOpen=true;
 
+  // Reset the clocks!
+  for(unsigned int x=0;x<m_vDigitizers.size();x++){
+    m_vDigitizers[x]->WriteReg32(CBV1724_AcquisitionControlReg,0x0);
+    m_vDigitizers[x]->WriteReg32(0xEF28, 0x1);
+  }
+
+  
   cout<<"DONE WITH ARM PROCEDURE"<<endl;
   return 0;
 }
@@ -414,7 +421,6 @@ int DigiInterface::StartRun()
         
     // Send s-in    
     if( m_RunStartModule != NULL ){
-      //sleep(3);
       cout<<"Sending S-IN!"<<endl;
       m_koLog->Message( "Sent start signal to run start module ");      
       m_RunStartModule->SendStartSignal();
