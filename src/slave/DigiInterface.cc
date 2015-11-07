@@ -172,7 +172,7 @@ int DigiInterface::Arm(koOptions *options){
 
   // Reset the clocks!
   for(unsigned int x=0;x<m_vDigitizers.size();x++){
-    m_vDigitizers[x]->WriteReg32(CBV1724_AcquisitionControlReg,0x0);
+    m_vDigitizers[x]->WriteReg32(CBV1724_AcquisitionControlReg,0x5);
     m_vDigitizers[x]->WriteReg32(0xEF28, 0x1);
   }
 
