@@ -282,8 +282,8 @@ int koNet::CheckDataSocket(int socket, koStatusPacket_t &status)
    while(MessageOnPipe(socket)==0) {
       string type;
       if((ReceiveString(socket,type))!=0)   {
-	 LogError("koNet::CheckDataSocket - Saw message on pipe but no header. Partial message follows:");
-	 LogError(type);
+	//LogError("koNet::CheckDataSocket - Saw message on pipe but no header. Partial message follows:");
+	//LogError(type);
 	 return -2;
       }   
       if(type=="UPDATE")        {      

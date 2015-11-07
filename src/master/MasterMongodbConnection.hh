@@ -38,7 +38,8 @@ public:
 			    string comment, map<string,koOptions*> options,
 			    string collection="DEFAULT");
   
-  int          SetDBs(string logdb, string monitordb, string runsdb);
+  int          SetDBs(string logdb, string monitordb, string runsdb,
+		      string user, string password, string dbauth);
   //
   // Name    : UpdateEndTime
   // Purpose : Updates run control document with the time the run ended.
@@ -61,8 +62,8 @@ public:
   //            UpdateDAQStatus
   // Purpose  : Update rate and status information in online DB. 
   //
-  void         AddRates(koStatusPacket_t DAQStatus);   
-  void         UpdateDAQStatus(koStatusPacket_t DAQStatus, 
+  void         AddRates(koStatusPacket_t *DAQStatus);   
+  void         UpdateDAQStatus(koStatusPacket_t *DAQStatus, 
 			       string detector="all");
 
   //

@@ -13,6 +13,7 @@
 // ****************************************************
 
 #include "MasterMongodbConnection.hh"
+#include "mongo/util/net/hostandport.h"
 
 MasterMongodbConnection::MasterMongodbConnection()
 {
@@ -39,7 +40,8 @@ MasterMongodbConnection::~MasterMongodbConnection()
 }
 
 int MasterMongodbConnection::SetDBs(string logdb, string monitordb, 
-				    string runsdb){
+				    string runsdb, string user,
+				    string password, string dbauth){
 
   // Will check success here
   bool logconnected = true, monitorconnected = true, runsconnected = true;
@@ -56,12 +58,22 @@ int MasterMongodbConnection::SetDBs(string logdb, string monitordb,
   if( logdb != "" ){
     try{
       fLogDB = new mongo::DBClientConnection( true );
-      fLogDB->connect( logdb );
+      cout<<"LOG DB: "<<logdb<<" "<<fLogDB << endl;
+      string errmess;
+      //      mongo::HostAndPort hp(logdb);
+
+      fLogDB->connect( logdb );//hp, errmess );
+
+      if(user != ""){
+	cout<<"Auth with "<<user<<" "<<password<<endl;
+	fLogDB->auth(dbauth, user, password, errmess, true);
+	//	fLogDB->auth(BSON("user"<<user<<"pwd"<<password<<"mechanism"<<"SCRAM-SHA-1"));
+      }
     }
     catch(const mongo::DBException &e){
       delete fLogDB;
       fLogDB = NULL;
-      if(fLog!=NULL) fLog->Error("Problem connecting to mongo. Caught exception " + 
+      if(fLog!=NULL) fLog->Error("Problem connecting to log mongo. Caught exception " + 
 				 string(e.what()));        
       logconnected = false;
     }
@@ -72,11 +84,16 @@ int MasterMongodbConnection::SetDBs(string logdb, string monitordb,
     try{
       fMonitorDB = new mongo::DBClientConnection( true );
       fMonitorDB->connect( monitordb );
+      string errmess="";
+      if(user != "")
+	fMonitorDB->auth(dbauth, user, password, errmess, true);
+
+
     }
     catch( const mongo::DBException &e ){
       delete fMonitorDB;
       fMonitorDB = NULL;
-      if(fLog!=NULL) fLog->Error("Problem connecting to mongo. Caught exception " +
+      if(fLog!=NULL) fLog->Error("Problem connecting to monitor mongo. Caught exception " +
 				 string(e.what()));
       monitorconnected = false;
     }
@@ -87,11 +104,15 @@ int MasterMongodbConnection::SetDBs(string logdb, string monitordb,
     try{
       fRunsDB = new mongo::DBClientConnection( true );
       fRunsDB->connect( runsdb );
+      string errmess="";
+      if(user != "")
+	fRunsDB->auth(dbauth, user, password, errmess, true);
+
     }
     catch( const mongo::DBException &e ){
       delete fRunsDB;
       fRunsDB = NULL;
-      if(fLog!=NULL) fLog->Error("Problem connecting to mongo. Caught exception " +
+      if(fLog!=NULL) fLog->Error("Problem connecting to runs mongo. Caught exception " +
 				 string(e.what()) );
       runsconnected = false;
     }
@@ -104,6 +125,9 @@ int MasterMongodbConnection::SetDBs(string logdb, string monitordb,
 void MasterMongodbConnection::InsertOnline(string DB, 
 					   string collection,
 					   mongo::BSONObj bson){
+  string coll = collection.substr(collection.find("."), collection.size()); 
+  collection = "run" + coll;
+
   // Choose proper DB
   mongo::DBClientConnection *thedb = NULL;
   if( DB == "monitor" && fMonitorDB != NULL){
@@ -126,7 +150,7 @@ void MasterMongodbConnection::InsertOnline(string DB,
     }
     catch(const mongo::DBException &e){
       if( fLog!= NULL ){
-	fLog->Error("Failed inserting to DB '" + DB + "'. The DB seems to be down or unreachable. Continuing without that DB.");
+	fLog->Error("Failed inserting to DB '" + DB + "'. The DB seems to be down or unreachable. Continuing without that DB. Offending collection: " + collection);
       }
       if( DB=="monitor"){
 	delete fMonitorDB;
@@ -410,30 +434,30 @@ void MasterMongodbConnection::SendLogMessage(string message, int priority)
   
 }
 
-void MasterMongodbConnection::AddRates(koStatusPacket_t DAQStatus)
+void MasterMongodbConnection::AddRates(koStatusPacket_t *DAQStatus)
 /*
   Update the rates in the online db. 
   Idea: combine all rates into one doc to cut down on queries?
   The online.rates collection should be a TTL collection.
 */
 {   
-  for(unsigned int x = 0; x < DAQStatus.Slaves.size(); x++)  {
+  for(unsigned int x = 0; x < DAQStatus->Slaves.size(); x++)  {
       mongo::BSONObjBuilder b;
       time_t currentTime;
       time(&currentTime);
 
       b.appendTimeT("createdAt",currentTime);
-      b.append("node",DAQStatus.Slaves[x].name);
-      b.append("bltrate",DAQStatus.Slaves[x].Freq);
-      b.append("datarate",DAQStatus.Slaves[x].Rate);
-      b.append("runmode",DAQStatus.RunMode);
-      b.append("nboards",DAQStatus.Slaves[x].nBoards);
+      b.append("node",DAQStatus->Slaves[x].name);
+      b.append("bltrate",DAQStatus->Slaves[x].Freq);
+      b.append("datarate",DAQStatus->Slaves[x].Rate);
+      b.append("runmode",DAQStatus->RunMode);
+      b.append("nboards",DAQStatus->Slaves[x].nBoards);
       b.append("timeseconds",(int)currentTime);
       InsertOnline("monitor", "online.daq_rates",b.obj());
    }     
 }
 
-void MasterMongodbConnection::UpdateDAQStatus(koStatusPacket_t DAQStatus,
+void MasterMongodbConnection::UpdateDAQStatus(koStatusPacket_t* DAQStatus,
 					      string detector)
 /*
   Insert DAQ status doc. The online.daqstatus should be a TTL collection.
@@ -446,28 +470,28 @@ void MasterMongodbConnection::UpdateDAQStatus(koStatusPacket_t DAQStatus,
    b.appendTimeT("createdAt",currentTime);
    b.append("timeseconds",(int)currentTime);
    b.append("detector", detector);
-   b.append("mode",DAQStatus.RunMode);
-   if(DAQStatus.DAQState==KODAQ_ARMED)
+   b.append("mode",DAQStatus->RunMode);
+   if(DAQStatus->DAQState==KODAQ_ARMED)
      b.append("state","Armed");
-   else if(DAQStatus.DAQState==KODAQ_RUNNING)
+   else if(DAQStatus->DAQState==KODAQ_RUNNING)
      b.append("state","Running");
-   else if(DAQStatus.DAQState==KODAQ_IDLE)
+   else if(DAQStatus->DAQState==KODAQ_IDLE)
      b.append("state","Idle");
-   else if(DAQStatus.DAQState==KODAQ_ERROR)
+   else if(DAQStatus->DAQState==KODAQ_ERROR)
      b.append("state","Error");
    else
      b.append("state","Undefined");
-   b.append("network",DAQStatus.NetworkUp);
-   b.append("currentRun",DAQStatus.RunInfo.RunNumber);
-   b.append("startedBy",DAQStatus.RunInfo.StartedBy);
+   b.append("network",DAQStatus->NetworkUp);
+   b.append("currentRun",DAQStatus->RunInfo.RunNumber);
+   b.append("startedBy",DAQStatus->RunInfo.StartedBy);
    
-   string datestring = DAQStatus.RunInfo.StartDate;
+   string datestring = DAQStatus->RunInfo.StartDate;
    if(datestring.size()!=0){
      datestring.pop_back();
      datestring+="+01:00";
    }
    b.append("startTime",datestring);
-   b.append("numSlaves",(int)DAQStatus.Slaves.size());
+   b.append("numSlaves",(int)DAQStatus->Slaves.size());
    InsertOnline("monitor", "online.daq_status",b.obj());
 }
 

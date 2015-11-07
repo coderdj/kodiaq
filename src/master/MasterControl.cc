@@ -41,7 +41,8 @@ int MasterControl::Initialize(string filepath){
   }
 
   // We want to fill these options
-  string LOG_DB="", MONITOR_DB="", RUNS_DB="";
+  string LOG_DB="", MONITOR_DB="", RUNS_DB="",
+    DB_USER="", DB_PASSWORD="", DB_AUTH="";
   // Also detectors but will declare them inline
 
   // Declare mongodb
@@ -66,6 +67,12 @@ int MasterControl::Initialize(string filepath){
       MONITOR_DB=words[1];
     else if(words[0] == "RUNS_DB") 
       RUNS_DB=words[1];
+    else if(words[0] == "DB_USER")
+      DB_USER = words[1];
+    else if(words[0] == "DB_PASSWORD")
+      DB_PASSWORD = words[1];
+    else if(words[0] == "DB_AUTH")
+      DB_AUTH = words[1];
     else if(words[0] == "DETECTOR" && words.size()>=5){
       string name = words[1];
       int port=koHelper::StringToInt(words[2]);
@@ -91,7 +98,7 @@ int MasterControl::Initialize(string filepath){
   cout<<"Found "<<mDetectors.size()<<" detectors."<<endl;
 
   //Set mongo dbs (if any, can be empty) and return
-  mMongoDB->SetDBs(LOG_DB, MONITOR_DB, RUNS_DB);
+  mMongoDB->SetDBs(LOG_DB, MONITOR_DB, RUNS_DB, DB_USER, DB_PASSWORD, DB_AUTH);
   return 0;     
 }
 
@@ -253,7 +260,7 @@ int MasterControl::Start(string detector, string user, string comment,
     all_armed=true;
     for(auto iterator:mDetectors){
       if(iterator.first==detector || detector=="all"){
-	if(iterator.second->GetStatus().DAQState != KODAQ_ARMED)
+	if(iterator.second->GetStatus()->DAQState != KODAQ_ARMED)
 	  all_armed = false;
       }
     }
@@ -368,24 +375,24 @@ string MasterControl::GetStatusString(){
   ss<<"***************************************************************"<<endl;
   for(auto iter : mDetectors) {
     ss<<"Detector: "<<iter.first;
-    if( iter.second->GetStatus().DAQState == KODAQ_IDLE)
+    if( iter.second->GetStatus()->DAQState == KODAQ_IDLE)
       ss<<" IDLE"<<endl;
-    else if( iter.second->GetStatus().DAQState == KODAQ_ARMED)
-      ss<<" ARMED in mode "<<iter.second->GetStatus().RunMode<<endl;
-    else if( iter.second->GetStatus().DAQState == KODAQ_RUNNING)
-      ss<<" RUNNING in mode "<<iter.second->GetStatus().RunMode<<endl;
-    else if( iter.second->GetStatus().DAQState == KODAQ_RDY)
-      ss<<" READY in mode "<<iter.second->GetStatus().RunMode<<endl;
-    else if( iter.second->GetStatus().DAQState == KODAQ_ERROR)
+    else if( iter.second->GetStatus()->DAQState == KODAQ_ARMED)
+      ss<<" ARMED in mode "<<iter.second->GetStatus()->RunMode<<endl;
+    else if( iter.second->GetStatus()->DAQState == KODAQ_RUNNING)
+      ss<<" RUNNING in mode "<<iter.second->GetStatus()->RunMode<<endl;
+    else if( iter.second->GetStatus()->DAQState == KODAQ_RDY)
+      ss<<" READY in mode "<<iter.second->GetStatus()->RunMode<<endl;
+    else if( iter.second->GetStatus()->DAQState == KODAQ_ERROR)
       ss<<" ERROR"<<endl;
     else
       ss<<" UNDEFINED"<<endl;
-    cout<<iter.second->GetStatus().Slaves.size()<<" nslaves"<<endl;
-    for(unsigned int x=0; x<iter.second->GetStatus().Slaves.size(); x++){
-      ss<<"        "<<iter.second->GetStatus().Slaves[x].name<<": "<<
-	iter.second->GetStatus().Slaves[x].nBoards<<" boards. Rate: "<<
-	iter.second->GetStatus().Slaves[x].Rate<<" (MB/s) @ "<<
-	iter.second->GetStatus().Slaves[x].Freq<<" Hz"<<endl;
+    cout<<iter.second->GetStatus()->Slaves.size()<<" nslaves"<<endl;
+    for(unsigned int x=0; x<iter.second->GetStatus()->Slaves.size(); x++){
+      ss<<"        "<<iter.second->GetStatus()->Slaves[x].name<<": "<<
+	iter.second->GetStatus()->Slaves[x].nBoards<<" boards. Rate: "<<
+	iter.second->GetStatus()->Slaves[x].Rate<<" (MB/s) @ "<<
+	iter.second->GetStatus()->Slaves[x].Freq<<" Hz"<<endl;
     }
   }
   ss<<"***************************************************************"<<endl;

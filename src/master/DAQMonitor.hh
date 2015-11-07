@@ -53,9 +53,9 @@ public:
   int ValidateStartCommand(string user, string comment, 
 			   koOptions *options);
 
-  koStatusPacket_t GetStatus(){    
+  koStatusPacket_t* GetStatus(){    
     m_bReady=false;
-    return m_DAQStatus;
+    return &m_DAQStatus;
   }; 
   
   void PollNetwork();
