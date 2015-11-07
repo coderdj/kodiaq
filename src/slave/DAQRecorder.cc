@@ -122,6 +122,18 @@ int DAQRecorder_mongodb::RegisterProcessor()
      conn->connect( m_options->GetString("mongo_address") );
      mongo::client::initialize();
 
+     // If authentication
+     if( m_options->GetString("mongo_user") != "" &&
+	 m_options->GetString("mongo_password") != "" &&
+	 m_options->GetString("mongo_auth_db") != ""){
+       string err;
+       conn->auth(m_options->GetString("mongo_auth_db"),
+		  m_options->GetString("mongo_user"),
+		  m_options->GetString("mongo_password"),
+		  err,
+		  true);
+     }
+
      // Set write concern
      if( m_options->GetInt("mongo_write_concern") == 0 ){
        //conn->conn().setWriteConcern( mongo::W_NONE );
