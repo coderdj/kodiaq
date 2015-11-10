@@ -158,7 +158,14 @@ void DataProcessor::SplitChannels(vector<u_int32_t*> *&buffvec, vector<u_int32_t
       // Proper computation of channel size needs channel mask
       u_int32_t mask = ((*buffvec)[x][idx+1])&0xFF;
       // need Hamming weight of mask
-      if(!ZLE) channelSize = (((*buffvec)[x][idx]&0xFFFFFF)-4)/__builtin_popcount(mask);      
+            
+      // this line segfaults sometimes, check manually
+      if(!ZLE){
+	if(__builtin_popcount(mask)==0)
+	  continue;
+	channelSize = (((*buffvec)[x][idx]&0xFFFFFF)-4)/
+	  __builtin_popcount(mask);      
+      }
 
       if(eventIndices!=NULL)
 	eventIndices->push_back(retbuff->size());
