@@ -161,8 +161,10 @@ void DataProcessor::SplitChannels(vector<u_int32_t*> *&buffvec, vector<u_int32_t
             
       // this line segfaults sometimes, check manually
       if(!ZLE){
-	if(__builtin_popcount(mask)==0)
+	if(__builtin_popcount(mask)==0){ 
+	  idx++;
 	  continue;
+	}
 	channelSize = (((*buffvec)[x][idx]&0xFFFFFF)-4)/
 	  __builtin_popcount(mask);      
       }
