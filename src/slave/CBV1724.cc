@@ -69,16 +69,17 @@ int CBV1724::Initialize(koOptions *options)
   UnlockDataBuffer();
   
   //Get size of BLT read using board data and options
-  u_int32_t data;
-  ReadReg32(CBV1724_BoardInfoReg,data);
-  u_int32_t memorySize = (u_int32_t)((data>>8)&0xFF);
-  ReadReg32(CBV1724_BuffOrg,data);
-  u_int32_t eventSize = (u_int32_t)((((memorySize*pow(2,20))/
-				      (u_int32_t)pow(2,data))*8+16)/4);
-  ReadReg32(CBV1724_BltEvNumReg,data);
+  //u_int32_t data;
+  //ReadReg32(CBV1724_BoardInfoReg,data);
+  //u_int32_t memorySize = (u_int32_t)((data>>8)&0xFF);
+  //ReadReg32(CBV1724_BuffOrg,data);
+  //u_int32_t eventSize = (u_int32_t)((((memorySize*pow(2,20))/
+  //(u_int32_t)pow(2,data))*8+16)/4);
+  //ReadReg32(CBV1724_BltEvNumReg,data);
   fBLTSize=options->GetInt("blt_size");
-  fBufferSize = data*eventSize*(u_int32_t)4+(fBLTSize);
-  fBufferSize = eventSize*data + fBLTSize;
+  //fBufferSize = data*eventSize*(u_int32_t)4+(fBLTSize);
+  //fBufferSize = eventSize*data + fBLTSize;
+  fBufferSize = fBLTSize;
   fReadoutThresh = options->GetInt("processing_readout_threshold");
    
   // Data is stored in these two vectors
