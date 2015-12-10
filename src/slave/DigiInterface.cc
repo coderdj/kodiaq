@@ -266,6 +266,13 @@ int DigiInterface::InitializeHardware(koOptions *options)
 	digitizer->SetCrateHandle(tempHandle);
 	if(digitizer->Initialize(options)!=0)
 	  return -1;
+      }
+      else if(Board.type=="V1495"){
+         CBV1495 *digitizer = new CBV1495(Board, m_koLog);
+         digitizer->SetCrateHandle(tempHandle);
+         digitizer->SetActivated(true);
+         if(digitizer->Initialize(options)!=0)
+           return -1;
       }	 
       else   {
 	if(m_koLog!=NULL)
