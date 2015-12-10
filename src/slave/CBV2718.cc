@@ -171,17 +171,9 @@ int CBV2718::SendStopSignal()
 
   // Set the output register                                                                                                                       
   unsigned int data = 0x0;
-  if(b_led_on)
-    data+=cvOut2Bit;
-  if(b_muonveto_on)
-    data+=cvOut1Bit;
-  if(b_startwithsin)
-    data+=cvOut0Bit;
-
-  CAENVME_ClearOutputRegister(fCrateHandle,data);
   
-  //   if(CAENVME_WriteRegister(fCrateHandle,cvOutRegClear,data)!=0)  
-  //     return -1;
+  CAENVME_SetOutputRegister(fCrateHandle,data);
+
    return 0;   
 }
 
