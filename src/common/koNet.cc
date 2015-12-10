@@ -77,7 +77,7 @@ int koNet::ReceiveString(int socket,string &buff)
       if(a==0) return -2;
       if(cbuff=='~') break;
       retstring.push_back(cbuff);
-      if(retstring.size()>100000) {
+      if(retstring.size()>1000000) {
 	LogError("koNet::ReceiveString - data overflow");
 	 buff=retstring;
 	 return -1; //crazy loop
@@ -174,9 +174,9 @@ int koNet::ReceiveFile(int socket, string path)
    while(line!="@")  {
       if(ReceiveString(socket,line)!=0)	{
 	 LogError("koNet::ReceiveFile - failed to get line. Check connection.");
-	 int x=-1;
-	 while(x!=0 &&x!=-2)
-	   x=ReceiveAck(socket);
+	 //int x=-1;
+	 //while(x!=0 &&x!=-2)
+	 //  x=ReceiveAck(socket);
 	 return -1;
       }      
       if(line!="@")
@@ -282,8 +282,8 @@ int koNet::CheckDataSocket(int socket, koStatusPacket_t &status)
    while(MessageOnPipe(socket)==0) {
       string type;
       if((ReceiveString(socket,type))!=0)   {
-	 LogError("koNet::CheckDataSocket - Saw message on pipe but no header. Partial message follows:");
-	 LogError(type);
+	//LogError("koNet::CheckDataSocket - Saw message on pipe but no header. Partial message follows:");
+	//LogError(type);
 	 return -2;
       }   
       if(type=="UPDATE")        {      

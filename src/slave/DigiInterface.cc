@@ -52,14 +52,14 @@ int DigiInterface::Arm(koOptions *options){
   //               Declare a proper DAQRecorder and attach to processors
   //               Put boards into 'ready' state (in case of start with Sin)
   
+  
   cout<<"Arming!"<<endl;
+
+  m_koOptions = options;
 
   // Ensure mutiple 'Arm' commands in sequence don't declare too many 
   // objects by closing first.
   Close();
-
-  // This must be set since later commands use it
-  m_koOptions = options;
 
   // Initialize boards. This reads options, builds electronics objects, 
   // and runs CAEN initialization procedure.
@@ -170,6 +170,13 @@ int DigiInterface::Arm(koOptions *options){
                  static_cast<void*>(this));
   m_ReadThread.IsOpen=true;
 
+  // Reset the clocks!
+  for(unsigned int x=0;x<m_vDigitizers.size();x++){
+    m_vDigitizers[x]->WriteReg32(CBV1724_AcquisitionControlReg,0x5);
+    m_vDigitizers[x]->WriteReg32(0xEF28, 0x1);
+  }
+
+  
   cout<<"DONE WITH ARM PROCEDURE"<<endl;
   return 0;
 }
@@ -331,7 +338,7 @@ void DigiInterface::Close()
    //Created the DAQ recorder, so must destroy it
    if(m_DAQRecorder!=NULL) delete m_DAQRecorder;
    m_DAQRecorder = NULL;
-   m_koOptions   = NULL;
+   //m_koOptions   = NULL;
    return;
 }
 
@@ -414,7 +421,6 @@ int DigiInterface::StartRun()
         
     // Send s-in    
     if( m_RunStartModule != NULL ){
-      //sleep(3);
       cout<<"Sending S-IN!"<<endl;
       m_koLog->Message( "Sent start signal to run start module ");      
       m_RunStartModule->SendStartSignal();
@@ -444,18 +450,24 @@ int DigiInterface::StartRun()
    cout<<"Entering stoprun"<<endl;
    if(m_RunStartModule!=NULL)  
      m_RunStartModule->SendStopSignal();
- 
-   usleep(1000);
+
+   if(m_koOptions->GetInt("run_start") == 1){
+     for(unsigned int x=0;x<m_vDigitizers.size();x++)   
+       m_vDigitizers[x]->SetActivated(false);
+   }
+   else{
+     usleep(1000);
    
-   for(unsigned int x=0;x<m_vDigitizers.size();x++)	{
-     u_int32_t data;
-     m_vDigitizers[x]->ReadReg32(CBV1724_AcquisitionControlReg,data);
-     cout<<"READ REG AT STOP "<<hex<<data<<endl;
-     data &= 0xFFFFFFFB;
-     m_vDigitizers[x]->WriteReg32(CBV1724_AcquisitionControlReg,data);
-     cout<<"WRITE REG AT STOP "<<hex<<data<<endl;
-     m_vDigitizers[x]->SetActivated(false);
-   }      
+     for(unsigned int x=0;x<m_vDigitizers.size();x++)	{
+       u_int32_t data;
+       m_vDigitizers[x]->ReadReg32(CBV1724_AcquisitionControlReg,data);
+       cout<<"READ REG AT STOP "<<hex<<data<<endl;
+       data &= 0xFFFFFFFB;
+       m_vDigitizers[x]->WriteReg32(CBV1724_AcquisitionControlReg,data);
+       cout<<"WRITE REG AT STOP "<<hex<<data<<endl;
+       m_vDigitizers[x]->SetActivated(false);
+     }      
+   }
       
    cout<<"Deactivated digitizers. Closing threads."<<endl;
    CloseThreads();

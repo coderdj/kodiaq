@@ -25,11 +25,13 @@ int koOptions::ReadParameterFile(string filename){
   // Make the bson object from the string
   try{
     m_bson = mongo::fromjson(json_string);
+    cout<<m_bson.jsonString()<<endl;
   }
   catch(...){
     std::cout<<"Error parsing file. Is it valid json?"<<std::endl;
     return -1;
   }
+  cout<<"Read parameter file from "<<filename<<endl;
   return 0;
 }
 
@@ -43,13 +45,16 @@ int koOptions::GetArraySize(string key){
 }
 
 mongo::BSONElement koOptions::GetField(string key){
+  mongo::BSONElement b;
   try{
-    return m_bson[key];
+    b = m_bson[key];
   }
   catch(...){
-    std::cout<<"Error fetching option. Key doesn't seem to exist."<<std::endl;
+    std::cout<<"Error fetching option. Key doesn't seem to exist: "<<
+      key<<std::endl;
     return mongo::BSONElement();
   }
+  return b;
 }
 
 void koOptions::ToStream_MongoUpdate(string run_name, 

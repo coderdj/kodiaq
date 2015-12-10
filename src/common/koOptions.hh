@@ -68,7 +68,7 @@ public:
   };
   vme_option_t GetVMEOption(int x);
  
-  int GetInt(string field_name){
+  int GetInt(string field_name){    
     return GetField(field_name).Int();
   };
   string GetString(string field_name){

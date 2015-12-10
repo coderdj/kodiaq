@@ -1,0 +1,1 @@
+cmd_/home/xedaq/kodiaq/caen/A3818Drv-1.5.2/src/a3818.ko := ld -r -m elf_x86_64 -T ./scripts/module-common.lds --build-id  -o /home/xedaq/kodiaq/caen/A3818Drv-1.5.2/src/a3818.ko /home/xedaq/kodiaq/caen/A3818Drv-1.5.2/src/a3818.o /home/xedaq/kodiaq/caen/A3818Drv-1.5.2/src/a3818.mod.o

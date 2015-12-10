@@ -44,13 +44,13 @@ int main(int argc, char *argv[])
 
   // Set up DAQ control objects and initialize variables
   std::cout<<"Reading .ini file "<<filepath<<"...";
-  MasterControl controller;
-  int ret = controller.Initialize( filepath );
+  MasterControl *controller = new MasterControl();
+  int ret = controller->Initialize( filepath );
   if(ret != 0 ){
     cout<<endl<<"Failed to read ini file. Please check that it exists!"<<endl;
     return -1;
   }
-  vector <string> detectors = controller.GetDetectorList();
+  vector <string> detectors = controller->GetDetectorList();
   detectors.insert( detectors.begin(), "all");
   int iCurrentDet = 0;
   time_t PrintTime = koLogger::GetCurrentTime();
@@ -70,17 +70,17 @@ int main(int argc, char *argv[])
             
       if( cCommand == 'c' ){
 	cout<<"Received command 'CONNECT'"<<endl;
-	controller.Connect();      
+	controller->Connect();      
       }
       else if( cCommand == 'd' ){
 	cout<<"Received command 'DISCONNECT'"<<endl;
-	controller.Disconnect();
+	controller->Disconnect();
       }
       else if( cCommand == 'r' ){
 	// reload inis
 	cout<<"Reloading config file "<<filepath<<endl;
-	controller.Close();
-	if(controller.Initialize(filepath)!=0){
+	controller->Close();
+	if(controller->Initialize(filepath)!=0){
 	  cout<<"Bad input file. No master contoller. Quitting."<<endl;
 	  return -1;
 	}
@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
       }
       else if( cCommand == 'p' ){
 	cout<<"Sending stop command"<<endl;
-	controller.Stop(detectors[iCurrentDet]);
+	controller->Stop(detectors[iCurrentDet]);
       }
       else if( cCommand == 's' ) {
 	cout<<"Staring from command line currently disabled."<<endl;/*
@@ -112,10 +112,10 @@ int main(int argc, char *argv[])
     } // end if kbhit
     
     // Check for commands on web network. 
-    controller.CheckRemoteCommand();
+    controller->CheckRemoteCommand();
 
     // Update data objects
-    controller.StatusUpdate();
+    controller->StatusUpdate();
     
     // Print update
     time_t CurrentTime = koLogger::GetCurrentTime();
@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
       if(bForceUpdate)
 	bForceUpdate = false;
       cout<<"Controlling detector: "<<detectors[iCurrentDet]<<endl;
-      cout<<controller.GetStatusString()<<endl;
+      cout<<controller->GetStatusString()<<endl;
       PrintTime =  koLogger::GetCurrentTime();
     }
 
