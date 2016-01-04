@@ -262,20 +262,23 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
     
     // First create the collection on the buffer db 
     // so the event builder can find it. Index by time and module.
-    mongo::DBClientConnection bufferDB;
+    mongo::DBClientBase bufferDB;
     if( options->GetInt("write_mode") == 2 ){ // write to mongo
+      string errstring;
+      mongo::ConnectionString cstring =
+	mongo::ConnectionString::parse(options->GetString("mongo_address"),
+				       errstring);
+
+      // Check if string is valid   
+      if(!cstring.isValid())
+	SendLogMessage( "Problem creating index in buffer DB. Invalid address. " +
+                        errstring, KOMESS_WARNING );	
+      
+
       try     {
-	bufferDB.connect( options->GetString("mongo_address") );
-	if( options->GetString("mongo_user") != "" &&
-	    options->GetString("mongo_password") != "" &&
-	    options->GetString("mongo_auth_db") != ""){
-	  string err;
-	  bufferDB.auth(options->GetString("mongo_auth_db"),
-			options->GetString("mongo_user"),
-			options->GetString("mongo_password"),
-			err,
-			true);
-	}
+	errstring = "";
+	bufferDB = cstring.connect(errstring);
+	
       }
       catch(const mongo::DBException &e)    {
 	SendLogMessage( "Problem connecting to mongo buffer. Caught exception " + 

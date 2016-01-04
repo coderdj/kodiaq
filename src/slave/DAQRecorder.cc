@@ -113,70 +113,52 @@ int DAQRecorder_mongodb::Initialize(koOptions *options)
 
 int DAQRecorder_mongodb::RegisterProcessor()
 {
-   int retval=-1;
-   //mongo::ScopedDbConnection *conn;
-   mongo::DBClientConnection *conn;
-   try  {
-     //conn = new mongo::ScopedDbConnection(m_options->mongo_address,10000.);
-     conn = new mongo::DBClientConnection();
-     conn->connect( m_options->GetString("mongo_address") );
-     mongo::client::initialize();
-
-     // If authentication
-     if( m_options->GetString("mongo_user") != "" &&
-	 m_options->GetString("mongo_password") != "" &&
-	 m_options->GetString("mongo_auth_db") != ""){
-       string err;
-       conn->auth(m_options->GetString("mongo_auth_db"),
-		  m_options->GetString("mongo_user"),
-		  m_options->GetString("mongo_password"),
-		  err,
-		  true);
-     }
-
-     // Set write concern
-     if( m_options->GetInt("mongo_write_concern") == 0 ){
-       //conn->conn().setWriteConcern( mongo::W_NONE );
-       conn->setWriteConcern( mongo::WriteConcern::unacknowledged );
-       LogMessage( "MongoDB WriteConcern set to NONE" );  
-       LogMessage( m_options->GetString("mongo_address"));
-     }
-     else{
-       //       conn->conn().setWriteConcern( mongo::W_NORMAL );
-       conn->setWriteConcern( mongo::WriteConcern::acknowledged );
-       LogMessage( "MongoDB WriteConcern set to NORMAL" );
-       LogMessage( m_options->GetString("mongo_address") );
-     }
-
-   }
-   catch(const mongo::DBException &e)  {
-     stringstream err;
-      err<<"DAQRecorder_mongodb::RegisterProcessor - Error connecting to mongodb "<<e.toString();
-      LogError(err.str());
-      return -1;
-   }
-   int lock = pthread_mutex_lock(&m_ConnectionMutex);
-   if(lock!=0)  {
-     //conn->done();
-     return -1;
-   }
-   m_vScopedConnections.push_back(conn);
-   retval = m_vScopedConnections.size()-1;
-   pthread_mutex_unlock(&m_ConnectionMutex);
-
-   // These lines create a capped collection with name DB_ID.collection
-   // So one database is made per thread
-   // stringstream cS;
-   // int ID = m_vScopedConnections.size()-1;
-   // cS<<m_options->mongo_database<<"_"<<ID<<"."<<m_options->mongo_collection;
-   // conn->conn().createCollection(cS.str(),1000000000,true); //1GB capped collection 
+  int retval=-1;
+  mongo::DBClientBase *conn;
    
-   // The following line connects to a capped collection (one collection for all threads)
-   //stringstream cS;
-   //cS<<m_options->mongo_database<<"."<<m_options->mongo_collection;
-   //conn->conn().createCollection(cS.str(),10000000000,true); // Capped at 10GB
-   
-   return retval;
+  string errstring;
+  mongo::ConnectionString cstring = 
+    mongo::ConnectionString::parse(m_options->GetString("mongo_address"), 
+				   errstring);
+     
+  // Check if string is valid
+  if(!cstring.isValid()){
+    LogError("Invalid MongoDB connection string provided. Error returned: " + 
+	     errstring);
+    return -1;
+  }
+  errstring = "";
+  try{
+    conn = cstring.connect(errstring);
+    mongo::client::initialize();
+
+    // Set write concern
+    if( m_options->GetInt("mongo_write_concern") == 0 ){
+      conn->setWriteConcern( mongo::WriteConcern::unacknowledged );
+      LogMessage( "MongoDB WriteConcern set to NONE" );  
+      LogMessage( m_options->GetString("mongo_address"));
+    }
+    else{      
+      conn->setWriteConcern( mongo::WriteConcern::acknowledged );
+      LogMessage( "MongoDB WriteConcern set to NORMAL" );
+      LogMessage( m_options->GetString("mongo_address") );
+    }
+  }
+  catch(const mongo::DBException &e)  {
+    stringstream err;
+    err<<"DAQRecorder_mongodb::RegisterProcessor - Error connecting to mongodb "<<e.toString();
+    LogError(err.str());
+    return -1;
+  }
+  int lock = pthread_mutex_lock(&m_ConnectionMutex);
+  if(lock!=0)  {
+    return -1;
+  }
+  m_vScopedConnections.push_back(conn);
+  retval = m_vScopedConnections.size()-1;
+  pthread_mutex_unlock(&m_ConnectionMutex);
+       
+  return retval;
 }
 
 void DAQRecorder_mongodb::UpdateCollection(koOptions *options)

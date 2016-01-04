@@ -107,9 +107,9 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_koSlave_OBJECTS = koSlave-koSlave.$(OBJEXT) \
 	koSlave-CBV1724.$(OBJEXT) koSlave-CBV2718.$(OBJEXT) \
-	koSlave-DigiInterface.$(OBJEXT) koSlave-VMEBoard.$(OBJEXT) \
-	koSlave-DAQRecorder.$(OBJEXT) koSlave-DataProcessor.$(OBJEXT) \
-	koSlave-NCursesUI.$(OBJEXT)
+	koSlave-CBV1495.$(OBJEXT) koSlave-DigiInterface.$(OBJEXT) \
+	koSlave-VMEBoard.$(OBJEXT) koSlave-DAQRecorder.$(OBJEXT) \
+	koSlave-DataProcessor.$(OBJEXT) koSlave-NCursesUI.$(OBJEXT)
 koSlave_OBJECTS = $(am_koSlave_OBJECTS)
 am__DEPENDENCIES_1 =
 koSlave_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
@@ -318,7 +318,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-koSlave_SOURCES = koSlave.cc CBV1724.cc CBV1724.hh CBV2718.cc CBV2718.hh DigiInterface.cc DigiInterface.hh VMEBoard.cc VMEBoard.hh DAQRecorder.cc DAQRecorder.hh DataProcessor.cc DataProcessor.hh NCursesUI.hh NCursesUI.cc
+koSlave_SOURCES = koSlave.cc CBV1724.cc CBV1724.hh CBV2718.cc CBV2718.hh CBV1495.cc CBV1495.hh DigiInterface.cc DigiInterface.hh VMEBoard.cc VMEBoard.hh DAQRecorder.cc DAQRecorder.hh DataProcessor.cc DataProcessor.hh NCursesUI.hh NCursesUI.cc
 koSlave_CPPFLAGS = -I$(top_srcdir)/src/common -Wall -g -DLINUX -fPIC \
 	-std=c++11 $(am__append_3)
 koSlave_LDADD = -L$(top_srcdir)/src/common/.libs -lkodiaq -lCAENVME \
@@ -418,6 +418,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/koSlave-CBV1495.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/koSlave-CBV1724.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/koSlave-CBV2718.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/koSlave-DAQRecorder.Po@am__quote@
@@ -489,6 +490,20 @@ koSlave-CBV2718.obj: CBV2718.cc
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='CBV2718.cc' object='koSlave-CBV2718.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(koSlave_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o koSlave-CBV2718.obj `if test -f 'CBV2718.cc'; then $(CYGPATH_W) 'CBV2718.cc'; else $(CYGPATH_W) '$(srcdir)/CBV2718.cc'; fi`
+
+koSlave-CBV1495.o: CBV1495.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(koSlave_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT koSlave-CBV1495.o -MD -MP -MF $(DEPDIR)/koSlave-CBV1495.Tpo -c -o koSlave-CBV1495.o `test -f 'CBV1495.cc' || echo '$(srcdir)/'`CBV1495.cc
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/koSlave-CBV1495.Tpo $(DEPDIR)/koSlave-CBV1495.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='CBV1495.cc' object='koSlave-CBV1495.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(koSlave_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o koSlave-CBV1495.o `test -f 'CBV1495.cc' || echo '$(srcdir)/'`CBV1495.cc
+
+koSlave-CBV1495.obj: CBV1495.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(koSlave_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT koSlave-CBV1495.obj -MD -MP -MF $(DEPDIR)/koSlave-CBV1495.Tpo -c -o koSlave-CBV1495.obj `if test -f 'CBV1495.cc'; then $(CYGPATH_W) 'CBV1495.cc'; else $(CYGPATH_W) '$(srcdir)/CBV1495.cc'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/koSlave-CBV1495.Tpo $(DEPDIR)/koSlave-CBV1495.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='CBV1495.cc' object='koSlave-CBV1495.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(koSlave_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o koSlave-CBV1495.obj `if test -f 'CBV1495.cc'; then $(CYGPATH_W) 'CBV1495.cc'; else $(CYGPATH_W) '$(srcdir)/CBV1495.cc'; fi`
 
 koSlave-DigiInterface.o: DigiInterface.cc
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(koSlave_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT koSlave-DigiInterface.o -MD -MP -MF $(DEPDIR)/koSlave-DigiInterface.Tpo -c -o koSlave-DigiInterface.o `test -f 'DigiInterface.cc' || echo '$(srcdir)/'`DigiInterface.cc
