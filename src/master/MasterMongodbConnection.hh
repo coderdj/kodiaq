@@ -38,8 +38,8 @@ public:
 			    string comment, map<string,koOptions*> options,
 			    string collection="DEFAULT");
   
-  int          SetDBs(string logdb, string monitordb, string runsdb,
-		      string user, string password, string dbauth);
+  int          SetDBs(string logdb, string monitordb, string runsdb);
+		      //string user, string password, string dbauth);
   //
   // Name    : UpdateEndTime
   // Purpose : Updates run control document with the time the run ended.
@@ -82,16 +82,18 @@ public:
   void InsertOnline(string name, string collection,mongo::BSONObj bson);
   void Start(koOptions *options,string user,string comment=""){return;};
   void EndRun(string user,string comment=""){return;};
-  int  UpdateNoiseDirectory(string run_name);
+  //int  UpdateNoiseDirectory(string run_name);
   void SendRunStartReply(int response, string message);//, string mode, string comment);
   void ClearDispatcherReply();
 
  private:
+  int Connect();
+
   koOptions                 *fOptions;
   map <string,mongo::OID>    fLastDocOIDs;
   koLogger                  *fLog;
-
-  mongo::DBClientConnection *fLogDB, *fMonitorDB, *fRunsDB;
+  mongo::ConnectionString    fLogString, fMonitorString, fRunsString;
+  mongo::DBClientBase       *fLogDB, *fMonitorDB, *fRunsDB;
 };
 
 #endif

@@ -287,9 +287,9 @@ int koNet::CheckDataSocket(int socket, koStatusPacket_t &status)
 	 return -2;
       }   
       if(type=="UPDATE")        {      
-	 int id,stat,nboards;
-	 double rate,freq;
-	 string name;
+	 int id=0,stat=0,nboards=0;
+	 double rate=0.,freq=0.;
+	 string name="";
 	 if(ReceiveUpdate(socket,id,name,rate,freq,nboards,stat)!=0)  {	 
 	    LogError("koNet::CheckDataSocket - Saw update on pipe but failed to fetch.");
 	    return -2;
