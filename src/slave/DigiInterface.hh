@@ -19,6 +19,7 @@
 #include <koHelper.hh>
 #include "CBV1724.hh"
 #include "CBV2718.hh"
+#include "CBV1495.hh"
 #include "DataProcessor.hh"
 
 using namespace std;
