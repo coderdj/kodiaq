@@ -40,7 +40,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 
   </head>
-  <body>
+  <body role="document">
 
 <div id="navbar" class="navbar navbar-inverse navbar-default navbar-fixed-top">
   <div class="container">
@@ -67,7 +67,7 @@
             
 
 <li>
-    <a href="deployment.html" title="Previous Chapter: Deployment of the Full System"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm">&laquo; Deployment of th...</span>
+    <a href="deployment.html" title="Previous Chapter: Deployment of the Full System"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm">&laquo; Deployment of...</span>
     </a>
   </li>
   <li>
@@ -485,30 +485,49 @@ of these options are required, but be sure to include the options
 related to your chosen write mode.</p>
 <blockquote>
 <div><blockquote>
-<div><ul class="simple">
-<li><strong>write_mode {int}</strong>
+<div><ul>
+<li><p class="first"><strong>write_mode {int}</strong>
 Define what is done with the data. 0 - no writing (test mode). 1
 - write to file (not yet supported). 2 - write to mongodb. If you
-choose mode &#8216;2&#8217;, make sure the MONGO_OPTIONS are defined.</li>
-<li><strong>compression {int}</strong> turns compression on (1) or off (0). Compression
-is done with Google&#8217;s snappy algorithm.</li>
-<li><strong>mongo_address {string}</strong> gives the address of the PC running the
-mongodb database. This can be either a hostname or an ip address.</li>
-<li><strong>mongo_database {string}</strong> defines a database name for output.</li>
-<li><strong>mongo_collection {string}</strong> defines a collection name. If you end
+choose mode &#8216;2&#8217;, make sure the MONGO_OPTIONS are defined.</p>
+</li>
+<li><p class="first"><strong>compression {int}</strong> turns compression on (1) or off (0). Compression
+is done with Google&#8217;s snappy algorithm.</p>
+</li>
+<li><p class="first"><strong>mongo_address {string}</strong> This is the mongoDB connection string
+for your database deployment. It must be a valid connection string
+readable by the C++ driver. Strings are checked for plausibility
+before a connection is attempted (using the built-in isValid() call).
+Please note that multiple mongos instances are not supported as a
+fallback case. The only instance where you can have multiple servers
+defined in the connection string is for a replica set.</p>
+<p>Here&#8217;s are a couple examples, for a standalone server and a replica:</p>
+<div class="highlight-python"><div class="highlight"><pre>mongodb://user:pass@server:port/DB
+mongodb://user:pass@server0:port0,server1:port1,server2:port2/DB?replicaSet=set_name
+</pre></div>
+</div>
+</li>
+<li><p class="first"><strong>mongo_database {string}</strong> defines a database name for output. In case
+you use authentication in your connection string this must be identical
+to your authentication database.</p>
+</li>
+<li><p class="first"><strong>mongo_collection {string}</strong> defines a collection name. If you end
 the collection name with a wildcard (for example data*) the software
 will automatically assign a date/time string for the end of the collection
-name of form: data_YYMMDD_HHMM.</li>
-<li><strong>mongo_min_insert_size {int}</strong> gives the minimum number of BSON documents
+name of form: data_YYMMDD_HHMM.</p>
+</li>
+<li><p class="first"><strong>mongo_min_insert_size {int}</strong> gives the minimum number of BSON documents
 that must be collected before an insert is performed. kodiaq uses
 bulk inserts to put data into mongodb. This means each insert is
-actually a vector of  BSON documents.</li>
-<li><strong>mongo_write_concern {int}</strong> defines the write concern for mongo.
+actually a vector of  BSON documents.</p>
+</li>
+<li><p class="first"><strong>mongo_write_concern {int}</strong> defines the write concern for mongo.
 Putting this to  normal mode (set 1) turns write concern on. This
 means the client will  wait for a reply from the mongo database after
 writing. On the one hand, this is very good since it confirms an
 insert made it to mongo. On the other hand it is very slow. Turning
-the option of (value 0) is required for high-rate data-taking.</li>
+the option of (value 0) is required for high-rate data-taking.</p>
+</li>
 </ul>
 </div></blockquote>
 <ul>
@@ -692,7 +711,7 @@ some special settings.</p>
     </p>
     <p>
         &copy; Copyright 2014, Daniel Coderre.<br/>
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.<br/>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.3.3.<br/>
     </p>
   </div>
 </footer>

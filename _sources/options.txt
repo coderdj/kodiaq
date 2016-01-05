@@ -293,9 +293,22 @@ related to your chosen write mode.
      choose mode '2', make sure the MONGO_OPTIONS are defined.
    * **compression {int}** turns compression on (1) or off (0). Compression
      is done with Google's snappy algorithm.
-   * **mongo_address {string}** gives the address of the PC running the 
-     mongodb database. This can be either a hostname or an ip address.
-   * **mongo_database {string}** defines a database name for output.
+   * **mongo_address {string}** This is the mongoDB connection string 
+     for your database deployment. It must be a valid connection string
+     readable by the C++ driver. Strings are checked for plausibility 
+     before a connection is attempted (using the built-in isValid() call).
+     Please note that multiple mongos instances are not supported as a  
+     fallback case. The only instance where you can have multiple servers
+     defined in the connection string is for a replica set.
+
+     Here's are a couple examples, for a standalone server and a replica::
+
+         mongodb://user:pass@server:port/DB
+         mongodb://user:pass@server0:port0,server1:port1,server2:port2/DB?replicaSet=set_name
+
+   * **mongo_database {string}** defines a database name for output. In case
+     you use authentication in your connection string this must be identical 
+     to your authentication database.
    * **mongo_collection {string}** defines a collection name. If you end
      the collection name with a wildcard (for example data*) the software
      will automatically assign a date/time string for the end of the collection
