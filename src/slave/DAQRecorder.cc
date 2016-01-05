@@ -129,8 +129,16 @@ int DAQRecorder_mongodb::RegisterProcessor()
   }
   errstring = "";
   try{
-    conn = cstring.connect(errstring);
     mongo::client::initialize();
+    conn = cstring.connect(errstring);
+
+    //using mongo::client::initialize;
+    //using mongo::client::Options;
+    // Configure the mongo C++ client driver, enabling SSL and setting
+    // the SSL Certificate Authority file to "mycafile".
+    //initialize(Options().setSSLMode(Options::kSSLRequired));
+    //mongo::client::initialize();
+    
 
     // Set write concern
     if( m_options->GetInt("mongo_write_concern") == 0 ){
