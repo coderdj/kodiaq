@@ -428,20 +428,21 @@ make
 </div>
 <p>The connection to the master must also be defined. This is defined in the file src/slave/SlaveConfig.ini,
 which looks as follows:</p>
-<div class="highlight-python"><div class="highlight"><pre>SERVERADDR xedaq02
+<div class="highlight-python"><div class="highlight"><pre>SERVERADDR reader0
 COM_PORT 2002
-DATA_PORT 2003
-NAME xedaq01
-ID 1
+DATA_PORT 3002
+NAME reader2
+ID 2
 </pre></div>
 </div>
-<p>This examples defines slave &#8216;xedaq01&#8217; with ID &#8216;1&#8217; to use ports 2002 and 2003 to
+<p>This examples defines slave &#8216;reader2&#8217; with ID &#8216;2&#8217; to use ports 2002 and 3002 to
 try to connect to the server at hostname xedaq02. The ports given must correspond
 to a detector defined in src/master/MasterConfig.ini (see below) or the slave will
 never be contacted by the network and will just listen perpetually. The server address
 can be an IP address or a hostname. The NAME should be a single unique string (any words
 beyond the first one are ignored). The ID should be a single digit between 0 and 9 and is
 used to uniquely identify this slave from the dispatcher.</p>
+<p>Note that for ourdeployment we generally assign ports such that COM_PORT is 2000+ID and DATA_PORT is 3000+ID. Each slave needs unique ports.</p>
 <p>To start the slave just run koSlave, preferably in a detached screen.
 The program will automatically scan the master and check to see if
 it puts the network up. If so the slave will connect automatically.</p>
@@ -463,13 +464,19 @@ make
 detached screen and can be left on more or less indefinitely unless
 there are issues.</p>
 <p>The options for the master are stored in a configuration file in src/master at MasterConfig.ini. The options look as follows</p>
-<div class="highlight-python"><div class="highlight"><pre>MONITOR_DB online        // name of monitoring database
-MONITOR_ADDR xedaq01     // address of mongodb server (hostname or IP)
-DETECTOR tpc 2002 2003   // define detector &#39;tpc&#39; to communicate over ports 2002 and 2003
-DETECTOR muon_veto 2004 2005  // define detector &#39;muon_veto&#39; to communicate over ports 2004 and 2005
+<div class="highlight-python"><div class="highlight"><pre>MONITOR_DB mongodb://localhost:27017/run
+LOG_DB mongodb://user:pass@localhost:27017/log
+RUNS_DB mongodb://localhost:27017/run
+
+DETECTOR tpc 2000 3000 tpc_options.ini
+DETECTOR tpc 2001 3001 tpc_options.ini
+DETECTOR tpc 2002 3002 tpc_options.ini
+DETECTOR tpc 2003 3003 tpc_options.ini
+DETECTOR tpc 2004 3004 tpc_options.ini
 </pre></div>
 </div>
-<p>The detector names allow the web interface to send specific commands to specific detectors only.</p>
+<p>The detector names allow the web interface to send specific commands to specific detectors only. Each slave gets a DETECTOR line giving it&#8217;s detector, port, dataport, and default ini file.</p>
+<p>The <a href="#id1"><span class="problematic" id="id2">*</span></a>_DB options accept any valid MongoDB connection string. Note that for the C++ driver, multiple mongos interfaces may be defined for replica sets only and are not supported for, for example, redundant interfaces to sharded clusters.</p>
 <p>The DDC-10 module uses telnet and requires libtcl8.5 and libexpect.</p>
 <div class="section" id="run-modes">
 <h3>Run Modes<a class="headerlink" href="#run-modes" title="Permalink to this headline">¶</a></h3>

@@ -191,19 +191,22 @@ Everything should be in place so you can now compile the kodiaq package itself.:
 The connection to the master must also be defined. This is defined in the file src/slave/SlaveConfig.ini,
 which looks as follows::
 
-      SERVERADDR xedaq02
+      SERVERADDR reader0
       COM_PORT 2002
-      DATA_PORT 2003
-      NAME xedaq01
-      ID 1
+      DATA_PORT 3002
+      NAME reader2
+      ID 2
 
-This examples defines slave 'xedaq01' with ID '1' to use ports 2002 and 2003 to 
+This examples defines slave 'reader2' with ID '2' to use ports 2002 and 3002 to 
 try to connect to the server at hostname xedaq02. The ports given must correspond 
 to a detector defined in src/master/MasterConfig.ini (see below) or the slave will
 never be contacted by the network and will just listen perpetually. The server address
 can be an IP address or a hostname. The NAME should be a single unique string (any words
 beyond the first one are ignored). The ID should be a single digit between 0 and 9 and is
 used to uniquely identify this slave from the dispatcher.
+
+Note that for ourdeployment we generally assign ports such that COM_PORT is 2000+ID and DATA_PORT is 3000+ID. Each slave needs unique ports.
+
 
 To start the slave just run koSlave, preferably in a detached screen.
 The program will automatically scan the master and check to see if
@@ -234,12 +237,19 @@ there are issues.
 The options for the master are stored in a configuration file in src/master at MasterConfig.ini. The options look as follows\
 ::
 
-    MONITOR_DB online        // name of monitoring database
-    MONITOR_ADDR xedaq01     // address of mongodb server (hostname or IP)
-    DETECTOR tpc 2002 2003   // define detector 'tpc' to communicate over ports 2002 and 2003
-    DETECTOR muon_veto 2004 2005  // define detector 'muon_veto' to communicate over ports 2004 and 2005
+   MONITOR_DB mongodb://localhost:27017/run       
+   LOG_DB mongodb://user:pass@localhost:27017/log
+   RUNS_DB mongodb://localhost:27017/run
 
-The detector names allow the web interface to send specific commands to specific detectors only.
+   DETECTOR tpc 2000 3000 tpc_options.ini
+   DETECTOR tpc 2001 3001 tpc_options.ini
+   DETECTOR tpc 2002 3002 tpc_options.ini
+   DETECTOR tpc 2003 3003 tpc_options.ini
+   DETECTOR tpc 2004 3004 tpc_options.ini
+
+The detector names allow the web interface to send specific commands to specific detectors only. Each slave gets a DETECTOR line giving it's detector, port, dataport, and default ini file.
+
+The *_DB options accept any valid MongoDB connection string. Note that for the C++ driver, multiple mongos interfaces may be defined for replica sets only and are not supported for, for example, redundant interfaces to sharded clusters. 
 
 The DDC-10 module uses telnet and requires libtcl8.5 and libexpect. 
 
