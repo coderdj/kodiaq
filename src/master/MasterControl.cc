@@ -19,9 +19,6 @@ MasterControl::MasterControl(){
 MasterControl::~MasterControl(){
   
   delete mLog;
-  //for(auto iter: mMonitors)
-  //delete iter.second; 
-  //mMonitors.clear();
   for(auto iter: mDetectors)
     delete iter.second;
   mDetectors.clear();
@@ -42,13 +39,17 @@ int MasterControl::Initialize(string filepath){
 
   // We want to fill these options
   string LOG_DB="", MONITOR_DB="", RUNS_DB="";
-    //DB_USER="", DB_PASSWORD="", DB_AUTH="";
+
   // Also detectors but will declare them inline
 
   // Declare mongodb
   mMongoDB = new MasterMongodbConnection(mLog);
 
   string line;
+  vector <string> detectors;
+  vector <vector <int> >ports;
+  vector <vector <int> >dports;
+  vector <string> inis;
   while(!infile.eof()){
     getline( infile, line );
     if ( line[0] == '#' ) continue; //ignore comments  
@@ -67,37 +68,41 @@ int MasterControl::Initialize(string filepath){
       MONITOR_DB=words[1];
     else if(words[0] == "RUNS_DB") 
       RUNS_DB=words[1];
-    /*else if(words[0] == "DB_USER")
-      DB_USER = words[1];
-    else if(words[0] == "DB_PASSWORD")
-      DB_PASSWORD = words[1];
-    else if(words[0] == "DB_AUTH")
-      DB_AUTH = words[1];
-    */
     else if(words[0] == "DETECTOR" && words.size()>=5){
       string name = words[1];
       int port=koHelper::StringToInt(words[2]);
       int dport = koHelper::StringToInt(words[3]);
       string ini = words[4];
-      
-      mStatusUpdateTimes[name] = koLogger::GetCurrentTime();
-      mRatesUpdateTimes[name] = koLogger::GetCurrentTime();
-
-      // This object gets created here. The DAQ Monitor then owns it.
-      //koNetServer *server = new koNetServer(mLog);
-      mLog->Message("Passing log to server");
-      //koNetServer server(mLog);
-      //server.Initialize(port,dport);
-      
-      // Declare the detector
-      DAQMonitor *monitor = new DAQMonitor(port, dport, mLog, mMongoDB, name, ini);
-      //DAQMonitor *monitor = new DAQMonitor(server, mLog, mMongoDB, name, ini);
-      mDetectors[name] = monitor;
-      //mMonitors[name] = server;
+      // See if we have this one already
+      int det_index = -1;
+      for(unsigned int x=0;x<detectors.size();x++){
+	if(detectors[x]==name)
+	  det_index=x;
+      }      
+      if(det_index == -1){
+	mStatusUpdateTimes[name] = koLogger::GetCurrentTime();
+	mRatesUpdateTimes[name] = koLogger::GetCurrentTime();
+	vector<int> thisport, thisdport;
+	thisport.push_back(port);
+	thisdport.push_back(dport);
+	ports.push_back(thisport);
+	dports.push_back(thisdport);
+	detectors.push_back(name);
+	inis.push_back(ini);
+      }
+      else{
+	ports[det_index].push_back(port);
+	dports[det_index].push_back(dport);
+      }
     }
   }
-  cout<<"Found "<<mDetectors.size()<<" detectors."<<endl;
-
+  for(unsigned int x=0;x<detectors.size();x++){
+    DAQMonitor *monitor = new DAQMonitor(ports[x], dports[x], mLog, mMongoDB, 
+					 detectors[x], inis[x]);
+    mDetectors[detectors[x]]=monitor;
+  }
+  cout<<"Found "<<mDetectors.size()<<" detectors"<<endl;
+  
   //Set mongo dbs (if any, can be empty) and return
   mMongoDB->SetDBs(LOG_DB, MONITOR_DB, RUNS_DB);//, DB_USER, DB_PASSWORD, DB_AUTH);
   return 0;     
@@ -172,15 +177,17 @@ int MasterControl::Start(string detector, string user, string comment,
   if(web)
     mMongoDB->SendRunStartReply(12, "Validating start command");
   int valid_success=0;
+  string message="";
   for(auto iterator:mDetectors){
     if(iterator.first==detector || detector=="all")
       valid_success+=iterator.second->ValidateStartCommand(user, comment,
-							   options[iterator.first]);
+							   options[iterator.first], 
+							   message);
   }
   if(valid_success!=0){
     cout<<"Error during command validation! Aborting run start.";
     if(web)
-      mMongoDB->SendRunStartReply(18, "Error during command validation! Aborting.");
+      mMongoDB->SendRunStartReply(18, "Error during command validation! Aborting. " + message);
     return -2;
   }
   cout<<"Success!"<<endl;
@@ -282,10 +289,11 @@ int MasterControl::Start(string detector, string user, string comment,
 
   // Insert the run doc and update the noise directory
   if(web){
-    if(((detector == "all" || detector == "tpc") && 
-	options["tpc"]->GetInt("noise_spectra_enable")==1) || 
-       (detector != "all" && 
-	options[detector]->GetInt("noise_spectra_enable")==1))
+    
+    //if(((detector == "all" || detector == "tpc") && 
+    //	options["tpc"]->GetInt("noise_spectra_enable")==1) || 
+    // (detector != "all" && 
+    //	options[detector]->GetInt("noise_spectra_enable")==1))
       //mMongoDB->UpdateNoiseDirectory(run_name);
     
     mMongoDB->InsertRunDoc(user, run_name, comment, options, run_name);
@@ -388,18 +396,19 @@ string MasterControl::GetStatusString(){
       ss<<" ERROR"<<endl;
     else
       ss<<" UNDEFINED"<<endl;
-    cout<<iter.second->GetStatus()->Slaves.size()<<" nslaves"<<endl;
-    for(unsigned int x=0; x<iter.second->GetStatus()->Slaves.size(); x++){
+    koStatusPacket_t *status = iter.second->GetStatus();
+    for(unsigned int x=0; x<status->Slaves.size(); x++){
       
       // Check initializes
-      if(iter.second->GetStatus()->Slaves[x].name.empty()){
+      if(status->Slaves[x].name.empty()){
 	mLog->Message("Corrupted slave data");
 	continue;
       }
-      ss<<"        "<<iter.second->GetStatus()->Slaves[x].name<<": ";
-      ss<<iter.second->GetStatus()->Slaves[x].nBoards<<" boards. Rate: ";
-      ss<<iter.second->GetStatus()->Slaves[x].Rate<<" (MB/s) @ ";
-      ss<<iter.second->GetStatus()->Slaves[x].Freq<<" Hz"<<endl;
+      string a = status->Slaves[x].name;
+      ss<<"        "<<status->Slaves[x].name<<": ";
+      ss<<status->Slaves[x].nBoards<<" boards. Rate: ";
+      ss<<status->Slaves[x].Rate<<" (MB/s) @ ";
+      ss<<status->Slaves[x].Freq<<" Hz"<<endl;
     }
   }
   ss<<"***************************************************************"<<endl;

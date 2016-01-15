@@ -244,6 +244,8 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
   mongo::BSONObjBuilder builder;
   builder.genOID();
 
+  if(fLog!=NULL) fLog->Message("IN RUN DOC");
+
   // Top level stuff
   builder.append("name",name);
   builder.append("user",user);
@@ -262,7 +264,7 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
     
     // First create the collection on the buffer db 
     // so the event builder can find it. Index by time and module.
-    mongo::DBClientBase bufferDB;
+    mongo::DBClientBase *bufferDB;
     if( options->GetInt("write_mode") == 2 ){ // write to mongo
       string errstring;
       mongo::ConnectionString cstring =
@@ -290,9 +292,10 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
 	collectionName += options->GetString("mongo_collection");
       else 
 	collectionName += collection;
-      bufferDB.createCollection( collectionName );
-      bufferDB.createIndex( collectionName,
+      bufferDB->createCollection( collectionName );
+      bufferDB->createIndex( collectionName,
 			    mongo::fromjson( "{ time: -1, module: -1, _id: -1}" ) );
+      delete bufferDB;
     }
 
     mongo::BSONObjBuilder det_sub;
@@ -342,7 +345,8 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
     comment_arr.append( comment_sub.obj() );
     builder.appendArray( "comments", comment_arr.arr() );
   }
-   
+  if(fLog!=NULL) fLog->Message("NEAR END");
+
   //insert into collection
   mongo::BSONObj bObj = builder.obj();
   InsertOnline("runs","run.runs",bObj);
@@ -438,10 +442,11 @@ void MasterMongodbConnection::SendLogMessage(string message, int priority)
 				mongo::Query().
 				sort("idnum",-1));    
     }
-    catch( ... ){
+    catch( const mongo::DBException &e ){
       cout<<"Failed to send log message. Maybe mongo is down."<<endl;
       fLog->Error("Failed to send log message to mongodb");
       fLog->Error("Missed message: " + message);
+      fLog->Error(e.what());
       return;
     }
 
@@ -495,6 +500,11 @@ void MasterMongodbConnection::AddRates(koStatusPacket_t *DAQStatus)
       mongo::BSONObjBuilder b;
       time_t currentTime;
       time(&currentTime);
+
+      if(DAQStatus->Slaves[x].name.empty()){
+	fLog->Message("Corrupted slave data");
+	continue;
+      }
 
       b.appendTimeT("createdAt",currentTime);
       b.append("node",DAQStatus->Slaves[x].name);
@@ -575,7 +585,11 @@ int MasterMongodbConnection::CheckForCommand(string &command, string &user,
      else
        return -1;
    }
-   catch(...){
+   catch( const mongo::DBException &e ){
+     if(fLog!=NULL) {
+       fLog->Error("MongoDB error checking command DB");
+       fLog->Error(e.what());
+     }
      return -1;
    }
 
