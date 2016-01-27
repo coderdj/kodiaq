@@ -14,7 +14,6 @@
 
 DAQMonitor::DAQMonitor()
 {
-   m_DAQNetwork=NULL;
    m_Log       =NULL;
    m_Mongodb   =NULL;
    koHelper::InitializeStatus(m_DAQStatus);
@@ -24,12 +23,17 @@ DAQMonitor::DAQMonitor()
    m_detector = "";
 }
 
-DAQMonitor::DAQMonitor(int port, int dport, koLogger *logger,
+DAQMonitor::DAQMonitor(vector<int> ports, vector<int> dports, koLogger *logger,
 		       MasterMongodbConnection *mongodb, string detector,
 		       string ini_file)
 {
-  m_DAQNetwork = new koNetServer(logger);
-  m_DAQNetwork->Initialize(port, dport);
+  if(ports.size() == dports.size()){
+    for(unsigned int x=0;x<ports.size();x++){
+      koNetServer *new_network = new koNetServer(logger);
+      new_network->Initialize(ports[x], dports[x]);
+      m_DAQNetworks.push_back(new_network);
+    }
+  }
   m_Log        = logger;
   m_Mongodb    = mongodb;
   koHelper::InitializeStatus(m_DAQStatus);
@@ -42,8 +46,9 @@ DAQMonitor::DAQMonitor(int port, int dport, koLogger *logger,
 DAQMonitor::~DAQMonitor()
 {
   pthread_mutex_destroy(&m_DAQStatusMutex);
-  if(m_DAQNetwork!=NULL)
-    delete m_DAQNetwork;
+  for(unsigned int x=0;x<m_DAQNetworks.size();x++)
+    delete m_DAQNetworks[x];
+  m_DAQNetworks.clear();
 }
 
 void DAQMonitor::ProcessCommand(string command, string user, 
@@ -68,10 +73,10 @@ void DAQMonitor::ProcessCommand(string command, string user,
 }
 
 int DAQMonitor::ValidateStartCommand(string user, string comment, 
-				     koOptions *options)
+				     koOptions *options, string &message)
 {
   int reply = 0; // 0, OK, 1 - warning, 2- no way
-  string message;
+  //string message;
   // This function should check if the DAQ can be started with these options.
   // Failure due to i.e., DAQ already running, no source in for calib mode, etc.
   // A response is made to the UI via a DB entry.
@@ -98,41 +103,50 @@ int DAQMonitor::ValidateStartCommand(string user, string comment,
 int DAQMonitor::Connect()
 {
   //Put up listening interface
-  if(m_DAQNetwork->PutUpNetwork()!=0){
-    m_Mongodb->SendLogMessage("DAQMonitor::Connect could not put up interface.",KOMESS_ERROR);
-    return -1;
-  }
-  
-  //Loop to add new slaves
-  double timer=0.;
-  int cID=-1;
-  string cName="",cIP="";  
-  int nSlaves=0;
-  while(timer<5.)   { //wait 5 seconds for slaves to connect            
-    if(m_DAQNetwork->AddConnection(cID,cName,cIP)==0)  {
-      stringstream errstring;
-      errstring<<"Connected to slave "<<cName<<"("<<cID<<") at IP "<<cIP<<".";
-      m_Mongodb->SendLogMessage(errstring.str(),KOMESS_NORMAL);	
-      nSlaves++;
+  for(unsigned int x=0;x<m_DAQNetworks.size();x++){
+    if(m_DAQNetworks[x]->PutUpNetwork()!=0){
+      m_Mongodb->SendLogMessage("DAQMonitor::Connect could not put up interface",KOMESS_ERROR);
+      return -1;
     }
-    usleep(1000);
-    timer+=0.001;    
+  
+    //Loop to add new slaves
+    double timer=0.;
+    int cID=-1;
+    string cName="",cIP="";  
+    int nSlaves=0;
+    while(timer<2.)   { //wait 5 seconds for slaves to connect            
+      if(m_DAQNetworks[x]->AddConnection(cID,cName,cIP)==0)  {
+	stringstream errstring;
+	errstring<<"Connected to slave "<<cName<<"("<<cID<<") at IP "<<cIP<<".";
+	m_Mongodb->SendLogMessage(errstring.str(),KOMESS_NORMAL);	
+	nSlaves++;
+      }
+      usleep(1000);
+      timer+=0.001;    
+    }
+  
+    //Finished. Take down listening interface (stop listening for new slaves)
+    stringstream errstring;
+    errstring<<"DAQ network online with "<<nSlaves<<" slaves.";
+    m_Log->Message(errstring.str());
+    //m_Mongodb->SendLogMessage(errstring.str(),KOMESS_NORMAL);
+    m_DAQNetworks[x]->TakeDownNetwork();
+    m_DAQStatus.NetworkUp=true;
   }
-  
-  //Finished. Take down listening interface (stop listening for new slaves)
-  stringstream errstring;
-  errstring<<"DAQ network online with "<<nSlaves<<" slaves.";
-  m_Log->Message(errstring.str());
-  m_Mongodb->SendLogMessage(errstring.str(),KOMESS_NORMAL);
-  m_DAQNetwork->TakeDownNetwork();
-  m_DAQStatus.NetworkUp=true;
-  
   //Start network checking loop
   pthread_create(&m_NetworkUpdateThread,NULL,DAQMonitor::UpdateThreadWrapper,
 		 static_cast<void*>(this));
   return 0;
 }
 
+int DAQMonitor::LockStatus(){
+  pthread_mutex_lock(&m_DAQStatusMutex);
+  return 0;
+}
+int DAQMonitor::UnlockStatus(){
+  pthread_mutex_unlock(&m_DAQStatusMutex);
+  return 0;
+}
 void* DAQMonitor::UpdateThreadWrapper(void* monitor)
 {
   DAQMonitor *thismonitor = static_cast<DAQMonitor*>(monitor);
@@ -144,12 +158,15 @@ void DAQMonitor::PollNetwork()
 {
   time_t fPrevTime = koLogger::GetCurrentTime();
   while(m_DAQStatus.NetworkUp){    
-    time_t fCurrentTime = koLogger::GetCurrentTime();
+    time_t fCurrentTime = koLogger::GetCurrentTime();                            
+    for(unsigned int x=0;x<m_DAQNetworks.size();x++){
     
-    pthread_mutex_lock(&m_DAQStatusMutex);
-    while(m_DAQNetwork->WatchDataPipe(m_DAQStatus)==0) m_bReady=true;
-    pthread_mutex_unlock(&m_DAQStatusMutex);
-    usleep(10000);
+      // Poll Network
+      pthread_mutex_lock(&m_DAQStatusMutex);
+      while(m_DAQNetworks[x]->WatchDataPipe(m_DAQStatus)==0) m_bReady=true;
+      pthread_mutex_unlock(&m_DAQStatusMutex);
+    }
+    usleep(5000);
 
     // Check to see if any slaves are timing out    
     for(unsigned int x=0;x<m_DAQStatus.Slaves.size();x++){
@@ -162,7 +179,9 @@ void DAQMonitor::PollNetwork()
     }
     
     if(difftime(fCurrentTime,fPrevTime)>100.){
-      m_DAQNetwork->SendCommand("KEEPALIVE");
+      for(unsigned int x=0;x<m_DAQNetworks.size();x++){
+	m_DAQNetworks[x]->SendCommand("KEEPALIVE");
+      }
       fPrevTime=fCurrentTime;
     }
   }
@@ -180,7 +199,9 @@ void DAQMonitor::ThrowFatalError(bool killDAQ, string errTxt)
 
 int DAQMonitor::Disconnect()
 {
-  m_DAQNetwork->Disconnect();
+  for(unsigned int x=0;x<m_DAQNetworks.size();x++){
+    m_DAQNetworks[x]->Disconnect();
+  }
   koHelper::InitializeStatus(m_DAQStatus);
   sleep(2);
   pthread_join(m_NetworkUpdateThread,NULL);
@@ -191,16 +212,19 @@ int DAQMonitor::PreProcess(koOptions* mode){
   // 
   // Send preprocess
   m_DAQStatus.RunMode = m_DAQStatus.RunModeLabel = mode->GetString("name");
-  m_DAQNetwork->SendCommand("PREPROCESS");
+  for(unsigned int x=0;x<m_DAQNetworks.size();x++)
+    m_DAQNetworks[x]->SendCommand("PREPROCESS");
 
   // Send options to slaves           
   stringstream *optionsStream = new stringstream();
   mode->ToStream(optionsStream);
-  if(m_DAQNetwork->SendOptionsStream(optionsStream)!=0){
-    delete optionsStream;
-    m_Mongodb->SendLogMessage("Error sending options to clients in preprocess.",
-			      KOMESS_WARNING);
-    return -1;
+  for(unsigned int x=0;x<m_DAQNetworks.size();x++){
+    if(m_DAQNetworks[x]->SendOptionsStream(optionsStream)!=0){
+      delete optionsStream;
+      m_Mongodb->SendLogMessage("Error sending options to clients in preprocess.",
+				KOMESS_WARNING);
+      return -1;
+    }
   }
   delete optionsStream;
   return 0;
@@ -227,7 +251,8 @@ int DAQMonitor::Start(string run_name, string user,
     m_DAQNetwork->SendCommand("DBUPDATE");
     m_DAQNetwork->SendCommand(options->mongo_collection);
     }*/
-  m_DAQNetwork->SendCommand("START");  
+  for(unsigned int x=0;x<m_DAQNetworks.size();x++)
+    m_DAQNetworks[x]->SendCommand("START");  
   stringstream mess;
   m_DAQStatus.RunInfo.RunNumber = run_name;
   mess<<"Run <b>"<<m_DAQStatus.RunInfo.RunNumber<<"</b> started by "<<user;
@@ -248,7 +273,8 @@ int DAQMonitor::Start(string run_name, string user,
 
 int DAQMonitor::Stop(string user,string comment)
 {
-  m_DAQNetwork->SendCommand("STOP");
+  for(unsigned int x=0;x<m_DAQNetworks.size();x++)
+    m_DAQNetworks[x]->SendCommand("STOP");
   stringstream mess;
   mess<<"Run <b>"<<m_DAQStatus.RunInfo.RunNumber<<"</b> stopped by "<<user;
   if(comment.length() > 0 )
@@ -261,7 +287,8 @@ int DAQMonitor::Stop(string user,string comment)
 }
 int DAQMonitor::Shutdown()
 {
-  m_DAQNetwork->SendCommand("SLEEP");
+  for(unsigned int x=0;x<m_DAQNetworks.size();x++)
+    m_DAQNetworks[x]->SendCommand("SLEEP");
   m_DAQStatus.RunMode="None";
   return 0;
 }
@@ -287,7 +314,8 @@ int DAQMonitor::Arm(koOptions *mode, string run_name)
 
   // Get time
   m_DAQStatus.RunInfo.StartDate = koLogger::GetTimeString();
-  m_DAQNetwork->SendCommand("ARM");
+  for(unsigned int x=0;x<m_DAQNetworks.size();x++)
+    m_DAQNetworks[x]->SendCommand("ARM");
 
   stringstream *optionsStream = new stringstream();
   if(run_name != "" && mode->GetInt("write_mode") == WRITEMODE_MONGODB){
@@ -298,11 +326,13 @@ int DAQMonitor::Arm(koOptions *mode, string run_name)
     cout<<"Sending options stream"<<endl;
     mode->ToStream(optionsStream);   
   }
-  if(m_DAQNetwork->SendOptionsStream(optionsStream)!=0){
-    delete optionsStream;
-    m_Mongodb->SendLogMessage("Error sending options to clients.",
-			      KOMESS_WARNING);
-    return -1;
+  for(unsigned int x=0;x<m_DAQNetworks.size();x++){
+    if(m_DAQNetworks[x]->SendOptionsStream(optionsStream)!=0){
+      delete optionsStream;
+      m_Mongodb->SendLogMessage("Error sending options to clients.",
+				KOMESS_WARNING);
+      return -1;
+    }
   }
 
   delete optionsStream;

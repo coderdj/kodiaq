@@ -34,7 +34,7 @@ public:
   DAQMonitor();
   virtual ~DAQMonitor();
   //DAQMonitor(const DAQMonitor &rhs);
-  DAQMonitor(int port, int dport, koLogger *logger, 
+  DAQMonitor(vector<int> ports, vector<int> dports, koLogger *logger, 
 	     MasterMongodbConnection *mongodb, string detector, 
 	     string ini_file="DAQConfig.ini");
 
@@ -51,12 +51,14 @@ public:
   //  bool CheckError(int ERRNO, string ERRTXT);
   void ThrowFatalError(bool killDAQ, string errTxt);
   int ValidateStartCommand(string user, string comment, 
-			   koOptions *options);
+			   koOptions *options, string &message);
 
   koStatusPacket_t* GetStatus(){    
     m_bReady=false;
     return &m_DAQStatus;
   }; 
+  int LockStatus();
+  int UnlockStatus();
   
   void PollNetwork();
   static void* UpdateThreadWrapper(void* monitor);
@@ -71,7 +73,7 @@ private:
   koStatusPacket_t         m_DAQStatus;
   koRunInfo_t              m_RunInfo;
   
-  koNetServer             *m_DAQNetwork;
+  vector <koNetServer*>    m_DAQNetworks;
   koLogger                *m_Log; //local log
   MasterMongodbConnection *m_Mongodb;
   

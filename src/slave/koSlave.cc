@@ -245,36 +245,6 @@ connection_loop:
       int id;      
       if(fNetworkInterface.ListenForCommand(command,id,sender)==0)	{
 	cout<<"GOT COMMAND "<<command<<endl;
-	/*if(command=="PREPROCESS"){
-	  bRdy = false;
-	  bArmed=false;
-	  bERROR=false;
-	  fElectronics->Close();
-	  if(fNetworkInterface.ReceiveOptions(fOptionsPath)==0)  {
-	    if(fDAQOptions->ReadParameterFile(fOptionsPath)!=0)        {
-	      koLog->Error("koSlave - error loading options");
-	      fNetworkInterface.SlaveSendMessage("Error loading options!");
-	      continue;
-	    }
-	    int ret;
-	    if((ret=fElectronics->PreProcess(fDAQOptions))==0){
-	      fNetworkInterface.SlaveSendMessage("Board preprocessing done.");
-	      bRdy=true;
-	    }
-	    else{
-	      if(ret==-2)
-		bERROR=true;
-	      fNetworkInterface.SlaveSendMessage("Error preprocessing!");
-	      koLog->Error("koSlave - error in preprocessing.");
-	      continue;
-	    }
-	  }
-	  else   {
-	    koLog->Error("koSlave - error receiving options!");
-	    fNetworkInterface.SlaveSendMessage("Error receiving options!");
-	    continue;
-	  }
-	  }*/	    
 	if(command=="ARM")  {
 	  //if(!bRdy || bRunning)
 	  if(bRunning)
@@ -347,7 +317,7 @@ connection_loop:
 	    cout<<"STARTED"<<endl;
 	 }
 	 if(command=="STOP")  {
-	   //if(bIdle) continue;
+	   if(!bArmed || bRunning) continue;
 	   fElectronics->StopRun();
 	   //fElectronics->Close();
 	    bRunning=false;
