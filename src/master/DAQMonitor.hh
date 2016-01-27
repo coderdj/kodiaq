@@ -57,6 +57,8 @@ public:
     m_bReady=false;
     return &m_DAQStatus;
   }; 
+  int LockStatus();
+  int UnlockStatus();
   
   void PollNetwork();
   static void* UpdateThreadWrapper(void* monitor);

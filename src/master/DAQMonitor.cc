@@ -139,6 +139,14 @@ int DAQMonitor::Connect()
   return 0;
 }
 
+int DAQMonitor::LockStatus(){
+  pthread_mutex_lock(&m_DAQStatusMutex);
+  return 0;
+}
+int DAQMonitor::UnlockStatus(){
+  pthread_mutex_unlock(&m_DAQStatusMutex);
+  return 0;
+}
 void* DAQMonitor::UpdateThreadWrapper(void* monitor)
 {
   DAQMonitor *thismonitor = static_cast<DAQMonitor*>(monitor);

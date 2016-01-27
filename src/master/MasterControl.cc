@@ -266,10 +266,12 @@ int MasterControl::Start(string detector, string user, string comment,
   int armedCounter = 0;
   do{
     all_armed=true;
-    for(auto iterator:mDetectors){
+    for(auto iterator:mDetectors){      
       if(iterator.first==detector || detector=="all"){
+	iterator.second->LockStatus();
 	if(iterator.second->GetStatus()->DAQState != KODAQ_ARMED)
 	  all_armed = false;
+	iterator.second->UnlockStatus();
       }
     }
     if(!all_armed)
@@ -361,14 +363,18 @@ void MasterControl::StatusUpdate(){
 				     mStatusUpdateTimes[iter.first] );
       if ( dTimeStatus > 5. ) { //don't flood DB with updates
 	mStatusUpdateTimes[iter.first] = CurrentTime;
+	iter.second->LockStatus();
 	mMongoDB->UpdateDAQStatus( iter.second->GetStatus(), 
 				 iter.first );
+	iter.second->UnlockStatus();
       }
       double dTimeRates = difftime( CurrentTime,
 				    mRatesUpdateTimes[iter.first]);
       if ( dTimeRates > 10. ) { //send rates
 	mRatesUpdateTimes[iter.first] = CurrentTime;
+	iter.second->LockStatus();
 	mMongoDB->AddRates( iter.second->GetStatus() );
+	iter.second->UnlockStatus();
 	//	mMongoDB->UpdateDAQStatus( iter.second->GetStatus(),
 	//			 iter.first );
       }
@@ -378,11 +384,13 @@ void MasterControl::StatusUpdate(){
 
 string MasterControl::GetStatusString(){
   
+  
   stringstream ss;
   ss<<"***************************************************************"<<endl;
   ss<<"DAQ Status Update: "<<koLogger::GetTimeString()<<endl;
   ss<<"***************************************************************"<<endl;
   for(auto iter : mDetectors) {
+    iter.second->LockStatus();
     ss<<"Detector: "<<iter.first;
     if( iter.second->GetStatus()->DAQState == KODAQ_IDLE)
       ss<<" IDLE"<<endl;
@@ -398,6 +406,12 @@ string MasterControl::GetStatusString(){
       ss<<" UNDEFINED"<<endl;
     koStatusPacket_t *status = iter.second->GetStatus();
     for(unsigned int x=0; x<status->Slaves.size(); x++){
+
+      string name = status->Slaves[x].name;
+      cout<<x<<endl;
+      cout<<name.size()<<endl;
+      cout<<name<<endl;
+
       
       // Check initializes
       if(status->Slaves[x].name.empty()){
@@ -410,6 +424,7 @@ string MasterControl::GetStatusString(){
       ss<<status->Slaves[x].Rate<<" (MB/s) @ ";
       ss<<status->Slaves[x].Freq<<" Hz"<<endl;
     }
+    iter.second->UnlockStatus();
   }
   ss<<"***************************************************************"<<endl;
   return ss.str();          
