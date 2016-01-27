@@ -317,7 +317,7 @@ connection_loop:
 	    cout<<"STARTED"<<endl;
 	 }
 	 if(command=="STOP")  {
-	   if(bIdle) continue;
+	   if(!bArmed || bRunning) continue;
 	   fElectronics->StopRun();
 	   //fElectronics->Close();
 	    bRunning=false;
