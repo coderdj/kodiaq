@@ -143,6 +143,7 @@ class DigiInterface
   vector<int>         m_vCrateHandles;
   VMEBoard            *m_RunStartModule;
   DAQRecorder         *m_DAQRecorder;
+  vector<CBV1495*>    m_vGeneralPurposeBoards;
   
   // Rate info
   unsigned int         m_iReadSize;
