@@ -543,7 +543,7 @@ void DataProcessor::Process()
 	
 	//zip data if required
 	char* buff=NULL;
-	size_t eventSize=0;
+	u_int32_t eventSize=0;
 	if(m_koOptions->GetInt("compression") == 1){
 	  buff = new char[snappy::MaxCompressedLength((*sizevec)[b])];
 	  snappy::RawCompress((const char*)(*buffvec)[b], 

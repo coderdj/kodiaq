@@ -59,7 +59,9 @@ int DigiInterface::Arm(koOptions *options){
 
   // Ensure mutiple 'Arm' commands in sequence don't declare too many 
   // objects by closing first.
+  cout<<"Clearing"<<endl;
   Close();
+  cout<<"Finished clear"<<endl;
 
   // Initialize boards. This reads options, builds electronics objects, 
   // and runs CAEN initialization procedure.
@@ -67,13 +69,14 @@ int DigiInterface::Arm(koOptions *options){
     Close();
     return -1;
   }
-
+  cout<<"Hardware initialized"<<endl;
+  
   // Have to activate boards before spawning processing threads
   // otherwise threads will immediately exit.
   for(unsigned int x=0;x<m_vDigitizers.size();x++)
     m_vDigitizers[x]->SetActivated(true);
+  cout<<"Digitizers activated"<<endl;
   
-
   // If we are starting with S-IN we arm the acquisition control
   // with 0b101 = activated, start on NIM high on S-IN.
   if(options->GetInt("run_start") == 1){                                       
@@ -83,6 +86,7 @@ int DigiInterface::Arm(koOptions *options){
       m_vDigitizers[x]->WriteReg32(CBV1724_AcquisitionControlReg,data); 
     }
   }
+  cout<<"Run started"<<endl;
 
   //Set up processing threads containers
   m_iReadSize=0;
@@ -207,6 +211,7 @@ int DigiInterface::InitializeHardware(koOptions *options)
     }
     
     int cerror=-1;
+    cout<<"Running CAENVME_Init for "<<Link.id<<"."<<Link.crate<<endl;
     if((cerror=CAENVME_Init(BType,Link.id,Link.crate,
 			    &tempHandle))!=cvSuccess){
       stringstream therror;
@@ -216,7 +221,7 @@ int DigiInterface::InitializeHardware(koOptions *options)
 	m_koLog->Error(therror.str());      
       return -1;
     }
-    
+ 
     // LOG FW
     /*char *fw = (char*)malloc (100);
       CAENVME_BoardFWRelease( tempHandle, fw );
@@ -281,11 +286,12 @@ int DigiInterface::InitializeHardware(koOptions *options)
       }
     }
   }
-
+  cout<<"Links done"<<endl;
 
   // Initialize digitizers. This sets up their internal data structures
   // and loads all registers to the boards. 
   for(unsigned int x=0; x<m_vDigitizers.size();x++)  {
+    cout<<"Initializing digitizer "<<m_vDigitizers[x]->GetID().id<<endl;
     if(m_vDigitizers[x]->Initialize(options)!=0){
       stringstream err;
       err<<"Digtizer "<<m_vDigitizers[x]->GetID().id<<
@@ -298,7 +304,7 @@ int DigiInterface::InitializeHardware(koOptions *options)
 		       koHelper::IntToString(m_vDigitizers[x]->GetID().id) +
 		       ".");
   }
-   
+  cout<<"Init done"<<endl;
   return 0;
 }
 
