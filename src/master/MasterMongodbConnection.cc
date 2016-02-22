@@ -23,6 +23,7 @@ MasterMongodbConnection::MasterMongodbConnection()
    fMonitorDB = NULL;
    fRunsDB = NULL;
    fLogDBName=fMonitorDBName=fRunsDBName="run";
+   fBufferUser=fBufferPassword="";
    fRunsCollection="runs";
    mongo::client::initialize();
 }
@@ -35,6 +36,7 @@ MasterMongodbConnection::MasterMongodbConnection(koLogger *Log)
    fMonitorDB = NULL;
    fRunsDB = NULL;
    fLogDBName=fMonitorDBName=fRunsDBName="run";
+   fBufferUser=fBufferPassword="";
    fRunsCollection="runs";
    mongo::client::initialize();
 }
@@ -46,7 +48,8 @@ MasterMongodbConnection::~MasterMongodbConnection()
 int MasterMongodbConnection::SetDBs(string logdb, string monitordb, 
 				    string runsdb, string logname, 
 				    string monitorname, string runsname, 
-				    string runscollection){//, string user,
+				    string runscollection, string bufferUser, 
+				    string bufferPassword){//, string user,
   //				    string password, string dbauth){
   string errmsg="";
   fLogString = mongo::ConnectionString::parse(logdb, errmsg);
@@ -59,6 +62,8 @@ int MasterMongodbConnection::SetDBs(string logdb, string monitordb,
   if(fRunsString.isValid() && fLogString.isValid() && fMonitorString.isValid())
     cout<<"All mongodb connection strings confirmed valid"<<endl;
 
+  fBufferUser = bufferUser;
+  fBufferPassword=bufferPassword;
   fLogDBName=logname;
   fMonitorDBName=monitorname;
   fRunsDBName=runsname;
@@ -295,6 +300,10 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
     mongo::DBClientBase *bufferDB;
     if( options->GetInt("write_mode") == 2 ){ // write to mongo
       string errstring;
+      string connstring = options->GetString("mongo_address");
+      if(fBufferUser!="" && fBufferPassword!="")
+	connstring = "mongodb://" + fBufferUser + ":" + fBufferPassword + "@" +
+	  connstring.substr(10, connstring.size()-10);
       mongo::ConnectionString cstring =
 	mongo::ConnectionString::parse(options->GetString("mongo_address"),
 				       errstring);

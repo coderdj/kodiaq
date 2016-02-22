@@ -40,7 +40,8 @@ public:
   
   int          SetDBs(string logdb, string monitordb, string runsdb,
 		      string logname, string monitorname, string runsname,
-		      string runscollection);
+		      string runscollection, string bufferUser, 
+		      string bufferPassword);
 		      //string user, string password, string dbauth);
   //
   // Name    : UpdateEndTime
@@ -97,6 +98,7 @@ public:
   mongo::ConnectionString    fLogString, fMonitorString, fRunsString;
   mongo::DBClientBase       *fLogDB, *fMonitorDB, *fRunsDB;
   string                     fLogDBName,fMonitorDBName,fRunsDBName,fRunsCollection;
+  string                     fBufferUser, fBufferPassword;
 };
 
 #endif

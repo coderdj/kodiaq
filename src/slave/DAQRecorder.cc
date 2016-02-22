@@ -123,7 +123,7 @@ int DAQRecorder_mongodb::RegisterProcessor()
   // Create connection string
   string connstring = m_options->GetString("mongo_address");
   if(m_DB_USER!="" && m_DB_PASSWORD!=""){
-    connstring=connstring.substr(9, connstring.size()-10);
+    connstring=connstring.substr(10, connstring.size()-10);
     connstring = "mongodb://" + m_DB_USER + ":" + m_DB_PASSWORD +"@"+ connstring;
   }
   string errstring;
