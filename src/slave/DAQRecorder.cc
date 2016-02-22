@@ -124,7 +124,7 @@ int DAQRecorder_mongodb::RegisterProcessor()
   string connstring = m_options->GetString("mongo_address");
   if(m_DB_USER!="" && m_DB_PASSWORD!=""){
     connstring=connstring.substr(9, connstring.size()-10);
-    connstring = "mongodb://" + m_DB_USER + "@" + m_DB_PASSWORD + connstring;
+    connstring = "mongodb://" + m_DB_USER + ":" + m_DB_PASSWORD +"@"+ connstring;
   }
   string errstring;
   mongo::ConnectionString cstring = 
@@ -132,6 +132,7 @@ int DAQRecorder_mongodb::RegisterProcessor()
      
   // Check if string is valid
   if(!cstring.isValid()){
+    LogError(connstring);
     LogError("Invalid MongoDB connection string provided. Error returned: " + 
 	     errstring);
     return -1;
