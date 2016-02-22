@@ -4,7 +4,7 @@
 #include <fstream>
 #include <iostream>
 
-koOptions::koOptions(){}
+koOptions::koOptions(){ fLoaded=false; }
 
 koOptions::~koOptions(){}
 
@@ -31,6 +31,7 @@ int koOptions::ReadParameterFile(string filename){
     std::cout<<"Error parsing file. Is it valid json?"<<std::endl;
     return -1;
   }
+  fLoaded=true;
   cout<<"Read parameter file from "<<filename<<endl;
   return 0;
 }

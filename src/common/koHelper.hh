@@ -200,5 +200,6 @@ class koHelper
   static string GetStatusText( int status_enum );
 
  private:
+
 };
 #endif

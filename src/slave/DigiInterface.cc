@@ -474,6 +474,9 @@ int DigiInterface::StartRun()
    if(m_RunStartModule!=NULL)  
      m_RunStartModule->SendStopSignal();
 
+   if(!m_koOptions->Loaded())
+     return 0;
+
    if(m_koOptions->GetInt("run_start") == 1){
      for(unsigned int x=0;x<m_vDigitizers.size();x++)   
        m_vDigitizers[x]->SetActivated(false);

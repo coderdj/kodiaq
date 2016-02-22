@@ -47,6 +47,7 @@ public:
   koOptions();
   virtual ~koOptions();
 
+  int Loaded(){ return fLoaded;}
   int ReadParameterFile(string filename);
   void SetBSON(mongo::BSONObj bson){
     m_bson = bson;
@@ -91,7 +92,7 @@ private:
   int GetArraySize(string key);
   mongo::BSONElement GetField(string key);
   mongo::BSONObj m_bson;
-
+  bool fLoaded;
 
 };
 
