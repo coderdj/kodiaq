@@ -21,6 +21,7 @@ DigiInterface::DigiInterface()
    m_koLog = NULL;
    m_DAQRecorder=NULL;
    m_RunStartModule=NULL;
+   m_DB_USER=m_DB_PASSWORD="";
    pthread_mutex_init(&m_RateMutex,NULL);
 }
 
@@ -30,7 +31,8 @@ DigiInterface::~DigiInterface()
   Close();
 }
 
-DigiInterface::DigiInterface(koLogger *logger, int ID)
+DigiInterface::DigiInterface(koLogger *logger, int ID, 
+			     string DB_USER, string DB_PASSWORD)
 {
    m_ReadThread.IsOpen  = false;
    m_WriteThread.IsOpen = false;
@@ -38,6 +40,8 @@ DigiInterface::DigiInterface(koLogger *logger, int ID)
    m_DAQRecorder        = NULL;
    m_RunStartModule     = NULL;
    m_slaveID            = ID;
+   m_DB_USER            = DB_USER;
+   m_DB_PASSWORD        = DB_PASSWORD;
    pthread_mutex_init(&m_RateMutex,NULL);
 }
 
@@ -113,7 +117,7 @@ int DigiInterface::Arm(koOptions *options){
   }
   else if ( options->GetInt("write_mode") == WRITEMODE_MONGODB ){
 #ifdef HAVE_LIBMONGOCLIENT
-    m_DAQRecorder = new DAQRecorder_mongodb(m_koLog);
+    m_DAQRecorder = new DAQRecorder_mongodb(m_koLog, m_DB_USER, m_DB_PASSWORD);
 #else
     if( m_koLog != NULL )
       m_koLog->Error("DigitInterface::Initialize - Your chosen write mode is not available in this installation");

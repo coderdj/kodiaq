@@ -89,7 +89,7 @@ class DAQRecorder_mongodb : public DAQRecorder
     
                   DAQRecorder_mongodb();
    virtual       ~DAQRecorder_mongodb();
-                  DAQRecorder_mongodb(koLogger *koLog);
+  DAQRecorder_mongodb(koLogger *koLog, string DB_USER, string DB_PASSWORD);
    
    //
    // Name      : int DAQRecorder_mongodb::Initialize(koOptions* options)
@@ -130,6 +130,7 @@ class DAQRecorder_mongodb : public DAQRecorder
    //
    void            CloseConnections();
 
+  string           m_DB_USER, m_DB_PASSWORD;
    pthread_mutex_t m_ConnectionMutex;
   //vector <mongo::ScopedDbConnection*> m_vScopedConnections;   
   vector <mongo::DBClientBase*> m_vScopedConnections;

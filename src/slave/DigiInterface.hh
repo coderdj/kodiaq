@@ -53,7 +53,7 @@ class DigiInterface
  public:
    DigiInterface();
    virtual ~DigiInterface();
-  DigiInterface(koLogger *logger, int ID=-1);
+  DigiInterface(koLogger *logger, int ID=-1, string DB_USER="", string DB_PASSWORD="");
    
   //General Control
   //
@@ -154,7 +154,9 @@ class DigiInterface
   koOptions           *m_koOptions;
   koLogger            *m_koLog;
   int                  m_slaveID;
-  
+
+  // DB connection
+  string               m_DB_USER, m_DB_PASSWORD;
 };
 
 #endif
