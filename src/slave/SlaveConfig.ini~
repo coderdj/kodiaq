@@ -1,6 +1,7 @@
-# Options for slave network configuration
-SERVERADDR xedaq02
-COM_PORT 2002
-DATA_PORT 2003 
-NAME xedaq01 
+SERVERADDR 192.168.131.10
+COM_PORT 2001
+DATA_PORT 3001
+NAME reader1
 ID 1
+DB_USER reader
+DB_PASSWORD luxstinks

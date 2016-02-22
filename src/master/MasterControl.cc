@@ -41,6 +41,7 @@ int MasterControl::Initialize(string filepath){
   string LOG_DB="", MONITOR_DB="", RUNS_DB="";
   string RUNS_DB_NAME="", LOG_DB_NAME="", MONITOR_DB_NAME="";
   string RUNS_COLLECTION="";
+  string BUFFER_USER="", BUFFER_PASSWORD="";
   // Also detectors but will declare them inline
 
   // Declare mongodb
@@ -77,6 +78,10 @@ int MasterControl::Initialize(string filepath){
       LOG_DB_NAME=words[1];
     else if(words[0] == "RUNS_COLLECTION")
       RUNS_COLLECTION=words[1];
+    else if(words[0]=="BUFFER_USER")
+      BUFFER_USER=words[1];
+    else if(words[0]=="BUFFER_PASSWORD")
+      BUFFER_PASSWORD=words[1];
 
     else if(words[0] == "DETECTOR" && words.size()>=5){
       string name = words[1];
@@ -116,7 +121,7 @@ int MasterControl::Initialize(string filepath){
   //Set mongo dbs (if any, can be empty) and return
   mMongoDB->SetDBs(LOG_DB, MONITOR_DB, RUNS_DB,
 		   LOG_DB_NAME, MONITOR_DB_NAME, RUNS_DB_NAME,
-		   RUNS_COLLECTION);//, DB_USER, DB_PASSWORD, DB_AUTH);
+		   RUNS_COLLECTION, BUFFER_USER, BUFFER_PASSWORD);//, DB_USER, DB_PASSWORD, DB_AUTH);
   return 0;     
 }
 
