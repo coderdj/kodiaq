@@ -547,7 +547,7 @@ void DataProcessor::Process()
 	if(m_koOptions->GetInt("compression") == 1){
 	  buff = new char[snappy::MaxCompressedLength((*sizevec)[b])];
 	  snappy::RawCompress((const char*)(*buffvec)[b], 
-			      (*sizevec)[b], buff, &eventSize);
+			      (*sizevec)[b], buff, (size_t*)&eventSize);
 	  delete[] (*buffvec)[b];
 	}
 	else{
