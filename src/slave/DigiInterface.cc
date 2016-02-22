@@ -268,10 +268,11 @@ int DigiInterface::InitializeHardware(koOptions *options)
 	  return -1;
       }
       else if(Board.type=="V1495"){
-         CBV1495 *digitizer = new CBV1495(Board, m_koLog);
-         digitizer->SetCrateHandle(tempHandle);
-         digitizer->SetActivated(true);
-         if(digitizer->Initialize(options)!=0)
+         CBV1495 *gpBoard = new CBV1495(Board, m_koLog);
+         m_vGeneralPurposeBoards.push_back(gpBoard);
+         gpBoard->SetCrateHandle(tempHandle);
+         gpBoard->SetActivated(true);
+         if(gpBoard->Initialize(options)!=0)
            return -1;
       }	 
       else   {
@@ -340,7 +341,12 @@ void DigiInterface::Close()
    if(m_RunStartModule!=NULL)  {
       delete m_RunStartModule;
       m_RunStartModule=NULL;
-   }      
+   }   
+
+   // clear the general purpose boards
+   for(unsigned int x=0;x<m_vGeneralPurposeBoards.size();x++)  
+      delete m_vGeneralPurposeBoards[x];
+   m_vGeneralPurposeBoards.clear(); 
       
    //Created the DAQ recorder, so must destroy it
    if(m_DAQRecorder!=NULL) delete m_DAQRecorder;
