@@ -305,8 +305,7 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
 	connstring = "mongodb://" + fBufferUser + ":" + fBufferPassword + "@" +
 	  connstring.substr(10, connstring.size()-10);
       mongo::ConnectionString cstring =
-	mongo::ConnectionString::parse(options->GetString("mongo_address"),
-				       errstring);
+	mongo::ConnectionString::parse(connstring,  errstring);
       
       // Check if string is valid   
       if(!cstring.isValid())
