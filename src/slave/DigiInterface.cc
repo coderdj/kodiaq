@@ -21,6 +21,7 @@ DigiInterface::DigiInterface()
    m_koLog = NULL;
    m_DAQRecorder=NULL;
    m_RunStartModule=NULL;
+   m_DB_USER=m_DB_PASSWORD="";
    pthread_mutex_init(&m_RateMutex,NULL);
 }
 
@@ -30,7 +31,8 @@ DigiInterface::~DigiInterface()
   Close();
 }
 
-DigiInterface::DigiInterface(koLogger *logger, int ID)
+DigiInterface::DigiInterface(koLogger *logger, int ID, 
+			     string DB_USER, string DB_PASSWORD)
 {
    m_ReadThread.IsOpen  = false;
    m_WriteThread.IsOpen = false;
@@ -38,6 +40,8 @@ DigiInterface::DigiInterface(koLogger *logger, int ID)
    m_DAQRecorder        = NULL;
    m_RunStartModule     = NULL;
    m_slaveID            = ID;
+   m_DB_USER            = DB_USER;
+   m_DB_PASSWORD        = DB_PASSWORD;
    pthread_mutex_init(&m_RateMutex,NULL);
 }
 
@@ -117,7 +121,7 @@ int DigiInterface::Arm(koOptions *options){
   }
   else if ( options->GetInt("write_mode") == WRITEMODE_MONGODB ){
 #ifdef HAVE_LIBMONGOCLIENT
-    m_DAQRecorder = new DAQRecorder_mongodb(m_koLog);
+    m_DAQRecorder = new DAQRecorder_mongodb(m_koLog, m_DB_USER, m_DB_PASSWORD);
 #else
     if( m_koLog != NULL )
       m_koLog->Error("DigitInterface::Initialize - Your chosen write mode is not available in this installation");
@@ -273,10 +277,11 @@ int DigiInterface::InitializeHardware(koOptions *options)
 	  return -1;
       }
       else if(Board.type=="V1495"){
-         CBV1495 *digitizer = new CBV1495(Board, m_koLog);
-         digitizer->SetCrateHandle(tempHandle);
-         digitizer->SetActivated(true);
-         if(digitizer->Initialize(options)!=0)
+         CBV1495 *gpBoard = new CBV1495(Board, m_koLog);
+         m_vGeneralPurposeBoards.push_back(gpBoard);
+         gpBoard->SetCrateHandle(tempHandle);
+         gpBoard->SetActivated(true);
+         if(gpBoard->Initialize(options)!=0)
            return -1;
       }	 
       else   {
@@ -346,7 +351,12 @@ void DigiInterface::Close()
    if(m_RunStartModule!=NULL)  {
       delete m_RunStartModule;
       m_RunStartModule=NULL;
-   }      
+   }   
+
+   // clear the general purpose boards
+   for(unsigned int x=0;x<m_vGeneralPurposeBoards.size();x++)  
+      delete m_vGeneralPurposeBoards[x];
+   m_vGeneralPurposeBoards.clear(); 
       
    //Created the DAQ recorder, so must destroy it
    if(m_DAQRecorder!=NULL) delete m_DAQRecorder;

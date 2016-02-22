@@ -178,7 +178,7 @@ class koHelper
    // Purpose     : Returns a run number (actually a run name string) based on 
    //               the current time and date
    // 
-   static string    GetRunNumber(string detector = "data");
+   static string    GetRunNumber();
    //
    // Function    : MakeDBName
    // Purpose     : Returns a database name based on the current run number from

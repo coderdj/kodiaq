@@ -53,7 +53,7 @@ class DigiInterface
  public:
    DigiInterface();
    virtual ~DigiInterface();
-  DigiInterface(koLogger *logger, int ID=-1);
+  DigiInterface(koLogger *logger, int ID=-1, string DB_USER="", string DB_PASSWORD="");
    
   //General Control
   //
@@ -143,6 +143,7 @@ class DigiInterface
   vector<int>         m_vCrateHandles;
   VMEBoard            *m_RunStartModule;
   DAQRecorder         *m_DAQRecorder;
+  vector<CBV1495*>    m_vGeneralPurposeBoards;
   
   // Rate info
   unsigned int         m_iReadSize;
@@ -153,7 +154,9 @@ class DigiInterface
   koOptions           *m_koOptions;
   koLogger            *m_koLog;
   int                  m_slaveID;
-  
+
+  // DB connection
+  string               m_DB_USER, m_DB_PASSWORD;
 };
 
 #endif

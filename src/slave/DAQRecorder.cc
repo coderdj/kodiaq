@@ -77,6 +77,7 @@ void DAQRecorder::ResetError()
 DAQRecorder_mongodb::DAQRecorder_mongodb()
                     :DAQRecorder()
 {
+  m_DB_USER=m_DB_PASSWORD="";
 }
 
 DAQRecorder_mongodb::~DAQRecorder_mongodb()
@@ -84,9 +85,12 @@ DAQRecorder_mongodb::~DAQRecorder_mongodb()
    CloseConnections();
 }
 
-DAQRecorder_mongodb::DAQRecorder_mongodb(koLogger *koLog)
+DAQRecorder_mongodb::DAQRecorder_mongodb(koLogger *koLog, string DB_USER,
+					 string DB_PASSWORD)
                     :DAQRecorder(koLog)
 {
+  m_DB_USER=DB_USER;
+  m_DB_PASSWORD=DB_PASSWORD;
 }
 
 void DAQRecorder_mongodb::CloseConnections()
@@ -116,10 +120,15 @@ int DAQRecorder_mongodb::RegisterProcessor()
   int retval=-1;
   mongo::DBClientBase *conn;
    
+  // Create connection string
+  string connstring = m_options->GetString("mongo_address");
+  if(m_DB_USER!="" && m_DB_PASSWORD!=""){
+    connstring=connstring.substr(9, connstring.size()-10);
+    connstring = "mongodb://" + m_DB_USER + "@" + m_DB_PASSWORD + connstring;
+  }
   string errstring;
   mongo::ConnectionString cstring = 
-    mongo::ConnectionString::parse(m_options->GetString("mongo_address"), 
-				   errstring);
+    mongo::ConnectionString::parse(connstring, errstring);
      
   // Check if string is valid
   if(!cstring.isValid()){

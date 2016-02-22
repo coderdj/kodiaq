@@ -39,7 +39,8 @@ int MasterControl::Initialize(string filepath){
 
   // We want to fill these options
   string LOG_DB="", MONITOR_DB="", RUNS_DB="";
-
+  string RUNS_DB_NAME="", LOG_DB_NAME="", MONITOR_DB_NAME="";
+  string RUNS_COLLECTION="";
   // Also detectors but will declare them inline
 
   // Declare mongodb
@@ -68,6 +69,15 @@ int MasterControl::Initialize(string filepath){
       MONITOR_DB=words[1];
     else if(words[0] == "RUNS_DB") 
       RUNS_DB=words[1];
+    else if(words[0] == "RUNS_DB_NAME")
+      RUNS_DB_NAME=words[1];
+    else if(words[0] == "MONITOR_DB_NAME")
+      MONITOR_DB_NAME=words[1];
+    else if(words[0] == "LOG_DB_NAME")
+      LOG_DB_NAME=words[1];
+    else if(words[0] == "RUNS_COLLECTION")
+      RUNS_COLLECTION=words[1];
+
     else if(words[0] == "DETECTOR" && words.size()>=5){
       string name = words[1];
       int port=koHelper::StringToInt(words[2]);
@@ -104,7 +114,9 @@ int MasterControl::Initialize(string filepath){
   cout<<"Found "<<mDetectors.size()<<" detectors"<<endl;
   
   //Set mongo dbs (if any, can be empty) and return
-  mMongoDB->SetDBs(LOG_DB, MONITOR_DB, RUNS_DB);//, DB_USER, DB_PASSWORD, DB_AUTH);
+  mMongoDB->SetDBs(LOG_DB, MONITOR_DB, RUNS_DB,
+		   LOG_DB_NAME, MONITOR_DB_NAME, RUNS_DB_NAME,
+		   RUNS_COLLECTION);//, DB_USER, DB_PASSWORD, DB_AUTH);
   return 0;     
 }
 
@@ -236,10 +248,11 @@ int MasterControl::Start(string detector, string user, string comment,
 
   // This might actually work. Let's assign a run name.
   string run_name = "";
-  if(detector == "all" || detector == "tpc")
-    run_name = koHelper::GetRunNumber(options["tpc"]->GetString("run_prefix"));
-  else 
-    run_name = koHelper::GetRunNumber(options[detector]->GetString("run_prefix"));
+  //if(detector == "all" || detector == "tpc")
+  //run_name = koHelper::GetRunNumber(options["tpc"]->GetString("run_prefix"));
+  //  else 
+  //run_name = koHelper::GetRunNumber(options[detector]->GetString("run_prefix"));
+  run_name = koHelper::GetRunNumber();
   cout<<"This run will be called "<<run_name<<endl;
   if(web)
     mMongoDB->SendRunStartReply(12, "Assigning run name: " + run_name);
@@ -407,10 +420,10 @@ string MasterControl::GetStatusString(){
     koStatusPacket_t *status = iter.second->GetStatus();
     for(unsigned int x=0; x<status->Slaves.size(); x++){
 
-      string name = status->Slaves[x].name;
-      cout<<x<<endl;
-      cout<<name.size()<<endl;
-      cout<<name<<endl;
+      //string name = status->Slaves[x].name;
+      //cout<<x<<endl;
+      //cout<<name.size()<<endl;
+      //cout<<name<<endl;
 
       
       // Check initializes

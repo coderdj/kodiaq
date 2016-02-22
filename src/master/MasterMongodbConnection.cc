@@ -22,6 +22,8 @@ MasterMongodbConnection::MasterMongodbConnection()
    fLogDB = NULL;
    fMonitorDB = NULL;
    fRunsDB = NULL;
+   fLogDBName=fMonitorDBName=fRunsDBName="run";
+   fRunsCollection="runs";
    mongo::client::initialize();
 }
 
@@ -32,6 +34,8 @@ MasterMongodbConnection::MasterMongodbConnection(koLogger *Log)
    fLogDB = NULL;
    fMonitorDB = NULL;
    fRunsDB = NULL;
+   fLogDBName=fMonitorDBName=fRunsDBName="run";
+   fRunsCollection="runs";
    mongo::client::initialize();
 }
 
@@ -40,7 +44,9 @@ MasterMongodbConnection::~MasterMongodbConnection()
 }
 
 int MasterMongodbConnection::SetDBs(string logdb, string monitordb, 
-				    string runsdb){//, string user,
+				    string runsdb, string logname, 
+				    string monitorname, string runsname, 
+				    string runscollection){//, string user,
   //				    string password, string dbauth){
   string errmsg="";
   fLogString = mongo::ConnectionString::parse(logdb, errmsg);
@@ -52,6 +58,11 @@ int MasterMongodbConnection::SetDBs(string logdb, string monitordb,
   if(!fRunsString.isValid()) cout<<"Proceeding without runs DB "<<errmsg<<endl;
   if(fRunsString.isValid() && fLogString.isValid() && fMonitorString.isValid())
     cout<<"All mongodb connection strings confirmed valid"<<endl;
+
+  fLogDBName=logname;
+  fMonitorDBName=monitorname;
+  fRunsDBName=runsname;
+  fRunsCollection=runscollection;
   return Connect();
 }
 
@@ -149,7 +160,7 @@ void MasterMongodbConnection::InsertOnline(string DB,
 					   string collection,
 					   mongo::BSONObj bson){
   string coll = collection.substr(collection.find("."), collection.size()); 
-  collection = "run" + coll;
+  //collection = "run" + coll;
 
   // Choose proper DB
   mongo::DBClientBase *thedb = NULL;
@@ -240,28 +251,45 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
 */
 {
 
-  //Create a bson object with the run information
-  mongo::BSONObjBuilder builder;
-  builder.genOID();
-
-  if(fLog!=NULL) fLog->Message("IN RUN DOC");
-
-  // Top level stuff
-  builder.append("name",name);
-  builder.append("user",user);
-  time_t currentTime;
-  time(&currentTime);
-  builder.appendTimeT("starttimestamp",currentTime);
-
-  string type="";
-
-  mongo::BSONObjBuilder detlist;
-  vector<string> detectors;  
-
   for ( auto iterator: options_list){
 
-    koOptions *options = iterator.second;
+    //Create a bson object with the run information
+    mongo::BSONObjBuilder builder;
+    builder.genOID();
     
+    if(fLog!=NULL) fLog->Message("IN RUN DOC");
+    
+    // Get the run number for TPC runs
+    int run_number = 0;
+    mongo::BSONObj obj;
+    if(iterator.first == "tpc"){
+      try{
+	obj = fMonitorDB->findOne(fRunsDBName+"."+fRunsCollection,
+				  mongo::Query(BSON("detector" << "tpc")).sort("number",-1));
+	if(!obj.isEmpty())
+	  run_number = obj.getIntField("number")+1;
+      }
+      catch (...){
+	cout<<"Can't query runs DB"<<endl;
+	return -1;
+      }
+    }
+
+    // Top level stuff
+    builder.append("name",name);
+    builder.append("user",user);
+    builder.append("detector", iterator.first);
+    builder.append("number", run_number);
+    time_t currentTime;
+    time(&currentTime);
+    builder.appendTimeT("start",currentTime);
+    
+    string type="None";
+    
+    //mongo::BSONObjBuilder detlist;
+    //vector<string> detectors;  
+    
+    koOptions *options = iterator.second;    
     // First create the collection on the buffer db 
     // so the event builder can find it. Index by time and module.
     mongo::DBClientBase *bufferDB;
@@ -270,17 +298,15 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
       mongo::ConnectionString cstring =
 	mongo::ConnectionString::parse(options->GetString("mongo_address"),
 				       errstring);
-
+      
       // Check if string is valid   
       if(!cstring.isValid())
 	SendLogMessage( "Problem creating index in buffer DB. Invalid address. " +
-                        errstring, KOMESS_WARNING );	
+                        errstring, KOMESS_WARNING );	      
       
-
       try     {
 	errstring = "";
-	bufferDB = cstring.connect(errstring);
-	
+	bufferDB = cstring.connect(errstring);	
       }
       catch(const mongo::DBException &e)    {
 	SendLogMessage( "Problem connecting to mongo buffer. Caught exception " + 
@@ -294,25 +320,37 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
 	collectionName += collection;
       bufferDB->createCollection( collectionName );
       bufferDB->createIndex( collectionName,
-			    mongo::fromjson( "{ time: -1, module: -1, _id: -1}" ) );
+			     mongo::fromjson( "{ time: 1, endtime: 1 }" ) );
       delete bufferDB;
     }
+    
+    mongo::BSONObjBuilder reader;    
+    reader.append("ini", options->ExportBSON() );
+    // Find the VME option corresponding to DPP
+    bool DPP=true;
+    for(int x=0;x<options->GetVMEOptions();x++){
+      if(options->GetVMEOption(x).address == 0x8080 
+	 && options->GetVMEOption(x).value&(1 << 24))
+	DPP=false;
+    }
+    reader.append("self_trigger", DPP);
+    builder.append("reader",reader.obj());
 
-    mongo::BSONObjBuilder det_sub;
-
-    det_sub.append("reader_options", options->ExportBSON() );
-    mongo::BSONObjBuilder storageSub;
-    storageSub.append( "database", options->GetString("mongo_database") );
-    if(collection == "DEFAULT")
-      storageSub.append( "collection", options->GetString("mongo_collection") );
-    else
-      storageSub.append( "collection", collection );
-    storageSub.append( "address", options->GetString("mongo_address") );
-    storageSub.append( "compressed", options->GetInt("compression"));
-    det_sub.append( "mongo_buffer", storageSub.obj() );
+    // DATA field
+    if(options->GetInt("write_mode")==2){
+      mongo::BSONArrayBuilder data_sub;
+      mongo::BSONObjBuilder data_entry;
+      data_entry.append( "type", "untriggered");
+      data_entry.append("status", "transferring");
+      data_entry.append( "location", options->GetString("mongo_address") );      
+      data_entry.append("collection", name);//options->GetString("mongo_collection"));
+      data_entry.append( "compressed", options->GetInt("compression"));
+      data_sub.append(data_entry.obj());
+      builder.appendArray( "data", data_sub.arr() );
+    }
 
     // TPC ONLY - trigger info
-    if(iterator.first == "tpc"){
+    //if(iterator.first == "tpc"){
       // event builder sub object
       mongo::BSONObjBuilder trigger_sub; 
       trigger_sub.append( "mode",options->GetString("trigger_mode") );
@@ -320,45 +358,43 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
       if(options->GetString("trigger_mode") != "ignore")
 	trigger_sub.append( "status", "waiting_to_be_processed" );
       
-      det_sub.append( "trigger", trigger_sub.obj() );
-    }
+      builder.append( "trigger", trigger_sub.obj() );
+      //}
 
     if(iterator.first == "tpc" || type == "")
       type = options->GetString("source_type");
-    detlist.append(iterator.first, det_sub.obj());
-    detectors.push_back(iterator.first);
+    mongo::BSONObjBuilder source;
+    source.append("type", type);
+    if(type=="LED"){
+      source.append("frequency", options->GetInt("pulser_freq"));
+    }
+    builder.append("source", source.obj());
 
-  } // end iterator
-      
-  builder.append("detectors", detlist.obj());
-  builder.append("runmode", type);
+    //builder.append("runmode", runmode);
 
-  //builder.append("runmode", runmode);
-
-  // if comment, add comment sub-object                                             
-  if(comment != ""){
-    mongo::BSONArrayBuilder comment_arr;
-    mongo::BSONObjBuilder comment_sub;    
-    comment_sub.append( "text", comment);
-    comment_sub.appendTimeT( "date", currentTime);//+offset );
-    comment_sub.append( "user", user );
-    comment_arr.append( comment_sub.obj() );
-    builder.appendArray( "comments", comment_arr.arr() );
+    // if comment, add comment sub-object                                             
+    if(comment != ""){
+      mongo::BSONArrayBuilder comment_arr;
+      mongo::BSONObjBuilder comment_sub;    
+      comment_sub.append( "text", comment);
+      comment_sub.appendTimeT( "date", currentTime);//+offset );
+      comment_sub.append( "user", user );
+      comment_arr.append( comment_sub.obj() );
+      builder.appendArray( "comments", comment_arr.arr() );
+    }
+    
+    //insert into collection
+    mongo::BSONObj bObj = builder.obj();
+    InsertOnline("runs",fRunsDBName+"."+fRunsCollection,bObj);
+    
+    // store OID so you can update the end time
+    mongo::BSONElement OIDElement;
+    bObj.getObjectID(OIDElement);
+    //  if(detectors.size()==1)
+    fLastDocOIDs[iterator.first]=OIDElement.__oid();
+    //else
+    //fLastDocOIDs["all"] = OIDElement.__oid();
   }
-  if(fLog!=NULL) fLog->Message("NEAR END");
-
-  //insert into collection
-  mongo::BSONObj bObj = builder.obj();
-  InsertOnline("runs","run.runs",bObj);
-
-  // store OID so you can update the end time
-  mongo::BSONElement OIDElement;
-  bObj.getObjectID(OIDElement);
-  if(detectors.size()==1)
-    fLastDocOIDs[detectors[0]]=OIDElement.__oid();
-  else
-    fLastDocOIDs["all"] = OIDElement.__oid();
-
   return 0;   
 }
 
@@ -396,14 +432,14 @@ int MasterMongodbConnection::UpdateEndTime(string detector)
       time(&nowTime);
       
       mongo::BSONObj res;
-      string onlinesubstr = "runs";
+      string onlinesubstr = "runs_new";
       
       mongo::BSONObjBuilder bo;
       bo << "findandmodify" << onlinesubstr.c_str() << 
 	"query" << BSON("_id" << iterator.second )<<
-	"update" << BSON("$set" << BSON("endtimestamp" <<
+	"update" << BSON("$set" << BSON("end" <<
 					mongo::Date_t(1000*(nowTime))
-					<< "reader.data_taking_ended" << true));     
+					<< "data.0.status" << "transferred")); 
 
       mongo::BSONObj comnd = bo.obj();
       assert(fRunsDB->runCommand("run",comnd,res));
@@ -463,7 +499,7 @@ void MasterMongodbConnection::SendLogMessage(string message, int priority)
     alert.append("sender","dispatcher");
     alert.append("message",message);
     alert.append("addressed",false);
-    InsertOnline("monitor", "run.alerts",alert.obj());
+    InsertOnline("monitor", fMonitorDBName+".alerts",alert.obj());
   }
 
   stringstream messagestream;
@@ -485,7 +521,7 @@ void MasterMongodbConnection::SendLogMessage(string message, int priority)
    b.append("priority",priority);
    b.appendTimeT("time",currentTime);
    b.append("sender","dispatcher");
-   InsertOnline("log", "log.log",b.obj());
+   InsertOnline("log", fLogDBName+".log",b.obj());
   
 }
 
@@ -513,7 +549,7 @@ void MasterMongodbConnection::AddRates(koStatusPacket_t *DAQStatus)
       b.append("runmode",DAQStatus->RunMode);
       b.append("nboards",DAQStatus->Slaves[x].nBoards);
       b.append("timeseconds",(int)currentTime);
-      InsertOnline("monitor", "run.daq_rates",b.obj());
+      InsertOnline("monitor", fMonitorDBName+".daq_rates",b.obj());
    }     
 }
 
@@ -552,7 +588,7 @@ void MasterMongodbConnection::UpdateDAQStatus(koStatusPacket_t* DAQStatus,
    }
    b.append("startTime",datestring);
    b.append("numSlaves",(int)DAQStatus->Slaves.size());
-   InsertOnline("monitor", "run.daq_status",b.obj());
+   InsertOnline("monitor", fMonitorDBName+".daq_status",b.obj());
 }
 
 int MasterMongodbConnection::CheckForCommand(string &command, string &user, 
@@ -665,7 +701,7 @@ void MasterMongodbConnection::SendRunStartReply(int response, string message)
   mongo::BSONObjBuilder reply;
   reply.append("message",message);
   reply.append("replyenum",response);
-  InsertOnline("monitor", "run.dispatcherreply",reply.obj());
+  InsertOnline("monitor", fMonitorDBName+".dispatcherreply",reply.obj());
 }
 
 void MasterMongodbConnection::ClearDispatcherReply()
@@ -674,7 +710,7 @@ Clears the dispatcher reply db. Run when starting a new run
  */
 {
   if(fMonitorDB == NULL) return;
-  fMonitorDB->dropCollection("run.dispatcherreply");
+  fMonitorDB->dropCollection(fMonitorDBName+".dispatcherreply");
   return;
 }
 
@@ -685,7 +721,7 @@ int MasterMongodbConnection::PullRunMode(string name, koOptions &options)
  */
 {
   if(fMonitorDB == NULL) return -1;
-  if(fMonitorDB->count("run.run_modes") ==0){
+  if(fMonitorDB->count(fMonitorDBName+".run_modes") ==0){
     cout<<"No run modes in online db"<<endl;
     return -1;
   }
@@ -694,7 +730,7 @@ int MasterMongodbConnection::PullRunMode(string name, koOptions &options)
    mongo::BSONObjBuilder query; 
    query.append( "name" , name ); 
    //cout<<"Looking for run mode "<<name<<endl;
-   mongo::BSONObj res = fMonitorDB->findOne("run.run_modes" , query.obj() ); 
+   mongo::BSONObj res = fMonitorDB->findOne(fMonitorDBName+".run_modes" , query.obj() ); 
    if(res.nFields()==0) {
      cout<<"Empty run mode obj"<<endl;
      return -1; //empty object
