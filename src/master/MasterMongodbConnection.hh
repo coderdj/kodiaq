@@ -38,7 +38,9 @@ public:
 			    string comment, map<string,koOptions*> options,
 			    string collection="DEFAULT");
   
-  int          SetDBs(string logdb, string monitordb, string runsdb);
+  int          SetDBs(string logdb, string monitordb, string runsdb,
+		      string logname, string monitorname, string runsname,
+		      string runscollection);
 		      //string user, string password, string dbauth);
   //
   // Name    : UpdateEndTime
@@ -94,6 +96,7 @@ public:
   koLogger                  *fLog;
   mongo::ConnectionString    fLogString, fMonitorString, fRunsString;
   mongo::DBClientBase       *fLogDB, *fMonitorDB, *fRunsDB;
+  string                     fLogDBName,fMonitorDBName,fRunsDBName,fRunsCollection;
 };
 
 #endif
