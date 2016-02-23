@@ -40,7 +40,6 @@ MasterMongodbConnection::MasterMongodbConnection(koLogger *Log)
    fRunsCollection="runs";
    mongo::client::initialize();
 }
-
 MasterMongodbConnection::~MasterMongodbConnection()
 {
 }
@@ -92,23 +91,15 @@ int MasterMongodbConnection::Connect(){
   if(fLogString.isValid()){
     try{
       fLogDB = new mongo::DBClientConnection( true );
-      //cout<<"LOG DB: "<<logdb<<" "<<fLogDB << endl;
-      //string errmess;
-      //fLogDB->connect( fLogString.toString() );//hp, errmess );
       string errmess = "";
       fLogDB = fLogString.connect(errmess);
-
-      /*if(user != ""){
-	cout<<"Auth with "<<user<<" "<<password<<endl;
-	fLogDB->auth(dbauth, user, password, errmess, true);
-	//	fLogDB->auth(BSON("user"<<user<<"pwd"<<password<<"mechanism"<<"SCRAM-SHA-1"));
-	}*/
     }
     catch(const mongo::DBException &e){
       delete fLogDB;
       fLogDB = NULL;
-      if(fLog!=NULL) fLog->Error("Problem connecting to log mongo. Caught exception " + 
-				 string(e.what()));        
+      if(fLog!=NULL) 
+	fLog->Error("Problem connecting to log mongo. Caught exception " + 
+		    string(e.what()));        
       logconnected = false;
     }
   }
@@ -116,21 +107,15 @@ int MasterMongodbConnection::Connect(){
   // Connect monitor db
   if( fMonitorString.isValid() ){
     try{
-      //fMonitorDB = new mongo::DBClientConnection( true );
-      //fMonitorDB->connect( fMonitorString.toString() );
       string errmess = "";
       fMonitorDB = fMonitorString.connect(errmess);
-      //string errmess="";
-      /*if(user != "")
-	fMonitorDB->auth(dbauth, user, password, errmess, true);
-      */
-
     }
     catch( const mongo::DBException &e ){
       delete fMonitorDB;
       fMonitorDB = NULL;
-      if(fLog!=NULL) fLog->Error("Problem connecting to monitor mongo. Caught exception " +
-				 string(e.what()));
+      if(fLog!=NULL) 
+	fLog->Error("Problem connecting to monitor mongo. Caught exception " +
+		    string(e.what()));
       monitorconnected = false;
     }
   }
@@ -138,20 +123,15 @@ int MasterMongodbConnection::Connect(){
   // Connect to runs db
   if( fRunsString.isValid()){
     try{
-      //fRunsDB = new mongo::DBClientConnection( true );
-      //fRunsDB->connect( fRunsString.toString() );
       string errmess = "";
       fRunsDB = fRunsString.connect(errmess);
-      //string errmess="";
-      //if(user != "")
-      //fRunsDB->auth(dbauth, user, password, errmess, true);
-
     }
     catch( const mongo::DBException &e ){
       delete fRunsDB;
       fRunsDB = NULL;
-      if(fLog!=NULL) fLog->Error("Problem connecting to runs mongo. Caught exception " +
-				 string(e.what()) );
+      if(fLog!=NULL) 
+	fLog->Error("Problem connecting to runs mongo. Caught exception " +
+		    string(e.what()) );
       runsconnected = false;
     }
   }  
@@ -217,25 +197,6 @@ void MasterMongodbConnection::InsertOnline(string DB,
   }
 }
 
-/*int MasterMongodbConnection::UpdateNoiseDirectory(string run_name){
-  // disabled for now
-  return 0;
-  if(run_name == "" || fMonitorDB == NULL)
-    return -1;
-
-  // See if it exists
-  mongo::BSONObjBuilder query;
-  query.append("run_name", run_name);
-  mongo::BSONObj res = fMonitorDB->findOne("noise.directory" , query.obj() );
-  if(res.isEmpty()){    
-    mongo::BSONObjBuilder builder;
-    builder.append("run_name", run_name);
-    builder.append("collection", run_name);
-    builder.appendTimeT("date", koLogger::GetCurrentTime() );
-    InsertOnline("monitor","noise.directory",builder.obj());
-  }
-  return 0;
-  }*/
 int MasterMongodbConnection::InsertRunDoc(string user, string name, 
 					  string comment, 
 					  map<string,koOptions*> options_list,
@@ -244,15 +205,6 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
   At run start create a new run document and put it into the online.runs database.
   The OID of this document is saved as a private member so the document can be 
   updated when the run ends. 
-  
-  Fields important for trigger:
-                              
-                  runtype :   tells trigger how run should be processed. Hardcoded
-                              at the moment but will be part of koOptions once we
-                              have different run types
-                  starttime:  NOT the UTC time (this is in runstart) but should be
-                              the first CAEN digitizer time in the run (usually 0)
-		  	     
 */
 {
 
@@ -357,18 +309,15 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
       builder.appendArray( "data", data_sub.arr() );
     }
 
-    // TPC ONLY - trigger info
-    //if(iterator.first == "tpc"){
-      // event builder sub object
-      mongo::BSONObjBuilder trigger_sub; 
-      trigger_sub.append( "mode",options->GetString("trigger_mode") );
-      trigger_sub.append( "ended", false );
-      if(options->GetString("trigger_mode") != "ignore")
-	trigger_sub.append( "status", "waiting_to_be_processed" );
-      
-      builder.append( "trigger", trigger_sub.obj() );
-      //}
-
+    // Trigger sub-object
+    mongo::BSONObjBuilder trigger_sub; 
+    trigger_sub.append( "mode",options->GetString("trigger_mode") );
+    trigger_sub.append( "ended", false );
+    if(options->GetString("trigger_mode") != "ignore")
+      trigger_sub.append( "status", "waiting_to_be_processed" );
+    
+    builder.append( "trigger", trigger_sub.obj() );
+    
     if(iterator.first == "tpc" || type == "")
       type = options->GetString("source_type");
     mongo::BSONObjBuilder source;
@@ -378,14 +327,11 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
     }
     builder.append("source", source.obj());
 
-    //builder.append("runmode", runmode);
-
-    // if comment, add comment sub-object                                             
     if(comment != ""){
       mongo::BSONArrayBuilder comment_arr;
       mongo::BSONObjBuilder comment_sub;    
       comment_sub.append( "text", comment);
-      comment_sub.appendTimeT( "date", currentTime);//+offset );
+      comment_sub.appendTimeT( "date", currentTime);
       comment_sub.append( "user", user );
       comment_arr.append( comment_sub.obj() );
       builder.appendArray( "comments", comment_arr.arr() );
@@ -398,10 +344,7 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
     // store OID so you can update the end time
     mongo::BSONElement OIDElement;
     bObj.getObjectID(OIDElement);
-    //  if(detectors.size()==1)
     fLastDocOIDs[iterator.first]=OIDElement.__oid();
-    //else
-    //fLastDocOIDs["all"] = OIDElement.__oid();
   }
   return 0;   
 }
@@ -430,7 +373,8 @@ int MasterMongodbConnection::UpdateEndTime(string detector)
       cout<<"Matched!"<<endl;
       if( !iterator.second.isSet() ){
 	cout<<"No OID set for detector "<<iterator.first<<endl;
-	if(fLog!=NULL) fLog->Error("MasterMongodbConnection::UpdateEndTime - Want to stop run but don't have the _id field of the run info doc");
+	if(fLog!=NULL) 
+	  fLog->Error("MasterMongodbConnection::UpdateEndTime - Want to stop run but don't have the _id field of the run info doc");
 	continue;
       }
       cout<<"OID is set"<<endl;
@@ -443,14 +387,22 @@ int MasterMongodbConnection::UpdateEndTime(string detector)
       string onlinesubstr = "runs_new";
       
       mongo::BSONObjBuilder bo;
+      
       bo << "findandmodify" << onlinesubstr.c_str() << 
 	"query" << BSON("_id" << iterator.second )<<
 	"update" << BSON("$set" << BSON("end" <<
-					mongo::Date_t(1000*(nowTime))
-					<< "data.0.status" << "transferred")); 
+					mongo::Date_t(1000*(nowTime))));
 
       mongo::BSONObj comnd = bo.obj();
       assert(fRunsDB->runCommand("run",comnd,res));
+
+      mongo::BSONObjBuilder bo2;
+      bo2 << "findandmodify" << onlinesubstr.c_str() <<
+	"query" << BSON("_id" << iterator.second << "$exists" << BSON ("data.0" <<
+								       true ) ) <<
+	"update" << BSON("$set" << BSON("data.0.status"<<"transferred"));
+      mongo::BSONObj comnd2 = bo2.obj();
+      assert(fRunsDB->runCommand("run", comnd2, res));
 
       // Set to a new random oid so we don't update end times twice
       iterator.second.init();
@@ -465,10 +417,13 @@ int MasterMongodbConnection::UpdateEndTime(string detector)
 
 void MasterMongodbConnection::SendLogMessage(string message, int priority)
 /*
-  Log messages are saved into the database. An enum indicates the priority of the message.
-  For messages flagged with KOMESS_WARNING or KOMESS_ERROR an alert is created requiring
-  a user to mark the alert as solved before starting a new run.
- */
+  Log messages are saved into the database. 
+  An enum indicates the priority of the message.
+  For messages flagged with KOMESS_WARNING or 
+  KOMESS_ERROR an alert is created requiring
+  a user to mark the alert as solved before 
+  starting a new run.
+*/
 {      
 
   time_t currentTime;
@@ -513,11 +468,13 @@ void MasterMongodbConnection::SendLogMessage(string message, int priority)
   stringstream messagestream;
   string savemessage;
   if(priority==KOMESS_WARNING){
-    messagestream<<"The dispatcher has issued a warning with ID "<<ID<<" and text: "<<message;
+    messagestream<<"The dispatcher has issued a warning with ID "<<
+      ID<<" and text: "<<message;
     savemessage=messagestream.str();
   }
   else if(priority == KOMESS_ERROR){
-    messagestream<<"The dispatcher has issued an error with ID "<<ID<<" and text: "<<message;
+    messagestream<<"The dispatcher has issued an error with ID "<<
+      ID<<" and text: "<<message;
     savemessage=messagestream.str();
   }
   else savemessage=message;

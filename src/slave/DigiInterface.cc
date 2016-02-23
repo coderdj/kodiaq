@@ -23,6 +23,7 @@ DigiInterface::DigiInterface()
    m_RunStartModule=NULL;
    m_DB_USER=m_DB_PASSWORD="";
    pthread_mutex_init(&m_RateMutex,NULL);
+   m_koOptions = NULL;
 }
 
 DigiInterface::~DigiInterface()
@@ -43,6 +44,7 @@ DigiInterface::DigiInterface(koLogger *logger, int ID,
    m_DB_USER            = DB_USER;
    m_DB_PASSWORD        = DB_PASSWORD;
    pthread_mutex_init(&m_RateMutex,NULL);
+   m_koOptions = NULL;
 }
 
 int DigiInterface::Arm(koOptions *options){
@@ -474,7 +476,7 @@ int DigiInterface::StartRun()
    if(m_RunStartModule!=NULL)  
      m_RunStartModule->SendStopSignal();
 
-   if(!m_koOptions->Loaded())
+   if(m_koOptions!=NULL || !m_koOptions->Loaded())
      return 0;
 
    if(m_koOptions->GetInt("run_start") == 1){
