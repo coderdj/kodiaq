@@ -15435,13 +15435,13 @@ else
   as_fn_error $? "libboost_thread missing." "$LINENO" 5
 fi
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lmongoclient" >&5
-$as_echo_n "checking for main in -lmongoclient... " >&6; }
-if ${ac_cv_lib_mongoclient_main+:} false; then :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lmongocxx" >&5
+$as_echo_n "checking for main in -lmongocxx... " >&6; }
+if ${ac_cv_lib_mongocxx_main+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-lmongoclient  $LIBS"
+LIBS="-lmongocxx  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -15455,25 +15455,25 @@ return main ();
 }
 _ACEOF
 if ac_fn_cxx_try_link "$LINENO"; then :
-  ac_cv_lib_mongoclient_main=yes
+  ac_cv_lib_mongocxx_main=yes
 else
-  ac_cv_lib_mongoclient_main=no
+  ac_cv_lib_mongocxx_main=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mongoclient_main" >&5
-$as_echo "$ac_cv_lib_mongoclient_main" >&6; }
-if test "x$ac_cv_lib_mongoclient_main" = xyes; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mongocxx_main" >&5
+$as_echo "$ac_cv_lib_mongocxx_main" >&6; }
+if test "x$ac_cv_lib_mongocxx_main" = xyes; then :
   cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBMONGOCLIENT 1
+#define HAVE_LIBMONGOCXX 1
 _ACEOF
 
-  LIBS="-lmongoclient $LIBS"
+  LIBS="-lmongocxx $LIBS"
 
 else
-  as_fn_error $? "libmongoclient missing." "$LINENO" 5
+  as_fn_error $? "libmongocxx missing." "$LINENO" 5
 fi
 
 
@@ -16468,13 +16468,13 @@ else
   as_fn_error $? "libboost_thread missing." "$LINENO" 5
 fi
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lmongoclient" >&5
-$as_echo_n "checking for main in -lmongoclient... " >&6; }
-if ${ac_cv_lib_mongoclient_main+:} false; then :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lmongocxx" >&5
+$as_echo_n "checking for main in -lmongocxx... " >&6; }
+if ${ac_cv_lib_mongocxx_main+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-lmongoclient  $LIBS"
+LIBS="-lmongocxx  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -16488,25 +16488,25 @@ return main ();
 }
 _ACEOF
 if ac_fn_cxx_try_link "$LINENO"; then :
-  ac_cv_lib_mongoclient_main=yes
+  ac_cv_lib_mongocxx_main=yes
 else
-  ac_cv_lib_mongoclient_main=no
+  ac_cv_lib_mongocxx_main=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mongoclient_main" >&5
-$as_echo "$ac_cv_lib_mongoclient_main" >&6; }
-if test "x$ac_cv_lib_mongoclient_main" = xyes; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mongocxx_main" >&5
+$as_echo "$ac_cv_lib_mongocxx_main" >&6; }
+if test "x$ac_cv_lib_mongocxx_main" = xyes; then :
   cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBMONGOCLIENT 1
+#define HAVE_LIBMONGOCXX 1
 _ACEOF
 
-  LIBS="-lmongoclient $LIBS"
+  LIBS="-lmongocxx $LIBS"
 
 else
-  as_fn_error $? "libmongoclient missing." "$LINENO" 5
+  as_fn_error $? "libmongocxx missing." "$LINENO" 5
 fi
 
 
@@ -16720,13 +16720,13 @@ fi
 
 
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lmongoclient" >&5
-$as_echo_n "checking for main in -lmongoclient... " >&6; }
-if ${ac_cv_lib_mongoclient_main+:} false; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lmongocxx" >&5
+$as_echo_n "checking for main in -lmongocxx... " >&6; }
+if ${ac_cv_lib_mongocxx_main+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-lmongoclient  $LIBS"
+LIBS="-lmongocxx  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -16740,31 +16740,31 @@ return main ();
 }
 _ACEOF
 if ac_fn_cxx_try_link "$LINENO"; then :
-  ac_cv_lib_mongoclient_main=yes
+  ac_cv_lib_mongocxx_main=yes
 else
-  ac_cv_lib_mongoclient_main=no
+  ac_cv_lib_mongocxx_main=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mongoclient_main" >&5
-$as_echo "$ac_cv_lib_mongoclient_main" >&6; }
-if test "x$ac_cv_lib_mongoclient_main" = xyes; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mongocxx_main" >&5
+$as_echo "$ac_cv_lib_mongocxx_main" >&6; }
+if test "x$ac_cv_lib_mongocxx_main" = xyes; then :
   cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBMONGOCLIENT 1
+#define HAVE_LIBMONGOCXX 1
 _ACEOF
 
-  LIBS="-lmongoclient $LIBS"
+  LIBS="-lmongocxx $LIBS"
 
 fi
 
-if test "$ac_cv_lib_mongoclient_main" = yes; then :
+if test "$ac_cv_lib_mongocxx_main" = yes; then :
   HAVE_LIBMONGOCLIENT=1
 else
   HAVE_LIBMONGOCLIENT=0
 fi
- if test "$ac_cv_lib_mongoclient_main" = yes; then
+ if test "$ac_cv_lib_mongocxx_main" = yes; then
   WITH_MONGODB_TRUE=
   WITH_MONGODB_FALSE='#'
 else
@@ -19565,7 +19565,7 @@ $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
 
 
-if test "$ac_cv_lib_mongoclient_main" = yes; then :
+if test "$ac_cv_lib_mongocxx_main" = yes; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: Compiling WITH mongodb support" >&5
 $as_echo "$as_me: Compiling WITH mongodb support" >&6;}
 else

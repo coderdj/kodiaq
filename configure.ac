@@ -32,7 +32,7 @@ AS_IF([test "x$enable_master" = "xyes"], [
     AC_CHECK_LIB(boost_program_options,main,[],AC_MSG_ERROR([libboost_program_options missing.]))
     AC_CHECK_LIB(boost_filesystem,main,[],AC_MSG_ERROR([libboost_filesystem missing.]))
     AC_CHECK_LIB(boost_thread,main,[],AC_MSG_ERROR([libboost_thread missing.]))
-    AC_CHECK_LIB(mongoclient,main,[],AC_MSG_ERROR([libmongoclient missing.]))
+    AC_CHECK_LIB(mongocxx,main,[],AC_MSG_ERROR([libmongocxx missing.]))
     ], [
     AM_CONDITIONAL(WITH_MASTER,false)
     ])    
@@ -112,7 +112,7 @@ AS_IF([test "x$enable_all" = "xyes"], [
     AC_CHECK_LIB(boost_program_options,main,[],AC_MSG_ERROR([libboost_program_options missing.]))
     AC_CHECK_LIB(boost_filesystem,main,[],AC_MSG_ERROR([libboost_filesystem missing.]))
     AC_CHECK_LIB(boost_thread,main,[],AC_MSG_ERROR([libboost_thread missing.]))
-    AC_CHECK_LIB(mongoclient,main,[],AC_MSG_ERROR([libmongoclient missing.]))
+    AC_CHECK_LIB(mongocxx,main,[],AC_MSG_ERROR([libmongocxx missing.]))
 
 #    AC_CHECK_LIB(protobuf,main,[],AC_MSG_ERROR([libprotobuf missing]))    
     ], [
@@ -126,9 +126,9 @@ AC_CHECK_LIB(boost_thread,main,[],[])
 AC_CHECK_LIB([ncurses],initscr,[],AC_MSG_ERROR)
 
 
-AC_CHECK_LIB(mongoclient,main)
-AS_IF([test "$ac_cv_lib_mongoclient_main" = yes], [HAVE_LIBMONGOCLIENT=1],[HAVE_LIBMONGOCLIENT=0]) 
-AM_CONDITIONAL([WITH_MONGODB],[test "$ac_cv_lib_mongoclient_main" = yes])
+AC_CHECK_LIB(mongocxx,main)
+AS_IF([test "$ac_cv_lib_mongocxx_main" = yes], [HAVE_LIBMONGOCLIENT=1],[HAVE_LIBMONGOCLIENT=0]) 
+AM_CONDITIONAL([WITH_MONGODB],[test "$ac_cv_lib_mongocxx_main" = yes])
 
 #Check for libpbf (output file format) support and compile with it if it's there
 AC_CHECK_LIB(protobuf,main)
@@ -142,6 +142,6 @@ AM_CONDITIONAL([WITH_LIBPBF],[test "$ac_cv_lib_pbf_main" = yes])
 #AC_CONFIG_FILES([Makefile])
 AC_OUTPUT(Makefile src/ddc10/Makefile src/common/Makefile src/master/Makefile src/slave/Makefile)
 
-AS_IF([test "$ac_cv_lib_mongoclient_main" = yes], [AC_MSG_NOTICE([Compiling WITH mongodb support])],[AC_MSG_NOTICE([Compiling WITHOUT mongodb support])])
+AS_IF([test "$ac_cv_lib_mongocxx_main" = yes], [AC_MSG_NOTICE([Compiling WITH mongodb support])],[AC_MSG_NOTICE([Compiling WITHOUT mongodb support])])
 AS_IF([test "$ac_cv_lib_pbf_main" = yes], [AC_MSG_NOTICE([Compiling WITH file output support])],[AC_MSG_NOTICE([Compiling WITHOUT file output support])])
 

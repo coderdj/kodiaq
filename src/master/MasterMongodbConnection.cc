@@ -125,7 +125,7 @@ int MasterMongodbConnection::Connect(){
  
 void MasterMongodbConnection::InsertOnline(string DB, 
 					   string collection,
-					   builder::basic::document bson){
+					   bsoncxx::document bson){
   string db = collection.substr(0, collection.find(".");
   string coll = collection.substr(collection.find("."), collection.size()); 
 
@@ -176,7 +176,7 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
     koOptions *options = iterator.second;
 
     //Create a bson object with the run information
-    auto obj = builder::basic::document{};
+    auto obj = bsoncxx::builder::stream::document{};
     // Get the run number for TPC runs
     int run_number = 0;    
     if(iterator.first == "tpc"){

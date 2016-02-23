@@ -24,8 +24,8 @@ int koOptions::ReadParameterFile(string filename){
 
   // Make the bson object from the string
   try{
-    m_bson = mongo::fromjson(json_string);
-    cout<<m_bson.jsonString()<<endl;
+    m_bson = bsoncxx::from_json(json_string);
+    cout<<bsoncxx::to_json(m_bson)<<endl;
   }
   catch(...){
     std::cout<<"Error parsing file. Is it valid json?"<<std::endl;
@@ -38,7 +38,7 @@ int koOptions::ReadParameterFile(string filename){
 
 int koOptions::GetArraySize(string key){
   try{
-    return m_bson[key].Array().size();
+    return m_bson[key].get_array().size();
   }
   catch(...){
     return 0;
@@ -53,7 +53,7 @@ mongo::BSONElement koOptions::GetField(string key){
   catch(...){
     std::cout<<"Error fetching option. Key doesn't seem to exist: "<<
       key<<std::endl;
-    return mongo::BSONElement();
+    return bsoncxx::document::element;
   }
   return b;
 }
@@ -62,12 +62,12 @@ void koOptions::ToStream_MongoUpdate(string run_name,
 				     stringstream *retstream){
 
   // For dynamic collection names
-  mongo::BSONObjBuilder builder;
-  builder.append("mongo_collection", run_name );
-		 //		 koHelper::MakeDBName(run_name, 
-		 //		      m_bson["mongo_collection"].String()));
-  builder.appendElementsUnique(m_bson);
-  (*retstream)<<builder.obj().jsonString();
+  mongocxx::builder::stream::document builder{};
+  using bsoncxx::builder::core::concatenate;
+  builder << concatenate << m_bson;
+  builder<<"mongo_collection"<<run_name;
+  //  builder.appendElementsUnique(m_bson);
+  (*retstream)<<bsoncxx::to_json(builder);
 }
 
 
@@ -76,17 +76,19 @@ void koOptions::SetString(string field_name, string value){
   // This is not very beautiful, but you can't modify a BSONObj
   // So we will create a new BSON object that is a copy of the 
   // Current one and update the field
-  mongo::BSONObjBuilder builder;
-  builder.append(field_name, value);
-  builder.appendElementsUnique(m_bson);
-  m_bson = builder.obj();
+  mongocxx::builder::stream::document builder{};
+  using bsoncxx::builder::core::concatenate;
+  builder << concatenate << m_bson;
+  builder<<field_name<<value;
+  m_bson = builder.view();
 
 }
 void koOptions::SetInt(string field_name, int value){
-  mongo::BSONObjBuilder builder;
-  builder.append(field_name, value);
-  builder.appendElementsUnique(m_bson);
-  m_bson = builder.obj();
+  mongocxx::builder::stream::document builder{};
+  using bsoncxx::builder::core::concatenate;
+  builder << concatenate << m_bson;
+  builder<<field_name<<value;
+  m_bson = builder.view();
 }
 
 link_definition_t koOptions::GetLink(int index){
@@ -104,11 +106,17 @@ link_definition_t koOptions::GetLink(int index){
   // Fill object
   link_definition_t retlink;
   try{
-    mongo::BSONObj link_obj = m_bson["links"].Array()[index].Obj();
-    retlink.type = link_obj["type"].String();
-    retlink.crate = link_obj["crate"].Int();
-    retlink.id = link_obj["link"].Int();
-    retlink.node = link_obj["reader"].Int();
+    auto link_obj = m_bson["links"].get_array()[index].get_document();
+    if(link_obj) return dummy;
+
+    if(! (link_obj["type"] && link_obj["crate"] && link_obj["link"] &&
+	  link_obj["reader"] ) )
+      return dummy;
+
+    retlink.type = link_obj["type"].get_utf8();
+    retlink.crate = link_obj["crate"].get_int32();
+    retlink.id = link_obj["link"].get_int32();
+    retlink.node = link_obj["reader"].get_int32();
   }
   catch(...){
     return dummy;
@@ -133,18 +141,25 @@ board_definition_t koOptions::GetBoard(int index){
   // Fill object 
   board_definition_t retboard;
   try{
-    mongo::BSONObj board_obj = m_bson["boards"].Array()[index].Obj();
-    retboard.type = board_obj["type"].String();
-    retboard.vme_address = koHelper::StringToHex(board_obj["vme_address"].String());
-    retboard.id = koHelper::StringToInt(board_obj["serial"].String());
-    retboard.crate = board_obj["crate"].Int();
-    retboard.link = board_obj["link"].Int();
-    retboard.node = board_obj["reader"].Int();
+    auto board_obj = m_bson["boards"].get_array()[index].get_document();
+    if(board_obj) return dummy;
+
+    if(! (board_obj["type"] && board_obj["crate"] && board_obj["link"] &&
+          board_obj["reader"] && board_obj["serial"] && board_obj["vme_address"] ))
+       return dummy;
+              
+       retboard.type = board_obj["type"].get_utf8();
+       retboard.vme_address = koHelper::StringToHex(board_obj["vme_address"].get_utf8());
+       retboard.id = koHelper::StringToInt(board_obj["serial"].get_utf8());
+       retboard.crate = board_obj["crate"].get_int32();
+       retboard.link = board_obj["link"].get_int32();
+       retboard.node = board_obj["reader"].get_int32();
+       }
+    catch(...){
+      return dummy;
+    }
+    return retboard;
   }
-  catch(...){
-    return dummy;
-  }
-  return retboard;
 }
 
 vme_option_t koOptions::GetVMEOption(int index){
@@ -163,10 +178,15 @@ vme_option_t koOptions::GetVMEOption(int index){
   // Fill object                                                                    
   vme_option_t retreg;
   try{
-    mongo::BSONObj vme_obj = m_bson["registers"].Array()[index].Obj();
-    retreg.address = koHelper::StringToHex(vme_obj["register"].String());
-    retreg.value = koHelper::StringToHex(vme_obj["value"].String());
-    retreg.board = koHelper::StringToInt(vme_obj["board"].String());
+    auto vme_obj = m_bson["registers"].get_array()[index].get_document();
+    if(vme_obj) return dummy;
+
+    if(! (vme_obj["register"] && vme_obj["value"] && vme_obj["board"] ))
+      return dummy;
+    
+    retreg.address = vme_obj["register"].get_utf8();
+    retreg.value = koHelper::StringToHex(vme_obj["value"].get_utf8());
+    retreg.board = koHelper::StringToInt(vme_obj["board"].get_int32());
     retreg.node = -1;
   }
   catch(...){

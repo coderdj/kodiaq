@@ -27,8 +27,8 @@
 /* Define to 1 if you have the `expect' library (-lexpect). */
 /* #undef HAVE_LIBEXPECT */
 
-/* Define to 1 if you have the `mongoclient' library (-lmongoclient). */
-#define HAVE_LIBMONGOCLIENT 1
+/* Define to 1 if you have the `mongocxx' library (-lmongocxx). */
+#define HAVE_LIBMONGOCXX 1
 
 /* Define to 1 if you have the `ncurses' library (-lncurses). */
 #define HAVE_LIBNCURSES 1

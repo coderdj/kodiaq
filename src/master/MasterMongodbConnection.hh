@@ -87,7 +87,8 @@ public:
   //           to the XeDAQOptions object. Returns 0 on success.
   int          PullRunMode(string name, koOptions &options);
 
-  void InsertOnline(string name, string collection,mongo::BSONObj bson);
+  void InsertOnline(string name, string collection, 
+		    bsoncxx::document bson);
   void Start(koOptions *options,string user,string comment=""){return;};
   void EndRun(string user,string comment=""){return;};
   //int  UpdateNoiseDirectory(string run_name);
@@ -98,10 +99,10 @@ public:
   int Connect();
 
   koOptions                 *fOptions;
-  map <string,mongo::OID>    fLastDocOIDs;
+  map <string,types::b_oid>    fLastDocOIDs;
   koLogger                  *fLog;
-  mongo::ConnectionString    fLogString, fMonitorString, fRunsString;
-  mongo::DBClientBase       *fLogDB, *fMonitorDB, *fRunsDB;
+  //string    fLogString, fMonitorString, fRunsString;
+  mongocxx::client          *fLogDB, *fMonitorDB, *fRunsDB;
   string                     fLogDBName,fMonitorDBName,fRunsDBName,fRunsCollection;
   string                     fBufferUser, fBufferPassword;
 };

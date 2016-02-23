@@ -3,7 +3,9 @@
 
 #include <string>
 #include <sstream>
-#include "mongo/bson/bson.h"
+#include <bsoncxx/builder/stream/document.hpp>
+#include <bsoncxx/json.hpp>
+
 
 using namespace std;
 
@@ -52,7 +54,7 @@ public:
   void SetBSON(mongo::BSONObj bson){
     m_bson = bson;
   };
-  mongo::BSONObj ExportBSON(){
+  bsoncxx::document ExportBSON(){
     return m_bson;
   };
 
@@ -70,28 +72,28 @@ public:
   vme_option_t GetVMEOption(int x);
  
   int GetInt(string field_name){    
-    return GetField(field_name).Int();
+    return GetField(field_name).get_int32();
   };
   string GetString(string field_name){
-    return GetField(field_name).String();
+    return GetField(field_name).get_utf8();
   };
   void SetString(string field_name, string value);
   void SetInt(string field_name, int value);
 
   bool GetBool(string field_name){
-    return GetField(field_name).Bool();
+    return GetField(field_name).get_bool();
   };
 
   void ToStream(stringstream *retstream){
-    (*retstream)<<m_bson.jsonString();
+    (*retstream)<<bsoncxx::to_json(m_bson);
   };
   
   void ToStream_MongoUpdate(string run_name, stringstream *retstream);
 
 private:
   int GetArraySize(string key);
-  mongo::BSONElement GetField(string key);
-  mongo::BSONObj m_bson;
+  bsoncxx::document::element GetField(string key);
+  bsoncxx::document m_bson;
   bool fLoaded;
 
 };
