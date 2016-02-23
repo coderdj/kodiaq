@@ -129,8 +129,7 @@ libkodiaq_la_LIBADD =
 am_libkodiaq_la_OBJECTS = libkodiaq_la-kbhit.lo \
 	libkodiaq_la-koHelper.lo libkodiaq_la-koLogger.lo \
 	libkodiaq_la-koOptions.lo libkodiaq_la-koNet.lo \
-	libkodiaq_la-koNetClient.lo libkodiaq_la-koNetServer.lo \
-	libkodiaq_la-NCursesUI.lo
+	libkodiaq_la-koNetClient.lo libkodiaq_la-koNetServer.lo
 libkodiaq_la_OBJECTS = $(am_libkodiaq_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -341,9 +340,9 @@ top_srcdir = @top_srcdir@
 #makefile.am for common
 ACLOCAL_AMFLAGS = -I m4
 lib_LTLIBRARIES = libkodiaq.la
-libkodiaq_la_SOURCES = kbhit.cc kbhit.hh koHelper.hh koHelper.cc koLogger.hh koLogger.cc koOptions.hh koOptions.cc koNet.hh koNet.cc koNetClient.hh koNetClient.cc koNetServer.hh koNetServer.cc NCursesUI.hh NCursesUI.cc
+libkodiaq_la_SOURCES = kbhit.cc kbhit.hh koHelper.hh koHelper.cc koLogger.hh koLogger.cc koOptions.hh koOptions.cc koNet.hh koNet.cc koNetClient.hh koNetClient.cc koNetServer.hh koNetServer.cc
 libkodiaq_la_CPPFLAGS = -I$(top_srcdir)/src/common -Wall -g -DLINUX \
-	-fPIC -std=c++11 $(am__append_2)
+	-fPIC $(am__append_2)
 libkodiaq_la_LDFLAGS = -shared -lncurses $(am__append_1)
 all: all-am
 
@@ -424,7 +423,6 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libkodiaq_la-NCursesUI.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libkodiaq_la-kbhit.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libkodiaq_la-koHelper.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libkodiaq_la-koLogger.Plo@am__quote@
@@ -502,13 +500,6 @@ libkodiaq_la-koNetServer.lo: koNetServer.cc
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='koNetServer.cc' object='libkodiaq_la-koNetServer.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libkodiaq_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libkodiaq_la-koNetServer.lo `test -f 'koNetServer.cc' || echo '$(srcdir)/'`koNetServer.cc
-
-libkodiaq_la-NCursesUI.lo: NCursesUI.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libkodiaq_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libkodiaq_la-NCursesUI.lo -MD -MP -MF $(DEPDIR)/libkodiaq_la-NCursesUI.Tpo -c -o libkodiaq_la-NCursesUI.lo `test -f 'NCursesUI.cc' || echo '$(srcdir)/'`NCursesUI.cc
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libkodiaq_la-NCursesUI.Tpo $(DEPDIR)/libkodiaq_la-NCursesUI.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='NCursesUI.cc' object='libkodiaq_la-NCursesUI.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libkodiaq_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libkodiaq_la-NCursesUI.lo `test -f 'NCursesUI.cc' || echo '$(srcdir)/'`NCursesUI.cc
 
 mostlyclean-libtool:
 	-rm -f *.lo

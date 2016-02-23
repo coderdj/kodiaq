@@ -22,7 +22,7 @@
 #define HAVE_LIBBOOST_THREAD 1
 
 /* Define to 1 if you have the `CAENVME' library (-lCAENVME). */
-#define HAVE_LIBCAENVME 1
+/* #undef HAVE_LIBCAENVME */
 
 /* Define to 1 if you have the `expect' library (-lexpect). */
 /* #undef HAVE_LIBEXPECT */
@@ -43,7 +43,7 @@
 #define HAVE_LIBPTHREAD 1
 
 /* Define to 1 if you have the `snappy' library (-lsnappy). */
-#define HAVE_LIBSNAPPY 1
+/* #undef HAVE_LIBSNAPPY */
 
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
@@ -107,7 +107,7 @@
 /* #undef WITH_DDC10 */
 
 /* Compile master module */
-/* #undef WITH_MASTER */
+#define WITH_MASTER /**/
 
 /* Compile slave module */
-#define WITH_SLAVE /**/
+/* #undef WITH_SLAVE */

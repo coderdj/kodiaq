@@ -18,7 +18,12 @@
 #include <koOptions.hh>
 #include <koLogger.hh>
 #include <koHelper.hh>
-#include "mongo/client/dbclient.h"
+
+#include <bsoncxx/builder/stream/document.hpp>
+#include <bsoncxx/json.hpp>
+
+#include <mongocxx/client.hpp>
+#include <mongocxx/instance.hpp>
 
 class MasterMongodbConnection
 {

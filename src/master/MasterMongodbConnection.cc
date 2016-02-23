@@ -24,8 +24,7 @@ MasterMongodbConnection::MasterMongodbConnection()
    fRunsDB = NULL;
    fLogDBName=fMonitorDBName=fRunsDBName="run";
    fBufferUser=fBufferPassword="";
-   fRunsCollection="runs";
-   mongo::client::initialize();
+   fRunsCollection="runs";   
 }
 
 MasterMongodbConnection::MasterMongodbConnection(koLogger *Log)
@@ -38,7 +37,6 @@ MasterMongodbConnection::MasterMongodbConnection(koLogger *Log)
    fLogDBName=fMonitorDBName=fRunsDBName="run";
    fBufferUser=fBufferPassword="";
    fRunsCollection="runs";
-   mongo::client::initialize();
 }
 
 MasterMongodbConnection::~MasterMongodbConnection()
@@ -52,15 +50,9 @@ int MasterMongodbConnection::SetDBs(string logdb, string monitordb,
 				    string bufferPassword){//, string user,
   //				    string password, string dbauth){
   string errmsg="";
-  fLogString = mongo::ConnectionString::parse(logdb, errmsg);
-  if(!fLogString.isValid()) cout<<"Proceeding without mongodb log "<<errmsg<<endl;
-
-  fMonitorString = mongo::ConnectionString::parse(monitordb, errmsg);  
-  if(!fMonitorString.isValid()) cout<<"Proceeding without monitor DB "<<errmsg<<endl;
-  fRunsString = mongo::ConnectionString::parse(runsdb, errmsg);
-  if(!fRunsString.isValid()) cout<<"Proceeding without runs DB "<<errmsg<<endl;
-  if(fRunsString.isValid() && fLogString.isValid() && fMonitorString.isValid())
-    cout<<"All mongodb connection strings confirmed valid"<<endl;
+  fLogString = logdb;
+  fMonitorString = monitordb;
+  fRunsString = runsdb;
 
   fBufferUser = bufferUser;
   fBufferPassword=bufferPassword;
@@ -89,153 +81,70 @@ int MasterMongodbConnection::Connect(){
     delete fRunsDB;
 
   // Connect logdb
-  if(fLogString.isValid()){
-    try{
-      fLogDB = new mongo::DBClientConnection( true );
-      //cout<<"LOG DB: "<<logdb<<" "<<fLogDB << endl;
-      //string errmess;
-      //fLogDB->connect( fLogString.toString() );//hp, errmess );
-      string errmess = "";
-      fLogDB = fLogString.connect(errmess);
-
-      /*if(user != ""){
-	cout<<"Auth with "<<user<<" "<<password<<endl;
-	fLogDB->auth(dbauth, user, password, errmess, true);
-	//	fLogDB->auth(BSON("user"<<user<<"pwd"<<password<<"mechanism"<<"SCRAM-SHA-1"));
-	}*/
-    }
-    catch(const mongo::DBException &e){
+  try{
+    fLogDB = new mongocxx::client{fLogDB};            
+  }
+    catch(const mongocxx::exception &e){
       delete fLogDB;
       fLogDB = NULL;
-      if(fLog!=NULL) fLog->Error("Problem connecting to log mongo. Caught exception " + 
-				 string(e.what()));        
+      if(fLog!=NULL) 
+	fLog->Error("Problem connecting to log mongo. Caught exception " + 
+		    string(e.what()));        
       logconnected = false;
-    }
-  }
+    }  
   
   // Connect monitor db
-  if( fMonitorString.isValid() ){
     try{
-      //fMonitorDB = new mongo::DBClientConnection( true );
-      //fMonitorDB->connect( fMonitorString.toString() );
-      string errmess = "";
-      fMonitorDB = fMonitorString.connect(errmess);
-      //string errmess="";
-      /*if(user != "")
-	fMonitorDB->auth(dbauth, user, password, errmess, true);
-      */
-
+      fLogDB = new mongocxx::client{fMonitorString};
     }
-    catch( const mongo::DBException &e ){
+    catch( const mongocxx::exception &e ){
       delete fMonitorDB;
       fMonitorDB = NULL;
-      if(fLog!=NULL) fLog->Error("Problem connecting to monitor mongo. Caught exception " +
-				 string(e.what()));
+      if(fLog!=NULL) 
+	fLog->Error("Problem connecting to monitor mongo. Caught exception " +
+		    string(e.what()));
       monitorconnected = false;
     }
-  }
   
   // Connect to runs db
-  if( fRunsString.isValid()){
     try{
-      //fRunsDB = new mongo::DBClientConnection( true );
-      //fRunsDB->connect( fRunsString.toString() );
-      string errmess = "";
-      fRunsDB = fRunsString.connect(errmess);
-      //string errmess="";
-      //if(user != "")
-      //fRunsDB->auth(dbauth, user, password, errmess, true);
-
+      fLogDB = new mongocxx::client{fRunsString};
     }
-    catch( const mongo::DBException &e ){
+    catch( const mongocxx::exception &e ){
       delete fRunsDB;
       fRunsDB = NULL;
-      if(fLog!=NULL) fLog->Error("Problem connecting to runs mongo. Caught exception " +
-				 string(e.what()) );
+      if(fLog!=NULL) 
+	fLog->Error("Problem connecting to runs mongo. Caught exception " +
+		    string(e.what()) );
       runsconnected = false;
     }
-  }  
-  if( logconnected && monitorconnected && runsconnected && 
-      fLogString.isValid() && fRunsString.isValid() && fMonitorString.isValid() )
-    return 0;
-  return -1;
+    if( logconnected && monitorconnected && runsconnected )     
+      return 0;
+    return -1;
 }
  
 void MasterMongodbConnection::InsertOnline(string DB, 
 					   string collection,
-					   mongo::BSONObj bson){
+					   builder::basic::document bson){
+  string db = collection.substr(0, collection.find(".");
   string coll = collection.substr(collection.find("."), collection.size()); 
-  //collection = "run" + coll;
 
   // Choose proper DB
-  mongo::DBClientBase *thedb = NULL;
-  if( DB == "monitor"){
-    thedb = fMonitorDB;
-  }
-  else if( DB=="runs"){
-    thedb = fRunsDB;
-  }
-  else if( DB=="log"){
+  mongocxx::client *thedb = NULL;
+  if( DB == "monitor")
+    thedb = fMonitorDB;  
+  else if( DB=="runs")
+    thedb = fRunsDB;  
+  else if( DB=="log")
     thedb = fLogDB;
-  }
   
-  // Try for the insertion. If it fails then the DB connection must be bad.
-  // to avoid spamming the log files just bring the DB connection down. 
-  // we can add a 'reconnect' command to the master to bring it up again if the 
-  // problem is solved.
-  if(thedb != NULL){
-    try{
-      thedb->insert(collection,bson);
-    }
-    catch(const mongo::DBException &e){
+  auto col = c[db][coll];
 
-      // Our DB seems to be down. Try once to reconnect
-      //if(Connect()==0)
-      //InsertOnline(DB, collection, bson);
-      
+  if(thedb != NULL)
+    optional<result::insert_one> res = col->insert_one(bson);
 
-      if( fLog!= NULL ){
-	fLog->Error("Failed inserting to DB '" + DB + "'. The DB seems to be down or unreachable. Continuing without that DB. Offending collection: " + collection + ". Error: " + e.what());
-      }
-      if( DB=="monitor"){
-	delete fMonitorDB;
-	fMonitorDB = NULL;
-      }
-      else if(DB=="runs"){
-	delete fRunsDB;
-	fRunsDB = NULL;
-      }
-      else if(DB=="log"){
-	delete fLogDB;
-	fLogDB = NULL;
-      }	  	      
-    }
-  }
-  else{
-    if(Connect()==0)
-      InsertOnline(DB, collection, bson);
-  }
 }
 
-/*int MasterMongodbConnection::UpdateNoiseDirectory(string run_name){
-  // disabled for now
-  return 0;
-  if(run_name == "" || fMonitorDB == NULL)
-    return -1;
-
-  // See if it exists
-  mongo::BSONObjBuilder query;
-  query.append("run_name", run_name);
-  mongo::BSONObj res = fMonitorDB->findOne("noise.directory" , query.obj() );
-  if(res.isEmpty()){    
-    mongo::BSONObjBuilder builder;
-    builder.append("run_name", run_name);
-    builder.append("collection", run_name);
-    builder.appendTimeT("date", koLogger::GetCurrentTime() );
-    InsertOnline("monitor","noise.directory",builder.obj());
-  }
-  return 0;
-  }*/
 int MasterMongodbConnection::InsertRunDoc(string user, string name, 
 					  string comment, 
 					  map<string,koOptions*> options_list,
@@ -255,153 +164,100 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
 		  	     
 */
 {
+  // Super useful
+  using builder::stream::open_document;
+  using builder::stream::close_document;
+  using builder::stream::open_array;
+  using builder::stream::close_array;
 
   for ( auto iterator: options_list){
+    
+    // Our options object
+    koOptions *options = iterator.second;
 
     //Create a bson object with the run information
-    mongo::BSONObjBuilder builder;
-    builder.genOID();
-    
-    if(fLog!=NULL) fLog->Message("IN RUN DOC");
-    
+    auto obj = builder::basic::document{};
     // Get the run number for TPC runs
-    int run_number = 0;
-    mongo::BSONObj obj;
+    int run_number = 0;    
     if(iterator.first == "tpc"){
-      try{
-	obj = fMonitorDB->findOne(fRunsDBName+"."+fRunsCollection,
-				  mongo::Query(BSON("detector" << "tpc")).sort("number",-1));
-	if(!obj.isEmpty())
-	  run_number = obj.getIntField("number")+1;
-      }
-      catch (...){
-	cout<<"Can't query runs DB"<<endl;
-	return -1;
-      }
+      mongocxx::collection coll = fRunsDB[fRunsDBName][fRunsCollection];
+      
+      // Grab the most recent runs doc and get the run number
+      optional<bsoncxx::document::view> doc 
+	= coll.find_one(document{}<<"detector"<<"tpc"<<finalize,
+			document{}<<"number"<<-1<<finalize);
+      
+      if(!doc.empty())
+	run_number = doc["number"].get_int32()+1;
     }
-
+    
     // Top level stuff
-    builder.append("name",name);
-    builder.append("user",user);
-    builder.append("detector", iterator.first);
-    builder.append("number", run_number);
     time_t currentTime;
     time(&currentTime);
-    builder.appendTimeT("start",currentTime);
+    obj << "name" << name << "user" << user << "detector" << iterator.first <<
+    "number" << run_number << "start" << currentTime;
+
+    // Reader doc
+    bool DPP=true;
+    for(int x=0;x<options->GetVMEOptions();x++){
+      if(options->GetVMEOption(x).address == 0x8080
+         && options->GetVMEOption(x).value&(1 << 24))
+        DPP=false;
+    }
+    obj << "reader" << open_document << "ini" << options->ExportBSON() 
+	<< "self_triggger" << DPP << close_document;
     
-    string type="None";
-    
-    //mongo::BSONObjBuilder detlist;
-    //vector<string> detectors;  
-    
-    koOptions *options = iterator.second;    
-    // First create the collection on the buffer db 
-    // so the event builder can find it. Index by time and module.
-    mongo::DBClientBase *bufferDB;
+    // Data field                                                                   
+    if(options->GetInt("write_mode")==2)
+      obj << "data" << open_array << open_document << "type" << "untriggered" 
+	  << "status" << "tranferring" << "location" 
+	  << options->GetString("mongo_address") << "collection " << name 
+	  << "compressed" << options->GetInt("compression") << close_document 
+	  << close_array;
+
+    // Trigger field
+    obj << "trigger" << open_document << "mode" 
+	<< options->GetString("trigger_mode") << "ended" << false;
+    if(options->GetString("trigger_mode") != "ignore")
+      obj << "status" <<  "waiting_to_be_processed";
+    obj << close_document;
+
+    // Source field   
+    string type = options->GetString("source_type");
+    obj << "source" << open_document << "type" << type;
+    if(type=="LED")
+      obj << "frequency" << options->GetInt("pulser_freq");
+    obj << close_document;
+
+    // Comment field
+    if(comment != "")
+      obj << "comments" << open_array << open_document << "text" << comment
+	  << "date" << currentTime << "user" << user << close_document 
+	  << close_array;
+
+    // Insert the run doc
+    InsertOnline("runs",fRunsDBName+"."+fRunsCollection,obj);
+
+    // Now create the collection on the buffer DB and index
     if( options->GetInt("write_mode") == 2 ){ // write to mongo
-      string errstring;
+
+      // Add user and PW back to string
       string connstring = options->GetString("mongo_address");
       if(fBufferUser!="" && fBufferPassword!="")
 	connstring = "mongodb://" + fBufferUser + ":" + fBufferPassword + "@" +
 	  connstring.substr(10, connstring.size()-10);
-      mongo::ConnectionString cstring =
-	mongo::ConnectionString::parse(connstring,  errstring);
+      mongocxx::client buffer{connstring};
       
-      // Check if string is valid   
-      if(!cstring.isValid())
-	SendLogMessage( "Problem creating index in buffer DB. Invalid address. " +
-                        errstring, KOMESS_WARNING );	      
+      bsoncxx::builder::stream::document index;
+      index << "time" << 1 << "endtime" << 1;
       
-      try     {
-	errstring = "";
-	bufferDB = cstring.connect(errstring);	
-      }
-      catch(const mongo::DBException &e)    {
-	SendLogMessage( "Problem connecting to mongo buffer. Caught exception " + 
-			string(e.what()), KOMESS_ERROR );
-	return -1;
-      }
-      string collectionName = options->GetString("mongo_database") + ".";
-      if(collection == "DEFAULT") 
-	collectionName += options->GetString("mongo_collection");
-      else 
-	collectionName += collection;
-      bufferDB->createCollection( collectionName );
-      bufferDB->createIndex( collectionName,
-			     mongo::fromjson( "{ time: 1, endtime: 1 }" ) );
-      delete bufferDB;
-    }
-    
-    mongo::BSONObjBuilder reader;    
-    reader.append("ini", options->ExportBSON() );
-    // Find the VME option corresponding to DPP
-    bool DPP=true;
-    for(int x=0;x<options->GetVMEOptions();x++){
-      if(options->GetVMEOption(x).address == 0x8080 
-	 && options->GetVMEOption(x).value&(1 << 24))
-	DPP=false;
-    }
-    reader.append("self_trigger", DPP);
-    builder.append("reader",reader.obj());
-
-    // DATA field
-    if(options->GetInt("write_mode")==2){
-      mongo::BSONArrayBuilder data_sub;
-      mongo::BSONObjBuilder data_entry;
-      data_entry.append( "type", "untriggered");
-      data_entry.append("status", "transferring");
-      data_entry.append( "location", options->GetString("mongo_address") );      
-      data_entry.append("collection", name);//options->GetString("mongo_collection"));
-      data_entry.append( "compressed", options->GetInt("compression"));
-      data_sub.append(data_entry.obj());
-      builder.appendArray( "data", data_sub.arr() );
-    }
-
-    // TPC ONLY - trigger info
-    //if(iterator.first == "tpc"){
-      // event builder sub object
-      mongo::BSONObjBuilder trigger_sub; 
-      trigger_sub.append( "mode",options->GetString("trigger_mode") );
-      trigger_sub.append( "ended", false );
-      if(options->GetString("trigger_mode") != "ignore")
-	trigger_sub.append( "status", "waiting_to_be_processed" );
+      db = buffer[options->GetString("mongo_database")];
+      db[options->GetString("mongo_collection")].create_index(index.view(), {});
       
-      builder.append( "trigger", trigger_sub.obj() );
-      //}
-
-    if(iterator.first == "tpc" || type == "")
-      type = options->GetString("source_type");
-    mongo::BSONObjBuilder source;
-    source.append("type", type);
-    if(type=="LED"){
-      source.append("frequency", options->GetInt("pulser_freq"));
     }
-    builder.append("source", source.obj());
-
-    //builder.append("runmode", runmode);
-
-    // if comment, add comment sub-object                                             
-    if(comment != ""){
-      mongo::BSONArrayBuilder comment_arr;
-      mongo::BSONObjBuilder comment_sub;    
-      comment_sub.append( "text", comment);
-      comment_sub.appendTimeT( "date", currentTime);//+offset );
-      comment_sub.append( "user", user );
-      comment_arr.append( comment_sub.obj() );
-      builder.appendArray( "comments", comment_arr.arr() );
-    }
-    
-    //insert into collection
-    mongo::BSONObj bObj = builder.obj();
-    InsertOnline("runs",fRunsDBName+"."+fRunsCollection,bObj);
-    
+        
     // store OID so you can update the end time
-    mongo::BSONElement OIDElement;
-    bObj.getObjectID(OIDElement);
-    //  if(detectors.size()==1)
-    fLastDocOIDs[iterator.first]=OIDElement.__oid();
-    //else
-    //fLastDocOIDs["all"] = OIDElement.__oid();
+    fLastDocOIDs[iterator.first]=obj.get_oid();
   }
   return 0;   
 }
@@ -430,7 +286,8 @@ int MasterMongodbConnection::UpdateEndTime(string detector)
       cout<<"Matched!"<<endl;
       if( !iterator.second.isSet() ){
 	cout<<"No OID set for detector "<<iterator.first<<endl;
-	if(fLog!=NULL) fLog->Error("MasterMongodbConnection::UpdateEndTime - Want to stop run but don't have the _id field of the run info doc");
+	if(fLog!=NULL) 
+	  fLog->Error("MasterMongodbConnection::UpdateEndTime - Want to stop run but don't have the _id field of the run info doc");
 	continue;
       }
       cout<<"OID is set"<<endl;
@@ -439,27 +296,27 @@ int MasterMongodbConnection::UpdateEndTime(string detector)
       time_t nowTime;
       time(&nowTime);
       
-      mongo::BSONObj res;
-      string onlinesubstr = "runs_new";
+      // End time
+      bsoncxx::builder::stream::document filter_builder, update_builder;
+      filter_builder << "_id" << iterator.second;
+      update_builder << "end" << nowTime;
+      fRunsDB[fRunsCollection].update_one(filter_builder.view(),
+					  update_builder.view());
       
-      mongo::BSONObjBuilder bo;
-      bo << "findandmodify" << onlinesubstr.c_str() << 
-	"query" << BSON("_id" << iterator.second )<<
-	"update" << BSON("$set" << BSON("end" <<
-					mongo::Date_t(1000*(nowTime))
-					<< "data.0.status" << "transferred")); 
-
-      mongo::BSONObj comnd = bo.obj();
-      assert(fRunsDB->runCommand("run",comnd,res));
+      // data field
+      bsoncxx::builder::stream::document filter_builder_2, update_builder_2;
+      filter_builder_2 << "_id" << iterator.second << "$exists" 
+		       << open_document << "data.0.status" << true 
+		       << close_document;
+      update_builder_2 << "data.0.status" << "transferred";
+      fRunsDB[fRunsCollection].update_one(filter_builder_2.view(),
+					  update_builder_2.view());
 
       // Set to a new random oid so we don't update end times twice
-      iterator.second.init();
+      bsoncxx::oid::oid newoid;
+      fLastDocOIDs[iterator.first] = newoid;
     }
   }
-  catch (const mongo::DBException &e) {
-    if(fLog!=NULL) fLog->Error("MasterMongodbConnection::UpdateEndTime - Error fetching and updating run info doc with end time stamp.");
-    return -1;
-  }   
   return 0;
 }
 
@@ -479,57 +336,41 @@ void MasterMongodbConnection::SendLogMessage(string message, int priority)
   // users then get an immediate alert
   if((priority==KOMESS_WARNING || priority==KOMESS_ERROR) 
      && fMonitorDB!=NULL ){
-    
-    mongo::BSONObj obj;
-    try{
-      obj = fMonitorDB->findOne("run.alerts",
-				mongo::Query().
-				sort("idnum",-1));    
-    }
-    catch( const mongo::DBException &e ){
-      cout<<"Failed to send log message. Maybe mongo is down."<<endl;
-      fLog->Error("Failed to send log message to mongodb");
-      fLog->Error("Missed message: " + message);
-      fLog->Error(e.what());
-      return;
-    }
 
-    if(obj.isEmpty())
+    // Grab the most recent alert
+    optional<bsoncxx::document::view> doc
+      = coll.find_one({}, document{}<<"idnum"<<-1<<finalize);
+
+    if(obj.empty())
       ID=0;
     else
-      ID = obj.getIntField("idnum")+1;
+      ID = obj["idnum"].get_int32()+1;
 
-    mongo::BSONObjBuilder alert;
-    alert.genOID();
-    alert.append("idnum",ID);
-    alert.append("priority",priority);
-    alert.appendTimeT("timestamp",currentTime);
-    alert.append("sender","dispatcher");
-    alert.append("message",message);
-    alert.append("addressed",false);
-    InsertOnline("monitor", fMonitorDBName+".alerts",alert.obj());
+    bsoncxx::builder::stream::document alert;
+    alert << "idnum" << ID << "priority" << priority << "timestamp" << 
+      currentTime << "sender" << "dispatcher" << "message" << message <<
+      "addressed" << false;
+    InsertOnline("monitor", fMonitorDBName + "." + "alerts", alert);
   }
 
   stringstream messagestream;
   string savemessage;
   if(priority==KOMESS_WARNING){
-    messagestream<<"The dispatcher has issued a warning with ID "<<ID<<" and text: "<<message;
+    messagestream<<"The dispatcher has issued a warning with ID "
+		 <<ID<<" and text: "<<message;
     savemessage=messagestream.str();
   }
   else if(priority == KOMESS_ERROR){
-    messagestream<<"The dispatcher has issued an error with ID "<<ID<<" and text: "<<message;
+    messagestream<<"The dispatcher has issued an error with ID "
+		 <<ID<<" and text: "<<message;
     savemessage=messagestream.str();
   }
   else savemessage=message;
 
-  // Save into normal log
-   mongo::BSONObjBuilder b;
-   b.genOID();
-   b.append("message",message);
-   b.append("priority",priority);
-   b.appendTimeT("time",currentTime);
-   b.append("sender","dispatcher");
-   InsertOnline("log", fLogDBName+".log",b.obj());
+  bsoncxx::builder::stream::document b;
+  b << "message" << message << "priority" << priority << "time" << 
+    currentTime << "sender" << "dispatcher";
+  InsertOnline("log", fLogDBName+".log",b);
   
 }
 
@@ -541,23 +382,22 @@ void MasterMongodbConnection::AddRates(koStatusPacket_t *DAQStatus)
 */
 {   
   for(unsigned int x = 0; x < DAQStatus->Slaves.size(); x++)  {
-      mongo::BSONObjBuilder b;
+
       time_t currentTime;
       time(&currentTime);
-
       if(DAQStatus->Slaves[x].name.empty()){
 	fLog->Message("Corrupted slave data");
 	continue;
       }
 
-      b.appendTimeT("createdAt",currentTime);
-      b.append("node",DAQStatus->Slaves[x].name);
-      b.append("bltrate",DAQStatus->Slaves[x].Freq);
-      b.append("datarate",DAQStatus->Slaves[x].Rate);
-      b.append("runmode",DAQStatus->RunMode);
-      b.append("nboards",DAQStatus->Slaves[x].nBoards);
-      b.append("timeseconds",(int)currentTime);
-      InsertOnline("monitor", fMonitorDBName+".daq_rates",b.obj());
+      bsoncxx::builder::stream::document b;
+      b << "createdAt" << currentTime << "node" << DAQStatus->Slaves[x].name <<
+	"bltrate" << DAQStatus->Slaves[x].Freq << "datarate" << 
+	DAQStatus->Slaves[x].Rate << "runmode" << DAQStatus->RunMode <<
+	"nboards" << DAQStatus->Slaves[x].nBoards << "timeseconds" <<
+	(int)currentTime;
+      
+      InsertOnline("monitor", fMonitorDBName+".daq_rates",b);
    }     
 }
 
@@ -567,36 +407,32 @@ void MasterMongodbConnection::UpdateDAQStatus(koStatusPacket_t* DAQStatus,
   Insert DAQ status doc. The online.daqstatus should be a TTL collection.
  */
 {
-   mongo::BSONObjBuilder b;
    time_t currentTime;
    time(&currentTime);
-
-   b.appendTimeT("createdAt",currentTime);
-   b.append("timeseconds",(int)currentTime);
-   b.append("detector", detector);
-   b.append("mode",DAQStatus->RunMode);
+   
+   bsoncxx::builder::stream::document b;
+   b << "createdAt" << currentTime << "timeseconds" << (int)currentTime 
+     << "detector" << detector << "mode" << DAQStatus->RunMode;
    if(DAQStatus->DAQState==KODAQ_ARMED)
-     b.append("state","Armed");
+     b << "state" << "Armed";
    else if(DAQStatus->DAQState==KODAQ_RUNNING)
-     b.append("state","Running");
+     b << "state" << "Running";
    else if(DAQStatus->DAQState==KODAQ_IDLE)
-     b.append("state","Idle");
+     b << "state" << "Idle";
    else if(DAQStatus->DAQState==KODAQ_ERROR)
-     b.append("state","Error");
+     b << "state" << "Error";
    else
-     b.append("state","Undefined");
-   b.append("network",DAQStatus->NetworkUp);
-   b.append("currentRun",DAQStatus->RunInfo.RunNumber);
-   b.append("startedBy",DAQStatus->RunInfo.StartedBy);
+     b << "state" << "Undefined";
+   b << "network" << DAQStatus->NetworkUp << "currentRun" << 
+     DAQStatus->RunInfo.RunNumber << "startedBy" << DAQStatus->RunInfo.StartedBy;
    
    string datestring = DAQStatus->RunInfo.StartDate;
    if(datestring.size()!=0){
      datestring.pop_back();
      datestring+="+01:00";
    }
-   b.append("startTime",datestring);
-   b.append("numSlaves",(int)DAQStatus->Slaves.size());
-   InsertOnline("monitor", fMonitorDBName+".daq_status",b.obj());
+   b << "startTime" << datestring << "numSlaves" << (int)DAQStatus->Slaves.size();
+   InsertOnline("monitor", fMonitorDBName+".daq_status",b);
 }
 
 int MasterMongodbConnection::CheckForCommand(string &command, string &user, 
@@ -617,85 +453,83 @@ int MasterMongodbConnection::CheckForCommand(string &command, string &user,
     return -1;
 
   // See if something is in the DB
-   mongo::BSONObj b;
-   try{
-     if(fMonitorDB->count("run.daq_control") ==0)
-       return -1;
+  auto coll = fMonitorDB[fMonitorDBName]["daq_control"];
+  if(coll->count("run.daq_control") ==0)
+    return -1;
+  
+  bsoncxx::document::view command;
 
-     auto_ptr<mongo::DBClientCursor> cursor = 
-       fMonitorDB->query("run.daq_control", mongo::BSONObj());
-     if(cursor->more())
-       b = cursor->next();
-     else
-       return -1;
-   }
-   catch( const mongo::DBException &e ){
-     if(fLog!=NULL) {
-       fLog->Error("MongoDB error checking command DB");
-       fLog->Error(e.what());
-     }
-     return -1;
-   }
+  // Want only the newest command in case of spam
+  auto cursor = coll.find({});
+  for (auto&& doc : cursor) 
+    command = doc;
+  
+  // Strip data from the doc
+  auto com = command["command"];
+  if(com)
+    return -1;
 
+  // If this is a run start we can get the run modes
+  string modeTPC="", modeMV="";
+  bool override = false;
+  if( com == "Start" ){
+    auto mTPC = command["run_mode_tpc"];
+    auto mMV = command["run_mode_mv"];
+    auto oride = command["override"];
 
-   // Strip data from the doc
-   command=b.getStringField("command");
-   string modeTPC = "";
-   string modeMV = "";
-   if( command == "Start" ){
-     modeTPC = b.getStringField("run_mode_tpc");
-     modeMV  = b.getStringField("run_mode_mv");
-     override =  b.getBoolField("override");
+    if(mTPC || mMV || oride)
+      return -1;
+    modeTPC = mTPC.get_string();
+    modeMV = mMV.get_utf8();
+    override = oride.get_bool();
+  }
+  auto com = command["comment"];
+  auto det = command["detector"];
+  auto usr = command["user"];
+  if(com || det || usr)
+    return -1;
+  string comment = com.get_utf8();
+  string detector = det.get_utf8();
+  string user = usr.get_utf8();
+  
+  cout<<"Run mode TPC: "<<modeTPC<<" "<<b.getStringField("run_mode_tpc")<<endl;
+  cout<<"Detector: "<<detector<<endl;
 
-   }
-   else
-     override = false;
-   comment = b.getStringField("comment");
-   detector = b.getStringField("detector");
-   user=b.getStringField("user");
-
-   //cout<<"Got query: "<<b.toString()<<endl;
-   cout<<"Run mode TPC: "<<modeTPC<<" "<<b.getStringField("run_mode_tpc")<<endl;
-   cout<<"Detector: "<<detector<<endl;
-   // Remove any command docs in the DB. We can only do one at a time
-   fMonitorDB->remove("run.daq_control", 
-		   MONGO_QUERY("command"<<"Start"<<"detector"<<detector));
-   fMonitorDB->remove("run.daq_control",
-		   MONGO_QUERY("command"<<"Stop"<<"detector"<<detector)); 
-
-   // If start then get the modes
-   if(command=="Start"){
-     // Get the run modes
-     if( detector == "all" ){
-       options["tpc"] = new koOptions();
-       options["muon_veto"] = new koOptions();
-       if(PullRunMode(modeTPC, *(options["tpc"]))!=0 ||     
-	  PullRunMode(modeMV, *(options["muon_veto"])) !=0){
-	 delete options["tpc"];
-	 delete options["muon_veto"];
-	 return -1;
-       }
-     }
-     else{
-       options[detector] = new koOptions();
-       if(detector=="tpc" && PullRunMode(modeTPC, (*options[detector])) !=0){
-	 cout<<"Failed to pull tpc run mode "<<modeTPC<<endl;
-	 delete options[detector];
-	 return -1;	 
-       }
-       else if(detector=="muon_veto" &&
-	       PullRunMode(modeMV, (*options[detector]))!=0){
-	 cout<<"Failed to pull mv run mode "<<modeMV<<endl;
-	 delete options[detector];
-	 return -1;
-       }
-       stringstream pp;
+  // Remove commands in buffer. We don't want to get confused
+  coll.drop();
+  
+  // If start then get the modes. This code feels so outdated now.
+  if(command=="Start"){
+    // Get the run modes
+    if( detector == "all" ){
+      options["tpc"] = new koOptions();
+      options["muon_veto"] = new koOptions();
+      if(PullRunMode(modeTPC, *(options["tpc"]))!=0 ||     
+	 PullRunMode(modeMV, *(options["muon_veto"])) !=0){
+	delete options["tpc"];
+	delete options["muon_veto"];
+	return -1;
+      }
+    }
+    else{
+      options[detector] = new koOptions();
+      if(detector=="tpc" && PullRunMode(modeTPC, (*options[detector])) !=0){
+	cout<<"Failed to pull tpc run mode "<<modeTPC<<endl;
+	delete options[detector];
+	return -1;	 
+      }
+      else if(detector=="muon_veto" &&
+	      PullRunMode(modeMV, (*options[detector]))!=0){
+	cout<<"Failed to pull mv run mode "<<modeMV<<endl;
+	delete options[detector];
+	return -1;
+      }
+      stringstream pp;
        options[detector]->ToStream(&pp);
        cout<<pp.str()<<endl;
-     }
-   }
-     
-   return 0;
+    }
+  }  
+  return 0;
 }
 
 void MasterMongodbConnection::SendRunStartReply(int response, string message)
@@ -706,10 +540,9 @@ void MasterMongodbConnection::SendRunStartReply(int response, string message)
  */
 // replyenum : 11 - ack 12 - action 13 - start 19 - done 18 - err
 {
-  mongo::BSONObjBuilder reply;
-  reply.append("message",message);
-  reply.append("replyenum",response);
-  InsertOnline("monitor", fMonitorDBName+".dispatcherreply",reply.obj());
+  bsoncxx::builder::stream::document reply;
+  reply<<"message"<<message<<"replyenum"<<response;
+  InsertOnline("monitor", fMonitorDBName+".dispatcherreply",reply);
 }
 
 void MasterMongodbConnection::ClearDispatcherReply()
@@ -718,7 +551,8 @@ Clears the dispatcher reply db. Run when starting a new run
  */
 {
   if(fMonitorDB == NULL) return;
-  fMonitorDB->dropCollection(fMonitorDBName+".dispatcherreply");
+  auto collection = fMonitorDB[fMonitorDBName]["dispatcherreply"];
+  collection.drop();
   return;
 }
 
@@ -729,20 +563,21 @@ int MasterMongodbConnection::PullRunMode(string name, koOptions &options)
  */
 {
   if(fMonitorDB == NULL) return -1;
-  if(fMonitorDB->count(fMonitorDBName+".run_modes") ==0){
+  auto collection = fMonitorDB[fMonitorDBName]["run_modes"];
+  if(collection.count() ==0){
     cout<<"No run modes in online db"<<endl;
     return -1;
   }
+  
+  // Find the doc with this name
+  optional<bsoncxx::document::view> doc
+    = collection.find_one(document{}<<"name"<<name<<finalize);
+  
+  if(!doc.empty()){
+    options.SetBSON(res);
+    return 0;
+  }
 
-   //Find doc corresponding to this run mode
-   mongo::BSONObjBuilder query; 
-   query.append( "name" , name ); 
-   //cout<<"Looking for run mode "<<name<<endl;
-   mongo::BSONObj res = fMonitorDB->findOne(fMonitorDBName+".run_modes" , query.obj() ); 
-   if(res.nFields()==0) {
-     cout<<"Empty run mode obj"<<endl;
-     return -1; //empty object
-   }
-   options.SetBSON(res);
-   return 0;
+  cout<<"Empty run mode obj"<<endl;
+  return -1;
 }
