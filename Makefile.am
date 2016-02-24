@@ -1,6 +1,7 @@
 ACLOCAL_AMFLAGS = -I build/m4
-ACLOCAL_CPPFLAGS = -std=c++11
-
+ACLOCAL_LIBS = $(shell pkg-config --libs libmongocxx)
+ACLOCAL_CPPFLAGS = -std=c++11 $(shell pkg-config --cflags libmongocxx)
+ 
 SUBDIRS = 
 if WITH_DDC10
 SUBDIRS += src/ddc10

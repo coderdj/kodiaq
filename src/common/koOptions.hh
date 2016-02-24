@@ -3,7 +3,12 @@
 
 #include <string>
 #include <sstream>
+#include <mongocxx/client.hpp>
+#include <mongocxx/instance.hpp>
 #include <bsoncxx/builder/stream/document.hpp>
+#include <bsoncxx/builder/basic/document.hpp>
+#include <bsoncxx/document/value.hpp>
+#include <bsoncxx/builder/concatenate.hpp>
 #include <bsoncxx/json.hpp>
 
 
@@ -51,10 +56,10 @@ public:
 
   int Loaded(){ return fLoaded;}
   int ReadParameterFile(string filename);
-  void SetBSON(mongo::BSONObj bson){
+  void SetBSON(bsoncxx::document::view bson){
     m_bson = bson;
   };
-  bsoncxx::document ExportBSON(){
+  bsoncxx::document::view ExportBSON(){
     return m_bson;
   };
 
@@ -72,16 +77,16 @@ public:
   vme_option_t GetVMEOption(int x);
  
   int GetInt(string field_name){    
-    return GetField(field_name).get_int32();
+    return m_bson[field_name.c_str()].get_int32();
   };
   string GetString(string field_name){
-    return GetField(field_name).get_utf8();
+    return bsoncxx::to_json(m_bson[field_name].get_value());
   };
   void SetString(string field_name, string value);
   void SetInt(string field_name, int value);
 
   bool GetBool(string field_name){
-    return GetField(field_name).get_bool();
+    return m_bson[field_name].get_bool();
   };
 
   void ToStream(stringstream *retstream){
@@ -92,8 +97,8 @@ public:
 
 private:
   int GetArraySize(string key);
-  bsoncxx::document::element GetField(string key);
-  bsoncxx::document m_bson;
+  //bsoncxx::document::element GetField(string key);
+  bsoncxx::document::view m_bson;
   bool fLoaded;
 
 };
