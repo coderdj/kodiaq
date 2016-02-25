@@ -398,8 +398,8 @@ int MasterMongodbConnection::UpdateEndTime(string detector)
 
       mongo::BSONObjBuilder bo2;
       bo2 << "findandmodify" << onlinesubstr.c_str() <<
-	"query" << BSON("_id" << iterator.second << "$exists" << BSON ("data.0" <<
-								       true ) ) <<
+	"query" << BSON("_id" << iterator.second 
+			<< "data.0" << BSON ("$exists" << true ) ) <<
 	"update" << BSON("$set" << BSON("data.0.status"<<"transferred"));
       mongo::BSONObj comnd2 = bo2.obj();
       assert(fRunsDB->runCommand("run", comnd2, res));
