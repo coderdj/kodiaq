@@ -206,10 +206,12 @@ void CBV1724::SetActivated(bool active)
 {
    bActivated=active;
    if(active==false){
+     cout<<"Signaling final read"<<endl;
       if(pthread_mutex_trylock(&fDataLock)==0){	      
 	 pthread_cond_signal(&fReadyCondition);
 	 pthread_mutex_unlock(&fDataLock);
       }
+      cout<<"Done"<<endl;
    }      
    i_clockResetCounter=0;
 }

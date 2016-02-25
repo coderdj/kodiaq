@@ -476,8 +476,9 @@ int DigiInterface::StartRun()
    if(m_RunStartModule!=NULL)  
      m_RunStartModule->SendStopSignal();
 
-   if(m_koOptions!=NULL || !m_koOptions->Loaded())
+   if(m_koOptions==NULL || !m_koOptions->Loaded())
      return 0;
+   cout<<"Deactivating digitizers"<<endl;
 
    if(m_koOptions->GetInt("run_start") == 1){
      for(unsigned int x=0;x<m_vDigitizers.size();x++)   

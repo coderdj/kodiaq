@@ -53,9 +53,9 @@ void VMEBoard::LogSendMessage(string mess)
 
 int VMEBoard::WriteReg32(u_int32_t address, u_int32_t data)
 {
-  //stringstream str;
-  //str<<"Board: "<<fBID.id<<" writes register "<<hex<<address<<" with "<<data<<dec;
-  //LogMessage( str.str() );
+  stringstream str;
+  str<<"Board: "<<fBID.id<<" writes register "<<hex<<address<<" with "<<data<<dec;
+  LogMessage( str.str() );
 
   //  if(address == 0x8100){
   //stringstream str;                                                             
@@ -76,17 +76,17 @@ int VMEBoard::WriteReg32(u_int32_t address, u_int32_t data)
 
 int VMEBoard::ReadReg32(u_int32_t address, u_int32_t &data)
 {
-   u_int32_t temp=0;
+  stringstream str;                                                               
+  str<<"Board: "<<fBID.id<<" reads register "<<hex<<address<<" data "<<data<<dec;
+  LogMessage( str.str() );       
+
+  u_int32_t temp=0;
    int ret=0;
    if((ret=CAENVME_ReadCycle(fCrateHandle,fBID.vme_address+address,
 			     &temp,cvA32_U_DATA,cvD32))!=cvSuccess)
      return -1;      
    data=temp;
- 
-   //stringstream str;
-   //str<<"Board: "<<fBID.id<<" reads register "<<hex<<address<<" data "<<data<<dec;
-   //LogMessage( str.str() );
-   
+    
   return 0;
 }
 
