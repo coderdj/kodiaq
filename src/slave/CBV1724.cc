@@ -682,9 +682,9 @@ int CBV1724::DetermineBaselines()
       
       // Check out of bounds
       if(DACValues[(*dchannels)[x]] <= 0)
-	DACValues[(*dchannels)[x]] = 500;
-      if(DACValues[(*dchannels)[x]] >= 0xFFFF)
-	DACValues[(*dchannels)[x]] = 60000;
+	DACValues[(*dchannels)[x]] = 100;
+      if(DACValues[(*dchannels)[x]] >= 0x2000)
+	DACValues[(*dchannels)[x]] = 0x2000;
       /*
       if(discrepancy<0) //baseline is BELOW ideal
 	DACValues[(*dchannels)[x]] = (int)DACValues[(*dchannels)[x]]
