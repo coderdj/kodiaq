@@ -664,19 +664,39 @@ int CBV1724::DetermineBaselines()
 	delete[] (*buff)[x];
 	continue;
       }
+
+      u_int32_t offset = 100;
+      if(fabs(discrepancy) < 100)
+	offset = 10;
+      if(fabs(discrepancy) < 50)
+	offset = 5;
+      if(fabs(discrepancy) < 20)
+	offset = 2;
+      if(fabs(discrepancy) < 5)
+	offset = 1;
       
+      if(discrepancy < 0)
+	DACValues[(*dchannels)[x]] -= offset;
+      else 
+	DACValues[(*dchannels)[x]] += offset;
+      
+      // Check out of bounds
+      if(DACValues[(*dchannels)[x]] <= 0)
+	DACValues[(*dchannels)[x]] = 500;
+      if(DACValues[(*dchannels)[x]] >= 0xFFFF)
+	DACValues[(*dchannels)[x]] = 60000;
+      /*
       if(discrepancy<0) //baseline is BELOW ideal
-	DACValues[(*dchannels)[x]] -= 10;
-      //DACValues[(*dchannels)[x]] = (int)DACValues[(*dchannels)[x]]
-      //-((0xFFFF/2)*((-1*discrepancy)/(16383.)));
-      else if(discrepancy<300) // find adj
-	DACValues[(*dchannels)[x]] += 10;
-	//DACValues[(*dchannels)[x]] = (int)DACValues[(*dchannels)[x]]
-	//+((0xFFFF/2)*((discrepancy/(16383.))));
+	DACValues[(*dchannels)[x]] = (int)DACValues[(*dchannels)[x]]
+	  -((0xFFFF/2)*((-1*discrepancy)/(16383.)));
+      else if(discrepancy<300) // find adj	
+	DACValues[(*dchannels)[x]] = (int)DACValues[(*dchannels)[x]]
+	  +((0xFFFF/2)*((discrepancy/(16383.))));
       else //coarse adj
 	DACValues[(*dchannels)[x]] = (int)DACValues[(*dchannels)[x]]+300;
       if(DACValues[(*dchannels)[x]]>0xFFFF) DACValues[(*dchannels)[x]]=0xFFFF;
       if(DACValues[(*dchannels)[x]]<0) DACValues[(*dchannels)[x]]=0;
+      */
       delete[] (*buff)[x];
     } //end loop through channels
     LoadDAC(DACValues);
