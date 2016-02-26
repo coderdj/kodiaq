@@ -375,7 +375,8 @@ int CBV1724::InitForPreProcessing(){
     retval += (WriteReg32(CBV1724_ChannelConfReg,0x310) + 
 	       WriteReg32(CBV1724_DPPReg,0x1310000) + 
 	       WriteReg32(CBV1724_BuffOrg,0xA) +
-	       WriteReg32(CBV1724_CustomSize,0xC8) + 
+	       //WriteReg32(CBV1724_CustomSize,0xC8) + 
+	       WriteReg32(CBV1724_CustomSize, 0x1388) +
 	       WriteReg32( 0x811C, 0x840 ) + 
 	       WriteReg32(0x8000,0x310));
   else
@@ -531,9 +532,9 @@ int CBV1724::DetermineBaselines()
 
   // If there are old baselines we can use them as a starting point
   vector <int> DACValues;  
-  if(GetBaselines(DACValues,true)!=0) {
-    DACValues.resize(8,0x1000);
-  }
+  //if(GetBaselines(DACValues,true)!=0) {
+  DACValues.resize(8,0x1000);
+    //}
 
   //Load the old baselines into the board
   if(LoadDAC(DACValues)!=0) {
@@ -557,7 +558,7 @@ int CBV1724::DetermineBaselines()
   double maxDev = 2.;
   vector<bool> channelFinished(8,false);
   
-  int maxIterations = 35;
+  int maxIterations = 100;
   int currentIteration = 0;
 
   while(currentIteration<=maxIterations){    
@@ -665,11 +666,13 @@ int CBV1724::DetermineBaselines()
       }
       
       if(discrepancy<0) //baseline is BELOW ideal
-	DACValues[(*dchannels)[x]] = (int)DACValues[(*dchannels)[x]]
-	  -((0xFFFF/2)*((-1*discrepancy)/(16383.)));
+	DACValues[(*dchannels)[x]] -= 10;
+      //DACValues[(*dchannels)[x]] = (int)DACValues[(*dchannels)[x]]
+      //-((0xFFFF/2)*((-1*discrepancy)/(16383.)));
       else if(discrepancy<300) // find adj
-	DACValues[(*dchannels)[x]] = (int)DACValues[(*dchannels)[x]]
-	  +((0xFFFF/2)*((discrepancy/(16383.))));
+	DACValues[(*dchannels)[x]] += 10;
+	//DACValues[(*dchannels)[x]] = (int)DACValues[(*dchannels)[x]]
+	//+((0xFFFF/2)*((discrepancy/(16383.))));
       else //coarse adj
 	DACValues[(*dchannels)[x]] = (int)DACValues[(*dchannels)[x]]+300;
       if(DACValues[(*dchannels)[x]]>0xFFFF) DACValues[(*dchannels)[x]]=0xFFFF;
