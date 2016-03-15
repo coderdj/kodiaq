@@ -220,12 +220,17 @@ int DigiInterface::InitializeHardware(koOptions *options)
     cout<<"Running CAENVME_Init for "<<Link.id<<"."<<Link.crate<<endl;
     if((cerror=CAENVME_Init(BType,Link.id,Link.crate,
 			    &tempHandle))!=cvSuccess){
+      // Try again because 'caen'
+      if((cerror=CAENVME_Init(BType,Link.id,Link.crate,
+			      &tempHandle))!=cvSuccess){
+
       stringstream therror;
       therror<<"DigiInterface::Initialize - Error in CAEN initialization link "
 	     <<Link.id<<" crate "<<Link.crate<<": "<<cerror;
       if(m_koLog!=NULL)
 	m_koLog->Error(therror.str());      
       return -1;
+      }
     }
  
     // LOG FW
