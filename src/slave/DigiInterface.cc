@@ -220,6 +220,7 @@ int DigiInterface::InitializeHardware(koOptions *options)
     cout<<"Running CAENVME_Init for "<<Link.id<<"."<<Link.crate<<endl;
     if((cerror=CAENVME_Init(BType,Link.id,Link.crate,
 			    &tempHandle))!=cvSuccess){
+      CAENVME_End(tempHandle);
       // Try again because 'caen'
       if((cerror=CAENVME_Init(BType,Link.id,Link.crate,
 			      &tempHandle))!=cvSuccess){
