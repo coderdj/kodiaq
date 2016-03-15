@@ -279,8 +279,28 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
       else 
 	collectionName += collection;
       bufferDB->createCollection( collectionName );
-      bufferDB->createIndex( collectionName,
-			     mongo::fromjson( "{ time: 1, endtime: 1 }" ) );
+
+      if(options->HasField("mongo_sharding") &&
+	 options->GetInt("mongo_sharding")==1){
+	mongo::BSONObj retVal;
+	bufferDB->runCommand
+	  (
+	   options->GetString("mongo_database"),
+	   mongo::fromjson
+	   ( "{ shardCollection: '"+collectionName+"', key: { '_id': 'hashed' }"),
+	   retVal
+	   );
+	bufferDB->createIndex
+	  ( collectionName,
+	    mongo::fromjson( "{ time: 1, endtime: 1, _id: 'hashed'}" ) 
+	    );
+      }
+      else
+	bufferDB->createIndex
+          ( collectionName,
+            mongo::fromjson( "{ time: 1, endtime: 1}" )
+            );
+      
       delete bufferDB;
     }
     
@@ -298,6 +318,20 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
 
     // DATA field
     if(options->GetInt("write_mode")==2){
+
+      // Make mongo location string
+      string mloc = options->GetString("mongo_address");
+      int loc_index = mloc.size()-1;
+      while(mloc[loc_index] != '/'){
+	mloc.pop_back();
+	loc_index = mloc.size()-1;
+	if(loc_index < 10 ) { //mongodb://
+	  mloc = options->GetString("mongo_address");
+	  break;
+	}
+      }
+      mloc += options->GetString("mongo_database");
+      
       mongo::BSONArrayBuilder data_sub;
       mongo::BSONObjBuilder data_entry;
       data_entry.append( "type", "untriggered");
