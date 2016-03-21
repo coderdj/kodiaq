@@ -2,13 +2,23 @@
 DAQ Options
 ========================
 
-The DAQ options are stored in .ini files, usually found in
-src/master/data/RunModes and linked in the RunModes.ini file. The
-design of the program is that these files will be defined by
+DAQ options are stoed in .ini files. There are two types of DAQ options
+files. Static options are defined for the master and slave programs
+upon program start and remain the same for the life of the program.
+These files deal with master/slave connectivity and database addresses.
+Configuration of these files is defined in the 'deployment' section.
+
+This section deals with the 'run modes' ini files that define the settings
+for a particular run. These settings are reset each run and are designed
+to chage from run to run.
+
+The .ini files are in json format. This allows the files to be easily
+stored in a MongoDB collection in the full system deployment, or simply edited as
+text files for a local deployment.
+
+The design of the program is that these files will be defined by
 developers while end users will have to option to pick from several
-pre-defined modes. A suggested use of the end system is to have the
-.ini files and the RunModes.ini file with permissions set to read only
-for normal users.
+pre-defined modes. 
 
 It is important to not edit these files unless you know what you are
 doing. There is only a limited amount of sanity checking done on the
@@ -30,7 +40,8 @@ selected. However a limited amount of parsing is done.
 
 Options are given in JSON format. If the ini file is not valid JSON
 it will be rejected. You can check if you write valid JSON by using a 
-JSON validator, for example www.jsonlint.com. 
+JSON validator, for example www.jsonlint.com. In our system we allow our
+web view to validate the JSON before putting it into the database.
  
 Option names must exactly match one of the pre-defined
 options (case sensitive). The arguments can be strings, bools, or numeric.
@@ -41,21 +52,8 @@ In certain cases there are options that should only go to one slave
 PC. An example of this is the electronics definitions. The readout
 electronics are hard-wired to the slave PCs and the cabling must be
 defined in the options file. Most options allow for this directly 
-within the format. If you are trying to do something special you can also
-consider writing a composite file where different parts are sent to different 
-slaves. Just make sure each part is valid JSON on its own! 
-In order to send a particular file section to
-just one slave, the line should be preceeded by '%n' (without quotes)
-where n is the id of the slave as defined in its own network interface
-constructor. The '%' symbol must be the first symbol in the line as
-the master will parse the files searching specifically for this
-character. Please don't start any lines with the '%' symbol and then
-not follow them with an integer slave ID. Also, currently only up to
-10 slaves are supported numbered 0-9. 
+within the format. 
 
-Also of note, commenting can be done with the '#' symbol. Any lines
-preceeded by a '#' will be transmitted to the slaves but ignored by
-the parser. Embedded comments (at the end of a line) are also supported.
 
 Electronics Definitions
 ------------------------
@@ -64,7 +62,7 @@ CAEN V1724 digitizers can be read out in one of two ways: either via a
 single optical link to a V2718 crate controller, which reads the
 boards out through the VME backend, or via the optical links on the
 front of the V1724 digitizers themselves. When reading out through the
-crate controller, rates are severely limited, presumably either
+crate controller, rates are somewhat limited, presumably either
 through latency in the VME backplane or a delay introduced when
 processing the data in the crate controller module (this is a
 closed-source, commercial system so we are not sure which). Maximum
@@ -212,15 +210,15 @@ the section on board options.
 
    * **blt_size {int}** 
      Size of a block transfer. The default is the maximum size of
-     524288 bytes. There is probably no reason to change this.
-   * **run_start {int} {int}**
+     8 MB. There is probably no reason to change this unless you use a
+     different model of digitizer.
+   * **run_start {int} **
      Define how a run is started. 0 means via VME register and 1 means
      via s-in. Option 1 should always be used if you have multiple
-     digitizers as it synchronizes the clocks of the digitizers. The
-     second option is ignored if the first argument is set to zero (but must
-     still be provided). If the first argument is set to one the board
-     ID of the crate controller that will be used to start the run
-     must be provided as the second argument.
+     digitizers as it synchronizes the clocks of the digitizers.
+   * **run_start_module {int} **     
+     If run_start is set to '1', this option provides the ID of the crate
+     controller that will be used to start the run. Ignored if run_start is 0.
    * **baseline_mode {int}**
      kodiaq contains an automated routine to adjust the
      baselines so that the full dynamic range of each input channel is
@@ -228,10 +226,7 @@ the section on board options.
      Giving the argument '0' means the baselines are not determined.
      They are set via the values given in the files in
      src/slave/baselines. The argument '1' tells the program to
-     automatically determine baselines whenever the DAQ is armed. It
-     is forseen to add an option to have the baselines recalibrated every
-     hour or so without stopping the run, however this option does not
-     exist yet.
+     automatically determine baselines whenever the DAQ is armed.
    * **ddc10_options**
      If a DDC10 high energy veto module is used, this line lets you
      define the options. There is one string followed by fifteen
@@ -357,31 +352,19 @@ related to your chosen write mode.
     of the data parsing, BSON creation, and data input. As a rule this 
     number is usually set based on the number of threads in the processor 
     on the computer. 
-
-  * **noise_spectra_enable {int}** defines whether to take noise spectra (1) or
-    not (0) in the pre-processing stage of each run. 
-
-  * **noise_spectra_length {int}** length of the noise spectra in words. 
-    
-  * **noise_spectra_mongo_addr {string}** the IP or hostname of the MongoDB server
-    where the noise spectra should be written. They will bet written to 
-    the collection "noise.{run_name}". 
-  * **noise_spectra_mongo_coll {string}** defines the mongo collection where the
-    noise spectrum directory is created by the master. It is recommended to 
-    set this to "noise.directory". 
-  * **file_path {string}** in case of file output defines the output file path.
-  * **file_events_per_file {int}** in case of file output defines the number of
-    events per file. Once this number is reached a new file will be created with
-    an incremented file name and acquisition will continue.
-  * **OUTFILE_OPTIONS {string} {int} {int}**
-    This defines options for file output. The string argument defines
-    the path. Using a wildcard (*) at the end of the string only will
-    cause the end of the filename to be dynamically generated based on
-    time and date. Please don't put a wildcard anywhere except the end
-    of the string. The int defines the number of events per file.
-    The software only supports up to 10,000 files per run so don't
-    make this too huge (the last file will just get all the data if
-    this number is overrun). Writing -1 means all data in one file.
+  * **occurrence_integral {int}** defines whether or not to compute an integral
+    for each occurrence and store it in the documents. If this option is set to
+    zero, no integral is computed. If the option is non-zero it defines the number
+    of bins to use for the pre-sample baseline. This should usually be the
+    same as the pre-trigger window set via VME option.
+    NOTE: This number must be even and >=2. If the number is non-even it will be
+    reduced by one. If the number is <2 it will be set to zero. If the number is larger
+    than the sample size you will use the entire sample to determine the baseline
+    and will get bad results.
+* **lite_mode {int}** defines whether to store data or not. It is possible to run
+    the DAQ in a sort of 'lite_mode' where the raw data for each occurrence is not stored. Rather
+    one can store the occurrence_integral and the meta-data. If storage space is an issue
+    this may be a reasonable option to do many types of analysis while greatly reducing the data size.
 
 An example of how these options appear in the .ini file is shown
 below. ::
@@ -395,16 +378,9 @@ below. ::
       "mongo_database": "raw",
       "mongo_address": "xedaq00"
 
-      "file_events_per_file": 1000000,
-      "file_path": "../data/myfile",
-
       "processing_readout_threshold": 0,
       "processing_num_threads": 8,
 
-      "noise_spectra_enable": 1,
-      "noise_spectra_mongo_addr": "xedaq00",
-      "noise_spectra_mongo_coll": "noise.directory",
-      
       "compression": 1
   }
 

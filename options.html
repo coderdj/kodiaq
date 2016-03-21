@@ -40,7 +40,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 
   </head>
-  <body role="document">
+  <body>
 
 <div id="navbar" class="navbar navbar-inverse navbar-default navbar-fixed-top">
   <div class="container">
@@ -67,7 +67,7 @@
             
 
 <li>
-    <a href="deployment.html" title="Previous Chapter: Deployment of the Full System"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm">&laquo; Deployment of...</span>
+    <a href="deployment.html" title="Previous Chapter: Deployment of the Full System"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm">&laquo; Deployment of th...</span>
     </a>
   </li>
   <li>
@@ -199,13 +199,20 @@
       
   <div class="section" id="daq-options">
 <h1>DAQ Options<a class="headerlink" href="#daq-options" title="Permalink to this headline">¶</a></h1>
-<p>The DAQ options are stored in .ini files, usually found in
-src/master/data/RunModes and linked in the RunModes.ini file. The
-design of the program is that these files will be defined by
+<p>DAQ options are stoed in .ini files. There are two types of DAQ options
+files. Static options are defined for the master and slave programs
+upon program start and remain the same for the life of the program.
+These files deal with master/slave connectivity and database addresses.
+Configuration of these files is defined in the &#8216;deployment&#8217; section.</p>
+<p>This section deals with the &#8216;run modes&#8217; ini files that define the settings
+for a particular run. These settings are reset each run and are designed
+to chage from run to run.</p>
+<p>The .ini files are in json format. This allows the files to be easily
+stored in a MongoDB collection in the full system deployment, or simply edited as
+text files for a local deployment.</p>
+<p>The design of the program is that these files will be defined by
 developers while end users will have to option to pick from several
-pre-defined modes. A suggested use of the end system is to have the
-.ini files and the RunModes.ini file with permissions set to read only
-for normal users.</p>
+pre-defined modes.</p>
 <p>It is important to not edit these files unless you know what you are
 doing. There is only a limited amount of sanity checking done on the
 input of these files and improper editing could break the DAQ. If you
@@ -222,7 +229,8 @@ of the options available.</p>
 selected. However a limited amount of parsing is done.</p>
 <p>Options are given in JSON format. If the ini file is not valid JSON
 it will be rejected. You can check if you write valid JSON by using a
-JSON validator, for example www.jsonlint.com.</p>
+JSON validator, for example www.jsonlint.com. In our system we allow our
+web view to validate the JSON before putting it into the database.</p>
 <p>Option names must exactly match one of the pre-defined
 options (case sensitive). The arguments can be strings, bools, or numeric.
 Additionally, nested objects are allowed and are used for register, link,
@@ -231,20 +239,7 @@ and board definition.</p>
 PC. An example of this is the electronics definitions. The readout
 electronics are hard-wired to the slave PCs and the cabling must be
 defined in the options file. Most options allow for this directly
-within the format. If you are trying to do something special you can also
-consider writing a composite file where different parts are sent to different
-slaves. Just make sure each part is valid JSON on its own!
-In order to send a particular file section to
-just one slave, the line should be preceeded by &#8216;%n&#8217; (without quotes)
-where n is the id of the slave as defined in its own network interface
-constructor. The &#8216;%&#8217; symbol must be the first symbol in the line as
-the master will parse the files searching specifically for this
-character. Please don&#8217;t start any lines with the &#8216;%&#8217; symbol and then
-not follow them with an integer slave ID. Also, currently only up to
-10 slaves are supported numbered 0-9.</p>
-<p>Also of note, commenting can be done with the &#8216;#&#8217; symbol. Any lines
-preceeded by a &#8216;#&#8217; will be transmitted to the slaves but ignored by
-the parser. Embedded comments (at the end of a line) are also supported.</p>
+within the format.</p>
 </div>
 <div class="section" id="electronics-definitions">
 <h2>Electronics Definitions<a class="headerlink" href="#electronics-definitions" title="Permalink to this headline">¶</a></h2>
@@ -252,7 +247,7 @@ the parser. Embedded comments (at the end of a line) are also supported.</p>
 single optical link to a V2718 crate controller, which reads the
 boards out through the VME backend, or via the optical links on the
 front of the V1724 digitizers themselves. When reading out through the
-crate controller, rates are severely limited, presumably either
+crate controller, rates are somewhat limited, presumably either
 through latency in the VME backplane or a delay introduced when
 processing the data in the crate controller module (this is a
 closed-source, commercial system so we are not sure which). Maximum
@@ -401,16 +396,17 @@ the section on board options.</p>
 <div><ul>
 <li><p class="first"><strong>blt_size {int}</strong>
 Size of a block transfer. The default is the maximum size of
-524288 bytes. There is probably no reason to change this.</p>
+8 MB. There is probably no reason to change this unless you use a
+different model of digitizer.</p>
 </li>
-<li><p class="first"><strong>run_start {int} {int}</strong>
+<li><p class="first"><a href="#id1"><span class="problematic" id="id2">**</span></a>run_start {int} **
 Define how a run is started. 0 means via VME register and 1 means
 via s-in. Option 1 should always be used if you have multiple
-digitizers as it synchronizes the clocks of the digitizers. The
-second option is ignored if the first argument is set to zero (but must
-still be provided). If the first argument is set to one the board
-ID of the crate controller that will be used to start the run
-must be provided as the second argument.</p>
+digitizers as it synchronizes the clocks of the digitizers.</p>
+</li>
+<li><p class="first"><a href="#id3"><span class="problematic" id="id4">**</span></a>run_start_module {int} **
+If run_start is set to &#8216;1&#8217;, this option provides the ID of the crate
+controller that will be used to start the run. Ignored if run_start is 0.</p>
 </li>
 <li><p class="first"><strong>baseline_mode {int}</strong>
 kodiaq contains an automated routine to adjust the
@@ -419,10 +415,7 @@ used. This option lets the user set when that should happen.
 Giving the argument &#8216;0&#8217; means the baselines are not determined.
 They are set via the values given in the files in
 src/slave/baselines. The argument &#8216;1&#8217; tells the program to
-automatically determine baselines whenever the DAQ is armed. It
-is forseen to add an option to have the baselines recalibrated every
-hour or so without stopping the run, however this option does not
-exist yet.</p>
+automatically determine baselines whenever the DAQ is armed.</p>
 </li>
 <li><p class="first"><strong>ddc10_options</strong>
 If a DDC10 high energy veto module is used, this line lets you
@@ -569,37 +562,28 @@ of the data parsing, BSON creation, and data input. As a rule this
 number is usually set based on the number of threads in the processor
 on the computer.</p>
 </li>
-<li><p class="first"><strong>noise_spectra_enable {int}</strong> defines whether to take noise spectra (1) or
-not (0) in the pre-processing stage of each run.</p>
-</li>
-<li><p class="first"><strong>noise_spectra_length {int}</strong> length of the noise spectra in words.</p>
-</li>
-<li><p class="first"><strong>noise_spectra_mongo_addr {string}</strong> the IP or hostname of the MongoDB server
-where the noise spectra should be written. They will bet written to
-the collection &#8220;noise.{run_name}&#8221;.</p>
-</li>
-<li><p class="first"><strong>noise_spectra_mongo_coll {string}</strong> defines the mongo collection where the
-noise spectrum directory is created by the master. It is recommended to
-set this to &#8220;noise.directory&#8221;.</p>
-</li>
-<li><p class="first"><strong>file_path {string}</strong> in case of file output defines the output file path.</p>
-</li>
-<li><p class="first"><strong>file_events_per_file {int}</strong> in case of file output defines the number of
-events per file. Once this number is reached a new file will be created with
-an incremented file name and acquisition will continue.</p>
-</li>
-<li><p class="first"><strong>OUTFILE_OPTIONS {string} {int} {int}</strong>
-This defines options for file output. The string argument defines
-the path. Using a wildcard (*) at the end of the string only will
-cause the end of the filename to be dynamically generated based on
-time and date. Please don&#8217;t put a wildcard anywhere except the end
-of the string. The int defines the number of events per file.
-The software only supports up to 10,000 files per run so don&#8217;t
-make this too huge (the last file will just get all the data if
-this number is overrun). Writing -1 means all data in one file.</p>
+<li><p class="first"><strong>occurrence_integral {int}</strong> defines whether or not to compute an integral
+for each occurrence and store it in the documents. If this option is set to
+zero, no integral is computed. If the option is non-zero it defines the number
+of bins to use for the pre-sample baseline. This should usually be the
+same as the pre-trigger window set via VME option.
+NOTE: This number must be even and &gt;=2. If the number is non-even it will be
+reduced by one. If the number is &lt;2 it will be set to zero. If the number is larger
+than the sample size you will use the entire sample to determine the baseline
+and will get bad results.</p>
 </li>
 </ul>
 </div></blockquote>
+<ul>
+<li><dl class="first docutils">
+<dt><strong>lite_mode {int}</strong> defines whether to store data or not. It is possible to run</dt>
+<dd><p class="first last">the DAQ in a sort of &#8216;lite_mode&#8217; where the raw data for each occurrence is not stored. Rather
+one can store the occurrence_integral and the meta-data. If storage space is an issue
+this may be a reasonable option to do many types of analysis while greatly reducing the data size.</p>
+</dd>
+</dl>
+</li>
+</ul>
 <p>An example of how these options appear in the .ini file is shown
 below.</p>
 <div class="highlight-python"><div class="highlight"><pre>{
@@ -611,15 +595,8 @@ below.</p>
     &quot;mongo_database&quot;: &quot;raw&quot;,
     &quot;mongo_address&quot;: &quot;xedaq00&quot;
 
-    &quot;file_events_per_file&quot;: 1000000,
-    &quot;file_path&quot;: &quot;../data/myfile&quot;,
-
     &quot;processing_readout_threshold&quot;: 0,
     &quot;processing_num_threads&quot;: 8,
-
-    &quot;noise_spectra_enable&quot;: 1,
-    &quot;noise_spectra_mongo_addr&quot;: &quot;xedaq00&quot;,
-    &quot;noise_spectra_mongo_coll&quot;: &quot;noise.directory&quot;,
 
     &quot;compression&quot;: 1
 }
@@ -711,7 +688,7 @@ some special settings.</p>
     </p>
     <p>
         &copy; Copyright 2014, Daniel Coderre.<br/>
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.3.3.<br/>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.<br/>
     </p>
   </div>
 </footer>
