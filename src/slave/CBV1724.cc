@@ -391,137 +391,6 @@ int CBV1724::InitForPreProcessing(){
     retval = -1;
   return retval;
 }
-/*int CBV1724::DoNoiseSpectra(string mongo_addr, string mongo_coll, u_int32_t length){
-
-  // ONLY compatible with mongodb
-#ifdef HAVE_LIBMONGOCLIENT
-
-  // Requires C++11
-  vector<vector<int>> valuesPerChannel(8,vector<int>());
-  
-  // Assume already initialized
-  if(InitForPreProcessing()!=0 || WriteReg32(CBV1724_CustomSize,length)!=0){
-    LogError("Can't load registers for preprocessing");
-    return -1;
-  }
-
-  // Load baselines from local file into board
-  vector <int> DACValues;
-  if(GetBaselines(DACValues,true)!=0) {
-    DACValues.resize(8,0x1000);
-  }
-  if(LoadDAC(DACValues)!=0) {
-    LogError("Can't load to DAC!");
-    return -1;
-  }
-
-  // Initialize connection to mongodb
-  mongo::DBClientConnection *mongo = NULL;
-  try{
-    mongo::client::initialize();
-    mongo = new mongo::DBClientConnection();
-    mongo->connect(mongo_addr);
-  }
-  catch( ... ){
-    LogError("Failed to connect to mongodb in noise spectra");
-    cout<<"Noise spectra failed, could not connect to MongoDB at address "
-	<<mongo_addr<<endl;
-    delete mongo;
-    return -1;
-  }
-
-  // Get the firmware revision
-  u_int32_t fwRev=0;
-  ReadReg32(0x118C,fwRev);
-  int fwVERSION = ((fwRev>>8)&0xFF); //0 for old FW, 137 for new FW        
-
-  do{
-
-    // Enable to board      
-    WriteReg32(CBV1724_AcquisitionControlReg,0x4);
-    usleep(100);
-    //Set Software Trigger            
-    WriteReg32(CBV1724_SoftwareTriggerReg,0x1);
-    usleep(100);
-    //Disable the board                                   
-    WriteReg32(CBV1724_AcquisitionControlReg,0x0);  
-    
-    //Read the data
-    unsigned int readout = 0, thisread =0, counter=0;
-    do{
-      thisread = 0;
-      thisread = ReadMBLT();
-      readout+=thisread;
-      usleep(100);
-      counter++;
-    } while( counter < 1000 && (readout == 0));// || thisread != 0)); 
-    // Either the timer times out or the readout is non zero 
-    // but the current read is finished
-    if(readout == 0){
-      LogError("Read failed in noise spectra function.");
-      cout<<"Read failed in noise function."<<endl;
-      if(mongo!=NULL)
-	delete mongo;
-      return -1;
-    }
-    
-    // Use main kodiaq parsing
-    int rc=0;
-    u_int32_t ht=0;
-    vector <u_int32_t> *dsizes;
-    vector<u_int32_t*> *buff= ReadoutBuffer(dsizes, rc, ht);
-    vector <u_int32_t> *dchannels = new vector<u_int32_t>;
-    vector <u_int32_t> *dtimes = new vector<u_int32_t>;
-    
-    bool berr; string serr;
-    if(fwVERSION!=0)
-      DataProcessor::SplitChannelsNewFW(buff,dsizes,
-					dtimes,dchannels,berr,serr);
-    else
-      DataProcessor::SplitChannels(buff,dsizes,dtimes,dchannels,NULL,false);
-    
-    for(unsigned int x=0;x<buff->size(); x++){
-      if((*dsizes)[x]>100) (*dsizes)[x]=100;
-      int max = DataProcessor::GetBufferMax((*buff)[x], (*dsizes)[x]);
-      valuesPerChannel[(*dchannels)[x]].push_back(max);
-      delete [] (*buff)[x];
-    }
-    
-    delete buff;
-    delete dsizes;
-    delete dchannels;
-    delete dtimes;
-
-  } while(valuesPerChannel[0].size() < 500 );
-
-  // Write to mongodb
-  string collection = "noise.dump";
-  mongo::BSONObj obj = mongo->findOne(mongo_coll,
-				      mongo::Query().sort("_id",-1));
-  if(!obj.isEmpty())
-    collection = (string)("noise.") + (string)(obj.getStringField("collection"));
-  cout<<"Inserting into noise collection: "<<collection<<endl;
-  // Find the collection to write to 
-  for(unsigned int x=0; x<valuesPerChannel.size(); x++){
-    mongo::BSONObjBuilder bson;
-    bson.append("module",fBID.id);
-    bson.append("channel", x);
-    bson.append("data", valuesPerChannel[x]);
-    stringstream name;
-    name.str(std::string());
-    name<<"Noise m_"<<fBID.id<<"_ch_"<<x;
-    bson.append("name", name.str());
-    mongo->insert(collection, bson.obj());
-  }
-
-  if(mongo!=NULL)
-    delete mongo;
-  return 0;
-#else
-  return 0;
-#endif
-}
-*/
 
 int CBV1724::DetermineBaselines()
 //Rewrite of baseline routine from Marc S
@@ -573,13 +442,13 @@ int CBV1724::DetermineBaselines()
     
     // Enable to board
     WriteReg32(CBV1724_AcquisitionControlReg,0x4);
-    usleep(5000); //
+    //usleep(5000); //
     //Set Software Trigger
     WriteReg32(CBV1724_SoftwareTriggerReg,0x1);
-    usleep(5000); //
+    //usleep(5000); //
     //Disable the board
     WriteReg32(CBV1724_AcquisitionControlReg,0x0);
-    usleep(5000); //        
+    //usleep(5000); //        
 
     //Read the data                    
     unsigned int readout = 0, thisread =0, counter=0;
