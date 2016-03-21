@@ -252,12 +252,13 @@ int MasterControl::Start(string detector, string user, string comment,
   */
 
   // This might actually work. Let's assign a run name.
-  string run_name = "";
-  //if(detector == "all" || detector == "tpc")
-  //run_name = koHelper::GetRunNumber(options["tpc"]->GetString("run_prefix"));
-  //  else 
-  //run_name = koHelper::GetRunNumber(options[detector]->GetString("run_prefix"));
-  run_name = koHelper::GetRunNumber();
+ 
+  string run_name = "xenon1t";
+  for(auto iterator:options){
+    if(options[iterator.first]->HasField("run_prefix"))
+      run_name = options[iterator.first]->GetString("run_prefix");
+  }
+  run_name = koHelper::GetRunNumber(run_name);
   cout<<"This run will be called "<<run_name<<endl;
   if(web)
     mMongoDB->SendRunStartReply(12, "Assigning run name: " + run_name);

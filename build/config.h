@@ -107,7 +107,7 @@
 /* #undef WITH_DDC10 */
 
 /* Compile master module */
-/* #undef WITH_MASTER */
+#define WITH_MASTER /**/
 
 /* Compile slave module */
 #define WITH_SLAVE /**/

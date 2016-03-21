@@ -274,6 +274,7 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
 	return -1;
       }
       string collectionName = options->GetString("mongo_database") + ".";
+
       if(collection == "DEFAULT") 
 	collectionName += options->GetString("mongo_collection");
       else 
@@ -283,17 +284,25 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
       if(options->HasField("mongo_sharding") &&
 	 options->GetInt("mongo_sharding")==1){
 	mongo::BSONObj retVal;
+	bufferDB->createIndex
+          ( collectionName,
+            mongo::fromjson( "{ time: 1, endtime: 1}" )
+            );
+	bufferDB->createIndex
+          ( collectionName,
+            mongo::fromjson( "{ _id: 'hashed'}" )
+            );
+	mongo::BSONObj ret;
 	bufferDB->runCommand
 	  (
-	   options->GetString("mongo_database"),
-	   mongo::fromjson
-	   ( "{ shardCollection: '"+collectionName+"', key: { '_id': 'hashed' }"),
-	   retVal
+	   "admin",
+	   mongo::fromjson( "{ shardCollection: '"+collectionName+"', key: { _id: 'hashed' } }"),
+	   ret
 	   );
-	bufferDB->createIndex
-	  ( collectionName,
-	    mongo::fromjson( "{ time: 1, endtime: 1, _id: 'hashed'}" ) 
-	    );
+	  fLog->Message(ret.toString());
+
+	  
+	//sleep(5);
       }
       else
 	bufferDB->createIndex
@@ -336,7 +345,8 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
       mongo::BSONObjBuilder data_entry;
       data_entry.append( "type", "untriggered");
       data_entry.append("status", "transferring");
-      data_entry.append( "location", options->GetString("mongo_address") );      
+      data_entry.append("host", "reader");
+      data_entry.append( "location", mloc);      
       data_entry.append("collection", name);//options->GetString("mongo_collection"));
       data_entry.append( "compressed", options->GetInt("compression"));
       data_sub.append(data_entry.obj());

@@ -65,7 +65,7 @@ void koHelper::InitializeStatus(koStatusPacket_t &Status)
    return;
 }
 
-string koHelper::GetRunNumber()
+string koHelper::GetRunNumber(string prefix)
 {
    time_t now = koLogger::GetCurrentTime();
    struct tm *timeinfo;
@@ -73,8 +73,8 @@ string koHelper::GetRunNumber()
    
    timeinfo = localtime(&now);
    strftime(idstring,25,"%y%m%d_%H%M",timeinfo);
-   //stringstream retstream;
-   //retstream<<detector<<idstring;
+   stringstream retstream;
+   retstream<<prefix<<idstring;
    
    return idstring;//retstream.str();
 }
@@ -138,7 +138,7 @@ string koHelper::MakeDBName(string run_name, string CollectionName)
 int koHelper::UpdateRunInfo(koRunInfo_t &fRunInfo, string startedby, 
 			    string detector)
 {  
-   fRunInfo.RunNumber=koHelper::GetRunNumber();
+   fRunInfo.RunNumber=koHelper::GetRunNumber(detector);
    fRunInfo.StartedBy=startedby;
    fRunInfo.StartDate=koLogger::GetTimeString();
    fRunInfo.StartDate.resize(fRunInfo.StartDate.size()-2);

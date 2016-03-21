@@ -538,7 +538,7 @@ void DataProcessor::Process()
 
 	// Get integral if required (do before zipping)
 	int integral = 0;
-	if( (integral=m_koOptions->GetInt("occurrence_integral")) )
+	if( (integral=m_koOptions->GetInt("occurrence_integral"))>0 )
 	  integral = GetBufferIntegral( (*buffvec)[b], (*sizevec)[b], integral );	
 	
 	//zip data if required
@@ -579,7 +579,7 @@ void DataProcessor::Process()
 	  bson.append("time_reset_counter", resetCounterStart );
 	  
 	  if( m_koOptions->HasField("occurrence_integral") &&
-	      m_koOptions->GetInt("occurrence_integral") == 1 )
+	      m_koOptions->GetInt("occurrence_integral") > 0 )
 	    bson.append("integral", integral);
 
 	  if( !m_koOptions->HasField("lite_mode") || m_koOptions->GetInt("lite_mode")==0)
