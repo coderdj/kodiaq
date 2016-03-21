@@ -211,28 +211,7 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
      m_options->GetString("mongo_collection");
    
    try{
-     // New insert format. Put insvec into sub-docs of the main BSON
-     /*if(m_options->GetString("mongo_output_format") == "trigger") {
-       long long minTime = 0x7FFFFFFFFFFFFFFF, maxTime = -1; 
-       mongo::BSONArrayBuilder subdoc_array;
-       for( unsigned int x = 0; x < insvec->size(); x++ ) {
-	 // insvec should be in temporal order somewhat, but might not be perfect. 
-	 // so have to track min and max time manually
-	 long long thisTime = (*insvec)[x].getField( "time" ).Long();
-	 if ( thisTime < minTime ) minTime = thisTime;
-	 if ( thisTime > maxTime ) maxTime = thisTime;
-	 subdoc_array.append( (*insvec)[x] );
-       }
-       // Now make a master BSON doc
-       mongo::BSONObjBuilder docBuilder;
-       docBuilder.append( "time_min", minTime );
-       docBuilder.append( "time_max", maxTime );
-       docBuilder.appendArray( "bulk", subdoc_array.arr() );
-       (m_vScopedConnections[ID])->insert( cS.str(), docBuilder.obj() );
-     }
-     else*/
      ( m_vScopedConnections[ID])->insert( cS.str(), (*insvec) );
-
    }
    catch(const mongo::DBException &e)  {
      stringstream elog;

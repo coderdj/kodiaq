@@ -538,8 +538,8 @@ void DataProcessor::Process()
 
 	// Get integral if required (do before zipping)
 	int integral = 0;
-	if( m_koOptions->GetInt("occurrence_integral") )
-	  integral = GetBufferIntegral( (*buffvec)[b], (*sizevec)[b] );	
+	if( (integral=m_koOptions->GetInt("occurrence_integral")) )
+	  integral = GetBufferIntegral( (*buffvec)[b], (*sizevec)[b], integral );	
 	
 	//zip data if required
 	char* buff=NULL;
@@ -578,11 +578,14 @@ void DataProcessor::Process()
 	  bson.append("raw_time", TimeStamp);
 	  bson.append("time_reset_counter", resetCounterStart );
 	  
-	  if( m_koOptions->GetInt("occurrence_integral") == 1 )
+	  if( m_koOptions->HasField("occurrence_integral") &&
+	      m_koOptions->GetInt("occurrence_integral") == 1 )
 	    bson.append("integral", integral);
 
-	  bson.appendBinData("data",(int)eventSize,mongo::BinDataGeneral,
-			     (const void*)buff);
+	  if( !m_koOptions->HasField("lite_mode") || m_koOptions->GetInt("lite_mode")==0)
+	    bson.appendBinData("data",(int)eventSize,mongo::BinDataGeneral,
+			       (const void*)buff);
+	    
 	  vMongoInsertVec->push_back(bson.obj());
 	  
 	  if((int)vMongoInsertVec->size() >
@@ -658,23 +661,30 @@ int DataProcessor::GetBufferMax( u_int32_t *buffvec, u_int32_t size ){
   }
     return largestWord;
 }
-int DataProcessor::GetBufferIntegral( u_int32_t *buffvec, u_int32_t size ){
+int DataProcessor::GetBufferIntegral( u_int32_t *buffvec, u_int32_t size, u_int32_t bins_baseline ){
   
   // Want to loop through buffer and get integral
   // Assume as first step baseline @ 0xAFFF
   int integral = 0;
   int baseline = 0;
+
+  // bins_baseline must be even and >2=
+  if((bins_baseline%2)==1)
+    bins_baseline-=1;
+  if(bins_baseline<2)
+    return 0;
+
   for ( u_int32_t i = 0; i < size/4; i++ ){
          
     int firstWord  =  buffvec[i]&0x3FFF;
     int secondWord = (buffvec[i]>>16)&0x3FFF;
     
-    if ( i <= 3 ){
+    if ( i <= bins_baseline/2 ){
       baseline += firstWord;
       baseline += secondWord;
       
-      if ( i == 3 )
-	baseline /= 8;
+      if ( i == bins_baseline/2 )
+	baseline /= bins_baseline;
     }
     else {
       integral += baseline - firstWord;
