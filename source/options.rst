@@ -361,7 +361,7 @@ related to your chosen write mode.
     reduced by one. If the number is <2 it will be set to zero. If the number is larger
     than the sample size you will use the entire sample to determine the baseline
     and will get bad results.
-* **lite_mode {int}** defines whether to store data or not. It is possible to run
+  * **lite_mode {int}** defines whether to store data or not. It is possible to run
     the DAQ in a sort of 'lite_mode' where the raw data for each occurrence is not stored. Rather
     one can store the occurrence_integral and the meta-data. If storage space is an issue
     this may be a reasonable option to do many types of analysis while greatly reducing the data size.

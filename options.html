@@ -572,18 +572,13 @@ reduced by one. If the number is &lt;2 it will be set to zero. If the number is 
 than the sample size you will use the entire sample to determine the baseline
 and will get bad results.</p>
 </li>
-</ul>
-</div></blockquote>
-<ul>
-<li><dl class="first docutils">
-<dt><strong>lite_mode {int}</strong> defines whether to store data or not. It is possible to run</dt>
-<dd><p class="first last">the DAQ in a sort of &#8216;lite_mode&#8217; where the raw data for each occurrence is not stored. Rather
+<li><p class="first"><strong>lite_mode {int}</strong> defines whether to store data or not. It is possible to run
+the DAQ in a sort of &#8216;lite_mode&#8217; where the raw data for each occurrence is not stored. Rather
 one can store the occurrence_integral and the meta-data. If storage space is an issue
 this may be a reasonable option to do many types of analysis while greatly reducing the data size.</p>
-</dd>
-</dl>
 </li>
 </ul>
+</div></blockquote>
 <p>An example of how these options appear in the .ini file is shown
 below.</p>
 <div class="highlight-python"><div class="highlight"><pre>{
