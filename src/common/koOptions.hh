@@ -56,6 +56,7 @@ public:
     return m_bson;
   };
 
+  bool HasField(string field_name);
   int GetLinks(){
     return GetArraySize("links");  
   };

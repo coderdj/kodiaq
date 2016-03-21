@@ -45,6 +45,10 @@ int koOptions::GetArraySize(string key){
   }
 }
 
+bool koOptions::HasField(string field_name){
+  return m_bson.hasField(field_name);
+}
+
 mongo::BSONElement koOptions::GetField(string key){
   mongo::BSONElement b;
   try{
