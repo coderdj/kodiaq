@@ -537,9 +537,10 @@ void DataProcessor::Process()
 	latestTime64 = Time64;
 
 	// Get integral if required (do before zipping)
-	int integral = 0;
-	if( (integral=m_koOptions->GetInt("occurrence_integral"))>0 )
-	  integral = GetBufferIntegral( (*buffvec)[b], (*sizevec)[b], integral );	
+	float integral = 0.;
+	int baseline=0;
+	if( (baseline=m_koOptions->GetInt("occurrence_integral"))>0 )
+	  integral = GetBufferIntegral( (*buffvec)[b], (*sizevec)[b], baseline );	
 	
 	//zip data if required
 	char* buff=NULL;
@@ -661,12 +662,12 @@ int DataProcessor::GetBufferMax( u_int32_t *buffvec, u_int32_t size ){
   }
     return largestWord;
 }
-int DataProcessor::GetBufferIntegral( u_int32_t *buffvec, u_int32_t size, u_int32_t bins_baseline ){
+float DataProcessor::GetBufferIntegral( u_int32_t *buffvec, u_int32_t size, u_int32_t bins_baseline ){
   
   // Want to loop through buffer and get integral
   // Assume as first step baseline @ 0xAFFF
-  int integral = 0;
-  int baseline = 0;
+  float integral = 0;
+  float baseline = 0.;
 
   // bins_baseline must be even and >2=
   if((bins_baseline%2)==1)
@@ -679,16 +680,16 @@ int DataProcessor::GetBufferIntegral( u_int32_t *buffvec, u_int32_t size, u_int3
     int firstWord  =  buffvec[i]&0x3FFF;
     int secondWord = (buffvec[i]>>16)&0x3FFF;
     
-    if ( i <= bins_baseline/2 ){
-      baseline += firstWord;
-      baseline += secondWord;
-      
-      if ( i == bins_baseline/2 )
+    if ( i < bins_baseline/2 ){
+      baseline += float(firstWord);
+      baseline += float(secondWord);
+    }
+    else if ( i == bins_baseline/2 ){
 	baseline /= bins_baseline;
     }
     else {
-      integral += baseline - firstWord;
-      integral += baseline - secondWord;
+      integral += baseline - float(firstWord);
+      integral += baseline - float(secondWord);
     }
 
   }

@@ -106,7 +106,7 @@ private:
   // Name       : int DataProcessor::GetBufferIntegral( u_int32_t *buffvec, u_int32_t size, u_int32_t baseline_bins )
   // Purpose    : Return the integral of the pulse in the buffer in digi units. Baseline bins must be even >=2
   //
-  int               GetBufferIntegral( u_int32_t *buffvec, u_int32_t size, u_int32_t baseline_bins );
+  float               GetBufferIntegral( u_int32_t *buffvec, u_int32_t size, u_int32_t baseline_bins );
   
   // Access to private members
   //DAQRecorder*   GetDAQRecorder(){
