@@ -70,7 +70,7 @@ string koLogger::GetTimeString()
    char timestring[25];
    
    time(&rawtime);
-   timeinfo = localtime(&rawtime);
+   timeinfo = gmtime(&rawtime);
    
    strftime(timestring,25,"%Y-%m-%dT%H:%M:%S - ",timeinfo);
    string retstring(timestring);

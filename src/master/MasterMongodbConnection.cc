@@ -593,7 +593,8 @@ void MasterMongodbConnection::UpdateDAQStatus(koStatusPacket_t* DAQStatus,
    string datestring = DAQStatus->RunInfo.StartDate;
    if(datestring.size()!=0){
      datestring.pop_back();
-     datestring+="+01:00";
+     datestring.pop_back();
+     //datestring+="+01:00";
    }
    b.append("startTime",datestring);
    b.append("numSlaves",(int)DAQStatus->Slaves.size());

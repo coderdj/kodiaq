@@ -71,7 +71,7 @@ string koHelper::GetRunNumber(string prefix)
    struct tm *timeinfo;
    char idstring[25];
    
-   timeinfo = localtime(&now);
+   timeinfo = gmtime(&now);
    strftime(idstring,25,"%y%m%d_%H%M",timeinfo);
    stringstream retstream;
    retstream<<prefix<<idstring;
@@ -83,7 +83,7 @@ int koHelper::CurrentTimeInt()
 {
    time_t now = koLogger::GetCurrentTime();
    struct tm *timeinfo;
-   timeinfo = localtime(&now);
+   timeinfo = gmtime(&now);
    char yrmdhr[10];
    strftime(yrmdhr,10,"%y%m%d%H",timeinfo);
    string timestring((const char*)yrmdhr);
