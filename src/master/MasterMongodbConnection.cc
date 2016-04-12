@@ -380,6 +380,20 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
       comment_arr.append( comment_sub.obj() );
       builder.appendArray( "comments", comment_arr.arr() );
     }
+    if(comment != ""){
+      vector<string> tags = GetHashTags(comment);
+      if(tags.size()!=0){
+	mongo::BSONArrayBuilder tag_arr;
+	for(unsigned int tag=0; tag<tags.size(); tag++){
+	  mongo::BSONObjBuilder tag_sub;
+	  tag_sub.append("name", tags[tag]);
+	  tag_sub.append("user", user);
+	  tag_sub.appendTimeT("date", currentTime);	  
+	  tag_arr.append(tag_sub.obj());
+	}
+	builder.appendArray("tags", tag_arr.arr());
+      }
+    }
     
     //insert into collection
     mongo::BSONObj bObj = builder.obj();
@@ -393,6 +407,27 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
   return 0;   
 }
 
+vector<string> MasterMongodbConnection::GetHashTags(string comment){
+  vector<string> tags;
+  string openTag="";
+  bool open=false;
+  for(unsigned int x=0; x<comment.size(); x++){
+    if(open){
+      if(comment[x]!=' ')
+	openTag.push_back(comment[x]);
+      else{
+	tags.push_back(openTag);
+	openTag="";
+	open = false;
+      }
+    }
+    else if(comment[x]=='#')
+      open=true; 
+  }
+  if(open && openTag.size()>0)
+    tags.push_back(openTag);
+  return tags;
+}
 
 int MasterMongodbConnection::UpdateEndTime(string detector)
 /*
@@ -592,6 +627,7 @@ void MasterMongodbConnection::UpdateDAQStatus(koStatusPacket_t* DAQStatus,
    
    string datestring = DAQStatus->RunInfo.StartDate;
    if(datestring.size()!=0){
+     datestring.pop_back();
      datestring.pop_back();
      datestring.pop_back();
      //datestring+="+01:00";

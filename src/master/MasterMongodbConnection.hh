@@ -90,6 +90,7 @@ public:
   void ClearDispatcherReply();
 
  private:
+  vector<string> GetHashTags(string comment);
   int Connect();
 
   koOptions                 *fOptions;
