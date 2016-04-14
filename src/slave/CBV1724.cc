@@ -508,7 +508,7 @@ int CBV1724::DetermineBaselines()
 	}      
       }
       baseline/=bdiv;
-      if(fabs(maxval-minval) > 50) {
+      if(abs(maxval-minval) > 50) {
 	//stringstream error;
 	//error<<"Channel "<<(*dchannels)[x]<<" signal in baseline?";
 	//LogMessage( error.str() );	
@@ -522,7 +522,7 @@ int CBV1724::DetermineBaselines()
       // and then can more accurately adjust DAC
       double discrepancy = baseline-idealBaseline;      
       //LogMessage("Discrepancy is " + koHelper::IntToString(discrepancy));
-      if(fabs(discrepancy)<=maxDev) { 
+      if(abs(discrepancy)<=maxDev) { 
 	stringstream message;
 	message<<"Board "<<fBID.id<< " Channel "<< (*dchannels)[x]
 	       <<" finished with value "<<baseline
@@ -537,17 +537,17 @@ int CBV1724::DetermineBaselines()
 
       // Have a range of 0xFFFF
       u_int32_t offset = 1000;
-      if(fabs(discrepancy)<1000)
+      if(abs(discrepancy)<1000)
 	offset = fabs(discrepancy);
-      if(fabs(discrepancy) < 500)
+      if(abs(discrepancy) < 500)
 	offset = 100;
-      if(fabs(discrepancy) < 100)
+      if(abs(discrepancy) < 100)
 	offset = 10;
-      if(fabs(discrepancy) < 50)
+      if(abs(discrepancy) < 50)
 	offset = 5;
-      if(fabs(discrepancy) < 20)
+      if(abs(discrepancy) < 20)
 	offset = 2;
-      if(fabs(discrepancy) < 5)
+      if(abs(discrepancy) < 5)
 	offset = 1;
       
       if(discrepancy < 0)
