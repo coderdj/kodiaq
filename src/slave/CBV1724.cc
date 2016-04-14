@@ -421,7 +421,7 @@ int CBV1724::DetermineBaselines()
   double maxDev = 2.;
   vector<bool> channelFinished(8,false);
   
-  int maxIterations = 1000;
+  int maxIterations = 200;
   int currentIteration = 0;
 
   while(currentIteration<=maxIterations){    
@@ -497,8 +497,8 @@ int CBV1724::DetermineBaselines()
 	    dbase=(((*buff)[x][y])&0xFFFF);
 	  else 
 	    dbase=(((*buff)[x][y]>>16)&0xFFFF);
-	  //if(dbase == 0 ) 
-	  //continue;
+	  if(dbase == 0 ) 
+	    continue;
 	  baseline+=dbase;
 	  bdiv+=1.;
 	  if(dbase>maxval) 
@@ -512,7 +512,7 @@ int CBV1724::DetermineBaselines()
 	//stringstream error;
 	//error<<"Channel "<<(*dchannels)[x]<<" signal in baseline?";
 	//LogMessage( error.str() );	
-	LogMessage("maxval - minval is " + koHelper::IntToString(maxval-minval) + " " + koHelper::IntToString(maxval) + " " 
+	LogMessage("maxval - minval is " + koHelper::IntToString(abs(maxval-minval)) + " " + koHelper::IntToString(maxval) + " " 
 		   + koHelper::IntToString(minval) + " maybe there's a signal in the baseline.");
 	delete[] (*buff)[x];
 	continue; //signal in baseline?
