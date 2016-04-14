@@ -421,7 +421,7 @@ int CBV1724::DetermineBaselines()
   double maxDev = 2.;
   vector<bool> channelFinished(8,false);
   
-  int maxIterations = 100;
+  int maxIterations = 1000;
   int currentIteration = 0;
 
   while(currentIteration<=maxIterations){    
@@ -528,7 +528,12 @@ int CBV1724::DetermineBaselines()
 	continue;
       }
 
-      u_int32_t offset = 100;
+      // Have a range of 0xFFFF
+      u_int32_t offset = 1000;
+      if(fabs(discrepancy)<1000)
+	offset = fabs(discrepancy);
+      if(fabs(discrepancy) < 500)
+	offset = 100;
       if(fabs(discrepancy) < 100)
 	offset = 10;
       if(fabs(discrepancy) < 50)
@@ -545,9 +550,9 @@ int CBV1724::DetermineBaselines()
       
       // Check out of bounds
       if(DACValues[(*dchannels)[x]] <= 0)
-	DACValues[(*dchannels)[x]] = 100;
-      if(DACValues[(*dchannels)[x]] >= 0x2000)
-	DACValues[(*dchannels)[x]] = 0x2000;
+	DACValues[(*dchannels)[x]] = 0x0;
+      if(DACValues[(*dchannels)[x]] >= 0xFFFF)
+	DACValues[(*dchannels)[x]] = 0xFFFF;
 
       delete[] (*buff)[x];
     } //end loop through channels
