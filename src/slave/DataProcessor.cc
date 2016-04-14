@@ -575,9 +575,9 @@ void DataProcessor::Process()
 	  bson.append("module",iModule);
 	  bson.append("channel",Channel);
 	  bson.append("time",Time64);
-	  bson.append("endtime", Time64 + (long long)eventSize);
-	  bson.append("raw_time", TimeStamp);
-	  bson.append("time_reset_counter", resetCounterStart );
+	  // bson.append("endtime", Time64 + (long long)eventSize);
+	  //bson.append("raw_time", TimeStamp);
+	  //bson.append("time_reset_counter", resetCounterStart );
 	  
 	  if( m_koOptions->HasField("occurrence_integral") &&
 	      m_koOptions->GetInt("occurrence_integral") > 0 )
