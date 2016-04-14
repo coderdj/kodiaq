@@ -2,17 +2,6 @@
 kodiaq Data Acquisition Software
 =======================================
 
-0. Copyright 
---------------------------------
-
-All original kodiaq content copyright 2013 the University 
-of Bern. See the license file for license information.
-
-
-Author(s)
-	* Daniel Coderre, LHEP, University of Bern   
-   	* Lukas Bütikofer, LHEP, University of Bern
-
 1. Brief 
 ----------------------------------
 
