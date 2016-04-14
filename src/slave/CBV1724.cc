@@ -442,7 +442,7 @@ int CBV1724::DetermineBaselines()
     //usleep(5000); //
     //Disable the board
     WriteReg32(CBV1724_AcquisitionControlReg,0x0);
-    //usleep(5000); //        
+    usleep(5000);
 
     //Read the data                    
     unsigned int readout = 0, thisread =0, counter=0;
@@ -508,7 +508,7 @@ int CBV1724::DetermineBaselines()
 	}      
       }
       baseline/=bdiv;
-      if(maxval-minval > 500) {
+      if(maxval-minval > 50) {
 	//stringstream error;
 	//error<<"Channel "<<(*dchannels)[x]<<" signal in baseline?";
 	//LogMessage( error.str() );	
@@ -523,6 +523,13 @@ int CBV1724::DetermineBaselines()
       double discrepancy = baseline-idealBaseline;      
       //LogMessage("Discrepancy is " + koHelper::IntToString(discrepancy));
       if(fabs(discrepancy)<=maxDev) { 
+	stringstream message;
+	message<<"Board "<<fBID.id<< " Channel "<< (*dchannels)[x]
+	       <<" finished with value "<<baseline
+	       <<" discrepancy: "<<discrepancy<<" and value "
+	       <<DACValues[(*dchannels)[x]]<<endl;
+	LogMessage(message.str());
+	
 	channelFinished[(*dchannels)[x]]=true;
 	delete[] (*buff)[x];
 	continue;

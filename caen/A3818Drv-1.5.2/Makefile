@@ -14,7 +14,7 @@
 # Kernel >= 2.6
 ###############################
 # Comment/uncomment the following line to disable/enable debugging
-#DEBUG = y
+DEBUG = y
 
 # Add your debugging flag (or not) to EXTRA_CFLAGS 
 ifeq ($(DEBUG),y)
