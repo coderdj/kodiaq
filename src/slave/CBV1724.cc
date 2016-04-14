@@ -421,7 +421,7 @@ int CBV1724::DetermineBaselines()
   double maxDev = 2.;
   vector<bool> channelFinished(8,false);
   
-  int maxIterations = 1000;
+  int maxIterations = 200;
   int currentIteration = 0;
 
   while(currentIteration<=maxIterations){    
