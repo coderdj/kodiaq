@@ -575,7 +575,7 @@ void DataProcessor::Process()
 	  bson.append("module",iModule);
 	  bson.append("channel",Channel);
 	  bson.append("time",Time64);
-	  // bson.append("endtime", Time64 + (long long)eventSize);
+	  bson.append("endtime", Time64 + (long long)eventSize);
 	  //bson.append("raw_time", TimeStamp);
 	  //bson.append("time_reset_counter", resetCounterStart );
 	  
