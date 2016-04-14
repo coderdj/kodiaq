@@ -396,7 +396,7 @@ int CBV1724::DetermineBaselines()
   // If there are old baselines we can use them as a starting point
   vector <int> DACValues;  
   //if(GetBaselines(DACValues,true)!=0) {
-  DACValues.resize(8,0x1000);
+  DACValues.resize(8,0xFFFF - fIdealBaseline);
     //}
 
   //Load the old baselines into the board
