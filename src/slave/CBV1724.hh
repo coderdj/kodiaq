@@ -78,7 +78,8 @@ class CBV1724 : public VMEBoard {
    vector <u_int32_t>  *fSizes;
    vector <u_int32_t*> *fBuffers;
    int                  i_clockResetCounter;
-   u_int64_t            i64_blt_first_time,i64_blt_second_time,i64_blt_last_time;
+   u_int64_t            i64_blt_first_time,i64_blt_second_time,i64_blt_last_time;  
+  u_int32_t            fIdealBaseline;
    int                  fBufferOccSize;
   bool                  bOver15;
 };

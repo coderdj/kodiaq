@@ -1,4 +1,3 @@
-
 // **********************************************************
 // 
 // DAQ Control for Xenon-1t
@@ -34,6 +33,7 @@ CBV1724::CBV1724()
    i_clockResetCounter = 0;
    i64_blt_first_time = i64_blt_second_time = i64_blt_last_time = 0;
    bOver15 = false;
+   fIdealBaseline = 16000;
 }
 
 CBV1724::~CBV1724()
@@ -56,6 +56,7 @@ CBV1724::CBV1724(board_definition_t BoardDef, koLogger *kLog)
   i64_blt_first_time = i64_blt_second_time = i64_blt_last_time = 0;
   fBufferOccSize = 0;
   bOver15 = false;
+  fIdealBaseline = 16000;
 }
 
 int CBV1724::Initialize(koOptions *options)
@@ -67,27 +68,19 @@ int CBV1724::Initialize(koOptions *options)
   i_clockResetCounter=0;
   bActivated=false;
   UnlockDataBuffer();
-  
-  //Get size of BLT read using board data and options
-  //u_int32_t data;
-  //ReadReg32(CBV1724_BoardInfoReg,data);
-  //u_int32_t memorySize = (u_int32_t)((data>>8)&0xFF);
-  //ReadReg32(CBV1724_BuffOrg,data);
-  //u_int32_t eventSize = (u_int32_t)((((memorySize*pow(2,20))/
-  //(u_int32_t)pow(2,data))*8+16)/4);
-  //ReadReg32(CBV1724_BltEvNumReg,data);
   fBLTSize=options->GetInt("blt_size");
-  //fBufferSize = data*eventSize*(u_int32_t)4+(fBLTSize);
-  //fBufferSize = eventSize*data + fBLTSize;
   fBufferSize = fBLTSize;
   fReadoutThresh = options->GetInt("processing_readout_threshold");
-   
+  if(options->HasField("baseline_level"))
+    fIdealBaseline = options->GetInt("baseline_level");
+
   // Data is stored in these two vectors
   fBuffers = new vector<u_int32_t*>();
   fSizes   = new vector<u_int32_t>();
 
   // Determine baselines if required
-  if(options->GetInt("baseline_mode")==1)    {	
+  if(options->HasField("baseline_mode") && 
+     options->GetInt("baseline_mode")==1)    {	
     m_koLog->Message("Determining baselines ");
     int tries = 0;
     int ret=-1;
@@ -117,7 +110,8 @@ int CBV1724::Initialize(koOptions *options)
   }
 
   // Load baselines
-  if(options->GetInt("baseline_mode") != 2){
+  if(!options->HasField("baseline_mode") ||
+     options->GetInt("baseline_mode") != 2){
     LoadBaselines();
     m_koLog->Message("Baselines loaded from file");
   }
@@ -423,7 +417,7 @@ int CBV1724::DetermineBaselines()
   LogMessage("Baselines for firmware version " + koHelper::IntToString(fwVERSION) );
 
   //Do the magic
-  double idealBaseline = 16000.;
+  double idealBaseline = (double)fIdealBaseline;
   double maxDev = 2.;
   vector<bool> channelFinished(8,false);
   
@@ -554,18 +548,7 @@ int CBV1724::DetermineBaselines()
 	DACValues[(*dchannels)[x]] = 100;
       if(DACValues[(*dchannels)[x]] >= 0x2000)
 	DACValues[(*dchannels)[x]] = 0x2000;
-      /*
-      if(discrepancy<0) //baseline is BELOW ideal
-	DACValues[(*dchannels)[x]] = (int)DACValues[(*dchannels)[x]]
-	  -((0xFFFF/2)*((-1*discrepancy)/(16383.)));
-      else if(discrepancy<300) // find adj	
-	DACValues[(*dchannels)[x]] = (int)DACValues[(*dchannels)[x]]
-	  +((0xFFFF/2)*((discrepancy/(16383.))));
-      else //coarse adj
-	DACValues[(*dchannels)[x]] = (int)DACValues[(*dchannels)[x]]+300;
-      if(DACValues[(*dchannels)[x]]>0xFFFF) DACValues[(*dchannels)[x]]=0xFFFF;
-      if(DACValues[(*dchannels)[x]]<0) DACValues[(*dchannels)[x]]=0;
-      */
+
       delete[] (*buff)[x];
     } //end loop through channels
     LoadDAC(DACValues);
