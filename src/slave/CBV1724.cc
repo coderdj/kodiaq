@@ -442,7 +442,7 @@ int CBV1724::DetermineBaselines()
     //usleep(5000); //
     //Disable the board
     WriteReg32(CBV1724_AcquisitionControlReg,0x0);
-    usleep(5000);
+    //usleep(5000);
 
     //Read the data                    
     unsigned int readout = 0, thisread =0, counter=0;
