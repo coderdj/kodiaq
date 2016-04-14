@@ -512,7 +512,7 @@ void MasterMongodbConnection::SendLogMessage(string message, int priority)
   // For WARNINGS and ERRORS we put an additional entry into the alert DB
   // users then get an immediate alert
   if((priority==KOMESS_WARNING || priority==KOMESS_ERROR) 
-     && fMonitorDB!=NULL ){
+     && fMonitorDB!=NULL && false){
     
     mongo::BSONObj obj;
     try{

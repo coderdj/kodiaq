@@ -370,7 +370,7 @@ int CBV1724::InitForPreProcessing(){
 	       WriteReg32(CBV1724_DPPReg,0x1310000) + 
 	       WriteReg32(CBV1724_BuffOrg,0xA) +
 	       //WriteReg32(CBV1724_CustomSize,0xC8) + 
-	       WriteReg32(CBV1724_CustomSize, 0x1388) +
+	       WriteReg32(CBV1724_CustomSize, 0x1F4) +
 	       WriteReg32( 0x811C, 0x840 ) + 
 	       WriteReg32(0x8000,0x310));
   else
@@ -486,19 +486,19 @@ int CBV1724::DetermineBaselines()
 
       //compute baseline
       double baseline=0.,bdiv=0.;
-      unsigned int maxval=0.,minval=17000.;
+      int maxval=-1,minval=17000;
 
       // Loop through data
       for(unsigned int y=0;y<(*dsizes)[x]/4;y++){
 	// Second loop for first/second sample in word
 	for(int z=0;z<2;z++){
-	  u_int32_t dbase=0;
+	  int dbase=0;
 	  if(z==0) 
 	    dbase=(((*buff)[x][y])&0xFFFF);
 	  else 
 	    dbase=(((*buff)[x][y]>>16)&0xFFFF);
-	  if(dbase == 0 ) 
-	    continue;
+	  //if(dbase == 0 ) 
+	  //continue;
 	  baseline+=dbase;
 	  bdiv+=1.;
 	  if(dbase>maxval) 
@@ -508,7 +508,7 @@ int CBV1724::DetermineBaselines()
 	}      
       }
       baseline/=bdiv;
-      if(maxval-minval > 50) {
+      if(fabs(maxval-minval) > 50) {
 	//stringstream error;
 	//error<<"Channel "<<(*dchannels)[x]<<" signal in baseline?";
 	//LogMessage( error.str() );	
