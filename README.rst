@@ -6,13 +6,8 @@ kodiaq Data Acquisition Software
 --------------------------------
 
 All original kodiaq content copyright 2013 the University 
-of Bern.
+of Bern. See the license file for license information.
 
-Caen libraries and drivers included for convenience and are copyright Caen. 
-Find the most recent drivers at www.caen.it.
-
-Source and compiled code to be distributed only with 
-authorization according to the XENON1T MOU.
 
 Author(s)
 	* Daniel Coderre, LHEP, University of Bern   
