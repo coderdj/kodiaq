@@ -418,8 +418,9 @@ int CBV1724::DetermineBaselines()
 
   //Do the magic
   double idealBaseline = (double)fIdealBaseline;
-  double maxDev = 2.;
-  vector<bool> channelFinished(8,false);
+  double maxDev = 5.;
+  //vector<bool> channelFinished(8,false);
+  vector<int> channelFinished(8, 0);
   
   int maxIterations = 200;
   int currentIteration = 0;
@@ -430,7 +431,8 @@ int CBV1724::DetermineBaselines()
     //get out if all channels done
     bool getOut=true;
     for(unsigned int x=0;x<channelFinished.size();x++){
-      if(channelFinished[x]==false) getOut=false;
+      //if(channelFinished[x]==false) getOut=false;
+      if(channelFinished[x]<5) getOut=false;
     }
     if(getOut) break;
     
@@ -479,7 +481,7 @@ int CBV1724::DetermineBaselines()
     
     //loop through channels
     for(unsigned int x=0;x<dchannels->size();x++){
-      if(channelFinished[(*dchannels)[x]] || (*dsizes)[x]==0) {
+      if(channelFinished[(*dchannels)[x]]>=5 || (*dsizes)[x]==0) {
 	delete[] (*buff)[x];
 	continue;
       }
@@ -508,7 +510,7 @@ int CBV1724::DetermineBaselines()
 	}      
       }
       baseline/=bdiv;
-      if(abs(maxval-minval) > 50) {
+      if(abs(maxval-minval) > 100) {
 	//stringstream error;
 	//error<<"Channel "<<(*dchannels)[x]<<" signal in baseline?";
 	//LogMessage( error.str() );	
@@ -523,17 +525,23 @@ int CBV1724::DetermineBaselines()
       double discrepancy = baseline-idealBaseline;      
       //LogMessage("Discrepancy is " + koHelper::IntToString(discrepancy));
       if(abs(discrepancy)<=maxDev) { 
-	stringstream message;
-	message<<"Board "<<fBID.id<< " Channel "<< (*dchannels)[x]
-	       <<" finished with value "<<baseline
-	       <<" discrepancy: "<<discrepancy<<" and value "
-	       <<DACValues[(*dchannels)[x]]<<endl;
-	LogMessage(message.str());
+
+	if(channelFinished[(*dchannels)[x]]>=5){
+	  stringstream message;
+	  message<<"Board "<<fBID.id<< " Channel "<< (*dchannels)[x]
+		 <<" finished with value "<<baseline
+		 <<" discrepancy: "<<discrepancy<<" and value "
+		 <<DACValues[(*dchannels)[x]]<<endl;
+	  LogMessage(message.str());
+	}
 	
-	channelFinished[(*dchannels)[x]]=true;
+	//channelFinished[(*dchannels)[x]]=true;
+	channelFinished[(*dchannels)[x]]+=1;
 	delete[] (*buff)[x];
 	continue;
       }
+      channelFinished[(*dchannels)[x]]=0;
+
 
       // Have a range of 0xFFFF
       u_int32_t offset = 1000;
@@ -586,7 +594,8 @@ int CBV1724::DetermineBaselines()
 
   int retval=0;
   for(unsigned int x=0;x<channelFinished.size();x++){
-    if(channelFinished[x]=false) {
+    //if(channelFinished[x]=false) {
+    if(channelFinished[x]<5){
       stringstream errstream;
       errstream<<"Didn't finish channel "<<x;
       LogError(errstream.str());
