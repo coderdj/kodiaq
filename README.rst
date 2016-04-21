@@ -3,6 +3,7 @@ kodiaq Data Acquisition Software
 =======================================
 
 Maintainer: D. Coderre, University of Bern
+
 Free and open source software: GPL version 3 (see LICENSE.txt for details)
 
 
