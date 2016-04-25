@@ -2,21 +2,24 @@
 kodiaq Data Acquisition Software
 =======================================
 
+Maintainer: D. Coderre, University of Bern
+
+Free and open source software: GPL version 3 (see LICENSE.txt for details)
+
+
 1. Brief 
 ----------------------------------
 
-kodiaq is a networked DAQ software inferface for XENON1T.
-It is designed to read CAEN V1724 digitizers in parallel
-from multiple reader PCs in order to achieve high speeds
-without sacrificing synchronization or control. 
+kodiaq is a DAQ control program based on CAEN digitizer hardware. It 
+allows the configuration of a network of readout PCs controlled by a 
+single master in order to facilitate horizontal scaling to reach very 
+high readout speeds. 
 
-The program can either be run as a single instance standalone program 
-for a one-machine DAQ deployment (a test stand for example) or in full 
-networked mode.
+In addition to the networked high-throughput mode, kodiaq can also 
+be run standalone as a single instance and controlled from the command line.
 
-In networked mode a single dispatcher controls an unlimited number of
-reader PCs. The dispatcher can either be controlled by simple text commands
-from the console or by the XENON1T online monitoring web interface.
+The code is designed to be used with the emo (http://www.github.com/coderdj/emo)
+web interface. 
 
 Please see the full documentation at http://xenon1t.github.io/kodiaq/
 
