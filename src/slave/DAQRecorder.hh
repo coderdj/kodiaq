@@ -75,7 +75,7 @@ class DAQRecorder
 #ifdef HAVE_LIBMONGOCLIENT
 
 #include "mongo/client/dbclient.h"
-
+//#include "mongo/write_result.h"
 /*! \brief Derived class for recording to a mongodb database
    
       Derived class of DAQRecorder designed to insert data into a mongodb

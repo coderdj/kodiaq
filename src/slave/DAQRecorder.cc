@@ -211,7 +211,29 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
      m_options->GetString("mongo_collection");
    
    try{
-     ( m_vScopedConnections[ID])->insert( cS.str(), (*insvec) );
+
+     // Use bulk op API     
+     mongo::BulkOperationBuilder bulky = m_vScopedConnections[ID]->
+       initializeUnorderedBulkOp(cS.str());
+     for(unsigned int i=0; i<insvec->size(); i+=1)
+       bulky.insert((*insvec)[i]);
+
+     // Make results object
+     mongo::WriteResult RES;
+     mongo::WriteConcern WC;
+
+     // Insert
+     if(m_options->HasField("mongo_write_concern") &&
+	m_options->GetInt("mongo_write_concern") != 0)
+       WC = mongo::WriteConcern::acknowledged;
+     else
+       WC = mongo::WriteConcern::unacknowledged;
+
+     // Insert
+     bulky.execute(&WC, &RES);
+
+     // Old line for vector insert
+     //     ( m_vScopedConnections[ID])->insert( cS.str(), (*insvec) );
    }
    catch(const mongo::DBException &e)  {
      stringstream elog;
