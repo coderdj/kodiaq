@@ -218,6 +218,17 @@ int DigiInterface::InitializeHardware(koOptions *options)
     
     int cerror=-1;
     cout<<"Running CAENVME_Init for "<<Link.id<<"."<<Link.crate<<endl;
+
+    // MINESWEEPER
+    stringstream command;
+    command<<"(cd /home/xedaq/minesweeper && echo `./minesweeper -l "<<
+      Link.id<<" -c "<<Link.crate<<"`)";
+    cout<<"Sending command: "<<command.str()<<endl;
+    int retsys = system(command.str().c_str());
+    cout<<"Returned: "<<retsys<<endl;
+    usleep(1000);
+    //
+
     if((cerror=CAENVME_Init(BType,Link.id,Link.crate,
 			    &tempHandle))!=cvSuccess){
       CAENVME_End(tempHandle);
