@@ -140,7 +140,7 @@ mongo_option_t koOptions::GetMongoOptions(){
     if(mongo_obj["indices"].Array().size()>0){
       ret.index_string = "{'";
       for(unsigned int x=0; x<mongo_obj["indices"].Array().size(); x++){
-	cout<<mongo_obj["indices"].Array()[x].String()<<endl;
+	//cout<<mongo_obj["indices"].Array()[x].String()<<endl;
 	ret.index_string += mongo_obj["indices"].Array()[x].String();
 	ret.index_string += "': 1";
 	if(x != mongo_obj["indices"].Array().size() -1)
