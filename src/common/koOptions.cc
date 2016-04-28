@@ -25,7 +25,7 @@ int koOptions::ReadParameterFile(string filename){
   // Make the bson object from the string
   try{
     m_bson = mongo::fromjson(json_string);
-    cout<<m_bson.jsonString()<<endl;
+    //cout<<m_bson.jsonString()<<endl;
   }
   catch(...){
     std::cout<<"Error parsing file. Is it valid json?"<<std::endl;
