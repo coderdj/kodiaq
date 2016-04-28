@@ -311,7 +311,7 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
             ( collectionName,
               mongo::fromjson( mongo_opts.index_string )
               );
-
+      mongo_opts.shard_string = "{'module':  1, '_id': 1}";
       if(mongo_opts.sharding){
 	bufferDB->createIndex
           ( collectionName,

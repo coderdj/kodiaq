@@ -64,12 +64,20 @@ mongo::BSONElement koOptions::GetField(string key){
 
 void koOptions::ToStream_MongoUpdate(string run_name, 
 				     stringstream *retstream){
+  mongo::BSONObjBuilder new_mongo_obj;
+  mongo::BSONObj mongo_obj;
+  try{
+    mongo_obj = m_bson["mongo"].Obj();
+  } catch ( ... ) {}
+  new_mongo_obj.append("collection", run_name);
+  new_mongo_obj.appendElementsUnique(mongo_obj);
 
   // For dynamic collection names
   mongo::BSONObjBuilder builder;
-  builder.append("mongo_collection", run_name );
-		 //		 koHelper::MakeDBName(run_name, 
-		 //		      m_bson["mongo_collection"].String()));
+  builder.append("mongo", new_mongo_obj.obj());
+  //builder.append("mongo_collection", run_name );
+  //		 koHelper::MakeDBName(run_name, 
+  //		      m_bson["mongo_collection"].String()));
   builder.appendElementsUnique(m_bson);
   (*retstream)<<builder.obj().jsonString();
 }
@@ -97,7 +105,7 @@ mongo_option_t koOptions::GetMongoOptions(){
   mongo_option_t ret;
   ret.address = "";
   ret.database = "";
-  ret.collection = "";
+  ret.collection = "DEFAULT";
   ret.index_string = "";
   ret.capped_size = 0;
   ret.unordered_bulk_inserts = false;
@@ -118,7 +126,7 @@ mongo_option_t koOptions::GetMongoOptions(){
   try{
     ret.address = mongo_obj["address"].String();
     ret.database = mongo_obj["database"].String();
-    ret.collection = mongo_obj["collection"].String();
+    //ret.collection = mongo_obj["collection"].String();
   } catch(...){
     ret.collection = "DEFAULT";
     ret.database = "untriggered";
@@ -127,11 +135,12 @@ mongo_option_t koOptions::GetMongoOptions(){
   // Indices
   try{
     if(mongo_obj["indices"].Array().size()>0){
-      ret.index_string = "{ ";
+      ret.index_string = "{'";
       for(unsigned int x=0; x<mongo_obj["indices"].Array().size(); x++){
-	ret.index_string += mongo_obj["indices"].Array()[x];
-	ret.index_string += ": 1";
-	if(x != mongo_obj["indices"].Array().size())
+	cout<<mongo_obj["indices"].Array()[x].String()<<endl;
+	ret.index_string += mongo_obj["indices"].Array()[x].String();
+	ret.index_string += "': 1";
+	if(x != mongo_obj["indices"].Array().size() -1)
 	  ret.index_string += ", ";
       }
       ret.index_string += " }";
