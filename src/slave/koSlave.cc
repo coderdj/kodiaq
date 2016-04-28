@@ -350,13 +350,18 @@ connection_loop:
 	 rate=rate/tdiff;
 	 rate/=1048576;
 	 freq=freq/tdiff;
+
+	 vector <int> digis;
+	 vector <int> sizes;
+	 int BufferSize = fElectronics->GetBufferOccupancy(digis, sizes);
+
 	 cout<<"rate: "<<rate<<" freq: "<<freq<<" iRate: "<<iRate<<" tdiff: "<<tdiff<<" status: ";
 	 if(status == KODAQ_ARMED) cout<<"ARMED";
 	 else if(status == KODAQ_RUNNING) cout<<"RUNNING";
 	 else if(status == KODAQ_RDY) cout<<"READY";
 	 else if(status == KODAQ_IDLE) cout<<"IDLE";
 	 else cout<<"ERROR";
-	 cout<<endl;
+	 cout<<" Buffer: "<<BufferSize<<endl;
 	 
 	 // Check for errors in threads
 	 string err;
