@@ -214,7 +214,7 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
    
    try{
 
-     /*
+     
      // Make results object 
      mongo::WriteResult RES;
      mongo::WriteConcern WC;
@@ -239,9 +239,9 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
 	 bulky.insert((*insvec)[i]);
        bulky.execute(&WC, &RES);
      }
-     */
+     
      //old line
-     ( m_vScopedConnections[ID])->insert( cS.str(), (*insvec) );
+     // ( m_vScopedConnections[ID])->insert( cS.str(), (*insvec) );
    }
    catch(const mongo::DBException &e)  {
      stringstream elog;
