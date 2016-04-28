@@ -288,8 +288,10 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
 
       if(collection == "DEFAULT") 
 	collectionName += mongo_opts.collection;
-      else 
+      else {
 	collectionName += collection;
+	mongo_opts.collection = collection;
+      }
 
       // Set all of the database options here
       // To retain backwards compatibility always make sure they exist
