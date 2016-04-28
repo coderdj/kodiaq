@@ -562,7 +562,9 @@ void DataProcessor::Process()
 
 	if(m_koOptions->GetInt("write_mode") == WRITEMODE_MONGODB){
 	  mongo::BSONObjBuilder bson;
-	  
+	  bson.genOID();
+
+
 	  //remove this later!
 	  if(mongo_opts.database == "online" &&
 	     mongo_opts.collection == "scope"){
