@@ -233,11 +233,12 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
        bulky.execute(&WC, &RES);
      }
      else{
-       mongo::BulkOperationBuilder bulky =
+       ( m_vScopedConnections[ID])->insert( cS.str(), (*insvec) );
+       /*  mongo::BulkOperationBuilder bulky =
 	 m_vScopedConnections[ID]->initializeOrderedBulkOp(cS.str());
        for(unsigned int i=0; i<insvec->size(); i+=1)
 	 bulky.insert((*insvec)[i]);
-       bulky.execute(&WC, &RES);
+	 bulky.execute(&WC, &RES);*/
      }
      
      //old line
