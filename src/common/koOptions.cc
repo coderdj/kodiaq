@@ -92,7 +92,90 @@ void koOptions::SetInt(string field_name, int value){
   builder.appendElementsUnique(m_bson);
   m_bson = builder.obj();
 }
+mongo_option_t koOptions::GetMongoOptions(){
 
+  mongo_option_t ret;
+  ret.address = "";
+  ret.database = "";
+  ret.collection = "";
+  ret.index_string = "";
+  ret.capped_size = 0;
+  ret.unordered_bulk_inserts = false;
+  ret.sharding = false;
+  ret.shard_string = "";
+  ret.write_concern = 0;
+  ret.min_insert_size = 1;
+  
+  mongo::BSONObj mongo_obj;
+  try{ 
+    mongo_obj = m_bson["mongo"].Obj();
+  }
+  catch(...){
+    return ret;
+  }
+  
+  // Connectivity
+  try{
+    ret.address = mongo_obj["address"].String();
+    ret.database = mongo_obj["database"].String();
+    ret.collection = mongo_obj["collection"].String();
+  } catch(...){
+    ret.collection = "DEFAULT";
+    ret.database = "untriggered";
+  }
+  
+  // Indices
+  try{
+    if(mongo_obj["indices"].Array().size()>0){
+      ret.index_string = "{ ";
+      for(unsigned int x=0; x<mongo_obj["indices"].Array().size(); x++){
+	ret.index_string += mongo_obj["indices"].Array()[x];
+	ret.index_string += ": 1";
+	if(x != mongo_obj["indices"].Array().size())
+	  ret.index_string += ", ";
+      }
+      ret.index_string += " }";
+    }
+  }  catch ( ... ){}
+  
+  // Capped
+  try {
+    ret.capped_size = mongo_obj["capped_size"].Long();
+  } catch( ... ){
+    try { 
+      ret.capped_size = mongo_obj["capped_size"].Int();
+    } catch( ... ) {}
+  }
+
+  // Bulk inserts
+  try{ 
+    if(mongo_obj["unordered_bulk_inserts"].Int() == 1)
+      ret.unordered_bulk_inserts = true;
+  } catch ( ... ) {}
+  
+  // Sharting
+  try{
+    if(mongo_obj["sharding"].Int() == 1)
+      ret.sharding = true;
+    string shard_key = mongo_obj["shard_key"].String();
+    ret.shard_string = "{ " + shard_key + ": ";
+    if(mongo_obj["hash_shard"].Int() == 1)
+      ret.shard_string += "'hashed'}";
+    else
+      ret.shard_string += "1}";
+  } catch( ... ) {}  
+
+  try{
+    ret.write_concern = mongo_obj["write_concern"].Int();
+  } catch ( ... ) {}
+
+  try{
+    ret.min_insert_size = mongo_obj["min_insert_size"].Int();
+  } catch ( ... ) {}
+
+  return ret;
+
+}
 link_definition_t koOptions::GetLink(int index){
 
   // Return dummy link if dne

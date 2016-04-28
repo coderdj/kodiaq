@@ -252,7 +252,18 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
     mongo::DBClientBase *bufferDB;
     if( options->GetInt("write_mode") == 2 ){ // write to mongo
       string errstring;
-      string connstring = options->GetString("mongo_address");
+      
+      // Get mongo options object
+      mongo_option_t mongo_opts = options->GetMongoOptions();
+
+      // Needs basic connectivity info to proceed
+      if( mongo_opts.address == "" || mongo_opts.database == ""){
+	fLog->Error("Writing to mongodb required both a database and address");
+	return -1;
+      }
+      
+      string connstring = mongo_opts.address;
+      
       if(fBufferUser!="" && fBufferPassword!="")
 	connstring = "mongodb://" + fBufferUser + ":" + fBufferPassword + "@" +
 	  connstring.substr(10, connstring.size()-10);
@@ -273,44 +284,76 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
 			string(e.what()), KOMESS_ERROR );
 	return -1;
       }
-      string collectionName = options->GetString("mongo_database") + ".";
+      string collectionName = mongo_opts.database + ".";
 
       if(collection == "DEFAULT") 
-	collectionName += options->GetString("mongo_collection");
+	collectionName += mongo_opts.collection;
       else 
 	collectionName += collection;
-      bufferDB->createCollection( collectionName );
 
-      if(options->HasField("mongo_sharding") &&
-	 options->GetInt("mongo_sharding")==1){
-	mongo::BSONObj retVal;
+      // Set all of the database options here
+      // To retain backwards compatibility always make sure they exist
+      
+      // Make string for creating indices
+      string index_string = mongo_opts.index_string;
+
+
+      if(mongo_opts.capped_size != 0)
+	bufferDB->createCollection(collectionName, 
+				   mongo_opts.capped_size, 
+				   true);
+      else
+	bufferDB->createCollection( collectionName );
+      
+
+      if(mongo_opts.index_string!="")
+          bufferDB->createIndex
+            ( collectionName,
+              mongo::fromjson( mongo_opts.index_string )
+              );
+
+      if(mongo_opts.sharding){
 	bufferDB->createIndex
           ( collectionName,
-            mongo::fromjson( "{ time: 1, endtime: 1}" )
-            );
-	bufferDB->createIndex
-          ( collectionName,
-            mongo::fromjson( "{ _id: 'hashed'}" )
+            mongo::fromjson( mongo_opts.shard_string )
             );
 	mongo::BSONObj ret;
 	bufferDB->runCommand
 	  (
 	   "admin",
-	   mongo::fromjson( "{ shardCollection: '"+collectionName+"', key: { _id: 'hashed' } }"),
+	   mongo::fromjson( "{ shardCollection: '"+collectionName+"', key: "+
+			    mongo_opts.shard_string+" }"),
 	   ret
 	   );
-	  fLog->Message(ret.toString());
-
-	  
-	//sleep(5);
+	fLog->Message(ret.toString());	 
       }
-      else
-	bufferDB->createIndex
-          ( collectionName,
-            mongo::fromjson( "{ time: 1, endtime: 1}" )
-            );
       
       delete bufferDB;
+
+
+      // Make mongo location string                                                    
+      string mloc = mongo_opts.address;
+      int loc_index = mloc.size()-1;
+      while(mloc[loc_index] != '/'){
+        mloc.pop_back();
+        loc_index = mloc.size()-1;
+        if(loc_index < 10 ) { //mongodb://                                             
+          mloc = mongo_opts.address;
+          break;
+	}
+      }
+      mloc += mongo_opts.database;
+      mongo::BSONArrayBuilder data_sub;
+      mongo::BSONObjBuilder data_entry;
+      data_entry.append( "type", "untriggered");
+      data_entry.append("status", "transferring");
+      data_entry.append("host", "reader");
+      data_entry.append( "location", mloc);
+      data_entry.append("collection", name);//options->GetString("mongo_collection"));
+      data_entry.append( "compressed", options->GetInt("compression"));
+      data_sub.append(data_entry.obj());
+      builder.appendArray( "data", data_sub.arr() );
+
     }
     
     mongo::BSONObjBuilder reader;    
@@ -325,33 +368,6 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
     reader.append("self_trigger", DPP);
     builder.append("reader",reader.obj());
 
-    // DATA field
-    if(options->GetInt("write_mode")==2){
-
-      // Make mongo location string
-      string mloc = options->GetString("mongo_address");
-      int loc_index = mloc.size()-1;
-      while(mloc[loc_index] != '/'){
-	mloc.pop_back();
-	loc_index = mloc.size()-1;
-	if(loc_index < 10 ) { //mongodb://
-	  mloc = options->GetString("mongo_address");
-	  break;
-	}
-      }
-      mloc += options->GetString("mongo_database");
-      
-      mongo::BSONArrayBuilder data_sub;
-      mongo::BSONObjBuilder data_entry;
-      data_entry.append( "type", "untriggered");
-      data_entry.append("status", "transferring");
-      data_entry.append("host", "reader");
-      data_entry.append( "location", mloc);      
-      data_entry.append("collection", name);//options->GetString("mongo_collection"));
-      data_entry.append( "compressed", options->GetInt("compression"));
-      data_sub.append(data_entry.obj());
-      builder.appendArray( "data", data_sub.arr() );
-    }
 
     // Trigger sub-object
     mongo::BSONObjBuilder trigger_sub; 

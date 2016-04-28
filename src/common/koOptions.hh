@@ -40,6 +40,21 @@ struct vme_option_t{
   int node;
 };
 
+/* \brief Storage container for database options 
+ */
+struct mongo_option_t{
+  string address;
+  string database;
+  string collection;
+  string index_string;
+  long long int capped_size;
+  bool unordered_bulk_inserts;
+  bool sharding;  
+  string shard_string;
+  int min_insert_size;
+  int write_concern;
+};
+
 
 class koOptions{
 
@@ -73,6 +88,9 @@ public:
   int GetInt(string field_name){    
     return GetField(field_name).Int();
   };
+  long int GetLong(string field_name){
+    return GetField(field_name).Long();
+  };
   string GetString(string field_name){
     return GetField(field_name).String();
   };
@@ -86,7 +104,7 @@ public:
   void ToStream(stringstream *retstream){
     (*retstream)<<m_bson.jsonString();
   };
-  
+  mongo_option_t GetMongoOptions();
   void ToStream_MongoUpdate(string run_name, stringstream *retstream);
 
 private:

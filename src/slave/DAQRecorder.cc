@@ -121,7 +121,8 @@ int DAQRecorder_mongodb::RegisterProcessor()
   mongo::DBClientBase *conn;
    
   // Create connection string
-  string connstring = m_options->GetString("mongo_address");
+  mongo_option_t mongo_opts = m_options->GetMongoOptions();
+  string connstring = mongo_opts.address;
   if(m_DB_USER!="" && m_DB_PASSWORD!=""){
     connstring=connstring.substr(10, connstring.size()-10);
     connstring = "mongodb://" + m_DB_USER + ":" + m_DB_PASSWORD +"@"+ connstring;
@@ -151,15 +152,15 @@ int DAQRecorder_mongodb::RegisterProcessor()
     
 
     // Set write concern
-    if( m_options->GetInt("mongo_write_concern") == 0 ){
+    if( mongo_opts.write_concern == 0 ){
       conn->setWriteConcern( mongo::WriteConcern::unacknowledged );
       LogMessage( "MongoDB WriteConcern set to NONE" );  
-      LogMessage( m_options->GetString("mongo_address"));
+      LogMessage( mongo_opts.address );
     }
     else{      
       conn->setWriteConcern( mongo::WriteConcern::acknowledged );
       LogMessage( "MongoDB WriteConcern set to NORMAL" );
-      LogMessage( m_options->GetString("mongo_address") );
+      LogMessage( mongo_opts.address );
     }
   }
   catch(const mongo::DBException &e)  {
@@ -193,7 +194,8 @@ void DAQRecorder_mongodb::Shutdown()
 int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
 					 int ID)
 {  // The ownership of insvec is passed to this function!
-   
+  mongo_option_t mongo_opts = m_options->GetMongoOptions();
+
   if(m_vScopedConnections.size()==0 || !m_bInitialized 
      || insvec->size() == 0)  {
       delete insvec;
@@ -207,11 +209,37 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
    }
 
    stringstream cS;
-   cS<<m_options->GetString("mongo_database")<<"."<<
-     m_options->GetString("mongo_collection");
+   cS<<mongo_opts.database<<"."<<
+     mongo_opts.collection;
    
    try{
-     ( m_vScopedConnections[ID])->insert( cS.str(), (*insvec) );
+
+     // Make results object 
+     mongo::WriteResult RES;
+     mongo::WriteConcern WC;
+     
+     if(mongo_opts.write_concern == 0)
+       WC = mongo::WriteConcern::unacknowledged;
+     else
+       WC = mongo::WriteConcern::acknowledged;
+
+     // Using mongo bulk op API     
+     if(mongo_opts.unordered_bulk_inserts){
+       mongo:: BulkOperationBuilder bulky = 
+	 m_vScopedConnections[ID]->initializeUnorderedBulkOp(cS.str());
+       for(unsigned int i=0; i<insvec->size(); i+=1)
+	 bulky.insert((*insvec)[i]);
+       bulky.execute(&WC, &RES);
+     }
+     else{
+       mongo::BulkOperationBuilder bulky =
+	 m_vScopedConnections[ID]->initializeOrderedBulkOp(cS.str());
+       for(unsigned int i=0; i<insvec->size(); i+=1)
+	 bulky.insert((*insvec)[i]);
+       bulky.execute(&WC, &RES);
+     }
+     //old line
+     //( m_vScopedConnections[ID])->insert( cS.str(), (*insvec) );
    }
    catch(const mongo::DBException &e)  {
      stringstream elog;

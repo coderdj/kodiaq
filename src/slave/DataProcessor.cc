@@ -558,13 +558,14 @@ void DataProcessor::Process()
 
 	//Now fill the actual data depending on write mode	
 #ifdef HAVE_LIBMONGOCLIENT
+	mongo_option_t mongo_opts = m_koOptions->GetMongoOptions();
 
 	if(m_koOptions->GetInt("write_mode") == WRITEMODE_MONGODB){
 	  mongo::BSONObjBuilder bson;
 	  
 	  //remove this later!
-	  if(m_koOptions->GetString("mongo_database") == "online" &&
-	     m_koOptions->GetString("mongo_collection") == "scope"){
+	  if(mongo_opts.database == "online" &&
+	     mongo_opts.collection == "scope"){
 	    time_t currentTime;
 	    struct tm *starttime;
 	    time(&currentTime);
@@ -589,8 +590,7 @@ void DataProcessor::Process()
 	    
 	  vMongoInsertVec->push_back(bson.obj());
 	  
-	  if((int)vMongoInsertVec->size() >
-	     m_koOptions->GetInt("mongo_min_insert_size")){
+	  if((int)vMongoInsertVec->size() > mongo_opts.min_insert_size){
 
 	    if(DAQRecorder_mdb->InsertThreaded(vMongoInsertVec,mongoID)==0){ 
 	      //success
