@@ -126,10 +126,13 @@ mongo_option_t koOptions::GetMongoOptions(){
   try{
     ret.address = mongo_obj["address"].String();
     ret.database = mongo_obj["database"].String();
-    //ret.collection = mongo_obj["collection"].String();
+  } catch(...){
+    ret.database = "untriggered";
+  }
+  try{
+    ret.collection = mongo_obj["collection"].String();
   } catch(...){
     ret.collection = "DEFAULT";
-    ret.database = "untriggered";
   }
   
   // Indices
