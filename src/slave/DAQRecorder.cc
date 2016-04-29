@@ -115,6 +115,7 @@ int DAQRecorder_mongodb::Initialize(koOptions *options)
    m_options = options;
    CloseConnections();
    ResetError();
+   m_children.clear();
    m_bInitialized = true;
    pthread_mutex_init(&m_ConnectionMutex,NULL);
       
@@ -181,6 +182,7 @@ int DAQRecorder_mongodb::RegisterProcessor()
   }
   m_vScopedConnections.push_back(conn);
   retval = m_vScopedConnections.size()-1;
+  m_children.push_back(0);
   pthread_mutex_unlock(&m_ConnectionMutex);
        
   return retval;
@@ -194,34 +196,45 @@ void DAQRecorder_mongodb::UpdateCollection(koOptions *options)
 void DAQRecorder_mongodb::Shutdown()
 {  
    CloseConnections();
-   Fillicide(true);
+   Fillicide(-1);
+   m_children.clear();
    return;
 }
 
-void DAQRecorder_mongodb::Fillicide(bool wait){
-  // Check on your children (should be fast)                                                                                                                    
+void DAQRecorder_mongodb::Fillicide(int ID){
+  // Check on your children (should be fast)                                          
+  
+  // Check out of bounds
+  if(ID!=-1 and (ID>m_children.size() || ID<-1))
+    return;
+  if(ID!=-1 && m_children[ID]==0)
+    return;
+
   pthread_mutex_lock(&m_childlock);
-  for(unsigned int x=0;x<m_children.size();x+=1){
-    int status;
-    pid_t result;
-    if(!wait)
-      result = waitpid(m_children[x], &status, WNOHANG);
-    else
+  int status;
+  pid_t result;
+  if(ID==-1){
+    for(unsigned int x=0;x<m_children.size();x++){
       result = waitpid(m_children[x], &status, 0);
-    if (result == 0)
-      continue;
-    else if(result==-1)
-      cout<<"Error in child process"<<endl;
-    else
-      m_children.erase(m_children.begin()+x);
+      m_children[x] = 0;
+    }
+    pthread_mutex_unlock(&m_childlock);
+    return;
   }
+  else
+    result = waitpid(m_children[ID], &status, 0);
+  
+  if(result==-1)
+    cout<<"Error in child process"<<endl;
+  
+  m_children[ID]=0;
   pthread_mutex_unlock(&m_childlock);
 }
 
 int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
 					 int ID)
 {  
-  Fillicide();
+  Fillicide(ID);
 
   // The ownership of insvec is passed to this function!
   mongo_option_t mongo_opts = m_options->GetMongoOptions();
@@ -259,21 +272,6 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
 
        try{
 	 
-	 mongo::DBClientBase *conn;
-	 string errstring;
-	 string connstring = mongo_opts.address;
-
-	 if(m_DB_USER!="" && m_DB_PASSWORD!=""){
-	   connstring=connstring.substr(10, connstring.size()-10);
-	   connstring = "mongodb://" + m_DB_USER + ":" + 
-	     m_DB_PASSWORD +"@"+ connstring;
-	 }
-	 mongo::ConnectionString cstring =
-	   mongo::ConnectionString::parse(connstring, errstring);
-	 mongo::client::initialize();
-	 conn = cstring.connect(errstring);
-	 
-	 
 	 // Make results object 
 	 mongo::WriteResult RES;
 	 mongo::WriteConcern WC;
@@ -286,24 +284,23 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
 	 // Using mongo bulk op API     
 	 if(mongo_opts.unordered_bulk_inserts){
 	   mongo:: BulkOperationBuilder bulky = 
-	     conn->initializeUnorderedBulkOp(cS.str());
-	   //m_vScopedConnections[ID]->initializeUnorderedBulkOp(cS.str());
+	     m_vScopedConnections[ID]->initializeUnorderedBulkOp(cS.str());
 	   for(unsigned int i=0; i<insvec->size(); i+=1)
 	     bulky.insert((*insvec)[i]);
 	   bulky.execute(&WC, &RES);
 	 }
 	 else{
-	   conn->insert(cS.str(), (*insvec) );
+	   // conn->insert(cS.str(), (*insvec) );
 	   //( m_vScopedConnections[ID])->insert( cS.str(), (*insvec) );
 	   /*  mongo::BulkOperationBuilder bulky =
 	       m_vScopedConnections[ID]->initializeOrderedBulkOp(cS.str());
 	       for(unsigned int i=0; i<insvec->size(); i+=1)
 	       bulky.insert((*insvec)[i]);
-	       bulky.execute(&WC, &RES);*/
-	 }
+	       bulky.execute(&WC, &RES);*/	 
 	 
 	 //old line
-	 // ( m_vScopedConnections[ID])->insert( cS.str(), (*insvec) );
+	 ( m_vScopedConnections[ID])->insert( cS.str(), (*insvec) );
+	 }
        }
        catch(const mongo::DBException &e)  {
 	 stringstream elog;
@@ -316,7 +313,7 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
        _exit(0);
      }
    pthread_mutex_lock(&m_childlock);
-   m_children.push_back(pid);
+   m_children[ID]=(pid);
    pthread_mutex_unlock(&m_childlock);
 
    delete insvec;

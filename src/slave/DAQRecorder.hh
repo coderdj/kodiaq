@@ -90,7 +90,7 @@ class DAQRecorder_mongodb : public DAQRecorder
                   DAQRecorder_mongodb();
    virtual       ~DAQRecorder_mongodb();
   DAQRecorder_mongodb(koLogger *koLog, string DB_USER, string DB_PASSWORD);
-  void Fillicide(bool wait=false);
+  void Fillicide(int ID=-1);
    //
    // Name      : int DAQRecorder_mongodb::Initialize(koOptions* options)
    // Purpose   : Initialize the data recorder by trying to connect to the
