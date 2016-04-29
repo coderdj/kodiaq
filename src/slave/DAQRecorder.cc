@@ -259,6 +259,14 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
 
        try{
 	 
+	 mongo::DBClientBase *conn;
+	 string errstring;
+	 string connstring = mongo_opts.address;
+	 mongo::ConnectionString cstring =
+	   mongo::ConnectionString::parse(connstring, errstring);
+	 mongo::client::initialize();
+	 conn = cstring.connect(errstring);
+	 
 	 
 	 // Make results object 
 	 mongo::WriteResult RES;
@@ -272,13 +280,15 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
 	 // Using mongo bulk op API     
 	 if(mongo_opts.unordered_bulk_inserts){
 	   mongo:: BulkOperationBuilder bulky = 
-	     m_vScopedConnections[ID]->initializeUnorderedBulkOp(cS.str());
+	     conn->initializeUnorderedBulkOp(cS.str());
+	   //m_vScopedConnections[ID]->initializeUnorderedBulkOp(cS.str());
 	   for(unsigned int i=0; i<insvec->size(); i+=1)
 	     bulky.insert((*insvec)[i]);
 	   bulky.execute(&WC, &RES);
 	 }
 	 else{
-	   ( m_vScopedConnections[ID])->insert( cS.str(), (*insvec) );
+	   conn->insert(cS.str(), (*insvec) );
+	   //( m_vScopedConnections[ID])->insert( cS.str(), (*insvec) );
 	   /*  mongo::BulkOperationBuilder bulky =
 	       m_vScopedConnections[ID]->initializeOrderedBulkOp(cS.str());
 	       for(unsigned int i=0; i<insvec->size(); i+=1)
