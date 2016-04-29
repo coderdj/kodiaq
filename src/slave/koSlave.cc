@@ -28,7 +28,7 @@ using namespace std;
 
 int ReadIniFile(string filepath, string &SERVERADDR, int &PORT, 
 		int &DATAPORT, string &NODENAME, int &ID,
-		string &DB_USER, string &DB_PASSWORD);
+		string &DB_USER, string &DB_PASSWORD, int &PROFILING);
 
 #ifdef KLITE
 // *******************************************************************************
@@ -183,8 +183,6 @@ program_start:
 // *******************************************************************************
 int main(int argc, char *argv[])
 {
-  ofstream profilefile;
-  profilefile.open("profile.log");
 
   string filepath = "DAQConfig.ini";
 #ifdef KLITE
@@ -219,11 +217,19 @@ int main(int argc, char *argv[])
    int PORT = 2002, DATAPORT = 2003, ID = 1;
    string DB_USER="", DB_PASSWORD="";
    string NODENAME = "DAQ01";
+   int PROFILING = 0;
    if(ReadIniFile(filepath, SERVERADDR, PORT, DATAPORT, NODENAME, ID,
-		  DB_USER, DB_PASSWORD)!=0){
+		  DB_USER, DB_PASSWORD, PROFILING)!=0){
      cout<<"Error reading .ini file, does it exist at src/slave/SlaveConfig.ini?"<<endl;
      return -1;
    }
+
+   // Profile output
+   ofstream profilefile;
+   if(PROFILING == 1)
+     profilefile.open("profile.log");
+
+   
    fNetworkInterface.Initialize(SERVERADDR,PORT,DATAPORT,ID,NODENAME); 
 
    DigiInterface  *fElectronics = new DigiInterface(koLog, ID, DB_USER, DB_PASSWORD);
@@ -363,8 +369,10 @@ connection_loop:
 	 vector <string> readout_reports;
 	 int BufferSize = fElectronics->GetBufferOccupancy(digis, sizes, counts,
 							   readout_reports);
-	 for(unsigned int report=0;report<readout_reports.size();report++)
-	   profilefile<<readout_reports[report]<<endl;
+	 if(PROFILING == 1){
+	   for(unsigned int report=0;report<readout_reports.size();report++)
+	     profilefile<<readout_reports[report]<<endl;
+	 }
 
 	 cout<<"rate: "<<rate<<" freq: "<<freq<<" iRate: "<<iRate<<" tdiff: "<<tdiff<<" status: ";
 	 if(status == KODAQ_ARMED) cout<<"ARMED";
@@ -418,7 +426,7 @@ connection_loop:
 
 int ReadIniFile(string filepath, string &SERVERADDR, int &PORT, 
 		int &DATAPORT, string &NODENAME, int &ID, 
-		string &DB_USER, string &DB_PASSWORD)
+		string &DB_USER, string &DB_PASSWORD, int &PROFILING)
 {
   ifstream inifile;
   inifile.open( filepath.c_str() );
@@ -451,6 +459,8 @@ int ReadIniFile(string filepath, string &SERVERADDR, int &PORT,
       DB_USER = words[1];
     else if ( words[0] == "DB_PASSWORD" )
       DB_PASSWORD = words[1];
+    else if ( words[0] == "PROFILING" )
+      PROFILING = koHelper::StringToInt(words[1]);
   }
   inifile.close();
   return 0;
