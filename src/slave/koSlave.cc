@@ -362,7 +362,10 @@ connection_loop:
 	 else if(status == KODAQ_IDLE) cout<<"IDLE";
 	 else cout<<"ERROR";
 	 cout<<" Buffer: "<<BufferSize<<endl;
-	 
+	 for(int digi=0; digi<sizes.size(); digi+=1)
+	   cout<<digis[digi]<<": "<<sizes.size()<<" ";	 
+	 cout<<endl;
+
 	 // Check for errors in threads
 	 string err;
 	 if( fElectronics->RunError( err ) ){

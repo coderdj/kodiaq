@@ -285,7 +285,7 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
 	return -1;
       }
       string collectionName = mongo_opts.database + ".";
-
+      cout<<collection<<endl;
       if(collection == "DEFAULT") 
 	collectionName += mongo_opts.collection;
       else {
@@ -313,7 +313,7 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
             ( collectionName,
               mongo::fromjson( mongo_opts.index_string )
               );
-      mongo_opts.shard_string = "{'module':  1, '_id': 1}";
+      // mongo_opts.shard_string = "{'module':  1, '_id': 1}";
       if(mongo_opts.sharding){
 	bufferDB->createIndex
           ( collectionName,
