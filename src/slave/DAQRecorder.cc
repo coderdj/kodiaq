@@ -262,6 +262,12 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
 	 mongo::DBClientBase *conn;
 	 string errstring;
 	 string connstring = mongo_opts.address;
+
+	 if(m_DB_USER!="" && m_DB_PASSWORD!=""){
+	   connstring=connstring.substr(10, connstring.size()-10);
+	   connstring = "mongodb://" + m_DB_USER + ":" + 
+	     m_DB_PASSWORD +"@"+ connstring;
+	 }
 	 mongo::ConnectionString cstring =
 	   mongo::ConnectionString::parse(connstring, errstring);
 	 mongo::client::initialize();
