@@ -90,7 +90,7 @@ class DAQRecorder_mongodb : public DAQRecorder
                   DAQRecorder_mongodb();
    virtual       ~DAQRecorder_mongodb();
   DAQRecorder_mongodb(koLogger *koLog, string DB_USER, string DB_PASSWORD);
-   
+  void Fillicide(bool wait=false);
    //
    // Name      : int DAQRecorder_mongodb::Initialize(koOptions* options)
    // Purpose   : Initialize the data recorder by trying to connect to the
@@ -134,7 +134,8 @@ class DAQRecorder_mongodb : public DAQRecorder
    pthread_mutex_t m_ConnectionMutex;
   //vector <mongo::ScopedDbConnection*> m_vScopedConnections;   
   vector <mongo::DBClientBase*> m_vScopedConnections;
-   
+  pthread_mutex_t  m_childlock;
+  vector<pid_t>    m_children;
 };
 #endif
 

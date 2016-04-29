@@ -122,7 +122,8 @@ class DigiInterface
   // being read out, object size, etc. but most of the memory usage is here). 
   // The vectors give the digitizer id's (digis) and the buffer size in each (sizes)
   // The return value is the total occupancy (sum of sizes)
-  int GetBufferOccupancy( vector<int> &digis, vector<int> &sizes);
+  int GetBufferOccupancy( vector<int> &digis, vector<int> &sizes, 
+			  vector<int> &counts, vector<string> &profile);
    
  private:   
   void          ReadThread();       // Only need 1 read thread since V1724

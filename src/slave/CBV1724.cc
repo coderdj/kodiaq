@@ -27,6 +27,7 @@ CBV1724::CBV1724()
    fBuffers=NULL;
    fSizes=NULL;
    fBufferOccSize = 0;
+   fBufferOccCount = 0;
    fReadoutThresh=10;
    pthread_mutex_init(&fDataLock,NULL);
    pthread_cond_init(&fReadyCondition,NULL);
@@ -55,6 +56,7 @@ CBV1724::CBV1724(board_definition_t BoardDef, koLogger *kLog)
   pthread_cond_init(&fReadyCondition,NULL);
   i64_blt_first_time = i64_blt_second_time = i64_blt_last_time = 0;
   fBufferOccSize = 0;
+  fBufferOccCount = 0;
   bOver15 = false;
   fIdealBaseline = 16000;
 }
@@ -116,7 +118,8 @@ int CBV1724::Initialize(koOptions *options)
     m_koLog->Message("Baselines loaded from file");
   }
   fBufferOccSize = 0;
-
+  fBufferOccCount = 0;
+  fReadoutReports.clear();
 
   // Report whether we succeeded or not
   stringstream messstr;
@@ -182,7 +185,8 @@ unsigned int CBV1724::ReadMBLT()
     
     // Update total buffer size
     fBufferOccSize += blt_bytes;
-    
+    fBufferOccCount++;
+
     if(fBuffers->size()==1) i64_blt_first_time = koHelper::GetTimeStamp(buff);
     
     // If we have enough BLTs (user option) signal that board can be read out
@@ -223,7 +227,8 @@ void CBV1724::ResetBuff()
       delete fSizes;
       fSizes   = NULL;
    }
-   
+   fBufferOccSize = 0;
+   fBufferOccCount = 0;
    UnlockDataBuffer();
 }
 
@@ -248,7 +253,7 @@ int CBV1724::RequestDataLock()
    int error=pthread_mutex_trylock(&fDataLock);
    if(error!=0) return -1;
    struct timespec timeToWait;
-   timeToWait.tv_sec = time(0)+3; //wait 3 seconds
+   timeToWait.tv_sec = time(0)+1; //wait 1 seconds
    timeToWait.tv_nsec= 0;
    if(pthread_cond_timedwait(&fReadyCondition,&fDataLock,&timeToWait)==0)
      return 0;
@@ -257,7 +262,8 @@ int CBV1724::RequestDataLock()
 }
 
 vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes, 
-					   int &resetCounter, u_int32_t &headerTime)
+					   int &resetCounter, u_int32_t &headerTime,
+					   int m_ID)
 // Note this PASSES OWNERSHIP of the returned vectors to the 
 // calling function! They must be cleared by the caller!
 // The reset counter is computed (did the clock reset during this buffer?) and
@@ -285,13 +291,24 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
 
   }
 
+  // PROFILING                  
+  if(m_ID != -1){
+    struct timeval tv;
+    gettimeofday(&tv,NULL);
+    unsigned long time_us = 1000000 * tv.tv_sec + tv.tv_usec;
+    stringstream ss;
+    ss<<fBID.id<<" "<<m_ID<<" "<<time_us<<" "<<fBufferOccSize<<" "<<fBuffers->size();
+    fReadoutReports.push_back(ss.str());
+  }
+
    vector<u_int32_t*> *retVec = fBuffers;
    fBuffers = new vector<u_int32_t*>();
    sizes = fSizes;
    fSizes = new vector<u_int32_t>();
-
-   // Reset total buffer size
+   
+   // Reset total buffer size 
    fBufferOccSize = 0;
+
 
    return retVec;
 }

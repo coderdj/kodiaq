@@ -148,7 +148,10 @@ program_start:
 	
 	vector <int> digis;
 	vector <int> sizes;
-	int BufferSize = fElectronics->GetBufferOccupancy(digis, sizes);
+	vector <int> counts;
+	vector <string> readout_reports;
+	int BufferSize = fElectronics->GetBufferOccupancy(digis, sizes, counts,
+							  readout_reports);
 	//theGUI.UpdateBufferSize(BufferSize);
 
 	/*if( fDAQOptions.buffer_size_kill != -1 && 
@@ -180,6 +183,9 @@ program_start:
 // *******************************************************************************
 int main(int argc, char *argv[])
 {
+  ofstream profilefile;
+  profilefile.open("profile.log");
+
   string filepath = "DAQConfig.ini";
 #ifdef KLITE
   // Get command line option 
@@ -353,7 +359,12 @@ connection_loop:
 
 	 vector <int> digis;
 	 vector <int> sizes;
-	 int BufferSize = fElectronics->GetBufferOccupancy(digis, sizes);
+	 vector <int> counts;
+	 vector <string> readout_reports;
+	 int BufferSize = fElectronics->GetBufferOccupancy(digis, sizes, counts,
+							   readout_reports);
+	 for(unsigned int report=0;report<readout_reports.size();report++)
+	   profilefile<<readout_reports[report]<<endl;
 
 	 cout<<"rate: "<<rate<<" freq: "<<freq<<" iRate: "<<iRate<<" tdiff: "<<tdiff<<" status: ";
 	 if(status == KODAQ_ARMED) cout<<"ARMED";
@@ -362,8 +373,8 @@ connection_loop:
 	 else if(status == KODAQ_IDLE) cout<<"IDLE";
 	 else cout<<"ERROR";
 	 cout<<" Buffer: "<<BufferSize<<endl;
-	 for(int digi=0; digi<sizes.size(); digi+=1)
-	   cout<<digis[digi]<<": "<<sizes.size()<<" ";	 
+	 for(unsigned int digi=0; digi<sizes.size(); digi+=1)
+	   cout<<digis[digi]<<": "<<sizes[digi]<<"("<<counts[digi]<<") ";	 
 	 cout<<endl;
 
 	 // Check for errors in threads

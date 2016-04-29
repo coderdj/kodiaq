@@ -426,12 +426,13 @@ void DataProcessor::Process()
     // 
 
     bExitCondition = true;
+    usleep(100);
     for(unsigned int x = 0; x < m_DigiInterface->GetDigis(); x++)  {
 
       CBV1724 *digi = m_DigiInterface->GetDigi(x);
       if(digi->Activated()) bExitCondition=false;
       else continue;
-      usleep(10); //avoid 100% cpu
+      //usleep(10); //avoid 100% cpu
 
       // Check if the digitizer has data and is not associated 
       // with another processor
@@ -442,7 +443,8 @@ void DataProcessor::Process()
       int resetCounterStart = 0; 
       u_int32_t headerTime = 0;
 
-      buffvec = digi->ReadoutBuffer( sizevec, resetCounterStart, headerTime );
+      buffvec = digi->ReadoutBuffer( sizevec, resetCounterStart, headerTime,
+				     mongoID );
       iModule = digi->GetID().id;
       digi->UnlockDataBuffer();
      

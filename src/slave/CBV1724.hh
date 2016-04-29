@@ -46,7 +46,9 @@ class CBV1724 : public VMEBoard {
    };  
    
   vector<u_int32_t*>* ReadoutBuffer(vector <u_int32_t> *&sizes,
-				    int &resetCounter, u_int32_t &headerTime);           /*!<  Passes a pointer to a vector of raw data that has been read from the board. Please note: this passes ownership of the raw data vector to the caller! That means the calling function is responsible for freeing this memory again later. A new buffer is created that will act as the board buffer until the next ReadoutBuffer call. The vector sizes contains the size in bytes of each element in the returned buffer. Ownership of sizes also passes to the caller.*/
+				    int &resetCounter, u_int32_t &headerTime,
+				    int m_ID=-1);           
+  /*!<  Passes a pointer to a vector of raw data that has been read from the board. Please note: this passes ownership of the raw data vector to the caller! That means the calling function is responsible for freeing this memory again later. A new buffer is created that will act as the board buffer until the next ReadoutBuffer call. The vector sizes contains the size in bytes of each element in the returned buffer. Ownership of sizes also passes to the caller.*/
    
    void ResetBuff();                                               /*!<  Clears and resets the object buffer.*/
    u_int32_t GetBLTSize()  {                                       /*!   Returns the block transfer size. */
@@ -61,7 +63,11 @@ class CBV1724 : public VMEBoard {
    void SetActivated(bool active);                                 /*!<  Set if this board is active (taking data).*/
 
   /* GetBufferSize: get the size of the buffer in this digitizer in bytes. */
-  int GetBufferSize(){ return fBufferOccSize; }
+  int GetBufferSize(int &count, vector<string> &reports){ 
+    count = fBufferOccCount;  
+    reports = fReadoutReports;
+    fReadoutReports.clear();
+    return fBufferOccSize; }
  private:
 
   int                   InitForPreProcessing();
@@ -81,7 +87,9 @@ class CBV1724 : public VMEBoard {
    u_int64_t            i64_blt_first_time,i64_blt_second_time,i64_blt_last_time;  
   u_int32_t            fIdealBaseline;
    int                  fBufferOccSize;
+  int                   fBufferOccCount;
   bool                  bOver15;
+  vector <string>       fReadoutReports;
 };
 
 #endif

@@ -333,14 +333,20 @@ int DigiInterface::InitializeHardware(koOptions *options)
 }
 
 
-int DigiInterface::GetBufferOccupancy( vector<int> &digis, vector<int> &sizes)
+int DigiInterface::GetBufferOccupancy( vector<int> &digis, vector<int> &sizes,
+				       vector<int> &counts, vector<string> &profile)
 {
   digis.resize(0);
   sizes.resize(0);
+  counts.resize(0);
   int totalSize = 0;
   for(unsigned int x=0; x<m_vDigitizers.size(); x++){
     digis.push_back(m_vDigitizers[x]->GetID().id);
-    int bSize = m_vDigitizers[x]->GetBufferSize();
+    int bCount = 0;
+    vector<string> p;
+    int bSize = m_vDigitizers[x]->GetBufferSize(bCount, p);
+    profile.insert(profile.end(), p.begin(), p.end());
+    counts.push_back(bCount);
     sizes.push_back(bSize);
     totalSize += bSize;
   }
