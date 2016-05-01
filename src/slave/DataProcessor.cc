@@ -426,13 +426,13 @@ void DataProcessor::Process()
     // 
 
     bExitCondition = true;
-    usleep(100);
+    //usleep(10);
     for(unsigned int x = 0; x < m_DigiInterface->GetDigis(); x++)  {
 
       CBV1724 *digi = m_DigiInterface->GetDigi(x);
       if(digi->Activated()) bExitCondition=false;
       else continue;
-      //usleep(10); //avoid 100% cpu
+      usleep(10); //avoid 100% cpu
 
       // Check if the digitizer has data and is not associated 
       // with another processor

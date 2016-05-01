@@ -35,6 +35,8 @@ CBV1724::CBV1724()
    i64_blt_first_time = i64_blt_second_time = i64_blt_last_time = 0;
    bOver15 = false;
    fIdealBaseline = 16000;
+   fLastReadout=koLogger::GetCurrentTime();
+   fReadoutTime = 1;
 }
 
 CBV1724::~CBV1724()
@@ -59,12 +61,14 @@ CBV1724::CBV1724(board_definition_t BoardDef, koLogger *kLog)
   fBufferOccCount = 0;
   bOver15 = false;
   fIdealBaseline = 16000;
+  fLastReadout=koLogger::GetCurrentTime();
+  fReadoutTime =  1;
 }
 
 int CBV1724::Initialize(koOptions *options)
 {
   // Initialize and ready the board according to the options object
-
+  
   // Set private members
   int retVal=0;
   i_clockResetCounter=0;
@@ -189,9 +193,14 @@ unsigned int CBV1724::ReadMBLT()
 
     if(fBuffers->size()==1) i64_blt_first_time = koHelper::GetTimeStamp(buff);
     
+    // Priority. If we defined a time stamp frequency, signal the readout
+    time_t current_time=koLogger::GetCurrentTime();
+    double tdiff = difftime(current_time, fLastReadout);
+    
     // If we have enough BLTs (user option) signal that board can be read out
-    if(fBuffers->size()>fReadoutThresh)
+    if(fBuffers->size()>fReadoutThresh || tdiff > fReadoutTime)
       pthread_cond_signal(&fReadyCondition);
+      
     UnlockDataBuffer();
   }
 
@@ -271,6 +280,7 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
 // is passed by reference to the caller
 {
   headerTime = 0;
+  fLastReadout=koLogger::GetCurrentTime();
 
   if(fBuffers->size()!=0 ) {
     i64_blt_first_time = koHelper::GetTimeStamp((*fBuffers)[0]);
