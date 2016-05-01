@@ -313,12 +313,13 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
             ( collectionName,
               mongo::fromjson( mongo_opts.index_string )
               );
-      // mongo_opts.shard_string = "{'module':  1, '_id': 1}";
+      //mongo_opts.shard_string = "{'module':  1, '_id': 'hashed'}";
+      mongo_opts.shard_string = "{'module': 1}";
       if(mongo_opts.sharding){
 	bufferDB->createIndex
           ( collectionName,
             mongo::fromjson( mongo_opts.shard_string )
-            );
+            );	
 	mongo::BSONObj ret;
 	bufferDB->runCommand
 	  (
@@ -326,8 +327,52 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
 	   mongo::fromjson( "{ shardCollection: '"+collectionName+"', key: "+
 			    mongo_opts.shard_string+" }"),
 	   ret
-	   );
+	   );       
 	fLog->Message(ret.toString());	 
+
+	/* This will be beautiful. We want to give mongo a little hint on how it should shard.
+	   This seems to be done by using 'split' to define where the chunks should be.
+	   We want to chunk on module number. 
+	*/
+
+	// Kill the autobalancer
+	mongo::WriteConcern WC = mongo::WriteConcern::unacknowledged;
+	bufferDB->update("config.settings", BSON("_id" << "balancer"),
+			 BSON("$set" << BSON("stopped"<<true)), true,
+			 false, &WC );
+
+	// First get a list of modules
+	vector <int> modules;
+	vector<string> migrateTo;
+	migrateTo.push_back("shard_0/eb0:27000");
+	migrateTo.push_back("shard_1/eb1:27000");
+	migrateTo.push_back("shard_2/eb2:27000");
+	for(int x=0; x<options->GetBoards(); x++){
+	  string serial = koHelper::IntToString(options->GetBoard(x).id);
+	  string jsonstring = "{ split: '"+collectionName+
+	    "', middle: { 'module': "+serial+"}}";
+	  cout<<"Telling mongo to split on: "<<jsonstring<<endl;
+	  bufferDB->runCommand
+	    (
+	     "admin",
+	     mongo::fromjson( jsonstring ),
+	     ret
+	     );
+	  fLog->Message(ret.toString());
+
+	  bufferDB->runCommand
+	    ( 
+	     "admin",
+	     mongo::fromjson( "{ moveChunk: '"+collectionName+
+			      "', find: { module: "+serial+"},"+
+			      "to: '"+migrateTo[x%3]+"' }"
+			      ),
+	     ret
+	      );
+	  fLog->Message(ret.toString());
+
+	}
+	
       }
       
       delete bufferDB;

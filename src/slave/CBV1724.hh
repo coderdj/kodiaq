@@ -89,6 +89,8 @@ class CBV1724 : public VMEBoard {
    int                  fBufferOccSize;
   int                   fBufferOccCount;
   bool                  bOver15;
+  time_t                fLastReadout;
+  double                fReadoutTime;
   vector <string>       fReadoutReports;
 };
 

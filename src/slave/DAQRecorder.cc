@@ -234,7 +234,7 @@ void DAQRecorder_mongodb::Fillicide(int ID){
 int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
 					 int ID)
 {  
-  Fillicide(ID);
+  //  Fillicide(ID);
 
   // The ownership of insvec is passed to this function!
   mongo_option_t mongo_opts = m_options->GetMongoOptions();
@@ -256,9 +256,9 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
      mongo_opts.collection;
 
    // Fork the insert
-   pid_t pid = fork();
-   if (pid == 0)
-     {
+   //pid_t pid = fork();
+   //if (pid == 0)
+   //{
        // child process
        
        // Make grandchild. This kills zombie processes.
@@ -270,52 +270,52 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
        //_exit(2);
        //}
 
-       try{
-	 
+   try{
+     
 	 // Make results object 
-	 mongo::WriteResult RES;
-	 mongo::WriteConcern WC;
-	 
-	 if(mongo_opts.write_concern == 0)
-	   WC = mongo::WriteConcern::unacknowledged;
-	 else
-	   WC = mongo::WriteConcern::acknowledged;
-	 
-	 // Using mongo bulk op API     
-	 if(mongo_opts.unordered_bulk_inserts){
-	   mongo:: BulkOperationBuilder bulky = 
-	     m_vScopedConnections[ID]->initializeUnorderedBulkOp(cS.str());
+     mongo::WriteResult RES;
+     mongo::WriteConcern WC;
+     
+     if(mongo_opts.write_concern == 0)
+       WC = mongo::WriteConcern::unacknowledged;
+     else
+       WC = mongo::WriteConcern::acknowledged;
+     
+     // Using mongo bulk op API     
+     if(mongo_opts.unordered_bulk_inserts){
+       mongo:: BulkOperationBuilder bulky = 
+	 m_vScopedConnections[ID]->initializeUnorderedBulkOp(cS.str());
+       for(unsigned int i=0; i<insvec->size(); i+=1)
+	 bulky.insert((*insvec)[i]);
+       bulky.execute(&WC, &RES);
+     }
+     else{
+       // conn->insert(cS.str(), (*insvec) );
+       //( m_vScopedConnections[ID])->insert( cS.str(), (*insvec) );
+       /*  mongo::BulkOperationBuilder bulky =
+	   m_vScopedConnections[ID]->initializeOrderedBulkOp(cS.str());
 	   for(unsigned int i=0; i<insvec->size(); i+=1)
-	     bulky.insert((*insvec)[i]);
-	   bulky.execute(&WC, &RES);
-	 }
-	 else{
-	   // conn->insert(cS.str(), (*insvec) );
-	   //( m_vScopedConnections[ID])->insert( cS.str(), (*insvec) );
-	   /*  mongo::BulkOperationBuilder bulky =
-	       m_vScopedConnections[ID]->initializeOrderedBulkOp(cS.str());
-	       for(unsigned int i=0; i<insvec->size(); i+=1)
 	       bulky.insert((*insvec)[i]);
 	       bulky.execute(&WC, &RES);*/	 
-	 
+       
 	 //old line
-	 ( m_vScopedConnections[ID])->insert( cS.str(), (*insvec) );
-	 }
-       }
-       catch(const mongo::DBException &e)  {
-	 stringstream elog;
-	 elog<<"DAQRecorder_mongodb - Caught mongodb exception writing to "
-	     <<cS.str()<<" : "<<e.what()<<endl;
-	 LogError(elog.str());
-	 delete insvec;	 
-	 //return -1;
-       }
-       _exit(0);
+       ( m_vScopedConnections[ID])->insert( cS.str(), (*insvec) );
      }
+   }
+   catch(const mongo::DBException &e)  {
+     stringstream elog;
+     elog<<"DAQRecorder_mongodb - Caught mongodb exception writing to "
+	 <<cS.str()<<" : "<<e.what()<<endl;
+     LogError(elog.str());
+     delete insvec;	 
+     //return -1;
+   }
+   //_exit(0);
+   //}
    pthread_mutex_lock(&m_childlock);
-   m_children[ID]=(pid);
+   //m_children[ID]=(pid);
    pthread_mutex_unlock(&m_childlock);
-
+   
    delete insvec;
    return 0;            
 }
