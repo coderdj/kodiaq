@@ -288,15 +288,15 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
     i64_blt_second_time = koHelper::GetTimeStamp((*fBuffers)[fBuffers->size()-1]);
 
     resetCounter = i_clockResetCounter;
-    if( i64_blt_first_time < 5E8 && bOver15 )
+    if( i64_blt_first_time < 12E8 && bOver15 )
       resetCounter++;
 
     // Is the object's over18 bool set?
-    if( i64_blt_second_time <5E8 && bOver15 ){
+    if( i64_blt_second_time <12E8 && bOver15 ){
       bOver15=false;
       i_clockResetCounter++;
     }
-    else if( i64_blt_second_time > 15E8 && !bOver15 )
+    else if( i64_blt_second_time > 12E8 && !bOver15 )
       bOver15 = true;
 
   }
