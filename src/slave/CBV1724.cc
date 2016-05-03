@@ -195,7 +195,7 @@ void CBV1724::CopyThread(){
     // Update total buffer size                                                        
     fBufferOccSize += m_temp_blt_bytes;     
     fBufferOccCount++;                                   
-    if(fBuffers->size()==1) i64_blt_first_time = koHelper::GetTimeStamp(m_tempBuff);   
+    //if(fBuffers->size()==1) i64_blt_first_time = koHelper::GetTimeStamp(m_tempBuff);   
                                                                                        
     // Priority. If we defined a time stamp frequency, signal the readout              
     time_t current_time=koLogger::GetCurrentTime();                                    
@@ -203,7 +203,7 @@ void CBV1724::CopyThread(){
     
     // If we have enough BLTs (user option) signal that board can be read out          
     if(fBuffers->size()>fReadoutThresh || tdiff > fReadoutTime)   {
-      cout<<fBuffers->size()<<" "<<fReadoutThresh<<" "<<fReadoutTime<<" "<<tdiff<<endl;
+      //cout<<fBuffers->size()<<" "<<fReadoutThresh<<" "<<fReadoutTime<<" "<<tdiff<<endl;
                fReadMeOut=true;                
     }
     //pthread_cond_signal(&fReadyCondition);                                          
@@ -425,17 +425,27 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
     // CASE 1: CLOCK RESET AT T0
     if(i64_blt_last_time >= i64_blt_first_time){
       i_clockResetCounter ++;
+      //cout<<"ADD TO CLOCK"<<i_clockResetCounter<<endl;
+
       resetCounter = i_clockResetCounter;
       // CASE 1B: CLOCK ALSO RESETS IN BUFFER
-      if(i64_blt_second_time< i64_blt_first_time)
+      if(i64_blt_second_time< i64_blt_first_time){
 	i_clockResetCounter++;
+	//cout<<"ADD TO CLOCK"<<i_clockResetCounter<<endl;
+
+      }
     }
     // CASE 2: CLOCK RESET IN BUFFER
     else if(i64_blt_last_time < i64_blt_first_time &&
 	    i64_blt_second_time < i64_blt_first_time){
       resetCounter = i_clockResetCounter;
       i_clockResetCounter++;
+      //cout<<"ADD TO CLOCK"<<i_clockResetCounter<<endl;
+
     }
+    else
+      resetCounter = i_clockResetCounter;
+
 
     i64_blt_last_time = i64_blt_second_time;
   }

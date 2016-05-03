@@ -525,6 +525,7 @@ void DataProcessor::Process()
 	}
 	if( TimeStamp < PrevTime[Channel]){
 	  ChannelResetCounters[Channel]++;
+	  //cout<<"CHANNEL RESET: "<<ChannelResetCounters[Channel]<<endl;
 	}
 	PrevTime[Channel] = TimeStamp;
 	//if( TimeStamp > 15E8 && !Over15Counter[Channel] )
