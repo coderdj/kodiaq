@@ -54,6 +54,8 @@ class CBV1724 : public VMEBoard {
    u_int32_t GetBLTSize()  {                                       /*!   Returns the block transfer size. */
       return fBLTSize;
    };
+  static void* CopyWrapper(void* data);
+  void CopyThread();
 
    int LockDataBuffer();                                           /*!<  This is a thread-safe program. In order to do anything with the buffer you have to lock the mutex. This function locks it for you.*/
    int UnlockDataBuffer();                                         /*!<  When a recorder function is done clearing the buffer of this object it can (and should) free the mutex so that acquisition can continue. As long as the user is accessing the buffer the digitizer cannot read any new data.*/
@@ -95,6 +97,11 @@ class CBV1724 : public VMEBoard {
   vector <string>       fReadoutReports;
   pid_t                 m_lastprocessPID;
   bool                  fReadMeOut;
+  bool                  bThreadOpen;
+  pthread_t             m_copyThread;
+  u_int32_t             m_temp_blt_bytes;
+  u_int32_t             *m_tempBuff;
+  bool                  bExists;
 };
 
 #endif

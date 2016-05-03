@@ -43,10 +43,19 @@ CBV1724::CBV1724()
    fReadoutTime = 1;
    m_lastprocessPID=0;
    fReadMeOut=false;
+   m_tempBuff = NULL;
+   bThreadOpen = false;
+   m_temp_blt_bytes=0;
+   bExists=false;
 }
 
 CBV1724::~CBV1724()
 {
+  bExists=false;
+  if(bThreadOpen)
+    pthread_join(m_copyThread,NULL);
+  bThreadOpen=false;
+
    ResetBuff();
    pthread_mutex_destroy(&fDataLock);
    pthread_mutex_destroy(&fWaitLock);
@@ -73,12 +82,20 @@ CBV1724::CBV1724(board_definition_t BoardDef, koLogger *kLog)
   fReadoutTime =  1;
   m_lastprocessPID=0;
   fReadMeOut=false;
+  m_tempBuff = NULL;
+  bThreadOpen=false;
+  m_temp_blt_bytes = 0;
+  bExists=false;
 }
 
 int CBV1724::Initialize(koOptions *options)
 {
   // Initialize and ready the board according to the options object
-  
+  bExists=true;
+  bThreadOpen = true;
+  pthread_create(&m_copyThread, NULL, CBV1724::CopyWrapper,
+		 static_cast<void*>(this) );
+
   // Set private members
   int retVal=0;
   i_clockResetCounter=0;
@@ -147,6 +164,54 @@ int CBV1724::Initialize(koOptions *options)
   }
    return retVal;
 }
+void* CBV1724::CopyWrapper(void* data){
+  
+  CBV1724 *board = static_cast<CBV1724*>(data);
+  board->CopyThread();
+  return (void*)data;
+  
+}
+
+void CBV1724::CopyThread(){
+
+  // We reserve too much space for the buffer (block transfers can get long).        
+  // In order to avoid shipping huge amounts of empty space around we copy           
+  // the buffer here to a new buffer that is just large enough for the data.         
+  // This memory is reserved here but it's ownership will be passed to the           
+  // processing function that drains it (that function must free it!)                
+  cout<<"In copy thread"<<endl;
+  do{
+    if(m_tempBuff == NULL || m_temp_blt_bytes == 0){
+      usleep(10);
+      continue;
+    }
+    u_int32_t *writeBuff = new u_int32_t[m_temp_blt_bytes/(sizeof(u_int32_t))];               
+    memcpy(writeBuff,m_tempBuff,m_temp_blt_bytes);               
+    LockDataBuffer();      
+    fBuffers->push_back(writeBuff);          
+    fSizes->push_back(m_temp_blt_bytes);       
+                                                                                       
+    // Update total buffer size                                                        
+    fBufferOccSize += m_temp_blt_bytes;     
+    fBufferOccCount++;                                   
+    if(fBuffers->size()==1) i64_blt_first_time = koHelper::GetTimeStamp(m_tempBuff);   
+                                                                                       
+    // Priority. If we defined a time stamp frequency, signal the readout              
+    time_t current_time=koLogger::GetCurrentTime();                                    
+    double tdiff = difftime(current_time, fLastReadout);                               
+    
+    // If we have enough BLTs (user option) signal that board can be read out          
+    if(fBuffers->size()>fReadoutThresh || tdiff > fReadoutTime)   
+               fReadMeOut=true;                
+    //pthread_cond_signal(&fReadyCondition);                                          
+    delete[] m_tempBuff;
+    m_tempBuff = NULL;
+    m_temp_blt_bytes=0;
+
+    UnlockDataBuffer();            
+  } while(bExists);
+  
+}
 
 unsigned int CBV1724::ReadMBLT()
 // Performs a FIFOBLT read cycle for this board and reads the
@@ -158,24 +223,26 @@ unsigned int CBV1724::ReadMBLT()
     int status;
     result = waitpid(m_lastprocessPID, &status, 0);
     }*/
-
-
+  if(m_tempBuff != NULL || m_temp_blt_bytes!=0) return 0;
   // Initialize
   unsigned int blt_bytes=0;
   int nb=0,ret=-5;   
    
   // The buffer must be freed in this function (fBufferSize can be large!)
-  u_int32_t *buff = new u_int32_t[fBufferSize];       
+  //u_int32_t *buff = new u_int32_t[fBufferSize];       
+  m_tempBuff = new u_int32_t[fBufferSize];
   do{
     ret = CAENVME_FIFOBLTReadCycle(fCrateHandle,fBID.vme_address,
-    				   ((unsigned char*)buff)+blt_bytes,
+    				   ((unsigned char*)m_tempBuff)+blt_bytes,
     				   fBLTSize,cvA32_U_BLT,cvD32,&nb);
     
     if((ret!=cvSuccess) && (ret!=cvBusError)){
       stringstream ss;
       ss<<"Board "<<fBID.id<<" reports read error "<<dec<<ret<<endl;
       LogError(ss.str());
-      delete[] buff;
+      delete[] m_tempBuff;
+      m_tempBuff = NULL;
+      m_temp_blt_bytes=0;
       return 0;
     }
     blt_bytes+=nb;
@@ -188,7 +255,9 @@ unsigned int CBV1724::ReadMBLT()
       ss<<"Board "<<fBID.id<<" reports insufficient BLT buffer size. ("
 	<<blt_bytes<<" > "<<fBufferSize<<")"<<endl;	 
       m_koLog->Error(ss.str());
-      delete[] buff;
+      delete[] m_tempBuff;
+      m_tempBuff = NULL;
+      m_temp_blt_bytes=0;
       return 0;
     }
   }while(ret!=cvBusError);
@@ -199,13 +268,18 @@ unsigned int CBV1724::ReadMBLT()
   
   //if(m_lastprocessPID == 0 || !forkIt){
     // child
-   
+  
   if(blt_bytes>0){
+    m_temp_blt_bytes = blt_bytes;
+    // Create a thread to handle the copy. This way the code can go on to the
+    // next digitizer immediately and copy in the BG
+    /*
     // We reserve too much space for the buffer (block transfers can get long). 
     // In order to avoid shipping huge amounts of empty space around we copy
     // the buffer here to a new buffer that is just large enough for the data.
     // This memory is reserved here but it's ownership will be passed to the
     // processing function that drains it (that function must free it!)
+    
     u_int32_t *writeBuff = new u_int32_t[blt_bytes/(sizeof(u_int32_t))]; 
     memcpy(writeBuff,buff,blt_bytes);
     LockDataBuffer();
@@ -228,9 +302,13 @@ unsigned int CBV1724::ReadMBLT()
     //pthread_cond_signal(&fReadyCondition);
     
     UnlockDataBuffer();
+    */
   }
-  
-  delete[] buff;
+  else{
+    delete[] m_tempBuff;
+    m_tempBuff = NULL;
+  }
+  //  delete[] buff;
   //  if(forkIt)
   //_exit(0);
   //}
@@ -243,6 +321,7 @@ void CBV1724::SetActivated(bool active)
    bActivated=active;
    if(active==false){
      cout<<"Signaling final read"<<endl;
+
       if(pthread_mutex_trylock(&fDataLock)==0){	      
 	//pthread_cond_signal(&fReadyCondition);
 	fReadMeOut=true;
@@ -529,7 +608,8 @@ int CBV1724::DetermineBaselines()
     //the current read is finished  
     if(readout == 0){
       LogError("Read failed in baseline function.");
-      return -1;
+      continue;
+      //return -1;
     }
 
     // Use main kodiaq parsing     
