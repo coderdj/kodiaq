@@ -422,9 +422,29 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
     headerTime = koHelper::GetTimeStamp((*fBuffers)[0]);
     i64_blt_second_time = koHelper::GetTimeStamp((*fBuffers)[fBuffers->size()-1]);
 
+    // CASE 1: CLOCK RESET AT T0
+    if(i64_blt_last_time >= i64_blt_first_time){
+      i_clockResetCounter ++;
+      resetCounter = i_clockResetCounter;
+      // CASE 1B: CLOCK ALSO RESETS IN BUFFER
+      if(i64_blt_second_time< i64_blt_first_time)
+	i_clockResetCounter++;
+    }
+    // CASE 2: CLOCK RESET IN BUFFER
+    else if(i64_blt_last_time < i64_blt_first_time &&
+	    i64_blt_second_time < i64_blt_first_time){
+      resetCounter = i_clockResetCounter;
+      i_clockResetCounter++;
+    }
+
+    i64_blt_last_time = i64_blt_second_time;
+  }
+    /*
     resetCounter = i_clockResetCounter;
+    bool incrementedClock = false;
+
     if( i64_blt_first_time < 12E8 && bOver15 )
-      resetCounter++;
+      resetCounter++;     
 
     // Is the object's over18 bool set?
     if( i64_blt_second_time <12E8 && bOver15 ){
@@ -435,7 +455,7 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
       bOver15 = true;
 
   }
-
+    */
   // PROFILING                  
   if(m_ID != -1){
     struct timeval tv;

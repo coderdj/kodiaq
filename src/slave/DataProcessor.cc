@@ -490,6 +490,7 @@ void DataProcessor::Process()
       vector<bool>        SawThisChannelOnce( 8, false );
       vector<u_int32_t>   ChannelResetCounters( 8, resetCounterStart );
       vector<bool>        Over15Counter( 8, false );
+      vector<u_int32_t>        PrevTime(8, 0);
 
       //Loop through the parsed buffers
       for(unsigned int b = 0; b < buffvec->size(); b++) {
@@ -522,12 +523,15 @@ void DataProcessor::Process()
 	      ChannelResetCounters[Channel]++;
 	  }
 	}
-	if( TimeStamp > 15E8 && !Over15Counter[Channel] )
-	  Over15Counter[Channel] = true;
-	else if ( TimeStamp < 5E8 && Over15Counter[Channel] ){
-	  Over15Counter[Channel] = false;
+	if( TimeStamp < PrevTime[Channel]){
 	  ChannelResetCounters[Channel]++;
 	}
+	//if( TimeStamp > 15E8 && !Over15Counter[Channel] )
+	//Over15Counter[Channel] = true;
+	//else if ( TimeStamp < 5E8 && Over15Counter[Channel] ){
+	//Over15Counter[Channel] = false;
+	//ChannelResetCounters[Channel]++;
+	//}
 	
 	// Convert the time to 64-bit
 	// We assume this data is in temporal order for 
