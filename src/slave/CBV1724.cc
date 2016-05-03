@@ -42,6 +42,7 @@ CBV1724::CBV1724()
    fLastReadout=koLogger::GetCurrentTime();
    fReadoutTime = 1;
    m_lastprocessPID=0;
+   fReadMeOut=false;
 }
 
 CBV1724::~CBV1724()
@@ -71,6 +72,7 @@ CBV1724::CBV1724(board_definition_t BoardDef, koLogger *kLog)
   fLastReadout=koLogger::GetCurrentTime();
   fReadoutTime =  1;
   m_lastprocessPID=0;
+  fReadMeOut=false;
 }
 
 int CBV1724::Initialize(koOptions *options)
@@ -222,7 +224,8 @@ unsigned int CBV1724::ReadMBLT()
     
     // If we have enough BLTs (user option) signal that board can be read out
     if(fBuffers->size()>fReadoutThresh || tdiff > fReadoutTime)
-      pthread_cond_signal(&fReadyCondition);
+      fReadMeOut=true;
+    //pthread_cond_signal(&fReadyCondition);
     
     UnlockDataBuffer();
   }
@@ -241,7 +244,8 @@ void CBV1724::SetActivated(bool active)
    if(active==false){
      cout<<"Signaling final read"<<endl;
       if(pthread_mutex_trylock(&fDataLock)==0){	      
-	 pthread_cond_signal(&fReadyCondition);
+	//pthread_cond_signal(&fReadyCondition);
+	fReadMeOut=true;
 	 pthread_mutex_unlock(&fDataLock);
       }
       cout<<"Done"<<endl;
@@ -287,14 +291,22 @@ int CBV1724::RequestDataLock()
 {
    int error=pthread_mutex_trylock(&fWaitLock);
    if(error!=0) return -1;
-   struct timespec timeToWait;
+   
+   /*struct timespec timeToWait;
    timeToWait.tv_sec = time(0)+1; //wait 1 seconds
    timeToWait.tv_nsec= 0;
    if(pthread_cond_timedwait(&fReadyCondition,&fDataLock,&timeToWait)==0){
      //LockDataBuffer();
      pthread_mutex_unlock(&fWaitLock);
      return 0;
+     }*/
+   
+   if(fReadMeOut){
+     LockDataBuffer();
+     pthread_mutex_unlock(&fWaitLock);
+     return 0;
    }
+
    pthread_mutex_unlock(&fWaitLock);
    //   UnlockDataBuffer();
    return -1;
@@ -309,6 +321,7 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
 // updated if needed. The value of this counter at the BEGINNING of the buffer
 // is passed by reference to the caller
 {
+  fReadMeOut=false;
   headerTime = 0;
   fLastReadout=koLogger::GetCurrentTime();
 

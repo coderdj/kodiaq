@@ -94,6 +94,7 @@ class CBV1724 : public VMEBoard {
   double                fReadoutTime;
   vector <string>       fReadoutReports;
   pid_t                 m_lastprocessPID;
+  bool                  fReadMeOut;
 };
 
 #endif
