@@ -277,7 +277,8 @@ unsigned int CBV1724::ReadMBLT()
     
     // If we have enough BLTs (user option) signal that board can be read out
     if(fBuffers->size()>fReadoutThresh || tdiff > fReadoutTime)
-      pthread_cond_signal(&fReadyCondition);
+      fReadMeOut=true;
+      //pthread_cond_signal(&fReadyCondition);
       
     UnlockDataBuffer();
   }

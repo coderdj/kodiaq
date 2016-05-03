@@ -256,7 +256,7 @@ void DataProcessor::SplitChannelsNewFW(vector<u_int32_t*> *&buffvec,
     }	
        
     unsigned int idx=0;           //used to iterate through the buffer
-    
+    unsigned int nBuffs = 0;
     while(idx<(((*sizevec)[x])/(sizeof(u_int32_t)))) {	    
       if(((*buffvec)[x][idx])==0xFFFFFFFF){
 	idx++; continue;
@@ -266,7 +266,7 @@ void DataProcessor::SplitChannelsNewFW(vector<u_int32_t*> *&buffvec,
 	idx++; continue;
       }
       //found a header
-	    
+      nBuffs++;
       //Read information from header. Need channel mask and header time
       u_int32_t mask = ((*buffvec)[x][idx+1])&0xFF;
 
@@ -352,6 +352,7 @@ void DataProcessor::SplitChannelsNewFW(vector<u_int32_t*> *&buffvec,
 
       }
     }//end while       
+    //cout<<"Found "<<nBuffs<<" headers in this BLT"<<endl;
     delete(*buffvec)[x];
   }//end for through buffvec
   delete buffvec;
