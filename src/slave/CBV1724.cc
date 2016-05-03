@@ -164,8 +164,9 @@ int CBV1724::Initialize(koOptions *options)
   }
    return retVal;
 }
+//#include <thread>
 void* CBV1724::CopyWrapper(void* data){
-  
+
   CBV1724 *board = static_cast<CBV1724*>(data);
   board->CopyThread();
   return (void*)data;
@@ -201,8 +202,10 @@ void CBV1724::CopyThread(){
     double tdiff = difftime(current_time, fLastReadout);                               
     
     // If we have enough BLTs (user option) signal that board can be read out          
-    if(fBuffers->size()>fReadoutThresh || tdiff > fReadoutTime)   
+    if(fBuffers->size()>fReadoutThresh || tdiff > fReadoutTime)   {
+      cout<<fBuffers->size()<<" "<<fReadoutThresh<<" "<<fReadoutTime<<" "<<tdiff<<endl;
                fReadMeOut=true;                
+    }
     //pthread_cond_signal(&fReadyCondition);                                          
     delete[] m_tempBuff;
     m_tempBuff = NULL;
@@ -223,7 +226,10 @@ unsigned int CBV1724::ReadMBLT()
     int status;
     result = waitpid(m_lastprocessPID, &status, 0);
     }*/
-  if(m_tempBuff != NULL || m_temp_blt_bytes!=0) return 0;
+  if(m_tempBuff != NULL || m_temp_blt_bytes!=0) {
+    return 0;
+  }
+  
   // Initialize
   unsigned int blt_bytes=0;
   int nb=0,ret=-5;   
@@ -368,6 +374,13 @@ int CBV1724::UnlockDataBuffer()
 
 int CBV1724::RequestDataLock()
 {
+  if(fReadMeOut){
+    int error = pthread_mutex_trylock(&fDataLock);
+    if(error!=0) return -1;
+    return 0;
+  }
+  return -1;
+  /*
    int error=pthread_mutex_trylock(&fWaitLock);
    if(error!=0) return -1;
    
@@ -379,7 +392,7 @@ int CBV1724::RequestDataLock()
      pthread_mutex_unlock(&fWaitLock);
      return 0;
      }*/
-   
+  /*
    if(fReadMeOut){
      LockDataBuffer();
      pthread_mutex_unlock(&fWaitLock);
@@ -388,7 +401,7 @@ int CBV1724::RequestDataLock()
 
    pthread_mutex_unlock(&fWaitLock);
    //   UnlockDataBuffer();
-   return -1;
+   return -1;*/
 }
 
 vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes, 

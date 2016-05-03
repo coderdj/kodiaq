@@ -392,6 +392,35 @@ void DigiInterface::Close()
 
 void* DigiInterface::ReadThreadWrapper(void* data)
 { 
+  
+  int policy = SCHED_RR;
+  pthread_attr_t tattr;
+  struct sched_param param;
+  pthread_attr_init(&tattr);                                                          
+  int error = pthread_attr_setschedpolicy(&tattr, policy);
+  error = pthread_attr_getschedparam(&tattr,&param);
+  param.sched_priority=99;
+  error=pthread_attr_setschedparam(&tattr,&param);
+  // insert error handling
+  error = pthread_attr_getschedparam(&tattr, &param);
+  cout<<param.sched_priority<<endl;
+  /*
+  pthread_t thId = pthread_self();
+  int newpolicy = SCHED_RR;
+  sched_param param;
+  param.sched_priority=99;
+  pthread_setschedparam(thId, newpolicy, &param);
+
+  pthread_attr_t thAttr;
+  int policy = 0;
+  int max_prio_for_policy = 0;
+  pthread_attr_init(&thAttr);
+  pthread_attr_getschedpolicy(&thAttr, &policy);
+  max_prio_for_policy = sched_get_priority_max(policy);
+  cout<<max_prio_for_policy<<endl;
+  pthread_setschedprio(thId, max_prio_for_policy);
+  pthread_attr_destroy(&thAttr);
+  */
    DigiInterface *digi = static_cast<DigiInterface*>(data);
    digi->ReadThread();
    return (void*)data;
@@ -433,6 +462,9 @@ void DigiInterface::ReadThread()
 
 	// Read from the digitizer and adjust the rates
 	 unsigned int ratecycle=m_vDigitizers[x]->ReadMBLT();	 	 
+	 //double drate = (double)(ratecycle);
+	 //if(drate > 1000000)
+	 //cout<<drate/1000000<<endl;
 
 	 rate+=ratecycle;
 	 if(ratecycle!=0)
