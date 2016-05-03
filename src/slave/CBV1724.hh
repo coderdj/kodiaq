@@ -78,6 +78,7 @@ class CBV1724 : public VMEBoard {
 
    unsigned int         fReadoutThresh;
    pthread_mutex_t      fDataLock;
+   pthread_mutex_t      fWaitLock;
    pthread_cond_t       fReadyCondition;
    u_int32_t            fBufferSize;
    u_int32_t            fBLTSize;
@@ -92,6 +93,7 @@ class CBV1724 : public VMEBoard {
   time_t                fLastReadout;
   double                fReadoutTime;
   vector <string>       fReadoutReports;
+  pid_t                 m_lastprocessPID;
 };
 
 #endif

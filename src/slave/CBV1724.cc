@@ -16,6 +16,9 @@
 #include "CBV1724.hh"
 #include "DataProcessor.hh"
 #include <koHelper.hh>
+#include <sys/types.h>
+#include <sys/wait.h>
+
 #ifdef HAVE_LIBMONGOCLIENT
 #include "mongo/client/dbclient.h"
 #endif
@@ -30,6 +33,7 @@ CBV1724::CBV1724()
    fBufferOccCount = 0;
    fReadoutThresh=10;
    pthread_mutex_init(&fDataLock,NULL);
+   pthread_mutex_init(&fWaitLock,NULL);
    pthread_cond_init(&fReadyCondition,NULL);
    i_clockResetCounter = 0;
    i64_blt_first_time = i64_blt_second_time = i64_blt_last_time = 0;
@@ -37,12 +41,14 @@ CBV1724::CBV1724()
    fIdealBaseline = 16000;
    fLastReadout=koLogger::GetCurrentTime();
    fReadoutTime = 1;
+   m_lastprocessPID=0;
 }
 
 CBV1724::~CBV1724()
 {
    ResetBuff();
    pthread_mutex_destroy(&fDataLock);
+   pthread_mutex_destroy(&fWaitLock);
    pthread_cond_destroy(&fReadyCondition);
 }
 
@@ -55,6 +61,7 @@ CBV1724::CBV1724(board_definition_t BoardDef, koLogger *kLog)
   fSizes=NULL;
   fReadoutThresh=10;
   pthread_mutex_init(&fDataLock,NULL);
+  pthread_mutex_init(&fWaitLock,NULL);
   pthread_cond_init(&fReadyCondition,NULL);
   i64_blt_first_time = i64_blt_second_time = i64_blt_last_time = 0;
   fBufferOccSize = 0;
@@ -63,6 +70,7 @@ CBV1724::CBV1724(board_definition_t BoardDef, koLogger *kLog)
   fIdealBaseline = 16000;
   fLastReadout=koLogger::GetCurrentTime();
   fReadoutTime =  1;
+  m_lastprocessPID=0;
 }
 
 int CBV1724::Initialize(koOptions *options)
@@ -142,6 +150,14 @@ unsigned int CBV1724::ReadMBLT()
 // Performs a FIFOBLT read cycle for this board and reads the
 // data into the buffer of this CBV1724 object
 {
+  //experimental                  
+  /*if(m_lastprocessPID!=0){
+    pid_t result;
+    int status;
+    result = waitpid(m_lastprocessPID, &status, 0);
+    }*/
+
+
   // Initialize
   unsigned int blt_bytes=0;
   int nb=0,ret=-5;   
@@ -174,6 +190,13 @@ unsigned int CBV1724::ReadMBLT()
       return 0;
     }
   }while(ret!=cvBusError);
+
+
+  //if(forkIt)
+  //m_lastprocessPID = fork();
+  
+  //if(m_lastprocessPID == 0 || !forkIt){
+    // child
    
   if(blt_bytes>0){
     // We reserve too much space for the buffer (block transfers can get long). 
@@ -190,7 +213,7 @@ unsigned int CBV1724::ReadMBLT()
     // Update total buffer size
     fBufferOccSize += blt_bytes;
     fBufferOccCount++;
-
+    
     if(fBuffers->size()==1) i64_blt_first_time = koHelper::GetTimeStamp(buff);
     
     // Priority. If we defined a time stamp frequency, signal the readout
@@ -200,11 +223,14 @@ unsigned int CBV1724::ReadMBLT()
     // If we have enough BLTs (user option) signal that board can be read out
     if(fBuffers->size()>fReadoutThresh || tdiff > fReadoutTime)
       pthread_cond_signal(&fReadyCondition);
-      
+    
     UnlockDataBuffer();
   }
-
+  
   delete[] buff;
+  //  if(forkIt)
+  //_exit(0);
+  //}
   return blt_bytes;
 }
 
@@ -259,14 +285,18 @@ int CBV1724::UnlockDataBuffer()
 
 int CBV1724::RequestDataLock()
 {
-   int error=pthread_mutex_trylock(&fDataLock);
+   int error=pthread_mutex_trylock(&fWaitLock);
    if(error!=0) return -1;
    struct timespec timeToWait;
    timeToWait.tv_sec = time(0)+1; //wait 1 seconds
    timeToWait.tv_nsec= 0;
-   if(pthread_cond_timedwait(&fReadyCondition,&fDataLock,&timeToWait)==0)
+   if(pthread_cond_timedwait(&fReadyCondition,&fDataLock,&timeToWait)==0){
+     //LockDataBuffer();
+     pthread_mutex_unlock(&fWaitLock);
      return 0;
-   UnlockDataBuffer();
+   }
+   pthread_mutex_unlock(&fWaitLock);
+   //   UnlockDataBuffer();
    return -1;
 }
 
@@ -449,7 +479,7 @@ int CBV1724::DetermineBaselines()
   //vector<bool> channelFinished(8,false);
   vector<int> channelFinished(8, 0);
   
-  int maxIterations = 200;
+  int maxIterations = 1000;
   int currentIteration = 0;
 
   while(currentIteration<=maxIterations){    
