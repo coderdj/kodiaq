@@ -92,9 +92,9 @@ int CBV1724::Initialize(koOptions *options)
 {
   // Initialize and ready the board according to the options object
   bExists=true;
-  bThreadOpen = true;
-  pthread_create(&m_copyThread, NULL, CBV1724::CopyWrapper,
-		 static_cast<void*>(this) );
+  //bThreadOpen = true;
+  //pthread_create(&m_copyThread, NULL, CBV1724::CopyWrapper,
+  //static_cast<void*>(this) );
 
   // Set private members
   int retVal=0;
@@ -220,72 +220,45 @@ unsigned int CBV1724::ReadMBLT()
 // Performs a FIFOBLT read cycle for this board and reads the
 // data into the buffer of this CBV1724 object
 {
-  //experimental                  
-  /*if(m_lastprocessPID!=0){
-    pid_t result;
-    int status;
-    result = waitpid(m_lastprocessPID, &status, 0);
-    }*/
-  if(m_tempBuff != NULL || m_temp_blt_bytes!=0) {
-    return 0;
-  }
-  
   // Initialize
   unsigned int blt_bytes=0;
   int nb=0,ret=-5;   
    
   // The buffer must be freed in this function (fBufferSize can be large!)
-  //u_int32_t *buff = new u_int32_t[fBufferSize];       
-  m_tempBuff = new u_int32_t[fBufferSize];
+  u_int32_t *buff = new u_int32_t[fBufferSize];       
   do{
     ret = CAENVME_FIFOBLTReadCycle(fCrateHandle,fBID.vme_address,
-    				   ((unsigned char*)m_tempBuff)+blt_bytes,
-    				   fBLTSize,cvA32_U_BLT,cvD32,&nb);
+				   ((unsigned char*)buff)+blt_bytes,
+				   fBLTSize,cvA32_U_BLT,cvD32,&nb);
     
     if((ret!=cvSuccess) && (ret!=cvBusError)){
       stringstream ss;
       ss<<"Board "<<fBID.id<<" reports read error "<<dec<<ret<<endl;
       LogError(ss.str());
-      delete[] m_tempBuff;
-      m_tempBuff = NULL;
-      m_temp_blt_bytes=0;
+      delete[] buff;
       return 0;
     }
     blt_bytes+=nb;
-    if(blt_bytes>fBufferSize)	{
+    if(blt_bytes>fBufferSize){
       // For Custom V1724 firmware max event size is ~10mus, corresponding to a 
       // buffer of several MB. Events which are this large are probably non
       // physical. Events going over the 10mus limit are simply ignored by the
       // board (!). 
-      stringstream ss;	 
+      stringstream ss; 
       ss<<"Board "<<fBID.id<<" reports insufficient BLT buffer size. ("
-	<<blt_bytes<<" > "<<fBufferSize<<")"<<endl;	 
+	<<blt_bytes<<" > "<<fBufferSize<<")"<<endl; 
       m_koLog->Error(ss.str());
-      delete[] m_tempBuff;
-      m_tempBuff = NULL;
-      m_temp_blt_bytes=0;
+      delete[] buff;
       return 0;
     }
   }while(ret!=cvBusError);
-
-
-  //if(forkIt)
-  //m_lastprocessPID = fork();
-  
-  //if(m_lastprocessPID == 0 || !forkIt){
-    // child
-  
+   
   if(blt_bytes>0){
-    m_temp_blt_bytes = blt_bytes;
-    // Create a thread to handle the copy. This way the code can go on to the
-    // next digitizer immediately and copy in the BG
-    /*
     // We reserve too much space for the buffer (block transfers can get long). 
     // In order to avoid shipping huge amounts of empty space around we copy
     // the buffer here to a new buffer that is just large enough for the data.
     // This memory is reserved here but it's ownership will be passed to the
     // processing function that drains it (that function must free it!)
-    
     u_int32_t *writeBuff = new u_int32_t[blt_bytes/(sizeof(u_int32_t))]; 
     memcpy(writeBuff,buff,blt_bytes);
     LockDataBuffer();
@@ -295,8 +268,8 @@ unsigned int CBV1724::ReadMBLT()
     // Update total buffer size
     fBufferOccSize += blt_bytes;
     fBufferOccCount++;
-    
-    if(fBuffers->size()==1) i64_blt_first_time = koHelper::GetTimeStamp(buff);
+
+    //if(fBuffers->size()==1) i64_blt_first_time = koHelper::GetTimeStamp(buff);
     
     // Priority. If we defined a time stamp frequency, signal the readout
     time_t current_time=koLogger::GetCurrentTime();
@@ -304,20 +277,12 @@ unsigned int CBV1724::ReadMBLT()
     
     // If we have enough BLTs (user option) signal that board can be read out
     if(fBuffers->size()>fReadoutThresh || tdiff > fReadoutTime)
-      fReadMeOut=true;
-    //pthread_cond_signal(&fReadyCondition);
-    
+      pthread_cond_signal(&fReadyCondition);
+      
     UnlockDataBuffer();
-    */
   }
-  else{
-    delete[] m_tempBuff;
-    m_tempBuff = NULL;
-  }
-  //  delete[] buff;
-  //  if(forkIt)
-  //_exit(0);
-  //}
+
+  delete[] buff;
   return blt_bytes;
 }
 
