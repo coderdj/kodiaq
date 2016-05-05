@@ -232,7 +232,7 @@ void DAQRecorder_mongodb::Fillicide(int ID){
 }
 
 int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
-					 int ID)
+					int ID, int resetCount)
 {  
   //  Fillicide(ID);
 
@@ -254,6 +254,8 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
    stringstream cS;
    cS<<mongo_opts.database<<"."<<
      mongo_opts.collection;
+   if(resetCount!=-1)
+     cS<<"_"<<resetCount;
 
    // Fork the insert
    //pid_t pid = fork();

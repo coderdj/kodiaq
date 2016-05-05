@@ -418,6 +418,7 @@ void DataProcessor::Process()
   vector<u_int32_t > *times        = NULL;  // Timestamp
   vector<u_int32_t > *eventIndices = NULL;  // Event
   int                 iModule      = 0;     // Fill with ID of current module
+  int                 LAST_RESET_COUNT = 0;
 
   //cout<<"ENTER LOOP"<<endl;
   while(!bExitCondition){
@@ -599,12 +600,21 @@ void DataProcessor::Process()
 	    bson.appendBinData("data",(int)eventSize,mongo::BinDataGeneral,
 			       (const void*)buff);
 	    
-	  vMongoInsertVec->push_back(bson.obj());
+	  bool insert = false;
 	  
-	  if((int)vMongoInsertVec->size() > mongo_opts.min_insert_size){
-
-	    if(DAQRecorder_mdb->InsertThreaded(vMongoInsertVec,mongoID)==0){ 
+	  if(m_koOptions->HasField("rotating_collections") &&
+	     m_koOptions->GetInt("rotating_collections") == 1){
+	    if(ChannelResetCounters[Channel] != LAST_RESET_COUNT)
+	      insert = true;
+	  }
+	  if((int)vMongoInsertVec->size() > mongo_opts.min_insert_size)
+	    insert = true;
+	    
+	  if(insert){
+	    if(DAQRecorder_mdb->InsertThreaded(vMongoInsertVec,mongoID, 
+					       LAST_RESET_COUNT)==0){ 
 	      //success
+	      LAST_RESET_COUNT = ChannelResetCounters[Channel];
 	      vMongoInsertVec = new vector<mongo::BSONObj>();
 	    }
 	    else{
@@ -614,6 +624,9 @@ void DataProcessor::Process()
 	      break;
 	    }
 	  }
+
+	  vMongoInsertVec->push_back(bson.obj());
+	  
 	}
 #endif
 #ifdef HAVE_LIBPBF
