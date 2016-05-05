@@ -20,6 +20,7 @@ CBV2718::CBV2718()
   b_led_on = false;
   b_muonveto_on = false;
   i_pulserHz = 0;
+  i_gimpMode = 0;
   bStarted=false;
 }
 
@@ -34,6 +35,7 @@ CBV2718::CBV2718(board_definition_t BID, koLogger *kLog)
   b_led_on = false;
   b_muonveto_on = false;
   i_pulserHz = 0;
+  i_gimpMode = 0;
   bStarted=false;
 }
 
@@ -53,6 +55,8 @@ int CBV2718::Initialize(koOptions *options)
   b_led_on = false;
   b_muonveto_on = false;
   i_pulserHz = 0;
+
+  i_gimpMode = 0;
   
   if(options->GetInt("led_trigger")==1)
     b_led_on = true;    
@@ -62,7 +66,9 @@ int CBV2718::Initialize(koOptions *options)
     b_startwithsin = true;
   if(options->GetInt("pulser_freq")>0)
     i_pulserHz = options->GetInt("pulser_freq");
-  
+  if(options->HasField("gimp_mode") &&
+     options->GetInt("gimp_mode") >0)
+    i_gimpMode = options->GetInt("gimp_mode");
   
   //CAENVME_SystemReset(fCrateHandle);
   if(SendStopSignal()!=0)
@@ -88,6 +94,10 @@ int CBV2718::SendStartSignal()
   // Line 3 : LED Pulser
   CAENVME_SetOutputConf(fCrateHandle, cvOutput3, cvDirect, 
 			cvActiveHigh, cvMiscSignals);
+  // Line 4 : GIMP Logic
+  CAENVME_SetOutputConf(fCrateHandle, cvOutput4, cvDirect,
+                        cvActiveHigh, cvManualSW);
+
 
   // Set the output register
   unsigned int data = 0x0;
@@ -97,6 +107,8 @@ int CBV2718::SendStartSignal()
     data+=cvOut1Bit;
   if(b_startwithsin)
     data+=cvOut0Bit;
+  if(i_gimpMode!=0)
+    data+=cvOut4Bit;
 
    // This is the S-IN                
   m_koLog->Message("Writing cvOutRegSet with :" + 
@@ -115,6 +127,8 @@ int CBV2718::SendStartSignal()
     // the maximum value of the lower one
     CVTimeUnits tu = cvUnit104ms;
     u_int32_t width = 0x1;
+    if(i_gimpMode!=0)
+      width = i_gimpMode;
     u_int32_t period = 0x0;
     if(i_pulserHz < 10){
       if(i_pulserHz > 5)

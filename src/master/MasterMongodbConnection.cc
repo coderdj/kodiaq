@@ -349,6 +349,8 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
 	migrateTo.push_back("shard_2/eb2:27000");
 	for(int x=0; x<options->GetBoards(); x++){
 	  string serial = koHelper::IntToString(options->GetBoard(x).id);
+	  if(options->GetBoard(x).type!="V1724")
+	    continue;
 	  string jsonstring = "{ split: '"+collectionName+
 	    "', middle: { 'module': "+serial+"}}";
 	  cout<<"Telling mongo to split on: "<<jsonstring<<endl;
