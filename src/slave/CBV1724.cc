@@ -389,7 +389,7 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
     i64_blt_second_time = koHelper::GetTimeStamp((*fBuffers)[fBuffers->size()-1]);
 
     // CASE 1: CLOCK RESET AT T0
-    if(i64_blt_last_time >= i64_blt_first_time){
+    if(i64_blt_last_time > i64_blt_first_time){
       i_clockResetCounter ++;
       //cout<<"ADD TO CLOCK"<<i_clockResetCounter<<endl;
 
