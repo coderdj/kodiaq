@@ -611,12 +611,15 @@ void DataProcessor::Process()
 	    insert = true;
 	    
 	  if(insert){
+	    if(!(m_koOptions->HasField("rotating_collections")) ||
+	       (m_koOptions->GetInt("rotating_collections") != 1))
+	      LAST_RESET_COUNT=-1;
 	    if(DAQRecorder_mdb->InsertThreaded(vMongoInsertVec,mongoID, 
 					       LAST_RESET_COUNT)==0){ 
 	      //success
-	      LAST_RESET_COUNT = ChannelResetCounters[Channel];
-	      vMongoInsertVec = new vector<mongo::BSONObj>();
-	    }
+		LAST_RESET_COUNT = ChannelResetCounters[Channel];
+		vMongoInsertVec = new vector<mongo::BSONObj>();
+	      }
 	    else{
 	      LogError("MongoDB insert error from processor thread.");
 	      bExitCondition=true;

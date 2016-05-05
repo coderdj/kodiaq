@@ -20,6 +20,25 @@
 #include <koHelper.hh>
 #include "mongo/client/dbclient.h"
 
+class MasterMongodbConnection;
+
+struct collection_thread_t
+{
+  pthread_t thread;
+  bool open;
+  bool run;
+};
+
+struct collection_thread_packet_t
+{
+  MasterMongodbConnection *mongoconnection;
+  koOptions *koptions;
+  mongo_option_t options;
+  string detector;
+  string collection;
+};
+
+
 class MasterMongodbConnection
 {
 
@@ -88,8 +107,14 @@ public:
   //int  UpdateNoiseDirectory(string run_name);
   void SendRunStartReply(int response, string message);//, string mode, string comment);
   void ClearDispatcherReply();
+  
+  bool IsRunning(string detector);
+  static void* CollectionThreadWrapper(void* data);
+  
 
  private:
+  int MakeMongoCollection(mongo_option_t mongo_opts, string collection, 
+			  koOptions *options, int time_cycle=-1);
   vector<string> GetHashTags(string comment);
   int Connect();
 
@@ -100,6 +125,8 @@ public:
   mongo::DBClientBase       *fLogDB, *fMonitorDB, *fRunsDB;
   string                     fLogDBName,fMonitorDBName,fRunsDBName,fRunsCollection;
   string                     fBufferUser, fBufferPassword;
+
+  map <string, collection_thread_t> m_collectionThreads;
 };
 
 #endif
