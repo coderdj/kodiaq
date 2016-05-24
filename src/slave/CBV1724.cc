@@ -422,7 +422,7 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
     if(reset != i_clockResetCounter){
       stringstream st;
       st<<"Clock reset board "<<fBID.id<<": first time ("<<i64_blt_first_time<<") second time ("<<i64_blt_second_time<<") last time ("<<
-	i64_blt_last_time<<") reset counter ("<<resetCounter<<")";
+	i64_blt_last_time<<") reset counter ("<<resetCounter<<") size of buffer vector ("<<fBuffers->size()<<")";
       LogError(st.str());
     }
 
