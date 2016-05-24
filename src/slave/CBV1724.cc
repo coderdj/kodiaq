@@ -388,6 +388,11 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
     headerTime = koHelper::GetTimeStamp((*fBuffers)[0]);
     i64_blt_second_time = koHelper::GetTimeStamp((*fBuffers)[fBuffers->size()-1]);
 
+    // LOGGING: TO REMOVE
+    bool recthis = false;
+    if(i_clockResetCounter == 0)
+      recthis = true;
+
     // CASE 1: CLOCK RESET AT T0
     if(i64_blt_last_time > i64_blt_first_time){
       i_clockResetCounter ++;
@@ -412,6 +417,13 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
     else
       resetCounter = i_clockResetCounter;
 
+    // REMOVE THIS IF LATER
+    if(recthis && i_clockResetCounter == 1){
+      stringstream st;
+      st<<"First reset board "<<fBID.id<<": first time ("<<i64_blt_first_time<<") second time ("<<i64_blt_second_time<<") last time ("<<
+	i64_blt_last_time<<") reset counter ("<<resetCounter<<")";
+      LogError(st.str());
+    }
 
     i64_blt_last_time = i64_blt_second_time;
   }
