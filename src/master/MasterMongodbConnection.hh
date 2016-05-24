@@ -32,8 +32,8 @@ struct collection_thread_t
 struct collection_thread_packet_t
 {
   MasterMongodbConnection *mongoconnection;
-  koOptions *koptions;
   mongo_option_t options;
+  vector<string> boardList;
   string detector;
   string collection;
 };
@@ -114,7 +114,7 @@ public:
 
  private:
   int MakeMongoCollection(mongo_option_t mongo_opts, string collection, 
-			  koOptions *options, int time_cycle=-1);
+			  vector<string> boardList, int time_cycle=-1);
   vector<string> GetHashTags(string comment);
   int Connect();
 

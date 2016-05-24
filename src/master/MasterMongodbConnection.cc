@@ -204,7 +204,7 @@ void* MasterMongodbConnection::CollectionThreadWrapper(void* data){
   mongo_option_t options = payload->options;
   string collection = payload->collection;
   string detector = payload->detector;
-  koOptions *koptions = payload->koptions;
+  vector <string> boardList = payload->boardList;
 
   int counter = 1;
   int readaheadconstant = 5;
@@ -216,14 +216,15 @@ void* MasterMongodbConnection::CollectionThreadWrapper(void* data){
 
     time_t currentTime = koLogger::GetCurrentTime();
     time_t tdiff = difftime(currentTime, startTime);
-    if( tdiff*(1+readaheadfraction)  / 21. < readaheadconstant){
-      mongocoll->MakeMongoCollection(options, collection, koptions, counter);
+    //    cout<<tdiff<<" "<<tdiff*(1+readaheadfraction)<<" "<<tdiff*(1+readaheadfraction)  / 21. <<" "<< counter<<" "<< readaheadconstant<<endl;
+    if( tdiff*(1+readaheadfraction)  / 21. + readaheadconstant > counter){
+      mongocoll->MakeMongoCollection(options, collection, boardList, counter);
       counter++;
     }
     sleep(1);
 								 
   }
-  delete &data;
+  //delete &data;
   return (data);
 }
 
@@ -236,15 +237,16 @@ bool MasterMongodbConnection::IsRunning(string detector){
 
 int MasterMongodbConnection::MakeMongoCollection(mongo_option_t mongo_opts, 
 						 string collection, 
-						 koOptions* options,
+						 vector<string> boardList,
 						 int time_cycle){
   
   string connstring = mongo_opts.address;
   mongo::DBClientBase *bufferDB;
 
-  if(time_cycle != -1)
+  if(time_cycle != -1){
     mongo_opts.collection=mongo_opts.collection+"_"+koHelper::IntToString(time_cycle);
-
+    collection = collection + "_"+koHelper::IntToString(time_cycle);
+  }
 
   if(fBufferUser!="" && fBufferPassword!="")
     connstring = "mongodb://" + fBufferUser + ":" + fBufferPassword + "@" +
@@ -330,12 +332,9 @@ int MasterMongodbConnection::MakeMongoCollection(mongo_option_t mongo_opts,
     migrateTo.push_back("shard_0/eb0:27000");
     migrateTo.push_back("shard_1/eb1:27000");
     migrateTo.push_back("shard_2/eb2:27000");
-    for(int x=0; x<options->GetBoards(); x++){
-      string serial = koHelper::IntToString(options->GetBoard(x).id);
-      if(options->GetBoard(x).type!="V1724")
-	continue;
+    for(int x=0; x<boardList.size(); x++){
       string jsonstring = "{ split: '"+collectionName+
-	"', middle: { 'module': "+serial+"}}";
+	"', middle: { 'module': "+boardList[x]+"}}";
       cout<<"Telling mongo to split on: "<<jsonstring<<endl;
       bufferDB->runCommand
 	(
@@ -349,7 +348,7 @@ int MasterMongodbConnection::MakeMongoCollection(mongo_option_t mongo_opts,
 	(
 	 "admin",
 	 mongo::fromjson( "{ moveChunk: '"+collectionName+
-			  "', find: { module: "+serial+"},"+
+			  "', find: { module: "+boardList[x]+"},"+
 			  "to: '"+migrateTo[x%3]+"' }"
 			  ),
 	 ret
@@ -437,10 +436,17 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
 	fLog->Error("Writing to mongodb required both a database and address");
 	return -1;
       }
-      
+      vector<string> boardList;
+      for(int x=0; x<options->GetBoards(); x++){
+	string serial = koHelper::IntToString(options->GetBoard(x).id);
+	if(options->GetBoard(x).type!="V1724")
+	  continue;
+	boardList.push_back(serial);
+      }
+
       if( options->HasField("rotating_collections") && 
 	  options->GetInt("rotating_collections") == 1){
-	if(MakeMongoCollection(mongo_opts, collection, options, 0)!=0){
+	if(MakeMongoCollection(mongo_opts, collection, boardList, 0)!=0){
 	  fLog->Error("Couldn't create mongodb collection");
           return -1;
 	}
@@ -458,7 +464,7 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
 	payload->options = mongo_opts;
 	payload->detector = iterator.first;
 	payload->collection = collection;
-	payload->koptions = options;
+	payload->boardList = boardList;
 	pthread_create(&m_collectionThreads[iterator.first].thread,
 		       NULL,MasterMongodbConnection::CollectionThreadWrapper,
 		       static_cast<void*>(payload));
@@ -467,7 +473,7 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
 
       }
       else{      
-	if(MakeMongoCollection(mongo_opts, collection, options, -1)!=0){
+	if(MakeMongoCollection(mongo_opts, collection, boardList, -1)!=0){
 	  fLog->Error("Couldn't create mongodb collection");
 	  return -1;
 	}
