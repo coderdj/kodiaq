@@ -162,6 +162,9 @@ int CBV1724::Initialize(koOptions *options)
     messstr<<"Board "<<fBID.id<<" failed initialization";
     m_koLog->Message( messstr.str() );
   }
+
+  i_clockResetCounter=0;
+  i64_blt_last_time = 0;
    return retVal;
 }
 //#include <thread>
