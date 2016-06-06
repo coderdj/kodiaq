@@ -88,7 +88,7 @@ int DigiInterface::Arm(koOptions *options){
   if(options->GetInt("run_start") == 1){                                       
     for(unsigned int x=0;x<m_vDigitizers.size();x++){
       u_int32_t data;
-      data = 0x25; 
+      data = 0x5; 
       m_vDigitizers[x]->WriteReg32(CBV1724_AcquisitionControlReg,data); 
     }
   }
@@ -182,7 +182,7 @@ int DigiInterface::Arm(koOptions *options){
 
   // Reset the clocks!
   for(unsigned int x=0;x<m_vDigitizers.size();x++){
-    m_vDigitizers[x]->WriteReg32(CBV1724_AcquisitionControlReg,0x25);
+    m_vDigitizers[x]->WriteReg32(CBV1724_AcquisitionControlReg,0x5);
     m_vDigitizers[x]->WriteReg32(0xEF28, 0x1);
   }
 
@@ -515,7 +515,7 @@ int DigiInterface::StartRun()
     for(unsigned int x=0;x<m_vDigitizers.size();x++){
       u_int32_t data;
       m_vDigitizers[x]->ReadReg32(CBV1724_AcquisitionControlReg,data);
-      data = 0x24;
+      data = 0x4;
       m_vDigitizers[x]->WriteReg32(CBV1724_AcquisitionControlReg,data);
       m_vDigitizers[x]->SetActivated(true);
     }
