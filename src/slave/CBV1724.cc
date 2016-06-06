@@ -608,7 +608,7 @@ int CBV1724::DetermineBaselines()
     if(getOut) break;
     
     // Enable to board
-    WriteReg32(CBV1724_AcquisitionControlReg,0x4);
+    WriteReg32(CBV1724_AcquisitionControlReg,0x24);
     //usleep(5000); //
     //Set Software Trigger
     WriteReg32(CBV1724_SoftwareTriggerReg,0x1);
