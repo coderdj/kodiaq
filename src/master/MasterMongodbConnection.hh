@@ -20,6 +20,24 @@
 #include <koHelper.hh>
 #include "mongo/client/dbclient.h"
 
+class MasterMongodbConnection;
+
+struct collection_thread_t
+{
+  pthread_t thread;
+  bool open;
+  bool run;
+};
+
+struct collection_thread_packet_t
+{
+  MasterMongodbConnection *mongoconnection;
+  mongo_option_t options;
+  vector<string> boardList;
+  string detector;
+  string collection;
+};
+
 class MasterMongodbConnection
 {
 
@@ -74,7 +92,8 @@ public:
   // Purpose : Checks the mongodb command db for remote commands (from web)
   int          CheckForCommand(string &command, string &user,
 			       string &comment, string &detector,
-			       bool &override, map<string,koOptions*> &options);
+			       bool &override, map<string,koOptions*> &options,
+			       int &expireAfterSeconds);
   
   //
   // Name    : PullRunMode
@@ -88,8 +107,20 @@ public:
   //int  UpdateNoiseDirectory(string run_name);
   void SendRunStartReply(int response, string message);//, string mode, string comment);
   void ClearDispatcherReply();
+  vector<mongo::BSONObj> GetRunQueue();
+  void SyncRunQueue(vector<mongo::BSONObj> queue);
+
+  void InsertCommand(mongo::BSONObj b);
+
+  bool IsRunning(string detector);
+  static void* CollectionThreadWrapper(void* data);
 
  private:
+  int MakeMongoCollection(mongo_option_t mongo_opts, string collection,
+                          vector<string> boardList, int time_cycle=-1);
+  map <string, collection_thread_t> m_collectionThreads;
+
+  
   vector<string> GetHashTags(string comment);
   int Connect();
 

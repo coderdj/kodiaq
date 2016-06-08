@@ -54,6 +54,7 @@ int main(int argc, char *argv[])
   detectors.insert( detectors.begin(), "all");
   int iCurrentDet = 0;
   time_t PrintTime = koLogger::GetCurrentTime();
+  time_t UpdateTime = koLogger::GetCurrentTime();
 
   cout<<"Done!"<<endl;
 
@@ -111,15 +112,23 @@ int main(int argc, char *argv[])
       cCommand = '0';
     } // end if kbhit
     
-    // Check for commands on web network. 
-    controller->CheckRemoteCommand();
-
-    // Update data objects
-    controller->StatusUpdate();
     
     // Print update
     time_t CurrentTime = koLogger::GetCurrentTime();
     double dTime = difftime( CurrentTime, PrintTime );
+    double dTime2 = difftime( CurrentTime, UpdateTime);
+    if(dTime2 > 2.){
+      // Check the run queue       
+      controller->CheckRunQueue();
+      
+      // Check for commands on web network.  
+      controller->CheckRemoteCommand();
+
+      // Update data objects        
+      controller->StatusUpdate();
+
+      UpdateTime = koLogger::GetCurrentTime();
+    }
     if( dTime > 9. || bForceUpdate){
       if(bForceUpdate)
 	bForceUpdate = false;

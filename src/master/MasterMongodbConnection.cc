@@ -197,6 +197,172 @@ void MasterMongodbConnection::InsertOnline(string DB,
   }
 }
 
+void* MasterMongodbConnection::CollectionThreadWrapper(void* data){
+  collection_thread_packet_t *payload = static_cast<collection_thread_packet_t*>(data);
+  
+  MasterMongodbConnection *mongocoll = payload->mongoconnection;
+  mongo_option_t options = payload->options;
+  string collection = payload->collection;
+  string detector = payload->detector;
+  vector <string> boardList = payload->boardList;
+
+  int counter = 1;
+  int readaheadconstant = 5;
+  double readaheadfraction = 0.1;
+  time_t startTime = koLogger::GetCurrentTime();
+  
+
+  while(mongocoll->IsRunning(detector)){
+
+    time_t currentTime = koLogger::GetCurrentTime();
+    time_t tdiff = difftime(currentTime, startTime);
+    //    cout<<tdiff<<" "<<tdiff*(1+readaheadfraction)<<" "<<tdiff*(1+readaheadfraction)  / 21. <<" "<< counter<<" "<< readaheadconstant<<endl;
+    if( tdiff*(1+readaheadfraction)  / 21. + readaheadconstant > counter){
+      mongocoll->MakeMongoCollection(options, collection, boardList, counter);
+      counter++;
+    }
+    sleep(1);
+								 
+  }
+  //delete &data;
+  return (data);
+}
+
+bool MasterMongodbConnection::IsRunning(string detector){
+  if(m_collectionThreads.find(detector) == m_collectionThreads.end())
+    return false;
+  return m_collectionThreads[detector].run;
+
+}
+
+int MasterMongodbConnection::MakeMongoCollection(mongo_option_t mongo_opts, 
+						 string collection, 
+						 vector<string> boardList,
+						 int time_cycle){
+  
+  string connstring = mongo_opts.address;
+  mongo::DBClientBase *bufferDB;
+
+  if(time_cycle != -1){
+    mongo_opts.collection=mongo_opts.collection+"_"+koHelper::IntToString(time_cycle);
+    collection = collection + "_"+koHelper::IntToString(time_cycle);
+  }
+
+  if(fBufferUser!="" && fBufferPassword!="")
+    connstring = "mongodb://" + fBufferUser + ":" + fBufferPassword + "@" +
+      connstring.substr(10, connstring.size()-10);
+  string errstring="";
+  mongo::ConnectionString cstring =
+    mongo::ConnectionString::parse(connstring,  errstring);
+
+  // Check if string is valid                                                      
+  if(!cstring.isValid())
+    SendLogMessage( "Problem creating index in buffer DB. Invalid address. " +
+		    errstring, KOMESS_WARNING );
+  
+  try     {
+    errstring = "";
+    bufferDB = cstring.connect(errstring);
+  }
+  catch(const mongo::DBException &e)    {
+    SendLogMessage( "Problem connecting to mongo buffer. Caught exception " +
+		    string(e.what()), KOMESS_ERROR );
+    return -1;
+  }
+  string collectionName = mongo_opts.database + ".";
+  //cout<<collection<<endl;
+  if(collection == "DEFAULT")
+    collectionName += mongo_opts.collection;
+  else {
+    collectionName += collection;
+    mongo_opts.collection = collection;
+  }
+
+  // Set all of the database options here                                          
+  // To retain backwards compatibility always make sure they exist         
+  // Make string for creating indices                                              
+  string index_string = mongo_opts.index_string;
+  
+  
+  if(mongo_opts.capped_size != 0)
+    bufferDB->createCollection(collectionName,
+			       mongo_opts.capped_size,
+			       true);
+  else
+    bufferDB->createCollection( collectionName );
+  
+  
+  if(mongo_opts.index_string!="")
+    bufferDB->createIndex
+      ( collectionName,
+	mongo::fromjson( mongo_opts.index_string )
+	);
+  //mongo_opts.shard_string = "{'module':  1, '_id': 'hashed'}";        
+  mongo_opts.shard_string = "{'module': 1}";
+  if(mongo_opts.sharding){
+    bufferDB->createIndex
+      ( collectionName,
+	mongo::fromjson( mongo_opts.shard_string )
+	);
+    mongo::BSONObj ret;
+    bufferDB->runCommand
+          (
+           "admin",
+           mongo::fromjson( "{ shardCollection: '"+collectionName+"', key: "+
+                            mongo_opts.shard_string+" }"),
+           ret
+           );
+    fLog->Message(ret.toString());
+    
+    /* This will be beautiful. We want to give mongo a little hint on 
+       how it should shard.                        
+       This seems to be done by using 'split' to define where the chunks should be 
+       We want to chunk on module number.                                          
+    */
+
+        // Kill the autobalancer                       
+    mongo::WriteConcern WC = mongo::WriteConcern::unacknowledged;
+    bufferDB->update("config.settings", BSON("_id" << "balancer"),
+		     BSON("$set" << BSON("stopped"<<true)), true,
+		     false, &WC );
+    
+    // First get a list of modules                                                 
+    vector <int> modules;
+    vector<string> migrateTo;
+    migrateTo.push_back("shard_0/eb0:27000");
+    migrateTo.push_back("shard_1/eb1:27000");
+    migrateTo.push_back("shard_2/eb2:27000");
+    for(int x=0; x<boardList.size(); x++){
+      string jsonstring = "{ split: '"+collectionName+
+	"', middle: { 'module': "+boardList[x]+"}}";
+      cout<<"Telling mongo to split on: "<<jsonstring<<endl;
+      bufferDB->runCommand
+	(
+	 "admin",
+	 mongo::fromjson( jsonstring ),
+	 ret
+	 );
+      fLog->Message(ret.toString());
+      
+      bufferDB->runCommand
+	(
+	 "admin",
+	 mongo::fromjson( "{ moveChunk: '"+collectionName+
+			  "', find: { module: "+boardList[x]+"},"+
+			  "to: '"+migrateTo[x%3]+"' }"
+			  ),
+	 ret
+	 );
+      fLog->Message(ret.toString());
+
+    }
+    
+  }
+  
+  delete bufferDB;
+  return 0;
+}
+
 int MasterMongodbConnection::InsertRunDoc(string user, string name, 
 					  string comment, 
 					  map<string,koOptions*> options_list,
@@ -209,6 +375,15 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
 {
 
   for ( auto iterator: options_list){
+
+    // Join thread if open
+    m_collectionThreads[iterator.first].run=false;
+    if(m_collectionThreads.find(iterator.first) != m_collectionThreads.end() &&
+       m_collectionThreads[iterator.first].open == true){
+      pthread_join(m_collectionThreads[iterator.first].thread,NULL);
+      m_collectionThreads[iterator.first].open= false;
+    }   
+
 
     //Create a bson object with the run information
     mongo::BSONObjBuilder builder;
@@ -249,7 +424,7 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
     koOptions *options = iterator.second;    
     // First create the collection on the buffer db 
     // so the event builder can find it. Index by time and module.
-    mongo::DBClientBase *bufferDB;
+    //mongo::DBClientBase *bufferDB;
     if( options->GetInt("write_mode") == 2 ){ // write to mongo
       string errstring;
       
@@ -261,122 +436,48 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
 	fLog->Error("Writing to mongodb required both a database and address");
 	return -1;
       }
-      
-      string connstring = mongo_opts.address;
-      
-      if(fBufferUser!="" && fBufferPassword!="")
-	connstring = "mongodb://" + fBufferUser + ":" + fBufferPassword + "@" +
-	  connstring.substr(10, connstring.size()-10);
-      mongo::ConnectionString cstring =
-	mongo::ConnectionString::parse(connstring,  errstring);
-      
-      // Check if string is valid   
-      if(!cstring.isValid())
-	SendLogMessage( "Problem creating index in buffer DB. Invalid address. " +
-                        errstring, KOMESS_WARNING );	      
-      
-      try     {
-	errstring = "";
-	bufferDB = cstring.connect(errstring);	
-      }
-      catch(const mongo::DBException &e)    {
-	SendLogMessage( "Problem connecting to mongo buffer. Caught exception " + 
-			string(e.what()), KOMESS_ERROR );
-	return -1;
-      }
-      string collectionName = mongo_opts.database + ".";
-      cout<<collection<<endl;
-      if(collection == "DEFAULT") 
-	collectionName += mongo_opts.collection;
-      else {
-	collectionName += collection;
-	mongo_opts.collection = collection;
+      vector<string> boardList;
+      for(int x=0; x<options->GetBoards(); x++){
+	string serial = koHelper::IntToString(options->GetBoard(x).id);
+	if(options->GetBoard(x).type!="V1724")
+	  continue;
+	boardList.push_back(serial);
       }
 
-      // Set all of the database options here
-      // To retain backwards compatibility always make sure they exist
-      
-      // Make string for creating indices
-      string index_string = mongo_opts.index_string;
-
-
-      if(mongo_opts.capped_size != 0)
-	bufferDB->createCollection(collectionName, 
-				   mongo_opts.capped_size, 
-				   true);
-      else
-	bufferDB->createCollection( collectionName );
-      
-
-      if(mongo_opts.index_string!="")
-          bufferDB->createIndex
-            ( collectionName,
-              mongo::fromjson( mongo_opts.index_string )
-              );
-      //mongo_opts.shard_string = "{'module':  1, '_id': 'hashed'}";
-      mongo_opts.shard_string = "{'module': 1}";
-      if(mongo_opts.sharding){
-	bufferDB->createIndex
-          ( collectionName,
-            mongo::fromjson( mongo_opts.shard_string )
-            );	
-	mongo::BSONObj ret;
-	bufferDB->runCommand
-	  (
-	   "admin",
-	   mongo::fromjson( "{ shardCollection: '"+collectionName+"', key: "+
-			    mongo_opts.shard_string+" }"),
-	   ret
-	   );       
-	fLog->Message(ret.toString());	 
-
-	/* This will be beautiful. We want to give mongo a little hint on how it should shard.
-	   This seems to be done by using 'split' to define where the chunks should be.
-	   We want to chunk on module number. 
-	*/
-
-	// Kill the autobalancer
-	mongo::WriteConcern WC = mongo::WriteConcern::unacknowledged;
-	bufferDB->update("config.settings", BSON("_id" << "balancer"),
-			 BSON("$set" << BSON("stopped"<<true)), true,
-			 false, &WC );
-
-	// First get a list of modules
-	vector <int> modules;
-	vector<string> migrateTo;
-	migrateTo.push_back("shard_0/eb0:27000");
-	migrateTo.push_back("shard_1/eb1:27000");
-	migrateTo.push_back("shard_2/eb2:27000");
-	for(int x=0; x<options->GetBoards(); x++){
-	  string serial = koHelper::IntToString(options->GetBoard(x).id);
-	  string jsonstring = "{ split: '"+collectionName+
-	    "', middle: { 'module': "+serial+"}}";
-	  cout<<"Telling mongo to split on: "<<jsonstring<<endl;
-	  bufferDB->runCommand
-	    (
-	     "admin",
-	     mongo::fromjson( jsonstring ),
-	     ret
-	     );
-	  fLog->Message(ret.toString());
-
-	  bufferDB->runCommand
-	    ( 
-	     "admin",
-	     mongo::fromjson( "{ moveChunk: '"+collectionName+
-			      "', find: { module: "+serial+"},"+
-			      "to: '"+migrateTo[x%3]+"' }"
-			      ),
-	     ret
-	      );
-	  fLog->Message(ret.toString());
-
+      if( options->HasField("rotating_collections") && 
+	  options->GetInt("rotating_collections") == 1){
+	if(MakeMongoCollection(mongo_opts, collection, boardList, 0)!=0){
+	  fLog->Error("Couldn't create mongodb collection");
+          return -1;
 	}
-	
-      }
-      
-      delete bufferDB;
+	// start thread
+	if(m_collectionThreads.find(iterator.first) == m_collectionThreads.end()){
+	  // create obj
+	  collection_thread_t threadobj;
+	  threadobj.open = false;
+	  threadobj.run = false;
+	  m_collectionThreads[iterator.first] = threadobj;
+	}
 
+	collection_thread_packet_t *payload = new collection_thread_packet_t;
+	payload->mongoconnection = this;
+	payload->options = mongo_opts;
+	payload->detector = iterator.first;
+	payload->collection = collection;
+	payload->boardList = boardList;
+	pthread_create(&m_collectionThreads[iterator.first].thread,
+		       NULL,MasterMongodbConnection::CollectionThreadWrapper,
+		       static_cast<void*>(payload));
+	m_collectionThreads[iterator.first].open = true;
+	m_collectionThreads[iterator.first].run = true;
+
+      }
+      else{      
+	if(MakeMongoCollection(mongo_opts, collection, boardList, -1)!=0){
+	  fLog->Error("Couldn't create mongodb collection");
+	  return -1;
+	}
+      }
 
       // Make mongo location string                                                    
       string mloc = mongo_opts.address;
@@ -503,6 +604,12 @@ int MasterMongodbConnection::UpdateEndTime(string detector)
   "data_taking_ended": bool to indicate reader is done with the run
  */
 {
+
+  // If thread running mark as dead
+  if(m_collectionThreads.find(detector) != m_collectionThreads.end())
+    m_collectionThreads[detector].run = false;
+
+
   if(fRunsDB == NULL )
     return -1;
   
@@ -703,7 +810,8 @@ void MasterMongodbConnection::UpdateDAQStatus(koStatusPacket_t* DAQStatus,
 int MasterMongodbConnection::CheckForCommand(string &command, string &user, 
 					     string &comment, string &detector,
 					     bool &override, 
-					     map<string, koOptions*> &options)
+					     map<string, koOptions*> &options,
+					     int &expireAfterSeconds)
 //string &detector,
 //					     koOptions &options)
 /*
@@ -743,10 +851,12 @@ int MasterMongodbConnection::CheckForCommand(string &command, string &user,
    command=b.getStringField("command");
    string modeTPC = "";
    string modeMV = "";
+   expireAfterSeconds = 0;
    if( command == "Start" ){
      modeTPC = b.getStringField("run_mode_tpc");
      modeMV  = b.getStringField("run_mode_mv");
      override =  b.getBoolField("override");
+     expireAfterSeconds=b.getIntField("stop_after_minutes")*60;
 
    }
    else
@@ -792,12 +902,58 @@ int MasterMongodbConnection::CheckForCommand(string &command, string &user,
        }
        stringstream pp;
        options[detector]->ToStream(&pp);
-       cout<<pp.str()<<endl;
+       //cout<<pp.str()<<endl;
      }
    }
      
    return 0;
 }
+
+void MasterMongodbConnection::SyncRunQueue(vector<mongo::BSONObj> dqueue){
+  if(fMonitorDB == NULL )
+    return;
+  fMonitorDB->dropCollection(fMonitorDBName+".daq_queue");
+  
+  for(unsigned int x=0;x<dqueue.size();x++){
+    try{
+      InsertOnline("monitor", "run.daq_queue", dqueue[x]);
+    }
+    catch(...){
+      return;
+    }
+  }
+}
+
+
+vector<mongo::BSONObj> MasterMongodbConnection::GetRunQueue(){
+
+  vector<mongo::BSONObj> retVec;
+  
+  if(fMonitorDB == NULL )
+    return retVec;
+
+  mongo::BSONObj b;
+  try{
+    if(fMonitorDB->count("run.daq_queue") ==0)
+      return retVec;
+
+    auto_ptr<mongo::DBClientCursor> cursor =
+      fMonitorDB->query("run.daq_queue", mongo::BSONObj());
+    while(cursor->more()){
+      b = cursor->next().getOwned();
+      retVec.push_back(b);
+    }
+  }
+  catch( const mongo::DBException &e ){
+    if(fLog!=NULL) {
+      fLog->Error("MongoDB error checking command DB");
+      fLog->Error(e.what());
+    }
+    return retVec;
+  }
+  return retVec;
+}
+
 
 void MasterMongodbConnection::SendRunStartReply(int response, string message)
 /*

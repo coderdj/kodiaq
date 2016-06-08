@@ -170,11 +170,112 @@ void MasterControl::Stop(string detector, string user, string comment){
   }
 
   mMongoDB->UpdateEndTime(detector);
+
+  // If either fStartTimes or fExpireAfterSeconds exists for this detector 
+  // then we have to change it 
+  vector<string> detectorsToStop;
+  if(detector == "all"){
+    detectorsToStop.push_back("tpc");
+    detectorsToStop.push_back("muon_veto");
+  }
+  else
+    detectorsToStop.push_back(detector);
+  for(unsigned int x=0; x<detectorsToStop.size(); x++){
+    if( fExpireAfterSeconds.find(detectorsToStop[x]) != fExpireAfterSeconds.end() )
+      fExpireAfterSeconds.erase(detectorsToStop[x]);
+    if( fStartTimes.find(detectorsToStop[x]) != fStartTimes.end() )
+      fStartTimes.erase(detectorsToStop[x]);
+  }
 }
 
+void MasterControl::CheckRunQueue(){
+  
+  // Here's what we want. First, check if there are any runs going that should
+  // be stopped. This means compare fStartTimes with fExpireAfterSeconds
+  cout<<"Iterating start times"<<endl;
+  for(auto iter : fStartTimes) {
+    
+    if( fExpireAfterSeconds.find(iter.first) != fExpireAfterSeconds.end() ){
+      // Calculate how long run has been going   
+      time_t currentTime = koLogger::GetCurrentTime();
+      double dTime = difftime( currentTime, iter.second);
+      
+      cout<<"Found run that started "<<dTime<<" seconds ago with "<<fExpireAfterSeconds[iter.first] << "limit"<<endl;
+      // Should we stop it? 
+      if(dTime > fExpireAfterSeconds[iter.first] && 
+	 fExpireAfterSeconds[iter.first]!=0)
+        Stop(iter.first, "dispatcher_autostop", "Run automatically stopped after "
+             + koHelper::IntToString(fExpireAfterSeconds[iter.first]) + "seconds.");
+    }
+  }
+  cout<<"Done with start times"<<endl;
+
+  // Second see if the next command in the queue can be run yet (if any).  
+  // This should be detector-aware. Like if the muon veto is idle it can loop the 
+  // queue to find the next run mentioning a muon veto (all or muon_veto). If
+  // it's 'muon_veto' then it can start the run. If it's 'all' it should wait for
+  // the TPC to finish.  
+
+  // Sync run queue with remote                                                       
+  fDAQQueue = mMongoDB->GetRunQueue();
+  
+  bool sawTPC=false, sawMV=false;
+  for(unsigned int x=0; x<fDAQQueue.size(); x++){
+    
+    // Case 1: We find a command that wants to start both. This only works 
+    // if there is no run going for the TPC or the muon veto and if we haven't
+    // found a command for either yet
+    bool abort = false;
+    string doc_det = fDAQQueue[x].getStringField("detector");
+    if(doc_det == "all" && !sawTPC && !sawMV){
+      sawTPC =sawMV =true;
+      // Now check if the detectors are both idle and that there are no start-time 
+      // entries for them
+      for(auto iter : mDetectors) {
+        if(iter.second->GetStatus()->DAQState != KODAQ_IDLE ||
+           fStartTimes.find(iter.first) != fStartTimes.end())
+          abort = true;
+      }
+    }
+    else if(mDetectors.find(doc_det) == mDetectors.end()){
+      fDAQQueue.erase(fDAQQueue.begin()+x);
+      x--;
+      continue;
+    }
+    else if(doc_det == "tpc" &&  !sawTPC){
+      sawTPC = true;
+      // Just check if the TPC is idle                                                
+      if(mDetectors["tpc"]->GetStatus()->DAQState != KODAQ_IDLE ||
+	 fStartTimes.find("tpc") != fStartTimes.end())
+        abort = true;
+    }
+    else if(doc_det == "muon_veto" && !sawMV){
+      sawMV = true;
+      
+      // Just check if the MV is idle          
+      if(mDetectors["muon_veto"]->GetStatus()->DAQState != KODAQ_IDLE ||
+         fStartTimes.find("muon_veto") != fStartTimes.end())
+        abort =true;
+    }
+    else 
+      abort=true;
+    if(abort)
+      continue;
+    mMongoDB->InsertOnline("monitor", "run.daq_control", fDAQQueue[x]);
+    fDAQQueue.erase(fDAQQueue.begin() + x);
+    mMongoDB->SyncRunQueue(fDAQQueue);
+    break;
+  }
+  return;
+
+
+
+
+
+}
 
 int MasterControl::Start(string detector, string user, string comment, 
-			 map<string,koOptions*> options, bool web){
+			 map<string,koOptions*> options, bool web, int expireAfterSeconds){
   // Return values:
   //                 0 - Success
   //                -1 - Failed, reset the DAQ
@@ -191,8 +292,8 @@ int MasterControl::Start(string detector, string user, string comment,
   
   // Validation step
   cout<<"Received start command. Validating..."<<flush;
-  if(web)
-    mMongoDB->SendRunStartReply(12, "Validating start command");
+  //if(web)
+  //mMongoDB->SendRunStartReply(12, "Validating start command");
   int valid_success=0;
   string message="";
   for(auto iterator:mDetectors){
@@ -209,47 +310,7 @@ int MasterControl::Start(string detector, string user, string comment,
   }
   cout<<"Success!"<<endl;
   
-  // Preprocess Step
-  /*cout<<"Performing run preprocessing..."<<flush;
-  if(web)
-    mMongoDB->SendRunStartReply(12, "Performing run preprocessing.");
-  int preprocess_success=0;
-  for(auto iterator:mDetectors){
-    if(iterator.first==detector || detector=="all")
-      preprocess_success+=iterator.second->PreProcess(options[iterator.first]);
-  }
-  if(preprocess_success!=0){
-    cout<<"Error during preprocessing! Aborting run start.";
-    if(web)
-      mMongoDB->SendRunStartReply(18, "Error during preprocessing! Aborting.");
-    return -1;
-  }
-  cout<<"Success!"<<endl;
-  
-  cout<<"Waiting for ready condition."<<endl;
-  time_t start_wait = koLogger::GetCurrentTime();
-  bool ready=false;
-  while(!ready){
-    ready = true;
-    for(auto iterator:mDetectors){
-      if(iterator.first==detector || detector=="all"){
-	if(iterator.second->GetStatus().DAQState != KODAQ_RDY)
-	  ready=false;
-      }
-    }
-    sleep(1);
-    time_t current_time = koLogger::GetCurrentTime();
-    double tdiff =difftime( current_time, start_wait );
-    if(tdiff>30)
-      break;
-  }
-  if(!ready){
-    cout<<"Processing timed out! Aborting run start.";
-    if(web)
-      mMongoDB->SendRunStartReply(18, "Processing timed out! Aborting.");
-    return -1;
-  }
-  */
+
 
   // This might actually work. Let's assign a run name.
  
@@ -260,13 +321,13 @@ int MasterControl::Start(string detector, string user, string comment,
   }
   run_name = koHelper::GetRunNumber(run_name);
   cout<<"This run will be called "<<run_name<<endl;
-  if(web)
-    mMongoDB->SendRunStartReply(12, "Assigning run name: " + run_name);
+  //if(web)
+  //mMongoDB->SendRunStartReply(12, "Assigning run name: " + run_name);
   
   // Arm the boards
   cout<<"Arming the digitizers..."<<flush;
   if(web)
-    mMongoDB->SendRunStartReply(12, "Arming digitizers.");
+    mMongoDB->SendRunStartReply(12, "Arming digitizers for run " + run_name);
   int arm_success=0;
   for(auto iterator:mDetectors){
     if(iterator.first==detector || detector=="all")
@@ -316,13 +377,14 @@ int MasterControl::Start(string detector, string user, string comment,
     // (detector != "all" && 
     //	options[detector]->GetInt("noise_spectra_enable")==1))
       //mMongoDB->UpdateNoiseDirectory(run_name);
-    
+    mMongoDB->SendRunStartReply(18, "Configuring databases for run " + run_name);
+
     mMongoDB->InsertRunDoc(user, run_name, comment, options, run_name);
   }
   // Start the actual run
   cout<<"Sending start command..."<<flush;
-  if(web)
-    mMongoDB->SendRunStartReply(13, "Sending start command");
+  //if(web)
+  //mMongoDB->SendRunStartReply(13, "Sending start command");
   int start_success=0;
   for(auto iterator:mDetectors){
     if(iterator.first==detector || detector=="all")
@@ -338,8 +400,17 @@ int MasterControl::Start(string detector, string user, string comment,
   }
   cout<<"Success!"<<endl;
   
+  // Update when this detector started 
+  if(expireAfterSeconds!=0){
+    fStartTimes[detector] = koLogger::GetCurrentTime();
+    fExpireAfterSeconds[detector] = expireAfterSeconds;
+  }
+
+
   if(web)
-    mMongoDB->SendRunStartReply(19, "Successfully completed run start procedure.");
+    mMongoDB->SendRunStartReply(19, "Run " + run_name + " started by " + user);
+
+  //    mMongoDB->SendRunStartReply(19, "Successfully completed run start procedure.");
   
   return 0;
 }
@@ -353,13 +424,15 @@ void MasterControl::CheckRemoteCommand(){
   string command,detector,user,comment;
   map<string, koOptions*> options;
   bool override=false;
-  mMongoDB->CheckForCommand(command,user,comment,detector,override,options);
+  int expireAfterSeconds =0;
+  mMongoDB->CheckForCommand(command,user,comment,detector,override,
+			    options,expireAfterSeconds);
 
   // If command is stop
   if(command == "Stop")
     Stop(detector, user, comment);
   else if(command=="Start"){
-    if(Start(detector,user,comment,options,true)==-1){
+    if(Start(detector,user,comment,options,true,expireAfterSeconds)==-1){
       cout<<"Sending stop command."<<endl;
       Stop(detector, "AUTO_DISPATCHER", "ABORTED: RUN START FAILED");
     }

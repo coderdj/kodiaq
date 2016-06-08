@@ -32,16 +32,21 @@ public:
   void Close();
 
   int  Start(string detector, string user, string comment,
-	     map<string,koOptions*> options, bool web);
+	     map<string,koOptions*> options, bool web, int expireAfterSeconds);
   void Stop(string detector="all", string user="dispatcher_console", 
 	    string comment="");
 
   void CheckRemoteCommand();
+  void CheckRunQueue();
   void StatusUpdate();
 
   string GetStatusString();
 
 private:
+  vector<mongo::BSONObj> fDAQQueue;
+  map<string, time_t> fStartTimes;
+  map<string, time_t> fExpireAfterSeconds;
+
   map<string, DAQMonitor*> mDetectors;
   //map<string, *koNetServer> mMonitors;
   MasterMongodbConnection *mMongoDB;

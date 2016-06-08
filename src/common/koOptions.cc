@@ -144,7 +144,7 @@ mongo_option_t koOptions::GetMongoOptions(){
 	ret.index_string += mongo_obj["indices"].Array()[x].String();
 	ret.index_string += "': 1";
 	if(x != mongo_obj["indices"].Array().size() -1)
-	  ret.index_string += ", ";
+	  ret.index_string += ", '";
       }
       ret.index_string += " }";
     }
