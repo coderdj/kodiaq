@@ -420,6 +420,8 @@ void DataProcessor::Process()
   int                 iModule      = 0;     // Fill with ID of current module
   int                 LAST_RESET_COUNT = 0;
 
+  time_t lastPrintTime = koLogger::GetCurrentTime();
+
   //cout<<"ENTER LOOP"<<endl;
   while(!bExitCondition){
     //
@@ -435,10 +437,19 @@ void DataProcessor::Process()
       if(digi->Activated()) bExitCondition=false;
       else continue;
       usleep(10); //avoid 100% cpu
+      
+      time_t thisTime = koLogger::GetCurrentTime();
+      if(fabs(difftime(lastPrintTime, thisTime)) > 1.0){
+	lastPrintTime = koLogger::GetCurrentTime();
+	//cout<<"Thread " << mongoID <<" polling for new data"<<endl;
+      }
 
       // Check if the digitizer has data and is not associated 
       // with another processor
       if(digi->RequestDataLock()!=0) continue;
+
+      //RL
+      //cout<<"Thread " << mongoID <<" reading digi "<<digi->GetID().id<<endl;
 
       // resetCounterStart = how many times has the digitizer clock cycled 
       // (it's only 31-bit) at the start of the event
@@ -450,6 +461,9 @@ void DataProcessor::Process()
       iModule = digi->GetID().id;
       digi->UnlockDataBuffer();
      
+      //cout<<"Thread " << mongoID <<" finished reading digi "<<digi->GetID().id<<endl;
+
+
       // Parse the data if requested
       // The processing functions will modify the vectors sent as arguments
       if(m_koOptions->GetInt("processing_mode") == 1) { 
@@ -482,7 +496,8 @@ void DataProcessor::Process()
 	  
 	}
       }
-      
+      //cout<<"Thread " << mongoID <<" finished parsing "<<digi->GetID().id<<endl;
+
 
       // Processing part is over. Now write the data with the DAQRecorder object
       unsigned int        currentEventIndex = 0;
@@ -575,16 +590,6 @@ void DataProcessor::Process()
 	  bson.genOID();
 
 
-	  //remove this later!
-	  if(mongo_opts.database == "online" &&
-	     mongo_opts.collection == "scope"){
-	    time_t currentTime;
-	    struct tm *starttime;
-	    time(&currentTime);
-	    starttime = localtime(&currentTime);
-	    bson.appendTimeT("starttimestamp",mktime(starttime));
-	  }
-	  //end remove later
 	  bson.append("module",iModule);
 	  bson.append("channel",Channel);
 	  bson.append("time",Time64);
@@ -599,7 +604,9 @@ void DataProcessor::Process()
 	  if( !m_koOptions->HasField("lite_mode") || m_koOptions->GetInt("lite_mode")==0)
 	    bson.appendBinData("data",(int)eventSize,mongo::BinDataGeneral,
 			       (const void*)buff);
-	    
+
+	  vMongoInsertVec->push_back(bson.obj());
+
 	  bool insert = false;
 	  
 	  if(m_koOptions->HasField("rotating_collections") &&
@@ -607,8 +614,17 @@ void DataProcessor::Process()
 	    if(ChannelResetCounters[Channel] != LAST_RESET_COUNT)
 	      insert = true;
 	  }
-	  if((int)vMongoInsertVec->size() > mongo_opts.min_insert_size)
+	  if((int)vMongoInsertVec->size() > mongo_opts.min_insert_size 
+	     || (int)vMongoInsertVec->size() < 0){
+	    //cout<<(int)vMongoInsertVec->size()<<" > "<<
+	    //mongo_opts.min_insert_size<<" so reading out!"<<endl;
 	    insert = true;
+	  }
+
+	  // If we're trying to close the run and we want to read out the buffer
+	  if(bExitCondition && b == buffvec->size() -1)
+            insert = true;
+
 	    
 	  if(insert){
 	    if(!(m_koOptions->HasField("rotating_collections")) ||
@@ -628,7 +644,6 @@ void DataProcessor::Process()
 	    }
 	  }
 
-	  vMongoInsertVec->push_back(bson.obj());
 	  
 	}
 #endif

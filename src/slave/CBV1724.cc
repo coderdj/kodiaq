@@ -183,7 +183,7 @@ void CBV1724::CopyThread(){
   // the buffer here to a new buffer that is just large enough for the data.         
   // This memory is reserved here but it's ownership will be passed to the           
   // processing function that drains it (that function must free it!)                
-  cout<<"In copy thread"<<endl;
+  //cout<<"In copy thread"<<endl;
   do{
     if(m_tempBuff == NULL || m_temp_blt_bytes == 0){
       usleep(10);
@@ -205,7 +205,7 @@ void CBV1724::CopyThread(){
     double tdiff = difftime(current_time, fLastReadout);                               
     
     // If we have enough BLTs (user option) signal that board can be read out          
-    if(fBuffers->size()>fReadoutThresh || tdiff > fReadoutTime)   {
+    if(abs(fBuffers->size())>fReadoutThresh || abs(tdiff) > fReadoutTime)   {
       //cout<<fBuffers->size()<<" "<<fReadoutThresh<<" "<<fReadoutTime<<" "<<tdiff<<endl;
                fReadMeOut=true;                
     }

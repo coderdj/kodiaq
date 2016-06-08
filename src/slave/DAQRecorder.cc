@@ -301,7 +301,10 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
 	       bulky.execute(&WC, &RES);*/	 
        
 	 //old line
+       //cout<<"Inserting "<<insvec->size()<<" documents ("<<ID<<")"<<" to "
+       //<<cS.str()<<endl;
        ( m_vScopedConnections[ID])->insert( cS.str(), (*insvec) );
+
      }
    }
    catch(const mongo::DBException &e)  {
