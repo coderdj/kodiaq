@@ -671,7 +671,7 @@ int CBV1724::DetermineBaselines()
 	    dbase=(((*buff)[x][y])&0xFFFF);
 	  else 
 	    dbase=(((*buff)[x][y]>>16)&0xFFFF);
-	  if(dbase == 0 ) 
+	  if(dbase == 0 || dbase == 4) 
 	    continue;
 	  baseline+=dbase;
 	  bdiv+=1.;
