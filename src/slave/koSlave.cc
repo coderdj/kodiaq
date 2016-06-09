@@ -28,7 +28,7 @@ using namespace std;
 
 int ReadIniFile(string filepath, string &SERVERADDR, int &PORT, 
 		int &DATAPORT, string &NODENAME, int &ID,
-		string &DB_USER, string &DB_PASSWORD, int &PROFILING);
+		string &DB_USER, string &DB_PASSWORD, int &PROFILING, int &CORES);
 
 #ifdef KLITE
 // *******************************************************************************
@@ -218,8 +218,9 @@ int main(int argc, char *argv[])
    string DB_USER="", DB_PASSWORD="";
    string NODENAME = "DAQ01";
    int PROFILING = 0;
+   int CORES=8;
    if(ReadIniFile(filepath, SERVERADDR, PORT, DATAPORT, NODENAME, ID,
-		  DB_USER, DB_PASSWORD, PROFILING)!=0){
+		  DB_USER, DB_PASSWORD, PROFILING, CORES)!=0){
      cout<<"Error reading .ini file, does it exist at src/slave/SlaveConfig.ini?"<<endl;
      return -1;
    }
@@ -232,7 +233,7 @@ int main(int argc, char *argv[])
    
    fNetworkInterface.Initialize(SERVERADDR,PORT,DATAPORT,ID,NODENAME); 
 
-   DigiInterface  *fElectronics = new DigiInterface(koLog, ID, DB_USER, DB_PASSWORD);
+   DigiInterface  *fElectronics = new DigiInterface(koLog, ID, DB_USER, DB_PASSWORD, CORES);
    koOptions   *fDAQOptions  = new koOptions();
    koRunInfo_t    fRunInfo;
    
@@ -426,7 +427,7 @@ connection_loop:
 
 int ReadIniFile(string filepath, string &SERVERADDR, int &PORT, 
 		int &DATAPORT, string &NODENAME, int &ID, 
-		string &DB_USER, string &DB_PASSWORD, int &PROFILING)
+		string &DB_USER, string &DB_PASSWORD, int &PROFILING, int &CORES)
 {
   ifstream inifile;
   inifile.open( filepath.c_str() );
@@ -461,6 +462,8 @@ int ReadIniFile(string filepath, string &SERVERADDR, int &PORT,
       DB_PASSWORD = words[1];
     else if ( words[0] == "PROFILING" )
       PROFILING = koHelper::StringToInt(words[1]);
+    else if ( words[0] == "CORES" )
+      CORES = koHelper::StringToInt(words[1]);
   }
   inifile.close();
   return 0;

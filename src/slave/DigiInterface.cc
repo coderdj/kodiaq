@@ -33,7 +33,7 @@ DigiInterface::~DigiInterface()
 }
 
 DigiInterface::DigiInterface(koLogger *logger, int ID, 
-			     string DB_USER, string DB_PASSWORD)
+			     string DB_USER, string DB_PASSWORD, int cores)
 {
    m_ReadThread.IsOpen  = false;
    m_WriteThread.IsOpen = false;
@@ -45,6 +45,7 @@ DigiInterface::DigiInterface(koLogger *logger, int ID,
    m_DB_PASSWORD        = DB_PASSWORD;
    pthread_mutex_init(&m_RateMutex,NULL);
    m_koOptions = NULL;
+   fCores = cores;
 }
 
 int DigiInterface::Arm(koOptions *options){
@@ -97,10 +98,16 @@ int DigiInterface::Arm(koOptions *options){
   //Set up processing threads containers
   m_iReadSize=0;
   m_iReadFreq=0;
+
+  /*
   if(options->GetInt("processing_num_threads")>0)
     m_vProcThreads.resize(options->GetInt("processing_num_threads"));
   else
     m_vProcThreads.resize(1);
+  */
+  m_vProcThreads.resize(fCores);                  
+
+
   for(unsigned int x=0;x<m_vProcThreads.size();x++)  {
     m_vProcThreads[x].IsOpen=false;
     m_vProcThreads[x].Processor=NULL;

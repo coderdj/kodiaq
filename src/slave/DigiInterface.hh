@@ -53,7 +53,8 @@ class DigiInterface
  public:
    DigiInterface();
    virtual ~DigiInterface();
-  DigiInterface(koLogger *logger, int ID=-1, string DB_USER="", string DB_PASSWORD="");
+  DigiInterface(koLogger *logger, int ID=-1, string DB_USER="", string DB_PASSWORD="",
+		int cores=8);
    
   //General Control
   //
@@ -133,7 +134,7 @@ class DigiInterface
   bool          UnlockRateMutex();  // done in a separate thread but readout of
                                     // the rate is done in the main thread
   int           InitializeHardware(koOptions *options);
-
+  int           fCores;
    //Threads
    vector<ProcThread>   m_vProcThreads;  
    PThreadType          m_ReadThread;
