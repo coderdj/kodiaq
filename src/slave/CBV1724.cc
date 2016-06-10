@@ -536,8 +536,6 @@ int CBV1724::InitForPreProcessing(){
   int fwVERSION = ((fwRev>>8)&0xFF); //0 for old FW, 137 for new FW  
   int retval = 0;
   cout<<"Preprocess for FW version " << hex << fwVERSION << dec <<endl;
-  retval += (WriteReg32( 0xEF24, 0x1) + WriteReg32( 0xEF1C, 0x1) +
-             WriteReg32( 0xEF00, 0x10) + WriteReg32( 0x8120, 0xFF ));
 
   if(fwVERSION!=0)
     retval += (WriteReg32(CBV1724_ChannelConfReg,0x310) + 
@@ -546,13 +544,17 @@ int CBV1724::InitForPreProcessing(){
 	       //WriteReg32(CBV1724_CustomSize,0xC8) + 
 	       WriteReg32(CBV1724_CustomSize, 0x1F4) +
 	       WriteReg32( 0x811C, 0x840 ) + 
-	       WriteReg32(0x8000,0x310));
+	       WriteReg32(0x8000,0x310)
+	       );
   else
     retval += (WriteReg32(CBV1724_ChannelConfReg,0x10) +
 	       WriteReg32(CBV1724_DPPReg,0x800000));
 
   retval += (WriteReg32(CBV1724_AcquisitionControlReg,0x0) +
 	     WriteReg32(CBV1724_TriggerSourceReg,0x80000000));
+
+  retval += (WriteReg32( 0xEF24, 0x1) + WriteReg32( 0xEF1C, 0x1) +
+             WriteReg32( 0xEF00, 0x10) + WriteReg32( 0x8120, 0xFF ));
 
   if(retval<0) 
     retval = -1;
@@ -625,7 +627,7 @@ int CBV1724::DetermineBaselines()
       thisread = 0;
       thisread = ReadMBLT();
       readout+=thisread;
-      //usleep(1000);
+      usleep(10);
       counter++;
     } while( counter < 1000 && (readout == 0 || thisread != 0));
     // Either the timer times out or the readout is non zero but 

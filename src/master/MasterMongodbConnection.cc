@@ -479,126 +479,6 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
 	}
       }
 
-      /*
-      string connstring = mongo_opts.address;
-      
-      if(fBufferUser!="" && fBufferPassword!="")
-	connstring = "mongodb://" + fBufferUser + ":" + fBufferPassword + "@" +
-	  connstring.substr(10, connstring.size()-10);
-      mongo::ConnectionString cstring =
-	mongo::ConnectionString::parse(connstring,  errstring);
-      
-      // Check if string is valid   
-      if(!cstring.isValid())
-	SendLogMessage( "Problem creating index in buffer DB. Invalid address. " +
-                        errstring, KOMESS_WARNING );	      
-      
-      try     {
-	errstring = "";
-	bufferDB = cstring.connect(errstring);	
-      }
-      catch(const mongo::DBException &e)    {
-	SendLogMessage( "Problem connecting to mongo buffer. Caught exception " + 
-			string(e.what()), KOMESS_ERROR );
-	return -1;
-      }
-      string collectionName = mongo_opts.database + ".";
-      cout<<collection<<endl;
-      if(collection == "DEFAULT") 
-	collectionName += mongo_opts.collection;
-      else {
-	collectionName += collection;
-	mongo_opts.collection = collection;
-      }
-
-      // Set all of the database options here
-      // To retain backwards compatibility always make sure they exist
-      
-      // Make string for creating indices
-      string index_string = mongo_opts.index_string;
-
-
-      if(mongo_opts.capped_size != 0)
-	bufferDB->createCollection(collectionName, 
-				   mongo_opts.capped_size, 
-				   true);
-      else
-	bufferDB->createCollection( collectionName );
-      
-
-      if(mongo_opts.index_string!="")
-          bufferDB->createIndex
-            ( collectionName,
-              mongo::fromjson( mongo_opts.index_string )
-              );
-      //mongo_opts.shard_string = "{'module':  1, '_id': 'hashed'}";
-      mongo_opts.shard_string = "{'module': 1}";
-      if(mongo_opts.sharding){
-	bufferDB->createIndex
-          ( collectionName,
-            mongo::fromjson( mongo_opts.shard_string )
-            );	
-	mongo::BSONObj ret;
-	bufferDB->runCommand
-	  (
-	   "admin",
-	   mongo::fromjson( "{ shardCollection: '"+collectionName+"', key: "+
-			    mongo_opts.shard_string+" }"),
-	   ret
-	   );       
-	fLog->Message(ret.toString());	 
-      */
-	/* This will be beautiful. We want to give mongo a little hint on how it should shard.
-	   This seems to be done by using 'split' to define where the chunks should be.
-	   We want to chunk on module number. 
-	*/
-      /*
-	// Kill the autobalancer
-	mongo::WriteConcern WC = mongo::WriteConcern::unacknowledged;
-	bufferDB->update("config.settings", BSON("_id" << "balancer"),
-			 BSON("$set" << BSON("stopped"<<true)), true,
-			 false, &WC );
-
-	// First get a list of modules
-	vector <int> modules;
-	vector<string> migrateTo;
-	migrateTo.push_back("shard_0/eb0:27000");
-	migrateTo.push_back("shard_1/eb1:27000");
-	migrateTo.push_back("shard_2/eb2:27000");
-	for(int x=0; x<options->GetBoards(); x++){
-	  string serial = koHelper::IntToString(options->GetBoard(x).id);
-	  if(options->GetBoard(x).type!="V1724")
-	    continue;
-	  string jsonstring = "{ split: '"+collectionName+
-	    "', middle: { 'module': "+serial+"}}";
-	  cout<<"Telling mongo to split on: "<<jsonstring<<endl;
-	  bufferDB->runCommand
-	    (
-	     "admin",
-	     mongo::fromjson( jsonstring ),
-	     ret
-	     );
-	  fLog->Message(ret.toString());
-
-	  bufferDB->runCommand
-	    ( 
-	     "admin",
-	     mongo::fromjson( "{ moveChunk: '"+collectionName+
-			      "', find: { module: "+serial+"},"+
-			      "to: '"+migrateTo[x%3]+"' }"
-			      ),
-	     ret
-	      );
-	  fLog->Message(ret.toString());
-
-	}
-	
-      }
-      
-      delete bufferDB;
-
-      */
-
       // Make mongo location string                                                    
       string mloc = mongo_opts.address;
       int loc_index = mloc.size()-1;
@@ -930,7 +810,8 @@ void MasterMongodbConnection::UpdateDAQStatus(koStatusPacket_t* DAQStatus,
 int MasterMongodbConnection::CheckForCommand(string &command, string &user, 
 					     string &comment, string &detector,
 					     bool &override, 
-					     map<string, koOptions*> &options)
+					     map<string, koOptions*> &options,
+					     int &expireAfterSeconds)
 //string &detector,
 //					     koOptions &options)
 /*
@@ -970,10 +851,12 @@ int MasterMongodbConnection::CheckForCommand(string &command, string &user,
    command=b.getStringField("command");
    string modeTPC = "";
    string modeMV = "";
+   expireAfterSeconds = 0;
    if( command == "Start" ){
      modeTPC = b.getStringField("run_mode_tpc");
      modeMV  = b.getStringField("run_mode_mv");
      override =  b.getBoolField("override");
+     expireAfterSeconds=b.getIntField("stop_after_minutes")*60;
 
    }
    else
@@ -1019,12 +902,58 @@ int MasterMongodbConnection::CheckForCommand(string &command, string &user,
        }
        stringstream pp;
        options[detector]->ToStream(&pp);
-       cout<<pp.str()<<endl;
+       //cout<<pp.str()<<endl;
      }
    }
      
    return 0;
 }
+
+void MasterMongodbConnection::SyncRunQueue(vector<mongo::BSONObj> dqueue){
+  if(fMonitorDB == NULL )
+    return;
+  fMonitorDB->dropCollection(fMonitorDBName+".daq_queue");
+  
+  for(unsigned int x=0;x<dqueue.size();x++){
+    try{
+      InsertOnline("monitor", "run.daq_queue", dqueue[x]);
+    }
+    catch(...){
+      return;
+    }
+  }
+}
+
+
+vector<mongo::BSONObj> MasterMongodbConnection::GetRunQueue(){
+
+  vector<mongo::BSONObj> retVec;
+  
+  if(fMonitorDB == NULL )
+    return retVec;
+
+  mongo::BSONObj b;
+  try{
+    if(fMonitorDB->count("run.daq_queue") ==0)
+      return retVec;
+
+    auto_ptr<mongo::DBClientCursor> cursor =
+      fMonitorDB->query("run.daq_queue", mongo::BSONObj());
+    while(cursor->more()){
+      b = cursor->next().getOwned();
+      retVec.push_back(b);
+    }
+  }
+  catch( const mongo::DBException &e ){
+    if(fLog!=NULL) {
+      fLog->Error("MongoDB error checking command DB");
+      fLog->Error(e.what());
+    }
+    return retVec;
+  }
+  return retVec;
+}
+
 
 void MasterMongodbConnection::SendRunStartReply(int response, string message)
 /*
