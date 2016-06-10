@@ -317,9 +317,9 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
    }
    //_exit(0);
    //}
-   pthread_mutex_lock(&m_childlock);
+   //pthread_mutex_lock(&m_childlock);
    //m_children[ID]=(pid);
-   pthread_mutex_unlock(&m_childlock);
+   //pthread_mutex_unlock(&m_childlock);
    
    delete insvec;
    return 0;            
