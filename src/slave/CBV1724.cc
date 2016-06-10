@@ -531,11 +531,14 @@ int CBV1724::GetBaselines(vector <int> &baselines, bool bQuiet)
 
 int CBV1724::InitForPreProcessing(){
   //Get the firmware revision (for data formats)                                    
-  cout<<"PREPROCESS INIT"<<endl;
   u_int32_t fwRev=0;
   ReadReg32(0x118C,fwRev);
   int fwVERSION = ((fwRev>>8)&0xFF); //0 for old FW, 137 for new FW  
   int retval = 0;
+  cout<<"Preprocess for FW version " << hex << fwVERSION << dec <<endl;
+  retval += (WriteReg32( 0xEF24, 0x1) + WriteReg32( 0xEF1C, 0x1) +
+             WriteReg32( 0xEF00, 0x10) + WriteReg32( 0x8120, 0xFF ));
+
   if(fwVERSION!=0)
     retval += (WriteReg32(CBV1724_ChannelConfReg,0x310) + 
 	       WriteReg32(CBV1724_DPPReg,0x1310000) + 
@@ -550,8 +553,7 @@ int CBV1724::InitForPreProcessing(){
 
   retval += (WriteReg32(CBV1724_AcquisitionControlReg,0x0) +
 	     WriteReg32(CBV1724_TriggerSourceReg,0x80000000));
-  retval += (WriteReg32( 0xEF24, 0x1) + WriteReg32( 0xEF1C, 0x1) + 
-	     WriteReg32( 0xEF00, 0x10) + WriteReg32( 0x8120, 0xFF ));
+
   if(retval<0) 
     retval = -1;
   return retval;
@@ -612,7 +614,7 @@ int CBV1724::DetermineBaselines()
     //usleep(5000); //
     //Set Software Trigger
     WriteReg32(CBV1724_SoftwareTriggerReg,0x1);
-    //usleep(5000); //
+    usleep(50); //
     //Disable the board
     WriteReg32(CBV1724_AcquisitionControlReg,0x0);
     //usleep(5000);
@@ -623,7 +625,7 @@ int CBV1724::DetermineBaselines()
       thisread = 0;
       thisread = ReadMBLT();
       readout+=thisread;
-      usleep(1000);
+      //usleep(1000);
       counter++;
     } while( counter < 1000 && (readout == 0 || thisread != 0));
     // Either the timer times out or the readout is non zero but 
@@ -686,8 +688,14 @@ int CBV1724::DetermineBaselines()
 	//stringstream error;
 	//error<<"Channel "<<(*dchannels)[x]<<" signal in baseline?";
 	//LogMessage( error.str() );	
-	LogMessage("maxval - minval is " + koHelper::IntToString(abs(maxval-minval)) + " " + koHelper::IntToString(maxval) + " " 
-		   + koHelper::IntToString(minval) + " maybe there's a signal in the baseline.");
+	LogMessage("maxval - minval for about " + 
+		   koHelper::IntToString(fBID.id) + " is " + 
+		   koHelper::IntToString(abs(maxval-minval)) + ", max " + 
+		   koHelper::IntToString(maxval) + " min " 
+		   + koHelper::IntToString(minval) + 
+		   " maybe there's a signal in the baseline." + 
+		   " Event length " + koHelper::IntToString((*dsizes)[x]/4) 
+		   + " words.");
 	delete[] (*buff)[x];
 	continue; //signal in baseline?
       }
