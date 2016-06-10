@@ -287,8 +287,8 @@ int MasterControl::Start(string detector, string user, string comment,
 
   // We have a staged start. Let's move through the stages. 
   if(web)
-    mMongoDB->SendRunStartReply(11, "Received command to start detector " + 
-				detector + " from user " + user);
+    mMongoDB->SendRunStartReply(11, "New run starting! Start detector " + 
+				detector + " initiated by user " + user);
   
   // Validation step
   cout<<"Received start command. Validating..."<<flush;
@@ -377,7 +377,7 @@ int MasterControl::Start(string detector, string user, string comment,
     // (detector != "all" && 
     //	options[detector]->GetInt("noise_spectra_enable")==1))
       //mMongoDB->UpdateNoiseDirectory(run_name);
-    mMongoDB->SendRunStartReply(18, "Configuring databases for run " + run_name);
+    mMongoDB->SendRunStartReply(22, "Configuring databases for run " + run_name);
 
     mMongoDB->InsertRunDoc(user, run_name, comment, options, run_name);
   }
