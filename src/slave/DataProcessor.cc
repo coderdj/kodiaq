@@ -430,7 +430,7 @@ void DataProcessor::Process()
     // 
 
     bExitCondition = true;
-    //usleep(10);
+
     for(unsigned int x = 0; x < m_DigiInterface->GetDigis(); x++)  {
 
       CBV1724 *digi = m_DigiInterface->GetDigi(x);
@@ -441,15 +441,12 @@ void DataProcessor::Process()
       time_t thisTime = koLogger::GetCurrentTime();
       if(fabs(difftime(lastPrintTime, thisTime)) > 1.0){
 	lastPrintTime = koLogger::GetCurrentTime();
-	//cout<<"Thread " << mongoID <<" polling for new data"<<endl;
       }
 
       // Check if the digitizer has data and is not associated 
       // with another processor
       if(digi->RequestDataLock()!=0) continue;
 
-      //RL
-      //cout<<"Thread " << mongoID <<" reading digi "<<digi->GetID().id<<endl;
 
       // resetCounterStart = how many times has the digitizer clock cycled 
       // (it's only 31-bit) at the start of the event
@@ -461,8 +458,6 @@ void DataProcessor::Process()
       iModule = digi->GetID().id;
       digi->UnlockDataBuffer();
      
-      //cout<<"Thread " << mongoID <<" finished reading digi "<<digi->GetID().id<<endl;
-
 
       // Parse the data if requested
       // The processing functions will modify the vectors sent as arguments
@@ -496,10 +491,9 @@ void DataProcessor::Process()
 	  
 	}
       }
-      //cout<<"Thread " << mongoID <<" finished parsing "<<digi->GetID().id<<endl;
 
-
-      // Processing part is over. Now write the data with the DAQRecorder object
+      // Processing part is over. 
+      // Now write the data with the DAQRecorder object
       unsigned int        currentEventIndex = 0;
       int                 protocHandle = -1;
       long long           latestTime64 =0;
@@ -507,7 +501,7 @@ void DataProcessor::Process()
       vector<bool>        SawThisChannelOnce( 8, false );
       vector<u_int32_t>   ChannelResetCounters( 8, resetCounterStart );
       vector<bool>        Over15Counter( 8, false );
-      vector<u_int32_t>        PrevTime(8, 0);
+      vector<u_int32_t>   PrevTime(8, 0);
 
       //Loop through the parsed buffers
       for(unsigned int b = 0; b < buffvec->size(); b++) {
@@ -545,17 +539,10 @@ void DataProcessor::Process()
 	  //cout<<"CHANNEL RESET: "<<ChannelResetCounters[Channel]<<endl;
 	}
 	PrevTime[Channel] = TimeStamp;
-	//if( TimeStamp > 15E8 && !Over15Counter[Channel] )
-	//Over15Counter[Channel] = true;
-	//else if ( TimeStamp < 5E8 && Over15Counter[Channel] ){
-	//Over15Counter[Channel] = false;
-	//ChannelResetCounters[Channel]++;
-	//}
 	
 	// Convert the time to 64-bit
 	// We assume this data is in temporal order for 
-	// computation using the reset counter
-	
+	// computation using the reset counter	
 	int iBitShift = 31; 
 	long long Time64 = ((unsigned long)ChannelResetCounters[Channel] << 
 			    iBitShift) +TimeStamp;
@@ -605,26 +592,43 @@ void DataProcessor::Process()
 	    bson.appendBinData("data",(int)eventSize,mongo::BinDataGeneral,
 			       (const void*)buff);
 
-	  vMongoInsertVec->push_back(bson.obj());
 
-	  bool insert = false;
-	  
+	  // If we're using rotating collections and the reset counter has
+	  // just changed, trigger an insert. All docs in the bulk insert
+	  // should have the same reset counter
 	  if(m_koOptions->HasField("rotating_collections") &&
-	     m_koOptions->GetInt("rotating_collections") == 1){
-	    if(ChannelResetCounters[Channel] != LAST_RESET_COUNT)
-	      insert = true;
+	     m_koOptions->GetInt("rotating_collections") == 1 &&
+	     ChannelResetCounters[Channel] != LAST_RESET_COUNT){
+
+	    if(DAQRecorder_mdb->InsertThreaded(vMongoInsertVec,mongoID,
+                                               LAST_RESET_COUNT)==0){
+	      LAST_RESET_COUNT = ChannelResetCounters[Channel];
+	      vMongoInsertVec = new vector<mongo::BSONObj>();
+	    }
+            else{
+              LogError("MongoDB insert error from processor thread.");
+              bExitCondition=true;
+              vMongoInsertVec = NULL;
+              break;
+            }
 	  }
+
+
+	  // Put new object into insert vector
+          vMongoInsertVec->push_back(bson.obj());
+	  
+	  bool insert = false;
+
+	  // If we exceed the threshold set by the user in options then make an insert
 	  if((int)vMongoInsertVec->size() > mongo_opts.min_insert_size 
 	     || (int)vMongoInsertVec->size() < 0){
-	    //cout<<(int)vMongoInsertVec->size()<<" > "<<
-	    //mongo_opts.min_insert_size<<" so reading out!"<<endl;
 	    insert = true;
 	  }
-
-	  // If we're trying to close the run and we want to read out the buffer
+	 
+	  // If we're trying to close the run and we're at the last doc, make
+	  // an insert to flush the buffer
 	  if(bExitCondition && b == buffvec->size() -1)
             insert = true;
-
 	    
 	  if(insert){
 	    if(!(m_koOptions->HasField("rotating_collections")) ||
