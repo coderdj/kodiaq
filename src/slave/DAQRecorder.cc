@@ -290,7 +290,7 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
        for(unsigned int i=0; i<insvec->size(); i+=1)
 	 bulky.insert((*insvec)[i]);
        bulky.execute(&WC, &RES);
-       //std::cout<<"Unordered write "<<RES.toString()<<endl;
+       std::cout<<"Unordered write "<<insvec->size()<<" docs with WC "<<WC.obj().toString()<<endl;
      }
      else{
        // conn->insert(cS.str(), (*insvec) );

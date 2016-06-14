@@ -625,9 +625,10 @@ void DataProcessor::Process()
 	    insert = true;
 	  }
 	 
-	  // If we're trying to close the run and we're at the last doc, make
+	  // If we're at the last doc from this round of BLTs
 	  // an insert to flush the buffer
-	  if(bExitCondition && b == buffvec->size() -1)
+	  //if(bExitCondition && 
+	  if(b == buffvec->size() -1)
             insert = true;
 	    
 	  if(insert){
