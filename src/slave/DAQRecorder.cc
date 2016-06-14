@@ -225,7 +225,7 @@ void DAQRecorder_mongodb::Fillicide(int ID){
     result = waitpid(m_children[ID], &status, 0);
   
   if(result==-1)
-    cout<<"Error in child process"<<endl;
+    std::cout<<"Error in child process"<<endl;
   
   m_children[ID]=0;
   pthread_mutex_unlock(&m_childlock);
@@ -290,6 +290,7 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
        for(unsigned int i=0; i<insvec->size(); i+=1)
 	 bulky.insert((*insvec)[i]);
        bulky.execute(&WC, &RES);
+       //std::cout<<"Unordered write "<<RES.toString()<<endl;
      }
      else{
        // conn->insert(cS.str(), (*insvec) );
@@ -303,7 +304,7 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
 	 //old line
        //cout<<"Inserting "<<insvec->size()<<" documents ("<<ID<<")"<<" to "
        //<<cS.str()<<endl;
-       ( m_vScopedConnections[ID])->insert( cS.str(), (*insvec) );
+       ( m_vScopedConnections[ID])->insert( cS.str(), (*insvec), 0, &WC );
 
      }
    }
