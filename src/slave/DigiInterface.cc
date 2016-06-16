@@ -24,6 +24,7 @@ DigiInterface::DigiInterface()
    m_DB_USER=m_DB_PASSWORD="";
    pthread_mutex_init(&m_RateMutex,NULL);
    m_koOptions = NULL;
+   bProfiling=false;
 }
 
 DigiInterface::~DigiInterface()
@@ -33,7 +34,8 @@ DigiInterface::~DigiInterface()
 }
 
 DigiInterface::DigiInterface(koLogger *logger, int ID, 
-			     string DB_USER, string DB_PASSWORD, int cores)
+			     string DB_USER, string DB_PASSWORD, int cores, 
+			     int profiling)
 {
    m_ReadThread.IsOpen  = false;
    m_WriteThread.IsOpen = false;
@@ -46,6 +48,7 @@ DigiInterface::DigiInterface(koLogger *logger, int ID,
    pthread_mutex_init(&m_RateMutex,NULL);
    m_koOptions = NULL;
    fCores = cores;
+   bProfiling = profiling;
 }
 
 int DigiInterface::Arm(koOptions *options){
@@ -166,7 +169,7 @@ int DigiInterface::Arm(koOptions *options){
 
     // Spawning of processing threads. depends on readout options.
     m_vProcThreads[x].Processor = new DataProcessor(this,m_DAQRecorder,
-                                                    m_koOptions, x);
+                                                    m_koOptions, x, bProfiling);
     pthread_create(&m_vProcThreads[x].Thread,NULL,DataProcessor::WProcess,
                    static_cast<void*>(m_vProcThreads[x].Processor));
     m_vProcThreads[x].IsOpen=true;
@@ -291,7 +294,7 @@ int DigiInterface::InitializeHardware(koOptions *options)
       m_koLog->Message(logmess.str());
       
       if(Board.type=="V1724"){	      
-	CBV1724 *digitizer = new CBV1724(Board,m_koLog);
+	CBV1724 *digitizer = new CBV1724(Board, m_koLog, bProfiling);
 	m_vDigitizers.push_back(digitizer);
 	digitizer->SetCrateHandle(tempHandle);
       }	 

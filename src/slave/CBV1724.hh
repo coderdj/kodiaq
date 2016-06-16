@@ -34,8 +34,9 @@
 class CBV1724 : public VMEBoard {
  public: 
    CBV1724();
-   virtual ~CBV1724();
-   explicit CBV1724(board_definition_t BoardDef, koLogger *kLog);   /*!   The preferred constructor. If you use the default constructor you have an empty board.*/
+  virtual ~CBV1724();
+  explicit CBV1724(board_definition_t BoardDef, koLogger *kLog, bool profiling=false); 
+  /*!   The preferred constructor. If you use the default constructor you have an empty board.*/
 
 
    int Initialize(koOptions *options);                             /*!<  Initialize all VME options using a XeDAQOptions object. Other run parameters are also set.*/
@@ -101,7 +102,8 @@ class CBV1724 : public VMEBoard {
   pthread_t             m_copyThread;
   u_int32_t             m_temp_blt_bytes;
   u_int32_t             *m_tempBuff;
-  bool                  bExists;
+  bool                  bExists, bProfiling;
+  ofstream              m_profilefile;
 };
 
 #endif

@@ -47,6 +47,7 @@ CBV1724::CBV1724()
    bThreadOpen = false;
    m_temp_blt_bytes=0;
    bExists=false;
+   bProfiling=false;
 }
 
 CBV1724::~CBV1724()
@@ -62,7 +63,7 @@ CBV1724::~CBV1724()
    pthread_cond_destroy(&fReadyCondition);
 }
 
-CBV1724::CBV1724(board_definition_t BoardDef, koLogger *kLog)
+CBV1724::CBV1724(board_definition_t BoardDef, koLogger *kLog, bool profiling)
         :VMEBoard(BoardDef,kLog)
 {
   fBLTSize=fBufferSize=0;
@@ -86,15 +87,13 @@ CBV1724::CBV1724(board_definition_t BoardDef, koLogger *kLog)
   bThreadOpen=false;
   m_temp_blt_bytes = 0;
   bExists=false;
+  bProfiling = profiling;
 }
 
 int CBV1724::Initialize(koOptions *options)
 {
   // Initialize and ready the board according to the options object
   bExists=true;
-  //bThreadOpen = true;
-  //pthread_create(&m_copyThread, NULL, CBV1724::CopyWrapper,
-  //static_cast<void*>(this) );
 
   // Set private members
   int retVal=0;
@@ -167,57 +166,6 @@ int CBV1724::Initialize(koOptions *options)
   i64_blt_last_time = 0;
    return retVal;
 }
-//#include <thread>
-void* CBV1724::CopyWrapper(void* data){
-
-  CBV1724 *board = static_cast<CBV1724*>(data);
-  board->CopyThread();
-  return (void*)data;
-  
-}
-
-void CBV1724::CopyThread(){
-
-  // We reserve too much space for the buffer (block transfers can get long).        
-  // In order to avoid shipping huge amounts of empty space around we copy           
-  // the buffer here to a new buffer that is just large enough for the data.         
-  // This memory is reserved here but it's ownership will be passed to the           
-  // processing function that drains it (that function must free it!)                
-  //cout<<"In copy thread"<<endl;
-  do{
-    if(m_tempBuff == NULL || m_temp_blt_bytes == 0){
-      usleep(10);
-      continue;
-    }
-    u_int32_t *writeBuff = new u_int32_t[m_temp_blt_bytes/(sizeof(u_int32_t))];               
-    memcpy(writeBuff,m_tempBuff,m_temp_blt_bytes);               
-    LockDataBuffer();      
-    fBuffers->push_back(writeBuff);          
-    fSizes->push_back(m_temp_blt_bytes);       
-                                                                                       
-    // Update total buffer size                                                        
-    fBufferOccSize += m_temp_blt_bytes;     
-    fBufferOccCount++;                                   
-    //if(fBuffers->size()==1) i64_blt_first_time = koHelper::GetTimeStamp(m_tempBuff);   
-                                                                                       
-    // Priority. If we defined a time stamp frequency, signal the readout              
-    time_t current_time=koLogger::GetCurrentTime();                                    
-    double tdiff = difftime(current_time, fLastReadout);                               
-    
-    // If we have enough BLTs (user option) signal that board can be read out          
-    if(abs(fBuffers->size())>fReadoutThresh || abs(tdiff) > fReadoutTime)   {
-      //cout<<fBuffers->size()<<" "<<fReadoutThresh<<" "<<fReadoutTime<<" "<<tdiff<<endl;
-               fReadMeOut=true;                
-    }
-    //pthread_cond_signal(&fReadyCondition);                                          
-    delete[] m_tempBuff;
-    m_tempBuff = NULL;
-    m_temp_blt_bytes=0;
-
-    UnlockDataBuffer();            
-  } while(bExists);
-  
-}
 
 unsigned int CBV1724::ReadMBLT()
 // Performs a FIFOBLT read cycle for this board and reads the
@@ -272,6 +220,11 @@ unsigned int CBV1724::ReadMBLT()
     fBufferOccSize += blt_bytes;
     fBufferOccCount++;
 
+    if(bProfiling && m_profilefile.is_open())
+      m_profilefile<<"READ "<<koLogger::GetTimeMus()<<" "<<blt_bytes<<" "<<
+	fBufferOccSize<<" "<<fBuffers->size()<<endl;
+
+
     //if(fBuffers->size()==1) i64_blt_first_time = koHelper::GetTimeStamp(buff);
     
     // Priority. If we defined a time stamp frequency, signal the readout
@@ -279,8 +232,12 @@ unsigned int CBV1724::ReadMBLT()
     double tdiff = difftime(current_time, fLastReadout);
     
     // If we have enough BLTs (user option) signal that board can be read out
-    if(fBuffers->size()>fReadoutThresh || tdiff > fReadoutTime)
+    if(fBuffers->size()>fReadoutThresh || fabs(tdiff) > fReadoutTime){
       fReadMeOut=true;
+      if(bProfiling && m_profilefile.is_open())
+	m_profilefile<<"SIGNAL "<<koLogger::GetTimeMus()<<" "<<blt_bytes<<" "<<
+	  fBufferOccSize<<" "<<fBuffers->size()<<" "<<tdiff<<endl;
+    }
       //pthread_cond_signal(&fReadyCondition);
       
     UnlockDataBuffer();
@@ -303,7 +260,12 @@ void CBV1724::SetActivated(bool active)
 	 pthread_mutex_unlock(&fDataLock);
       }
       cout<<"Done"<<endl;
+
+      if(m_profilefile.is_open())
+	m_profilefile.close();
    }      
+   if(bProfiling && !m_profilefile.is_open())
+     m_profilefile.open("profiling/profile_digi_"+koHelper::IntToString(fBID.id)+".txt", std::fstream::app);
    i_clockResetCounter=0;
 }
 
@@ -459,7 +421,12 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
    fBuffers = new vector<u_int32_t*>();
    sizes = fSizes;
    fSizes = new vector<u_int32_t>();
-   
+
+   cout<<"READING OUT "<<fBID.id<<" with old size: "<<retVec->size()<<" and new size "<<fBuffers->size()<<endl;
+   if(bProfiling && m_profilefile.is_open())
+     m_profilefile<<"CLEAR "<<koLogger::GetTimeMus()<<" "<<retVec->size()<<" "
+		  <<m_ID<<endl;
+
    // Reset total buffer size 
    fBufferOccSize = 0;
 

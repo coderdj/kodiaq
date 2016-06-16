@@ -54,7 +54,7 @@ class DigiInterface
    DigiInterface();
    virtual ~DigiInterface();
   DigiInterface(koLogger *logger, int ID=-1, string DB_USER="", string DB_PASSWORD="",
-		int cores=8);
+		int cores=8, int profiline=0);
    
   //General Control
   //
@@ -159,6 +159,7 @@ class DigiInterface
 
   // DB connection
   string               m_DB_USER, m_DB_PASSWORD;
+  bool                 bProfiling;
 };
 
 #endif

@@ -225,15 +225,11 @@ int main(int argc, char *argv[])
      return -1;
    }
 
-   // Profile output
-   ofstream profilefile;
-   if(PROFILING == 1)
-     profilefile.open("profile.log");
-
    
    fNetworkInterface.Initialize(SERVERADDR,PORT,DATAPORT,ID,NODENAME); 
 
-   DigiInterface  *fElectronics = new DigiInterface(koLog, ID, DB_USER, DB_PASSWORD, CORES);
+   DigiInterface  *fElectronics = new DigiInterface(koLog, ID, DB_USER, 
+						    DB_PASSWORD, CORES, PROFILING);
    koOptions   *fDAQOptions  = new koOptions();
    koRunInfo_t    fRunInfo;
    
@@ -370,10 +366,7 @@ connection_loop:
 	 vector <string> readout_reports;
 	 int BufferSize = fElectronics->GetBufferOccupancy(digis, sizes, counts,
 							   readout_reports);
-	 if(PROFILING == 1){
-	   for(unsigned int report=0;report<readout_reports.size();report++)
-	     profilefile<<readout_reports[report]<<endl;
-	 }
+
 
 	 cout<<"rate: "<<rate<<" freq: "<<freq<<" iRate: "<<iRate<<" tdiff: "<<tdiff<<" status: ";
 	 if(status == KODAQ_ARMED) cout<<"ARMED";

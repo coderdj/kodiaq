@@ -27,6 +27,7 @@ DataProcessor::DataProcessor()
    m_koOptions     = NULL;
    m_bErrorSet     = false;   
    m_id            = -1;
+   bProfiling      = false;
 }
 
 DataProcessor::~DataProcessor()
@@ -41,13 +42,14 @@ void* DataProcessor::WProcess(void* data)
 }
 
 DataProcessor::DataProcessor(DigiInterface *digi, DAQRecorder *recorder,
-			     koOptions *options, int id)
+			     koOptions *options, int id, bool profiling)
 {
   m_DigiInterface   = digi; 
   m_DAQRecorder     = recorder;
   m_koOptions       = options;
   m_bErrorSet       = false;
   m_id              = id;
+  bProfiling        = profiling;
 }
 
 void DataProcessor::LogError(string err)
@@ -246,7 +248,7 @@ void DataProcessor::SplitChannelsNewFW(vector<u_int32_t*> *&buffvec,
   //retsize will be the returned sizes in words
   //timeStamps will be the timestamps of the returned buffers
   //channels will be the channels of the returned buffers
-  
+
   for(unsigned int x=0; x<buffvec->size();x++)  {	
     //loop through main vector containing the raw data
     if((*sizevec)[x]==0)      {
@@ -372,6 +374,7 @@ void DataProcessor::Process()
   
   // If no boards are active set this to true to exit
   bool bExitCondition = false; 
+  int mongoID = -1;
   cout<<"OPEN PROC THREAD"<<endl;
   // Check if objects have been initialized properly
   if(m_DigiInterface == NULL || m_koOptions == NULL) 
@@ -383,7 +386,7 @@ void DataProcessor::Process()
 #ifdef HAVE_LIBMONGOCLIENT
   // MongoDB-specific variables
   
-  int mongoID = -1;
+  mongoID = -1;
   DAQRecorder_mongodb *DAQRecorder_mdb = NULL;
   vector <mongo::BSONObj> *vMongoInsertVec = new vector<mongo::BSONObj>();
   
@@ -421,8 +424,13 @@ void DataProcessor::Process()
   int                 LAST_RESET_COUNT = 0;
 
   time_t lastPrintTime = koLogger::GetCurrentTime();
+  
+  if(bProfiling && !m_profilefile.is_open())
+    m_profilefile.open("profiling/thread_"+koHelper::IntToString(mongoID)+".txt", std::fstream::app);
 
-  //cout<<"ENTER LOOP"<<endl;
+  if(bProfiling && m_profilefile.is_open())
+    m_profilefile<<"SEARCHING "<<koLogger::GetTimeMus()<<endl;
+
   while(!bExitCondition){
     //
     // This loop will be processed until the DigiInterface 
@@ -447,6 +455,9 @@ void DataProcessor::Process()
       // with another processor
       if(digi->RequestDataLock()!=0) continue;
 
+      if(bProfiling && m_profilefile.is_open())
+	m_profilefile<<"READ  "<<koLogger::GetTimeMus()<<" "
+		     <<digi->GetID().id<<endl;
 
       // resetCounterStart = how many times has the digitizer clock cycled 
       // (it's only 31-bit) at the start of the event
@@ -455,6 +466,11 @@ void DataProcessor::Process()
 
       buffvec = digi->ReadoutBuffer( sizevec, resetCounterStart, headerTime,
 				     mongoID );
+
+      if(bProfiling && m_profilefile.is_open())
+	m_profilefile<<"PARSING "<<koLogger::GetTimeMus()<<" "<<digi->GetID().id
+		     <<" 0 "<<buffvec->size()<<endl;
+
       iModule = digi->GetID().id;
       digi->UnlockDataBuffer();
      
@@ -521,6 +537,8 @@ void DataProcessor::Process()
 	
 	if( Channel < 0 || Channel > 7 ){
 	  cout<<"ERROR in CHANNEL"<<endl;
+	  if(bProfiling && m_profilefile.is_open())
+	    m_profilefile.close();
 	  return;
 	}
 	
@@ -599,11 +617,23 @@ void DataProcessor::Process()
 	  if(m_koOptions->HasField("rotating_collections") &&
 	     m_koOptions->GetInt("rotating_collections") == 1 &&
 	     ChannelResetCounters[Channel] != LAST_RESET_COUNT){
+	    
+	    if(bProfiling && m_profilefile.is_open())
+	      m_profilefile<<"INSERT "<<koLogger::GetTimeMus()<<" "
+			   <<iModule<<" "<<vMongoInsertVec->size()
+			   <<" "<<mongoID<<endl;			   
 
 	    if(DAQRecorder_mdb->InsertThreaded(vMongoInsertVec,mongoID,
                                                LAST_RESET_COUNT)==0){
 	      LAST_RESET_COUNT = ChannelResetCounters[Channel];
 	      vMongoInsertVec = new vector<mongo::BSONObj>();
+
+	      if(bProfiling && m_profilefile.is_open())
+		m_profilefile<<"PARSING "<<koLogger::GetTimeMus()<<" "
+			     <<digi->GetID().id
+			     <<" 0 "<<buffvec->size()<<endl;
+
+
 	    }
             else{
               LogError("MongoDB insert error from processor thread.");
@@ -635,11 +665,23 @@ void DataProcessor::Process()
 	    if(!(m_koOptions->HasField("rotating_collections")) ||
 	       (m_koOptions->GetInt("rotating_collections") != 1))
 	      LAST_RESET_COUNT=-1;
+
+	    if(bProfiling && m_profilefile.is_open())
+              m_profilefile<<"INSERT "<<koLogger::GetTimeMus()<<" "
+                           <<iModule<<" "<<vMongoInsertVec->size()
+                           <<" "<<mongoID<<endl;
+
 	    if(DAQRecorder_mdb->InsertThreaded(vMongoInsertVec,mongoID, 
 					       LAST_RESET_COUNT)==0){ 
 	      //success
 		LAST_RESET_COUNT = ChannelResetCounters[Channel];
 		vMongoInsertVec = new vector<mongo::BSONObj>();
+		
+		if(b!=buffvec->size()-1 && bProfiling && m_profilefile.is_open())
+		  m_profilefile<<"PARSING "<<koLogger::GetTimeMus()<<" "
+			       <<digi->GetID().id
+			       <<" 0 "<<buffvec->size()<<endl;
+		
 	      }
 	    else{
 	      LogError("MongoDB insert error from processor thread.");
@@ -677,6 +719,10 @@ void DataProcessor::Process()
       if(eventIndices!=NULL) delete eventIndices;
       buffvec=NULL;
       eventIndices=sizevec=channels=times=NULL;      
+      
+      if(bProfiling && m_profilefile.is_open())
+	m_profilefile<<"SEARCHING "<<koLogger::GetTimeMus()<<endl;
+
     }//end loop through digis
   }//end while loop
 #ifdef HAVE_LIBMONGOCLIENT
@@ -684,6 +730,8 @@ void DataProcessor::Process()
     delete vMongoInsertVec;
 #endif
   cout<<"LEAVING PROCESSING THREAD"<<endl;
+  if(bProfiling && m_profilefile.is_open())
+    m_profilefile.close();
   return;
 }
 
