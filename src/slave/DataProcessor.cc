@@ -401,7 +401,8 @@ void DataProcessor::Process()
       return;
     }
   }
-  
+  mongo_option_t mongo_opts = m_koOptions->GetMongoOptions();
+
 #endif
 
 #ifdef HAVE_LIBPBF
@@ -520,6 +521,10 @@ void DataProcessor::Process()
       vector<u_int32_t>   PrevTime(8, 0);
 
       //Loop through the parsed buffers
+      if(bProfiling && m_profilefile.is_open())
+        m_profilefile<<"DOCS "<<koLogger::GetTimeMus()<<" "<<digi->GetID().id
+                     <<" 0 "<<buffvec->size()<<endl;
+
       for(unsigned int b = 0; b < buffvec->size(); b++) {
 	u_int32_t TimeStamp = 0;
 	int       Channel    = -1;
@@ -588,12 +593,13 @@ void DataProcessor::Process()
 
 	//Now fill the actual data depending on write mode	
 #ifdef HAVE_LIBMONGOCLIENT
-	mongo_option_t mongo_opts = m_koOptions->GetMongoOptions();
+	//Loop through the parsed buffers        
+
 
 	if(m_koOptions->GetInt("write_mode") == WRITEMODE_MONGODB){
 	  mongo::BSONObjBuilder bson;
-	  bson.genOID();
 
+	  bson.genOID();	 	  
 
 	  bson.append("module",iModule);
 	  bson.append("channel",Channel);
@@ -629,9 +635,9 @@ void DataProcessor::Process()
 	      vMongoInsertVec = new vector<mongo::BSONObj>();
 
 	      if(bProfiling && m_profilefile.is_open())
-		m_profilefile<<"PARSING "<<koLogger::GetTimeMus()<<" "
+		m_profilefile<<"DOCS "<<koLogger::GetTimeMus()<<" "
 			     <<digi->GetID().id
-			     <<" 0 "<<buffvec->size()<<endl;
+			     <<" "<<b<<"  "<<buffvec->size()<<endl;
 
 
 	    }
@@ -678,9 +684,9 @@ void DataProcessor::Process()
 		vMongoInsertVec = new vector<mongo::BSONObj>();
 		
 		if(b!=buffvec->size()-1 && bProfiling && m_profilefile.is_open())
-		  m_profilefile<<"PARSING "<<koLogger::GetTimeMus()<<" "
+		  m_profilefile<<"DOCS "<<koLogger::GetTimeMus()<<" "
 			       <<digi->GetID().id
-			       <<" 0 "<<buffvec->size()<<endl;
+			       <<" "<<b<<" "<<buffvec->size()<<endl;
 		
 	      }
 	    else{
@@ -725,6 +731,9 @@ void DataProcessor::Process()
 
     }//end loop through digis
   }//end while loop
+  if(bProfiling && m_profilefile.is_open())
+    m_profilefile<<"DONE "<<koLogger::GetTimeMus()<<endl;
+
 #ifdef HAVE_LIBMONGOCLIENT
   if(vMongoInsertVec != NULL)
     delete vMongoInsertVec;
