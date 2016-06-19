@@ -366,7 +366,7 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
     }
     
     // Now check for resets within the buffer
-    u_int64_t i64_blt_last_time = i64_blt_first_time;
+    i64_blt_last_time = i64_blt_first_time;
     for(unsigned int x=1; x<fBuffers->size(); x++){
       u_int64_t thisTime = koHelper::GetTimeStamp((*fBuffers)[x]);
       if(thisTime < i64_blt_last_time)
