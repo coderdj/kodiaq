@@ -47,7 +47,7 @@ class CBV1724 : public VMEBoard {
    };  
    
   vector<u_int32_t*>* ReadoutBuffer(vector <u_int32_t> *&sizes,
-				    int &resetCounter, u_int32_t &headerTime,
+				    unsigned int &resetCounter, u_int32_t &headerTime,
 				    int m_ID=-1);           
   /*!<  Passes a pointer to a vector of raw data that has been read from the board. Please note: this passes ownership of the raw data vector to the caller! That means the calling function is responsible for freeing this memory again later. A new buffer is created that will act as the board buffer until the next ReadoutBuffer call. The vector sizes contains the size in bytes of each element in the returned buffer. Ownership of sizes also passes to the caller.*/
    
@@ -87,7 +87,7 @@ class CBV1724 : public VMEBoard {
    u_int32_t            fBLTSize;
    vector <u_int32_t>  *fSizes;
    vector <u_int32_t*> *fBuffers;
-   int                  i_clockResetCounter;
+   u_int64_t                  i_clockResetCounter;
    u_int64_t            i64_blt_first_time,i64_blt_second_time,i64_blt_last_time;  
   u_int32_t            fIdealBaseline;
    int                  fBufferOccSize;

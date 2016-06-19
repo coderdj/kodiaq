@@ -336,7 +336,8 @@ int CBV1724::RequestDataLock()
 }
 
 vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes, 
-					   int &resetCounter, u_int32_t &headerTime,
+					   unsigned int &resetCounter, 
+					   u_int32_t &headerTime,
 					   int m_ID)
 // Note this PASSES OWNERSHIP of the returned vectors to the 
 // calling function! They must be cleared by the caller!
@@ -350,35 +351,28 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
 
   if(fBuffers->size()!=0 ) {
     i64_blt_first_time = koHelper::GetTimeStamp((*fBuffers)[0]);
-    headerTime = koHelper::GetTimeStamp((*fBuffers)[0]);
-    i64_blt_second_time = koHelper::GetTimeStamp((*fBuffers)[fBuffers->size()-1]);
+    headerTime = i64_blt_first_time;
+    //i64_blt_second_time = koHelper::GetTimeStamp((*fBuffers)[fBuffers->size()-1]);
 
-    // LOGGING TO REMOVE
     u_int64_t reset = i_clockResetCounter;
+    resetCounter = i_clockResetCounter;
 
+    // If the clock reset before this buffer, then we can 
+    // record a clock reset here
     // CASE 1: CLOCK RESET AT T0
     if(i64_blt_last_time > i64_blt_first_time){
       i_clockResetCounter ++;
-      //cout<<"ADD TO CLOCK"<<i_clockResetCounter<<endl;
-
       resetCounter = i_clockResetCounter;
-      // CASE 1B: CLOCK ALSO RESETS IN BUFFER
-      if(i64_blt_second_time< i64_blt_first_time){
+    }
+    
+    // Now check for resets within the buffer
+    u_int64_t i64_blt_last_time = i64_blt_first_time;
+    for(unsigned int x=1; x<fBuffers->size(); x++){
+      u_int64_t thisTime = koHelper::GetTimeStamp((*fBuffers)[x]);
+      if(thisTime < i64_blt_last_time)
 	i_clockResetCounter++;
-	//cout<<"ADD TO CLOCK"<<i_clockResetCounter<<endl;
-
-      }
+      i64_blt_last_time = thisTime;
     }
-    // CASE 2: CLOCK RESET IN BUFFER
-    else if(i64_blt_last_time < i64_blt_first_time &&
-	    i64_blt_second_time < i64_blt_first_time){
-      resetCounter = i_clockResetCounter;
-      i_clockResetCounter++;
-      //cout<<"ADD TO CLOCK"<<i_clockResetCounter<<endl;
-
-    }
-    else
-      resetCounter = i_clockResetCounter;
 
     // REMOVE THIS IF LATER
     if(reset != i_clockResetCounter){
@@ -390,23 +384,7 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
 
     i64_blt_last_time = i64_blt_second_time;
   }
-    /*
-    resetCounter = i_clockResetCounter;
-    bool incrementedClock = false;
 
-    if( i64_blt_first_time < 12E8 && bOver15 )
-      resetCounter++;     
-
-    // Is the object's over18 bool set?
-    if( i64_blt_second_time <12E8 && bOver15 ){
-      bOver15=false;
-      i_clockResetCounter++;
-    }
-    else if( i64_blt_second_time > 12E8 && !bOver15 )
-      bOver15 = true;
-
-  }
-    */
   // PROFILING                  
   if(m_ID != -1){
     struct timeval tv;
@@ -416,7 +394,8 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
     ss<<fBID.id<<" "<<m_ID<<" "<<time_us<<" "<<fBufferOccSize<<" "<<fBuffers->size();
     fReadoutReports.push_back(ss.str());
   }
-
+  
+  // Memory management, pass pointer to caller *with ownsership*
    vector<u_int32_t*> *retVec = fBuffers;
    fBuffers = new vector<u_int32_t*>();
    sizes = fSizes;
@@ -606,7 +585,7 @@ int CBV1724::DetermineBaselines()
     }
 
     // Use main kodiaq parsing     
-    int rc=0;
+    unsigned int rc=0;
     u_int32_t ht=0;
     vector <u_int32_t> *dsizes;
     vector<u_int32_t*> *buff= ReadoutBuffer(dsizes, rc, ht);

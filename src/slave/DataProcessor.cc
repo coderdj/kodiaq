@@ -462,7 +462,7 @@ void DataProcessor::Process()
 
       // resetCounterStart = how many times has the digitizer clock cycled 
       // (it's only 31-bit) at the start of the event
-      int resetCounterStart = 0; 
+      unsigned int resetCounterStart = 0; 
       u_int32_t headerTime = 0;
 
       buffvec = digi->ReadoutBuffer( sizevec, resetCounterStart, headerTime,
