@@ -382,7 +382,7 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
       LogError(st.str());
     }
 
-    i64_blt_last_time = i64_blt_second_time;
+    //i64_blt_last_time = i64_blt_second_time;
   }
 
   // PROFILING                  
