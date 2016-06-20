@@ -382,9 +382,29 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
       LogError(st.str());
     }
 
-    //i64_blt_last_time = i64_blt_second_time;
+    // Now we have another issue. It can be that we have very unphysical data
+    // where the clock resets many, many times in a buffer. If we get one 
+    // of these buffers dump the ENTIRE BINARY HEADER to a special file.
+    // It will be a lot
+    if( i_clockResetCounter - reset > 5){ // 5 resets seems suitably crappy
+      ofstream outfile;
+      stringstream filename;
+      filename<<"/home/dan/crapData_"<<fBID.id<<"_"<<i_clockResetCounter<<".txt";
+      outfile.open(filename.str());
+      
+      // Print each word      
+      outfile<<koLogger::GetTimeString()<<" Record for digi "<<fBID.id
+	     <<" with "<<i_clockResetCounter-reset<<
+	" clock resets and a buffer size of "<<(*fSizes)[0]<<" and "
+	     <<fBuffers->size()<<" buffers."<<endl;
+      for(unsigned int idx = 0; idx < (*fSizes)[0]; idx++){
+	outfile<<hex<<(*fBuffers)[0][idx]<<endl;
+      }
+      outfile.close();
+    }// end remove later
+    
   }
-
+  
   // PROFILING                  
   if(m_ID != -1){
     struct timeval tv;
