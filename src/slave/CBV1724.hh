@@ -15,6 +15,7 @@
 
 #include "VMEBoard.hh"
 #include <pthread.h>
+#include <atomic>
 
 //Register definitions
 #define CBV1724_BoardInfoReg              0x8140
@@ -91,7 +92,7 @@ class CBV1724 : public VMEBoard {
    u_int64_t            i64_blt_first_time,i64_blt_second_time,i64_blt_last_time;  
   u_int32_t            fIdealBaseline;
    int                  fBufferOccSize;
-  int                   fBufferOccCount;
+  std::atomic<int>      fBufferOccCount;
   bool                  bOver15;
   time_t                fLastReadout;
   double                fReadoutTime;

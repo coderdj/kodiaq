@@ -189,6 +189,7 @@ unsigned int CBV1724::ReadMBLT()
       delete[] buff;
       return 0;
     }
+
     blt_bytes+=nb;
     if(blt_bytes>fBufferSize){
       // For Custom V1724 firmware max event size is ~10mus, corresponding to a 
@@ -204,6 +205,21 @@ unsigned int CBV1724::ReadMBLT()
     }
   }while(ret!=cvBusError);
    
+  // New: If the BLT is less than 6 words then count it and dump it
+  if(blt_bytes < 24) {
+    stringstream ss;
+    ss<<"Board "<<fBID.id<<" found a small BLT with only "
+      <<blt_bytes<<" size!"<<endl;
+    m_koLog->Error(ss.str());
+    
+    // Still increment counter
+    fBufferOccCount++;
+    
+
+    // This triggers a deletion of the buffer without recording    
+    blt_bytes = 0;
+  }
+
   if(blt_bytes>0){
     // We reserve too much space for the buffer (block transfers can get long). 
     // In order to avoid shipping huge amounts of empty space around we copy
