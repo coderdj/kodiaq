@@ -206,7 +206,7 @@ unsigned int CBV1724::ReadMBLT()
   }while(ret!=cvBusError);
    
   // New: If the BLT is less than 6 words then count it and dump it
-  if(blt_bytes < 24) {
+  if(blt_bytes < 24 && blt_bytes!=0) {
     stringstream ss;
     ss<<"Board "<<fBID.id<<" found a small BLT with only "
       <<blt_bytes<<" size!"<<endl;
