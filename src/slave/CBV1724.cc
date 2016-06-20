@@ -223,9 +223,7 @@ unsigned int CBV1724::ReadMBLT()
     if(bProfiling && m_profilefile.is_open())
       m_profilefile<<"READ "<<koLogger::GetTimeMus()<<" "<<blt_bytes<<" "<<
 	fBufferOccSize<<" "<<fBuffers->size()<<endl;
-
-
-    //if(fBuffers->size()==1) i64_blt_first_time = koHelper::GetTimeStamp(buff);
+   
     
     // Priority. If we defined a time stamp frequency, signal the readout
     time_t current_time=koLogger::GetCurrentTime();
@@ -238,8 +236,6 @@ unsigned int CBV1724::ReadMBLT()
 	m_profilefile<<"SIGNAL "<<koLogger::GetTimeMus()<<" "<<blt_bytes<<" "<<
 	  fBufferOccSize<<" "<<fBuffers->size()<<" "<<tdiff<<endl;
     }
-      //pthread_cond_signal(&fReadyCondition);
-      
     UnlockDataBuffer();
   }
 
@@ -311,28 +307,6 @@ int CBV1724::RequestDataLock()
     return 0;
   }
   return -1;
-  /*
-   int error=pthread_mutex_trylock(&fWaitLock);
-   if(error!=0) return -1;
-   
-   /*struct timespec timeToWait;
-   timeToWait.tv_sec = time(0)+1; //wait 1 seconds
-   timeToWait.tv_nsec= 0;
-   if(pthread_cond_timedwait(&fReadyCondition,&fDataLock,&timeToWait)==0){
-     //LockDataBuffer();
-     pthread_mutex_unlock(&fWaitLock);
-     return 0;
-     }*/
-  /*
-   if(fReadMeOut){
-     LockDataBuffer();
-     pthread_mutex_unlock(&fWaitLock);
-     return 0;
-   }
-
-   pthread_mutex_unlock(&fWaitLock);
-   //   UnlockDataBuffer();
-   return -1;*/
 }
 
 vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes, 
@@ -348,6 +322,7 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
   fReadMeOut=false;
   headerTime = 0;
   fLastReadout=koLogger::GetCurrentTime();
+  
 
   if(fBuffers->size()!=0 ) {
     i64_blt_first_time = koHelper::GetTimeStamp((*fBuffers)[0]);
@@ -377,8 +352,10 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
     // REMOVE THIS IF LATER
     if(reset != i_clockResetCounter){
       stringstream st;
-      st<<"Clock reset board "<<fBID.id<<": first time ("<<i64_blt_first_time<<") second time ("<<i64_blt_second_time<<") last time ("<<
-	i64_blt_last_time<<") reset counter ("<<resetCounter<<") size of buffer vector ("<<fBuffers->size()<<")";
+      st<<"Clock reset board "<<fBID.id<<": first time ("<<i64_blt_first_time
+	<<") second time ("<<i64_blt_second_time<<") last time ("<<
+	i64_blt_last_time<<") reset counter ("<<resetCounter
+	<<") size of buffer vector ("<<fBuffers->size()<<")";
       LogError(st.str());
     }
 
@@ -389,7 +366,7 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
     if( i_clockResetCounter - reset > 5){ // 5 resets seems suitably crappy
       ofstream outfile;
       stringstream filename;
-      filename<<"/home/dan/crapData_"<<fBID.id<<"_"<<i_clockResetCounter<<".txt";
+      filename<<"crapData_"<<fBID.id<<"_"<<i_clockResetCounter<<".txt";
       outfile.open(filename.str());
       
       // Print each word      
