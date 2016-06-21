@@ -167,6 +167,15 @@ int CBV1724::Initialize(koOptions *options)
    return retVal;
 }
 
+int CBV1724::GetBufferSize(int &count, vector<string> &reports){
+  LockDataBuffer();
+  count = fBufferOccCount;
+  reports = fReadoutReports;
+  fReadoutReports.clear();
+  UnlockDataBuffer();
+  return fBufferOccSize; 
+}
+
 unsigned int CBV1724::ReadMBLT()
 // Performs a FIFOBLT read cycle for this board and reads the
 // data into the buffer of this CBV1724 object

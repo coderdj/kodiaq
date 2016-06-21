@@ -67,11 +67,8 @@ class CBV1724 : public VMEBoard {
    void SetActivated(bool active);                                 /*!<  Set if this board is active (taking data).*/
 
   /* GetBufferSize: get the size of the buffer in this digitizer in bytes. */
-  int GetBufferSize(int &count, vector<string> &reports){ 
-    count = fBufferOccCount;  
-    reports = fReadoutReports;
-    fReadoutReports.clear();
-    return fBufferOccSize; }
+  int GetBufferSize(int &count, vector<string> &reports);
+
  private:
 
   int                   InitForPreProcessing();
