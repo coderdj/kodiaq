@@ -465,10 +465,10 @@ int CBV1724::DetermineBaselines()
     
     // Enable to board
     WriteReg32(CBV1724_AcquisitionControlReg,0x4);
-    //usleep(5000); //
+    if(fwVERSION==0) usleep(1500); //
     //Set Software Trigger
     WriteReg32(CBV1724_SoftwareTriggerReg,0x1);
-    //usleep(5000); //
+    if(fwVERSION==0) usleep(1500); //
     //Disable the board
     WriteReg32(CBV1724_AcquisitionControlReg,0x0);
     //usleep(5000);
