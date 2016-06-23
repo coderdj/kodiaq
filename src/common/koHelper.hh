@@ -26,7 +26,7 @@
 
 #include <unistd.h>
 #include "koLogger.hh"
-
+#include "koSysmon.hh"
 
 //DAQ STATUS IDENTIFIERS
 #define KODAQ_IDLE    0
@@ -94,6 +94,7 @@ struct koStatusPacket_t{
    vector <koMessage_t> Messages; // Pending messages from slaves
    vector <koNode_t> Slaves;      // Rates of slaves      
    koRunInfo_t RunInfo;           // info for current run
+   koSysInfo_t sysinfo;
 };
 
 

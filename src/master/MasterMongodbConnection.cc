@@ -14,6 +14,7 @@
 
 #include "MasterMongodbConnection.hh"
 #include "mongo/util/net/hostandport.h"
+#include <algorithm> 
 
 MasterMongodbConnection::MasterMongodbConnection()
 {
@@ -332,30 +333,78 @@ int MasterMongodbConnection::MakeMongoCollection(mongo_option_t mongo_opts,
     migrateTo.push_back("shard_0/eb0:27000");
     migrateTo.push_back("shard_1/eb1:27000");
     migrateTo.push_back("shard_2/eb2:27000");
-    for(int x=0; x<boardList.size(); x++){
-      string jsonstring = "{ split: '"+collectionName+
-	"', middle: { 'module': "+boardList[x]+"}}";
-      cout<<"Telling mongo to split on: "<<jsonstring<<endl;
-      bufferDB->runCommand
-	(
-	 "admin",
-	 mongo::fromjson( jsonstring ),
-	 ret
-	 );
-      fLog->Message(ret.toString());
+
+    bool LOTS_OF_SPLITS=false;
+    if(LOTS_OF_SPLITS){ // make option later
+      for(unsigned int x=0; x<boardList.size(); x++){        
+	string jsonstring = "{ split: '"+collectionName+  
+	  "', middle: { 'module': "+boardList[x]+"}}";  
+
+      // Create the chunk
+      cout<<"Telling mongo to split on: "<<jsonstring<<endl;                 
+      bufferDB->runCommand("admin", mongo::fromjson( jsonstring ),ret);
+      fLog->Message(ret.toString());       
+
+      // MIGRATE THE CHUNKS  
+      bufferDB->runCommand("admin", mongo::fromjson("{ moveChunk: '"+
+						    collectionName+
+						    "', find: { module: " +
+						    boardList[x] + "}, to: '"+
+						    migrateTo[x%3]+"'}"), ret);
+      fLog->Message(ret.toString());  
+      }                 
+    }
+    else{
       
-      bufferDB->runCommand
-	(
-	 "admin",
-	 mongo::fromjson( "{ moveChunk: '"+collectionName+
-			  "', find: { module: "+boardList[x]+"},"+
-			  "to: '"+migrateTo[x%3]+"' }"
-			  ),
-	 ret
-	 );
-      fLog->Message(ret.toString());
+      // Cast to int and sort the list. Then store the 1/3 and 2/3 values
+      vector <string> splitList;
+      vector <int> sortedList;
+      for(unsigned int x=0;x<boardList.size();x++)
+	sortedList.push_back(koHelper::StringToInt(boardList[x]));
+      sort(sortedList.begin(), sortedList.end());
+      splitList.push_back( koHelper::IntToString(sortedList[sortedList.size()/3] ));
+      splitList.push_back( koHelper::IntToString(sortedList[2*(sortedList.size()/3)]));
+            
+      // Collection creation at split values
+      for(unsigned int x=0; x<splitList.size(); x++){
+	string jsonstring = "{ split: '"+collectionName+
+	  "', middle: { 'module': "+splitList[x]+"}}";
+	cout<<"Telling mongo to split on: "<<jsonstring<<endl;
+	bufferDB->runCommand
+	  (
+	   "admin",
+	   mongo::fromjson( jsonstring ),
+	   ret
+	   );
+	fLog->Message(ret.toString());    
+	
+      }
+      
+      // MIGRATE THE CHUNKS
+      bufferDB->runCommand("admin", mongo::fromjson( "{ moveChunk: '"+collectionName+
+				  "', find: { module: "+
+				   koHelper::IntToString(sortedList[0])+
+				   "},"+ "to: '"+migrateTo[0]+"' }"), ret);
+      fLog->Message("Migrate to " + migrateTo[0] + " " + ret.toString());      
+      
+      bufferDB->runCommand("admin", mongo::fromjson( "{ moveChunk: '"+collectionName+
+						     "', find: { module: "+
+			  koHelper::IntToString(sortedList[(sortedList.size()/2)])+
+						     "},"+"to: '"+migrateTo[1]+"' }"
+			  ),ret);
+      fLog->Message("Migrate to " + migrateTo[1] + " " + ret.toString());
+
+      
+      // MIGRATE THE LAST CHUNK
+    bufferDB->runCommand("admin",
+			 mongo::fromjson( "{ moveChunk: '"+collectionName+
+					  "', find: { module: "+
+			koHelper::IntToString(sortedList[sortedList.size()-1])+"},"+
+                        "to: '"+migrateTo[2]+"' }"), ret);
+    fLog->Message("Migrate to " + migrateTo[2] + " " + ret.toString());
 
     }
+  
     
   }
   
@@ -446,9 +495,11 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
 
       if( options->HasField("rotating_collections") && 
 	  options->GetInt("rotating_collections") == 1){
-	if(MakeMongoCollection(mongo_opts, collection, boardList, 0)!=0){
-	  fLog->Error("Couldn't create mongodb collection");
-          return -1;
+	for(unsigned int t=0;t<1;t++){
+	  if(MakeMongoCollection(mongo_opts, collection, boardList, t)!=0){
+	    fLog->Error("Couldn't create mongodb collection");
+	    return -1;
+	  }
 	}
 	// start thread
 	if(m_collectionThreads.find(iterator.first) == m_collectionThreads.end()){
@@ -739,7 +790,8 @@ void MasterMongodbConnection::SendLogMessage(string message, int priority)
   
 }
 
-void MasterMongodbConnection::AddRates(koStatusPacket_t *DAQStatus)
+void MasterMongodbConnection::AddRates(koStatusPacket_t *DAQStatus, 
+				       koSysInfo_t *sysinfo)
 /*
   Update the rates in the online db. 
   Idea: combine all rates into one doc to cut down on queries?
@@ -763,6 +815,9 @@ void MasterMongodbConnection::AddRates(koStatusPacket_t *DAQStatus)
       b.append("runmode",DAQStatus->RunMode);
       b.append("nboards",DAQStatus->Slaves[x].nBoards);
       b.append("timeseconds",(int)currentTime);
+      b.append("cpu", sysinfo->cpuPct);
+      b.append("ramfree", sysinfo->availableRAM);
+      b.append("ramused", sysinfo->usedRAM);
       InsertOnline("monitor", fMonitorDBName+".daq_rates",b.obj());
    }     
 }

@@ -83,7 +83,7 @@ public:
   //            UpdateDAQStatus
   // Purpose  : Update rate and status information in online DB. 
   //
-  void         AddRates(koStatusPacket_t *DAQStatus);   
+  void         AddRates(koStatusPacket_t *DAQStatus, koSysInfo_t *sysinfo);   
   void         UpdateDAQStatus(koStatusPacket_t *DAQStatus, 
 			       string detector="all");
 

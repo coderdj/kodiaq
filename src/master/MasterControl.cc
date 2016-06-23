@@ -465,7 +465,7 @@ void MasterControl::StatusUpdate(){
       if ( dTimeRates > 10. ) { //send rates
 	mRatesUpdateTimes[iter.first] = CurrentTime;
 	iter.second->LockStatus();
-	mMongoDB->AddRates( iter.second->GetStatus() );
+	mMongoDB->AddRates( iter.second->GetStatus(), iter.second->GetSysInfo() );
 	iter.second->UnlockStatus();
 	//	mMongoDB->UpdateDAQStatus( iter.second->GetStatus(),
 	//			 iter.first );

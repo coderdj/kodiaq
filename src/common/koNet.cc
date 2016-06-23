@@ -276,7 +276,7 @@ int koNet::MessageOnPipe(int pipe)
    
 }
 
-int koNet::CheckDataSocket(int socket, koStatusPacket_t &status)
+int koNet::CheckDataSocket(int socket, koStatusPacket_t &status, koSysInfo_t &sysinfo)
 {
    int retval=-1;
    while(MessageOnPipe(socket)==0) {
@@ -290,11 +290,12 @@ int koNet::CheckDataSocket(int socket, koStatusPacket_t &status)
 	 int id=0,stat=0,nboards=0;
 	 double rate=0.,freq=0.;
 	 string name="";
-	 if(ReceiveUpdate(socket,id,name,rate,freq,nboards,stat)!=0)  {	 
+	 if(ReceiveUpdate(socket,id,name,rate,freq,nboards,stat, sysinfo)!=0)  {  
 	    LogError("koNet::CheckDataSocket - Saw update on pipe but failed to fetch.");
 	    return -2;
 	 }	
 	 bool found=false;
+	 status.sysinfo = sysinfo;
 	 for(unsigned int y=0;y<status.Slaves.size();y++)    {	     
 	    if(status.Slaves[y].ID!=id) continue;
 	    found=true;
@@ -386,7 +387,8 @@ int koNet::ReceiveRunMode(int socket, string &runMode)
 }
 
 int koNet::ReceiveUpdate(int socket,int &id, string &name,
-			 double &rate, double &freq, int &nBoards,int &status)
+			 double &rate, double &freq, int &nBoards,int &status,
+			 koSysInfo_t &sysinfo)
 {
    //assumption: header UPDATE has already been received by the function
    //that watches the socket
@@ -415,10 +417,23 @@ int koNet::ReceiveUpdate(int socket,int &id, string &name,
       LogError("koNet::ReceiveUpdate - Error receiving frequency.");
       return -1;
    }   
+   if(ReceiveDouble(socket, sysinfo.cpuPct)!=0){
+     LogError("koNet::ReceiveUpdate() - Error receiving CPUpct.");
+     return -1;
+   }
+   if(ReceiveInt(socket, sysinfo.availableRAM)!=0){
+     LogError("koNet::ReceiveUpdate() - Error receiving available RAM.");
+     return -1;
+   }
+   if(ReceiveInt(socket, sysinfo.usedRAM)!=0){
+     LogError("koNet::ReceiveUpdate() - Error receiving used RAM.");
+     return -1;
+   }
    if(ReceiveString(socket,temp)!=0 || temp!="DONE")    {	
       LogError("koNet::ReceiveUpdate - Error receiving footer.");
       return -1;
    }   
+
    return 0;   
 }
 
@@ -458,7 +473,7 @@ int koNet::ReceiveMessage(int socket, string &message, int &code)
 }
 
 int koNet::SendUpdate(int socket, int id, string name, int status, 
-		      double rate, double freq, int nBoards)
+		      double rate, double freq, int nBoards, koSysInfo_t sysinfo)
 {   
    //format: 
    //         UPDATE
@@ -498,6 +513,19 @@ int koNet::SendUpdate(int socket, int id, string name, int status,
       LogError("koNet::SendUpdate() - Error sending freq.");
       return -1;
    }
+   if(SendDouble(socket, sysinfo.cpuPct)!=0){
+     LogError("koNet::SendUpdate() - Error sending CPUpct.");
+     return -1;
+   }
+   if(SendInt(socket, sysinfo.availableRAM)!=0){
+     LogError("koNet::SendUpdate() - Error sending available RAM.");
+     return -1;
+   }
+   if(SendInt(socket, sysinfo.usedRAM)!=0){
+     LogError("koNet::SendUpdate() - Error sending used RAM.");
+     return -1;
+   }
+
    string UPDATEFOOTER="DONE";
    if(SendString(socket,UPDATEFOOTER)!=0)  {
       LogError("koNet::SendUpdate() - Error sending footer.");

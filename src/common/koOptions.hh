@@ -3,6 +3,7 @@
 
 #include <string>
 #include <sstream>
+#include <fstream>
 #include "mongo/bson/bson.h"
 
 using namespace std;
@@ -112,7 +113,8 @@ private:
   mongo::BSONElement GetField(string key);
   mongo::BSONObj m_bson;
   bool fLoaded;
-
+  ofstream m_profilefile;
+  bool bProfiling;
 };
 
 #endif

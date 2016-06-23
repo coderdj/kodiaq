@@ -163,7 +163,7 @@ void DAQMonitor::PollNetwork()
     
       // Poll Network
       pthread_mutex_lock(&m_DAQStatusMutex);
-      while(m_DAQNetworks[x]->WatchDataPipe(m_DAQStatus)==0) m_bReady=true;
+      while(m_DAQNetworks[x]->WatchDataPipe(m_DAQStatus, m_SysInfo)==0) m_bReady=true;
       pthread_mutex_unlock(&m_DAQStatusMutex);
     }
     usleep(5000);

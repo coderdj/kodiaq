@@ -57,6 +57,9 @@ public:
     m_bReady=false;
     return &m_DAQStatus;
   }; 
+  koSysInfo_t* GetSysInfo(){
+    return &m_SysInfo;
+  };
   int LockStatus();
   int UnlockStatus();
   
@@ -72,6 +75,7 @@ private:
 
   koStatusPacket_t         m_DAQStatus;
   koRunInfo_t              m_RunInfo;
+  koSysInfo_t              m_SysInfo;
   
   vector <koNetServer*>    m_DAQNetworks;
   koLogger                *m_Log; //local log

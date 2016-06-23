@@ -86,12 +86,12 @@ class koNetServer : public koNet
    // Purpose : Monitors the data pipes for traffic. If something comes then
    //           updates status and returns 0. Otherwise return -1
    // 
-   int          WatchDataPipe(koStatusPacket_t &status);
+  int          WatchDataPipe(koStatusPacket_t &status, koSysInfo_t &sysinfo);
    //
    // Name    : TransmitStatus
    // Purpose : Sends a status packet over the data pipe
    // 
-   int          TransmitStatus(koStatusPacket_t status);
+  int          TransmitStatus(koStatusPacket_t status, koSysInfo_t sysinfo);
    //
    //
    // For commands

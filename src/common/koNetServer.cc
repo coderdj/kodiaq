@@ -282,13 +282,13 @@ int koNetServer::CloseConnection(int id, string name)
    return 0;      
 }
 
-int koNetServer::WatchDataPipe(koStatusPacket_t &status)
+int koNetServer::WatchDataPipe(koStatusPacket_t &status, koSysInfo_t &sysinfo)
 //Watch the data pipe and update the status while updates and messages come in
 //decide the overall status of the DAQ by adding up the status of each slave
 {
    int retval=-1;
    for(unsigned int x=0;x<fDataSockets.size();x++)  {
-      if(CheckDataSocket(fDataSockets[x].socket,status)==0)
+     if(CheckDataSocket(fDataSockets[x].socket,status, sysinfo)==0)
 	retval=0;
    }
    if(retval==0)
@@ -420,7 +420,7 @@ int koNetServer::ReceiveBroadcast(int id, string &broadcast)
    return -1;
 }
 
-int koNetServer::TransmitStatus(koStatusPacket_t status)
+int koNetServer::TransmitStatus(koStatusPacket_t status, koSysInfo_t sysinfo)
 {
    int success=0;   
    vector <int> removeIDs;
@@ -434,7 +434,8 @@ int koNetServer::TransmitStatus(koStatusPacket_t status)
 	 double rate = status.Slaves[y].Rate;
 	 double freq = status.Slaves[y].Freq;
 	 int nboards = status.Slaves[y].nBoards;
-	 if(SendUpdate(fDataSockets[x].socket,id,name,stat,rate,freq,nboards)!=0){
+	 if(SendUpdate(fDataSockets[x].socket,id,name,stat,rate,freq,nboards,sysinfo)
+	    !=0){
 	    removeIDs.push_back(fDataSockets[x].id);
 	    success=-1;
 	 }	 
