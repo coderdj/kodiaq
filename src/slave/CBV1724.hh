@@ -89,7 +89,7 @@ class CBV1724 : public VMEBoard {
    u_int64_t            i64_blt_first_time,i64_blt_second_time,i64_blt_last_time;  
   u_int32_t            fIdealBaseline;
    int                  fBufferOccSize;
-  std::atomic<int>      fBufferOccCount;
+  std::atomic<int>      fBufferOccCount, fBadBlockCounter;
   bool                  bOver15;
   time_t                fLastReadout;
   double                fReadoutTime;

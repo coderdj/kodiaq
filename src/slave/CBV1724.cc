@@ -36,6 +36,7 @@ CBV1724::CBV1724()
    pthread_mutex_init(&fWaitLock,NULL);
    pthread_cond_init(&fReadyCondition,NULL);
    i_clockResetCounter = 0;
+   fBadBlockCounter = 0;
    i64_blt_first_time = i64_blt_second_time = i64_blt_last_time = 0;
    bOver15 = false;
    fIdealBaseline = 16000;
@@ -77,6 +78,7 @@ CBV1724::CBV1724(board_definition_t BoardDef, koLogger *kLog, bool profiling)
   i64_blt_first_time = i64_blt_second_time = i64_blt_last_time = 0;
   fBufferOccSize = 0;
   fBufferOccCount = 0;
+  fBadBlockCounter = 0;
   bOver15 = false;
   fIdealBaseline = 16000;
   fLastReadout=koLogger::GetCurrentTime();
@@ -94,6 +96,7 @@ int CBV1724::Initialize(koOptions *options)
 {
   // Initialize and ready the board according to the options object
   bExists=true;
+  fBadBlockCounter = 0;
 
   // Set private members
   int retVal=0;
@@ -216,11 +219,13 @@ unsigned int CBV1724::ReadMBLT()
    
   // New: If the BLT is less than 6 words then count it and dump it
   if(blt_bytes < 24 && blt_bytes!=0) {
-    stringstream ss;
-    ss<<"Board "<<fBID.id<<" found a small BLT with only "
-      <<blt_bytes<<" size!"<<endl;
-    m_koLog->Error(ss.str());
-    
+    fBadBlockCounter++;
+    if(fBadBlockCounter%1000==0){
+      stringstream ss;
+      ss<<"Board "<<fBID.id<<" found a total of "<<fBadBlockCounter<<
+	" blocks under 24 bytes."<<endl;
+      m_koLog->Error(ss.str());
+    }
     // Still increment counter
     fBufferOccCount++;
     
@@ -658,6 +663,7 @@ int CBV1724::DetermineBaselines()
 	//stringstream error;
 	//error<<"Channel "<<(*dchannels)[x]<<" signal in baseline?";
 	//LogMessage( error.str() );	
+	
 	LogMessage("maxval - minval for about " + 
 		   koHelper::IntToString(fBID.id) + " is " + 
 		   koHelper::IntToString(abs(maxval-minval)) + ", max " + 
@@ -666,6 +672,7 @@ int CBV1724::DetermineBaselines()
 		   " maybe there's a signal in the baseline." + 
 		   " Event length " + koHelper::IntToString((*dsizes)[x]/4) 
 		   + " words.");
+	
 	delete[] (*buff)[x];
 	continue; //signal in baseline?
       }
