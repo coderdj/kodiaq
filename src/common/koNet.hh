@@ -28,6 +28,7 @@
 
 #include "koLogger.hh"
 #include "koHelper.hh"
+#include "koSysmon.hh"
 
 using namespace std;
 
@@ -148,7 +149,8 @@ class koNet
    //            are updates, messages, and run modes. The status packed is 
    //            updated and zero is returned if something is there.
    // 
-   int           CheckDataSocket(int socket, koStatusPacket_t &status);
+  int           CheckDataSocket(int socket, koStatusPacket_t &status,
+				koSysInfo_t &sysinfo);
    //
    // Name     : SendMessage
    // Function : Send a message over the data socket. It should be picked up
@@ -167,14 +169,15 @@ class koNet
    //            arguments
    // //
    int           SendUpdate(int socket, int id, string name, int status,
-			    double rate, double freq, int nBoards);
+			    double rate, double freq, int nBoards, 
+			    koSysInfo_t sysinfo);
    //
    // Name     : ReceiveUpdate
    // Function : Called by CheckDataSocket to receive updates
    // 
    int           ReceiveUpdate(int socket,int &id, string &name,
 			       double &rate, double &freq, 
-			       int &nBoards,int &status);
+			       int &nBoards,int &status, koSysInfo_t &sysinfo);
    //
    // Name     : SendRunMode
    // Function : Sends the run mode over the data pipe

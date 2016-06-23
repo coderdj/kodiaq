@@ -18,6 +18,7 @@
 #include <koNetClient.hh>
 #include "DigiInterface.hh"
 #include <config.h>
+#include "koSysmon.hh"
 
 //If using the light version we need user input functions
 //#ifdef KLITE
@@ -237,6 +238,7 @@ int main(int argc, char *argv[])
    time_t         fPrevTime = koLogger::GetCurrentTime();
    bool           bArmed=false, bRunning=false, bConnected=false,
      bERROR=false;//, bRdy=false;
+   koSysmon sysmon;
    //
    koLog->Message("Started koSlave module.");
    
@@ -367,7 +369,10 @@ connection_loop:
 	 int BufferSize = fElectronics->GetBufferOccupancy(digis, sizes, counts,
 							   readout_reports);
 
-
+	 // System monitor
+	 koSysInfo_t systemInfo = sysmon.Get();	 
+	 cout<<"CPU: "<<systemInfo.cpuPct<<" RAM_tot: "<<systemInfo.availableRAM<<
+	   " RAM_used: "<<systemInfo.usedRAM<<endl;
 	 cout<<"rate: "<<rate<<" freq: "<<freq<<" iRate: "<<iRate<<" tdiff: "<<tdiff<<" status: ";
 	 if(status == KODAQ_ARMED) cout<<"ARMED";
 	 else if(status == KODAQ_RUNNING) cout<<"RUNNING";
@@ -386,11 +391,11 @@ connection_loop:
 	   koLog->Error("koSlave::main - [ ERROR ] From threads: " + err );
 	   fElectronics->StopRun();
 	   fElectronics->Close();
-	   continue;;
+	   continue;
 	 }
 
-
-	 if(fNetworkInterface.SendStatusUpdate(status,rate,freq,nBoards)!=0){
+	 //	 if(fNetworkInterface.SendStatusUpdate(status,rate,freq,nBoards,systemInfo)!=0){
+	 if(fNetworkInterface.SendStatusUpdate(status,rate,freq,nBoards, systemInfo)!=0){
 	    bConnected=false;
 	   koLog->Error("koSlave::main - [ FATAL ERROR ] Could not send status update. Going to idle state!");
 	 }	 

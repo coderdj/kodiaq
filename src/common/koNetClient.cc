@@ -154,9 +154,9 @@ int koNetClient::Disconnect()
 }
 
 
-int koNetClient::WatchForUpdates(koStatusPacket_t &status)
+int koNetClient::WatchForUpdates(koStatusPacket_t &status, koSysInfo_t &sysinfo)
 {
-   int a = CheckDataSocket(fDataSocket,status);
+  int a = CheckDataSocket(fDataSocket,status, sysinfo);
    if(a==0)   {
       koHelper::ProcessStatus(status);
       return 0;
@@ -215,9 +215,9 @@ int koNetClient::SendBroadcastMessage(string message)
 }
 
 int  koNetClient::SendStatusUpdate(int status, double rate, double freq, 
-				   int nBoards)
+				   int nBoards, koSysInfo_t sysinfo)
 {
-   return SendUpdate(fDataSocket,fID,fMyName,status,rate,freq,nBoards);
+  return SendUpdate(fDataSocket,fID,fMyName,status,rate,freq,nBoards, sysinfo);
 }
 
 int  koNetClient::GetStringList(vector<string> &stringList)

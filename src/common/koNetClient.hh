@@ -50,7 +50,7 @@ class koNetClient : public koNet
    //            Also fill status with the info on the update in this case.
    //            Returns -1 if nothing found.
    // 
-   int           WatchForUpdates(koStatusPacket_t &status);
+  int           WatchForUpdates(koStatusPacket_t &status, koSysInfo_t &sysinfo);
       
    //
    // Name     : SendCommand
@@ -105,7 +105,8 @@ class koNetClient : public koNet
    // Name     : SendStatusUpdate
    // Function : Slaves send their status to the master over the data pipe.
    // 
-   int           SendStatusUpdate(int status, double rate, double freq, int nBoards);
+  int           SendStatusUpdate(int status, double rate, double freq, int nBoards,
+				 koSysInfo_t sysinfo);
    //
    // Name     : Receive options
    // Function : Receive the options file over the network. The argument is
