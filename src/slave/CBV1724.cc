@@ -404,8 +404,10 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
 	     <<" with "<<i_clockResetCounter-reset<<
 	" clock resets and a buffer size of "<<(*fSizes)[0]<<" and "
 	     <<fBuffers->size()<<" buffers."<<endl;
-      for(unsigned int idx = 0; idx < (*fSizes)[0]/4; idx++){
-	outfile<<hex<<(*fBuffers)[0][idx]<<endl;
+      for(unsigned int bidx=0; bidx<fBuffers->size(); bidx++){	
+	for(unsigned int idx = 0; idx < (*fSizes)[bidx]/4; idx++){
+	  outfile<<hex<<(*fBuffers)[bidx][idx]<<endl;
+	}
       }
       outfile.close();
     }// end remove later
