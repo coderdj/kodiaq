@@ -276,6 +276,8 @@ unsigned int CBV1724::ReadMBLT()
 void CBV1724::SetActivated(bool active)
 // Set this board to active and ready to go
 {
+  if(active)
+    i_clockResetCounter=0;
    bActivated=active;
    if(active==false){
      cout<<"Signaling final read"<<endl;
@@ -292,7 +294,6 @@ void CBV1724::SetActivated(bool active)
    }      
    if(bProfiling && !m_profilefile.is_open())
      m_profilefile.open("profiling/profile_digi_"+koHelper::IntToString(fBID.id)+".txt", std::fstream::app);
-   i_clockResetCounter=0;
 }
 
 void CBV1724::ResetBuff()
