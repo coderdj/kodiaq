@@ -349,14 +349,23 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
 // The reset counter is computed (did the clock reset during this buffer?) and
 // updated if needed. The value of this counter at the BEGINNING of the buffer
 // is passed by reference to the caller
+// THE MUTEX MUST BE LOCKED IF THIS FUNCTION IS CALLED
 {
   fReadMeOut=false;
   headerTime = 0;
   fLastReadout=koLogger::GetCurrentTime();
-  
 
-  if(fBuffers->size()!=0 ) {
-    i64_blt_first_time = koHelper::GetTimeStamp((*fBuffers)[0]);
+  // Memory management, pass pointer to caller *with ownsership*                      
+  vector<u_int32_t*> *retVec = fBuffers;
+  fBuffers = new vector<u_int32_t*>();
+  sizes = fSizes;
+  fSizes = new vector<u_int32_t>();
+  long int occSize = fBufferOccSize;
+  fBufferOccSize = 0;
+  UnlockDataBuffer();
+
+  if(retVec->size()!=0 ) {
+    i64_blt_first_time = koHelper::GetTimeStamp((*retVec)[0]);
     headerTime = i64_blt_first_time;
     //i64_blt_second_time = koHelper::GetTimeStamp((*fBuffers)[fBuffers->size()-1]);
 
@@ -373,8 +382,8 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
     
     // Now check for resets within the buffer
     i64_blt_last_time = i64_blt_first_time;
-    for(unsigned int x=1; x<fBuffers->size(); x++){
-      u_int64_t thisTime = koHelper::GetTimeStamp((*fBuffers)[x]);
+    for(unsigned int x=1; x<retVec->size(); x++){
+      u_int64_t thisTime = koHelper::GetTimeStamp((*retVec)[x]);
       if(thisTime < i64_blt_last_time)
 	i_clockResetCounter++;
       i64_blt_last_time = thisTime;
@@ -386,7 +395,7 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
       st<<"Clock reset board "<<fBID.id<<": first time ("<<i64_blt_first_time
 	<<") second time ("<<i64_blt_second_time<<") last time ("<<
 	i64_blt_last_time<<") reset counter ("<<resetCounter
-	<<") size of buffer vector ("<<fBuffers->size()<<")";
+	<<") size of buffer vector ("<<retVec->size()<<")";
       LogError(st.str());
     }
 
@@ -421,23 +430,21 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
     gettimeofday(&tv,NULL);
     unsigned long time_us = 1000000 * tv.tv_sec + tv.tv_usec;
     stringstream ss;
-    ss<<fBID.id<<" "<<m_ID<<" "<<time_us<<" "<<fBufferOccSize<<" "<<fBuffers->size();
+    ss<<fBID.id<<" "<<m_ID<<" "<<time_us<<" "<<occSize<<" "<<retVec->size();
     fReadoutReports.push_back(ss.str());
   }
   
-  // Memory management, pass pointer to caller *with ownsership*
+  /*// Memory management, pass pointer to caller *with ownsership*
    vector<u_int32_t*> *retVec = fBuffers;
    fBuffers = new vector<u_int32_t*>();
    sizes = fSizes;
    fSizes = new vector<u_int32_t>();
-
-   cout<<"READING OUT "<<fBID.id<<" with old size: "<<retVec->size()<<" and new size "<<fBuffers->size()<<endl;
+  */
+   cout<<"READING OUT "<<fBID.id<<" with old size: "<<retVec->size()<<" and new size "<<retVec->size()<<endl;
    if(bProfiling && m_profilefile.is_open())
      m_profilefile<<"CLEAR "<<koLogger::GetTimeMus()<<" "<<retVec->size()<<" "
 		  <<m_ID<<endl;
 
-   // Reset total buffer size 
-   fBufferOccSize = 0;
 
 
    return retVec;

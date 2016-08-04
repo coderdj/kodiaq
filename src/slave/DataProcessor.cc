@@ -465,6 +465,7 @@ void DataProcessor::Process()
       unsigned int resetCounterStart = 0; 
       u_int32_t headerTime = 0;
 
+      // YIELDS LOCK
       buffvec = digi->ReadoutBuffer( sizevec, resetCounterStart, headerTime,
 				     mongoID );
 
@@ -473,7 +474,7 @@ void DataProcessor::Process()
 		     <<" 0 "<<buffvec->size()<<endl;
 
       iModule = digi->GetID().id;
-      digi->UnlockDataBuffer();
+      //digi->UnlockDataBuffer();
      
 
       // Parse the data if requested
