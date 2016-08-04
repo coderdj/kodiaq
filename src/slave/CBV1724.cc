@@ -625,6 +625,7 @@ int CBV1724::DetermineBaselines()
     unsigned int rc=0;
     u_int32_t ht=0;
     vector <u_int32_t> *dsizes;
+    LockDataBuffer();
     vector<u_int32_t*> *buff= ReadoutBuffer(dsizes, rc, ht);
 
     vector <u_int32_t> *dchannels = new vector<u_int32_t>;
