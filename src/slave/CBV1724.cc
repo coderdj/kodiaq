@@ -394,7 +394,7 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
     // where the clock resets many, many times in a buffer. If we get one 
     // of these buffers dump the ENTIRE BINARY HEADER to a special file.
     // It will be a lot
-    if( i_clockResetCounter - reset > 5){ // 5 resets seems suitably crappy
+    /*if( i_clockResetCounter - reset > 5){ // 5 resets seems suitably crappy
       ofstream outfile;
       stringstream filename;
       filename<<"crapData_"<<fBID.id<<"_"<<i_clockResetCounter<<".txt";
@@ -412,7 +412,7 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
       }
       outfile.close();
     }// end remove later
-    
+    */
   }
   
   // PROFILING                  
