@@ -80,6 +80,7 @@ class CBV1724 : public VMEBoard {
    unsigned int         fReadoutThresh;
    pthread_mutex_t      fDataLock;
    pthread_mutex_t      fWaitLock;
+   pthread_mutex_t      fTimerLock;
    pthread_cond_t       fReadyCondition;
    u_int32_t            fBufferSize;
    u_int32_t            fBLTSize;

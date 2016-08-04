@@ -34,6 +34,7 @@ CBV1724::CBV1724()
    fReadoutThresh=10;
    pthread_mutex_init(&fDataLock,NULL);
    pthread_mutex_init(&fWaitLock,NULL);
+   pthread_mutex_init(&fTimerLock,NULL);
    pthread_cond_init(&fReadyCondition,NULL);
    i_clockResetCounter = 0;
    fBadBlockCounter = 0;
@@ -61,6 +62,7 @@ CBV1724::~CBV1724()
    ResetBuff();
    pthread_mutex_destroy(&fDataLock);
    pthread_mutex_destroy(&fWaitLock);
+   pthread_mutex_destroy(&fTimerLock);
    pthread_cond_destroy(&fReadyCondition);
 }
 
@@ -74,6 +76,7 @@ CBV1724::CBV1724(board_definition_t BoardDef, koLogger *kLog, bool profiling)
   fReadoutThresh=10;
   pthread_mutex_init(&fDataLock,NULL);
   pthread_mutex_init(&fWaitLock,NULL);
+  pthread_mutex_init(&fTimerLock,NULL);
   pthread_cond_init(&fReadyCondition,NULL);
   i64_blt_first_time = i64_blt_second_time = i64_blt_last_time = 0;
   fBufferOccSize = 0;
@@ -364,6 +367,7 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
   fBufferOccSize = 0;
   UnlockDataBuffer();
 
+  pthread_mutex_lock(&fTimerLock);
   if(retVec->size()!=0 ) {
     i64_blt_first_time = koHelper::GetTimeStamp((*retVec)[0]);
     headerTime = i64_blt_first_time;
@@ -398,6 +402,7 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
 	<<") size of buffer vector ("<<retVec->size()<<")";
       LogError(st.str());
     }
+    pthread_mutex_unlock(&fTimerLock);
 
     // Now we have another issue. It can be that we have very unphysical data
     // where the clock resets many, many times in a buffer. If we get one 
