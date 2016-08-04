@@ -288,7 +288,7 @@ void CBV1724::SetActivated(bool active)
       if(pthread_mutex_trylock(&fDataLock)==0){	      
 	//pthread_cond_signal(&fReadyCondition);
 	fReadMeOut=true;
-	 pthread_mutex_unlock(&fDataLock);
+	pthread_mutex_unlock(&fDataLock);
       }
       cout<<"Done"<<endl;
 
@@ -365,9 +365,9 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
   fSizes = new vector<u_int32_t>();
   long int occSize = fBufferOccSize;
   fBufferOccSize = 0;
-  UnlockDataBuffer();
+  //UnlockDataBuffer();
 
-  pthread_mutex_lock(&fTimerLock);
+  //  pthread_mutex_lock(&fTimerLock);
   if(retVec->size()!=0 ) {
     i64_blt_first_time = koHelper::GetTimeStamp((*retVec)[0]);
     headerTime = i64_blt_first_time;
@@ -402,7 +402,7 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
 	<<") size of buffer vector ("<<retVec->size()<<")";
       LogError(st.str());
     }
-    pthread_mutex_unlock(&fTimerLock);
+    //pthread_mutex_unlock(&fTimerLock);
 
     // Now we have another issue. It can be that we have very unphysical data
     // where the clock resets many, many times in a buffer. If we get one 
@@ -428,6 +428,8 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
     }// end remove later
     */
   }
+
+  UnlockDataBuffer();
   
   // PROFILING                  
   if(m_ID != -1){
