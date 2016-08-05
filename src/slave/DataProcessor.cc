@@ -550,7 +550,7 @@ void DataProcessor::Process()
 	
 	if( !SawThisChannelOnce[Channel]){
 	  SawThisChannelOnce[Channel] = true;
-	  if( fabs( (int)headerTime - (int)TimeStamp) > 5E8 ){
+	  if( fabs( (int)headerTime - (int)TimeStamp) > 10E8 ){
 	    //times far apart. Probably on other sides of reset counter
 	    if( TimeStamp > headerTime && ChannelResetCounters[Channel]!=0)
 	      ChannelResetCounters[Channel]--;
