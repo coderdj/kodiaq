@@ -374,7 +374,8 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
     // If the clock reset before this buffer, then we can 
     // record a clock reset here
     // CASE 1: CLOCK RESET AT T0
-    if(i64_blt_last_time > i64_blt_first_time){
+    if(i64_blt_last_time > i64_blt_first_time && 
+       fabs(long(i64_blt_first_time)-long(i64_blt_last_time))>5E8){
       i_clockResetCounter ++;
       resetCounter = i_clockResetCounter;
     }
@@ -383,7 +384,8 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
     i64_blt_last_time = i64_blt_first_time;
     for(unsigned int x=1; x<retVec->size(); x++){
       u_int64_t thisTime = koHelper::GetTimeStamp((*retVec)[x]);
-      if(thisTime < i64_blt_last_time)
+      if(thisTime < i64_blt_last_time && 
+	 fabs(long(thisTime)-long(i64_blt_last_time))>5E8)
 	i_clockResetCounter++;
       i64_blt_last_time = thisTime;
     }
