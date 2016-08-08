@@ -152,7 +152,7 @@ u_int32_t koHelper::GetTimeStamp(u_int32_t *buffer)
   while((buffer[pnt])==0xFFFFFFFF) //filler between events                          
     pnt++;
   if((buffer[pnt]>>20)==0xA00)   { //look for a header                              
-    pnt+=3;
+    pnt+=5;
     return (buffer[pnt] & 0x7FFFFFFF);
   }
   return 0xFFFFFFFF;
