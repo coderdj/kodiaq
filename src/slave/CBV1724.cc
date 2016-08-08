@@ -429,7 +429,6 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
     */
   }
 
-  UnlockDataBuffer();
   
   // PROFILING                  
   if(m_ID != -1){
@@ -452,7 +451,7 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
      m_profilefile<<"CLEAR "<<koLogger::GetTimeMus()<<" "<<retVec->size()<<" "
 		  <<m_ID<<endl;
 
-
+   UnlockDataBuffer();
 
    return retVec;
 }
