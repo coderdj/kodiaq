@@ -378,6 +378,15 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
        fabs(long(i64_blt_first_time)-long(i64_blt_last_time))>5E8){
       i_clockResetCounter ++;
       resetCounter = i_clockResetCounter;
+
+      stringstream st;
+      st<<"Clock reset condition 1: board "<<fBID.id<<
+	": first time ("<<i64_blt_first_time
+        <<") last time ("<<i64_blt_last_time<<") reset counter ("
+	<<i_clockResetCounter<<") size of buffer vector ("<<retVec->size()<<")";
+      LogError(st.str());
+
+
     }
     
     // Now check for resets within the buffer
@@ -385,20 +394,27 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
     for(unsigned int x=1; x<retVec->size(); x++){
       u_int64_t thisTime = koHelper::GetTimeStamp((*retVec)[x]);
       if(thisTime < i64_blt_last_time && 
-	 fabs(long(thisTime)-long(i64_blt_last_time))>5E8)
+	 fabs(long(thisTime)-long(i64_blt_last_time))>5E8){
 	i_clockResetCounter++;
+	stringstream st;
+	st<<"Clock reset condition 2: board "<<fBID.id<<
+	  ": this time ("<<thisTime
+	  <<") last time ("<<i64_blt_last_time<<") reset counter ("
+	  <<i_clockResetCounter<<") size of buffer vector ("<<retVec->size()<<")";
+	LogError(st.str());
+      }
       i64_blt_last_time = thisTime;
     }
 
     // REMOVE THIS IF LATER
-    if(reset != i_clockResetCounter){
+    /*if(reset != i_clockResetCounter){
       stringstream st;
       st<<"Clock reset board "<<fBID.id<<": first time ("<<i64_blt_first_time
 	<<") second time ("<<i64_blt_second_time<<") last time ("<<
 	i64_blt_last_time<<") reset counter ("<<resetCounter
 	<<") size of buffer vector ("<<retVec->size()<<")";
       LogError(st.str());
-    }  
+      } */ 
 
     // Now we have another issue. It can be that we have very unphysical data
     // where the clock resets many, many times in a buffer. If we get one 
