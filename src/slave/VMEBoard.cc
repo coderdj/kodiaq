@@ -21,6 +21,8 @@ VMEBoard::VMEBoard()
    bIsSumModule=false;
    m_koLog=NULL;
    fBID.id = -1;
+   fErrorText = "";
+   fError = false;
 }
 
 VMEBoard::~VMEBoard()
@@ -111,6 +113,8 @@ int VMEBoard::ReadReg16(u_int32_t address,u_int16_t &data)
 int VMEBoard::Initialize(koOptions *options)
 {
    bActivated=false;
+   fError=false;
+   fErrorText="";
    return -1; //? or should this return 0
 }
 

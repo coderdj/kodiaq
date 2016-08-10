@@ -49,6 +49,8 @@ CBV1724::CBV1724()
    m_temp_blt_bytes=0;
    bExists=false;
    bProfiling=false;
+   fError=false;
+   fErrorText="";
 }
 
 CBV1724::~CBV1724()
@@ -90,6 +92,8 @@ CBV1724::CBV1724(board_definition_t BoardDef, koLogger *kLog, bool profiling)
   m_temp_blt_bytes = 0;
   bExists=false;
   bProfiling = profiling;
+  fError=false;
+  fErrorText="";
 }
 
 int CBV1724::Initialize(koOptions *options)
@@ -97,6 +101,8 @@ int CBV1724::Initialize(koOptions *options)
   // Initialize and ready the board according to the options object
   bExists=true;
   fBadBlockCounter = 0;
+  fError = false;
+  fErrorText = "";
 
   // Set private members
   int retVal=0;
@@ -224,6 +230,11 @@ unsigned int CBV1724::ReadMBLT()
       stringstream ss;
       ss<<"Board "<<fBID.id<<" found a total of "<<fBadBlockCounter<<
 	" blocks under 24 bytes."<<endl;
+      if(fBadBlockCounter > 25000){
+	// Kill it
+	fError = true;
+	fErrorText = "Found 50,000 bad CAEN blocks. You're paying them too much";
+      }
       m_koLog->Error(ss.str());
     }
     // Still increment counter
@@ -365,10 +376,36 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
     
   if(retVec->size()!=0 ) {
     i64_blt_first_time = koHelper::GetTimeStamp((*retVec)[0]);
-    headerTime = i64_blt_first_time;
-    //i64_blt_second_time = koHelper::GetTimeStamp((*fBuffers)[fBuffers->size()-1]);
+    
+    // CAEN farts. I don't necessarily want the first time, I want the first
+    // one that isn't garbage. If all are garbage skip checking I guess.
+    unsigned int iPosition = 1;
+    if(i64_blt_first_time == 0xFFFFFFFF){
+      
+      // Keep searching for a good one
+      for(unsigned int x=1; x<retVec->size(); x++){
+	i64_blt_first_time = koHelper::GetTimeStamp((*retVec)[x]);
+	if(i64_blt_first_time != 0xFFFFFFFF){
+	  iPosition = x;
+	  LogError("CAEN fart on header time for BLT[0] but found a good one at position " + koHelper::IntToString(x));
+	  break;
+	}
+      }
+      
+    }
 
-    u_int64_t reset = i_clockResetCounter;
+    // If it still sucks dump it to threads and see what they make of it
+    if(i64_blt_first_time == 0xFFFFFFFF){
+      headerTime = i64_blt_last_time;
+      i64_blt_first_time = headerTime;
+      resetCounter = i_clockResetCounter;
+      LogError("Irrecoverable CAEN fart with "+koHelper::IntToString(int(retVec->size()))+" buffers.");
+      UnlockDataBuffer();
+      return retVec;
+    }
+
+
+    headerTime = i64_blt_first_time;
     resetCounter = i_clockResetCounter;
 
     // If the clock reset before this buffer, then we can 
@@ -391,8 +428,12 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
     
     // Now check for resets within the buffer
     i64_blt_last_time = i64_blt_first_time;
-    for(unsigned int x=1; x<retVec->size(); x++){
+    for(unsigned int x=iPosition; x<retVec->size(); x++){
       u_int64_t thisTime = koHelper::GetTimeStamp((*retVec)[x]);
+      if(thisTime == 0xFFFFFFFF){
+	cout<<"Junk data!"<<endl;
+	continue;
+      }
       if(thisTime < i64_blt_last_time && 
 	 fabs(long(thisTime)-long(i64_blt_last_time))>5E8){
 	i_clockResetCounter++;

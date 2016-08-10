@@ -74,7 +74,10 @@ class VMEBoard
    bool IsSumModule()  {
       return bIsSumModule;
    };
-   
+  bool Error(string &message){
+    message = fErrorText;
+    return fError;
+  }
    
  protected:
    board_definition_t fBID;   
@@ -84,7 +87,8 @@ class VMEBoard
    void LogError(string err);
    void LogMessage(string mess);
    void LogSendMessage(string mess);
-   
+  bool fError;
+  string fErrorText;
  protected:
    koLogger *m_koLog;
 };

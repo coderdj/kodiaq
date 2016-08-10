@@ -389,6 +389,9 @@ connection_loop:
 	 if( fElectronics->RunError( err ) ){
 	   cout<<"ERROR "<<err;	   
 	   koLog->Error("koSlave::main - [ ERROR ] From threads: " + err );
+	   fNetworkInterface.SlaveSendMessage(err);
+	   status = KODAQ_ERROR;
+	   fNetworkInterface.SendStatusUpdate(status,rate,freq,nBoards, systemInfo);
 	   fElectronics->StopRun();
 	   fElectronics->Close();
 	   continue;

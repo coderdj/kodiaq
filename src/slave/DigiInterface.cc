@@ -640,5 +640,9 @@ bool DigiInterface::RunError(string &err)
       if(m_vProcThreads[x].Processor == NULL) continue;
       if(m_vProcThreads[x].Processor->QueryError(err)) return true;
    }   
+   for(unsigned int x=0; x<m_vDigitizers.size();x++)  {
+     if(m_vDigitizers[x]->Error(err))
+       return true;
+   }
    return false;   
 }
