@@ -76,7 +76,10 @@ class VMEBoard
    };
   bool Error(string &message){
     message = fErrorText;
-    return fError;
+    bool ret=fError;
+    fError=false;
+    fErrorText="";
+    return ret;
   }
    
  protected:
