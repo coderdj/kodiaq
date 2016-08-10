@@ -230,10 +230,10 @@ unsigned int CBV1724::ReadMBLT()
       stringstream ss;
       ss<<"Board "<<fBID.id<<" found a total of "<<fBadBlockCounter<<
 	" blocks under 24 bytes."<<endl;
-      if(fBadBlockCounter > 100000){
+      if(fBadBlockCounter > 1000000){
 	// Kill it
 	fError = true;
-	fErrorText = "Found 100,000 bad CAEN blocks. You're paying them too much";
+	fErrorText = "Found 1,000,000 bad CAEN blocks. You're paying them too much";
 	fBadBlockCounter=0; // Give time for run to stop
       }
       m_koLog->Error(ss.str());
