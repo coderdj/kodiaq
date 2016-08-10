@@ -120,6 +120,7 @@ class DAQRecorder_mongodb : public DAQRecorder
    // 
   int            InsertThreaded(vector <mongo::BSONObj> *insvec, int ID,
 				int resetCount=-1);
+  int            UpdateProgressDoc(int module, int resetCount, int ID);
    //
    // Name      : int DAQRecorder_mongodb::UpdateCollection
    // Purpose   : Change the mongodb collection without disconnecting

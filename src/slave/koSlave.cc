@@ -392,8 +392,8 @@ connection_loop:
 	   fNetworkInterface.SlaveSendMessage(err);
 	   status = KODAQ_ERROR;
 	   fNetworkInterface.SendStatusUpdate(status,rate,freq,nBoards, systemInfo);
-	   fElectronics->StopRun();
-	   fElectronics->Close();
+	   //fElectronics->StopRun();
+	   //fElectronics->Close();
 	   continue;
 	 }
 
