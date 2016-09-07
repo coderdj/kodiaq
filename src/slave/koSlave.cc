@@ -239,7 +239,7 @@ int main(int argc, char *argv[])
    time_t         fPrevTime = koLogger::GetCurrentTime();
    bool           bArmed=false, bRunning=false, bConnected=false,
      bERROR=false;//, bRdy=false;
-   koSysmon sysmon;
+   
    //
    koLog->Message("Started koSlave module.");
    koSysmon sysmon;
