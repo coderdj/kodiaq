@@ -21,6 +21,8 @@ VMEBoard::VMEBoard()
    bIsSumModule=false;
    m_koLog=NULL;
    fBID.id = -1;
+   fErrorText = "";
+   fError = false;
 }
 
 VMEBoard::~VMEBoard()
@@ -53,10 +55,10 @@ void VMEBoard::LogSendMessage(string mess)
 
 int VMEBoard::WriteReg32(u_int32_t address, u_int32_t data)
 {
-  stringstream str;
-  str<<"Board: "<<fBID.id<<" writes register "<<hex<<address<<" with "<<data<<dec;
-  LogMessage( str.str() );
-
+  //stringstream str;
+  //str<<"Board: "<<fBID.id<<" writes register "<<hex<<address<<" with "<<data<<dec;
+  //LogMessage( str.str() );
+  //
   //  if(address == 0x8100){
   //stringstream str;                                                             
   //str<<"Board: "<<fBID.id<<" writes register "<<hex<<address<<" with "<<data<<dec;
@@ -76,9 +78,9 @@ int VMEBoard::WriteReg32(u_int32_t address, u_int32_t data)
 
 int VMEBoard::ReadReg32(u_int32_t address, u_int32_t &data)
 {
-  stringstream str;                                                               
-  str<<"Board: "<<fBID.id<<" reads register "<<hex<<address<<" data "<<data<<dec;
-  LogMessage( str.str() );       
+  //stringstream str;                                                               
+  //str<<"Board: "<<fBID.id<<" reads register "<<hex<<address<<" data "<<data<<dec;
+  //LogMessage( str.str() );       
 
   u_int32_t temp=0;
    int ret=0;
@@ -111,6 +113,8 @@ int VMEBoard::ReadReg16(u_int32_t address,u_int16_t &data)
 int VMEBoard::Initialize(koOptions *options)
 {
    bActivated=false;
+   fError=false;
+   fErrorText="";
    return -1; //? or should this return 0
 }
 

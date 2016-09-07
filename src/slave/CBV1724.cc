@@ -16,6 +16,9 @@
 #include "CBV1724.hh"
 #include "DataProcessor.hh"
 #include <koHelper.hh>
+#include <sys/types.h>
+#include <sys/wait.h>
+
 #ifdef HAVE_LIBMONGOCLIENT
 #include "mongo/client/dbclient.h"
 #endif
@@ -30,23 +33,40 @@ CBV1724::CBV1724()
    fBufferOccCount = 0;
    fReadoutThresh=10;
    pthread_mutex_init(&fDataLock,NULL);
+   pthread_mutex_init(&fWaitLock,NULL);
    pthread_cond_init(&fReadyCondition,NULL);
    i_clockResetCounter = 0;
+   fBadBlockCounter = 0;
    i64_blt_first_time = i64_blt_second_time = i64_blt_last_time = 0;
    bOver15 = false;
    fIdealBaseline = 16000;
    fLastReadout=koLogger::GetCurrentTime();
    fReadoutTime = 1;
+   m_lastprocessPID=0;
+   fReadMeOut=false;
+   m_tempBuff = NULL;
+   bThreadOpen = false;
+   m_temp_blt_bytes=0;
+   bExists=false;
+   bProfiling=false;
+   fError=false;
+   fErrorText="";
 }
 
 CBV1724::~CBV1724()
 {
+  bExists=false;
+  if(bThreadOpen)
+    pthread_join(m_copyThread,NULL);
+  bThreadOpen=false;
+
    ResetBuff();
    pthread_mutex_destroy(&fDataLock);
+   pthread_mutex_destroy(&fWaitLock);
    pthread_cond_destroy(&fReadyCondition);
 }
 
-CBV1724::CBV1724(board_definition_t BoardDef, koLogger *kLog)
+CBV1724::CBV1724(board_definition_t BoardDef, koLogger *kLog, bool profiling)
         :VMEBoard(BoardDef,kLog)
 {
   fBLTSize=fBufferSize=0;
@@ -55,20 +75,35 @@ CBV1724::CBV1724(board_definition_t BoardDef, koLogger *kLog)
   fSizes=NULL;
   fReadoutThresh=10;
   pthread_mutex_init(&fDataLock,NULL);
+  pthread_mutex_init(&fWaitLock,NULL);
   pthread_cond_init(&fReadyCondition,NULL);
   i64_blt_first_time = i64_blt_second_time = i64_blt_last_time = 0;
   fBufferOccSize = 0;
   fBufferOccCount = 0;
+  fBadBlockCounter = 0;
   bOver15 = false;
   fIdealBaseline = 16000;
   fLastReadout=koLogger::GetCurrentTime();
   fReadoutTime =  1;
+  m_lastprocessPID=0;
+  fReadMeOut=false;
+  m_tempBuff = NULL;
+  bThreadOpen=false;
+  m_temp_blt_bytes = 0;
+  bExists=false;
+  bProfiling = profiling;
+  fError=false;
+  fErrorText="";
 }
 
 int CBV1724::Initialize(koOptions *options)
 {
   // Initialize and ready the board according to the options object
-  
+  bExists=true;
+  fBadBlockCounter = 0;
+  fError = false;
+  fErrorText = "";
+
   // Set private members
   int retVal=0;
   i_clockResetCounter=0;
@@ -135,7 +170,19 @@ int CBV1724::Initialize(koOptions *options)
     messstr<<"Board "<<fBID.id<<" failed initialization";
     m_koLog->Message( messstr.str() );
   }
+
+  i_clockResetCounter=0;
+  i64_blt_last_time = 0;
    return retVal;
+}
+
+int CBV1724::GetBufferSize(int &count, vector<string> &reports){
+  LockDataBuffer();
+  count = fBufferOccCount;
+  reports = fReadoutReports;
+  fReadoutReports.clear();
+  UnlockDataBuffer();
+  return fBufferOccSize; 
 }
 
 unsigned int CBV1724::ReadMBLT()
@@ -150,8 +197,8 @@ unsigned int CBV1724::ReadMBLT()
   u_int32_t *buff = new u_int32_t[fBufferSize];       
   do{
     ret = CAENVME_FIFOBLTReadCycle(fCrateHandle,fBID.vme_address,
-    				   ((unsigned char*)buff)+blt_bytes,
-    				   fBLTSize,cvA32_U_BLT,cvD32,&nb);
+				   ((unsigned char*)buff)+blt_bytes,
+				   fBLTSize,cvA32_U_BLT,cvD32,&nb);
     
     if((ret!=cvSuccess) && (ret!=cvBusError)){
       stringstream ss;
@@ -160,21 +207,45 @@ unsigned int CBV1724::ReadMBLT()
       delete[] buff;
       return 0;
     }
+
     blt_bytes+=nb;
-    if(blt_bytes>fBufferSize)	{
+    if(blt_bytes>fBufferSize){
       // For Custom V1724 firmware max event size is ~10mus, corresponding to a 
       // buffer of several MB. Events which are this large are probably non
       // physical. Events going over the 10mus limit are simply ignored by the
       // board (!). 
-      stringstream ss;	 
+      stringstream ss; 
       ss<<"Board "<<fBID.id<<" reports insufficient BLT buffer size. ("
-	<<blt_bytes<<" > "<<fBufferSize<<")"<<endl;	 
+	<<blt_bytes<<" > "<<fBufferSize<<")"<<endl; 
       m_koLog->Error(ss.str());
       delete[] buff;
       return 0;
     }
   }while(ret!=cvBusError);
    
+  // New: If the BLT is less than 6 words then count it and dump it
+  if(blt_bytes < 24 && blt_bytes!=0) {
+    fBadBlockCounter++;
+    if(fBadBlockCounter%1000==0){
+      stringstream ss;
+      ss<<"Board "<<fBID.id<<" found a total of "<<fBadBlockCounter<<
+	" blocks under 24 bytes."<<endl;
+      if(fBadBlockCounter > 1000000){
+	// Kill it
+	fError = true;
+	fErrorText = "Found 1,000,000 bad CAEN blocks. You're paying them too much";
+	fBadBlockCounter=0; // Give time for run to stop
+      }
+      m_koLog->Error(ss.str());
+    }
+    // Still increment counter
+    fBufferOccCount++;
+    
+
+    // This triggers a deletion of the buffer without recording    
+    blt_bytes = 0;
+  }
+
   if(blt_bytes>0){
     // We reserve too much space for the buffer (block transfers can get long). 
     // In order to avoid shipping huge amounts of empty space around we copy
@@ -191,16 +262,22 @@ unsigned int CBV1724::ReadMBLT()
     fBufferOccSize += blt_bytes;
     fBufferOccCount++;
 
-    if(fBuffers->size()==1) i64_blt_first_time = koHelper::GetTimeStamp(buff);
+    if(bProfiling && m_profilefile.is_open())
+      m_profilefile<<"READ "<<koLogger::GetTimeMus()<<" "<<blt_bytes<<" "<<
+	fBufferOccSize<<" "<<fBuffers->size()<<endl;
+   
     
     // Priority. If we defined a time stamp frequency, signal the readout
     time_t current_time=koLogger::GetCurrentTime();
     double tdiff = difftime(current_time, fLastReadout);
     
     // If we have enough BLTs (user option) signal that board can be read out
-    if(fBuffers->size()>fReadoutThresh || tdiff > fReadoutTime)
-      pthread_cond_signal(&fReadyCondition);
-      
+    if(fBuffers->size()>fReadoutThresh || fabs(tdiff) > fReadoutTime){
+      fReadMeOut=true;
+      if(bProfiling && m_profilefile.is_open())
+	m_profilefile<<"SIGNAL "<<koLogger::GetTimeMus()<<" "<<blt_bytes<<" "<<
+	  fBufferOccSize<<" "<<fBuffers->size()<<" "<<tdiff<<endl;
+    }
     UnlockDataBuffer();
   }
 
@@ -211,16 +288,24 @@ unsigned int CBV1724::ReadMBLT()
 void CBV1724::SetActivated(bool active)
 // Set this board to active and ready to go
 {
+  if(active)
+    i_clockResetCounter=0;
    bActivated=active;
    if(active==false){
      cout<<"Signaling final read"<<endl;
+
       if(pthread_mutex_trylock(&fDataLock)==0){	      
-	 pthread_cond_signal(&fReadyCondition);
-	 pthread_mutex_unlock(&fDataLock);
+	//pthread_cond_signal(&fReadyCondition);
+	fReadMeOut=true;
+	pthread_mutex_unlock(&fDataLock);
       }
       cout<<"Done"<<endl;
+
+      if(m_profilefile.is_open())
+	m_profilefile.close();
    }      
-   i_clockResetCounter=0;
+   if(bProfiling && !m_profilefile.is_open())
+     m_profilefile.open("profiling/profile_digi_"+koHelper::IntToString(fBID.id)+".txt", std::fstream::app);
 }
 
 void CBV1724::ResetBuff()
@@ -259,66 +344,167 @@ int CBV1724::UnlockDataBuffer()
 
 int CBV1724::RequestDataLock()
 {
-   int error=pthread_mutex_trylock(&fDataLock);
-   if(error!=0) return -1;
-   struct timespec timeToWait;
-   timeToWait.tv_sec = time(0)+1; //wait 1 seconds
-   timeToWait.tv_nsec= 0;
-   if(pthread_cond_timedwait(&fReadyCondition,&fDataLock,&timeToWait)==0)
-     return 0;
-   UnlockDataBuffer();
-   return -1;
+  if(fReadMeOut){
+    int error = pthread_mutex_trylock(&fDataLock);
+    if(error!=0) return -1;
+    return 0;
+  }
+  return -1;
 }
 
 vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes, 
-					   int &resetCounter, u_int32_t &headerTime,
+					   unsigned int &resetCounter, 
+					   u_int32_t &headerTime,
 					   int m_ID)
 // Note this PASSES OWNERSHIP of the returned vectors to the 
 // calling function! They must be cleared by the caller!
 // The reset counter is computed (did the clock reset during this buffer?) and
 // updated if needed. The value of this counter at the BEGINNING of the buffer
 // is passed by reference to the caller
+// THE MUTEX MUST BE LOCKED IF THIS FUNCTION IS CALLED
 {
+  fReadMeOut=false;
   headerTime = 0;
   fLastReadout=koLogger::GetCurrentTime();
 
-  if(fBuffers->size()!=0 ) {
-    i64_blt_first_time = koHelper::GetTimeStamp((*fBuffers)[0]);
-    headerTime = koHelper::GetTimeStamp((*fBuffers)[0]);
-    i64_blt_second_time = koHelper::GetTimeStamp((*fBuffers)[fBuffers->size()-1]);
-
-    resetCounter = i_clockResetCounter;
-    if( i64_blt_first_time < 12E8 && bOver15 )
-      resetCounter++;
-
-    // Is the object's over18 bool set?
-    if( i64_blt_second_time <12E8 && bOver15 ){
-      bOver15=false;
-      i_clockResetCounter++;
+  // Memory management, pass pointer to caller *with ownsership*                      
+  vector<u_int32_t*> *retVec = fBuffers;
+  fBuffers = new vector<u_int32_t*>();
+  sizes = fSizes;
+  fSizes = new vector<u_int32_t>();
+  long int occSize = fBufferOccSize;
+  fBufferOccSize = 0;
+    
+  if(retVec->size()!=0 ) {
+    i64_blt_first_time = koHelper::GetTimeStamp((*retVec)[0]);
+    
+    // CAEN farts. I don't necessarily want the first time, I want the first
+    // one that isn't garbage. If all are garbage skip checking I guess.
+    unsigned int iPosition = 1;
+    if(i64_blt_first_time == 0xFFFFFFFF){
+      
+      // Keep searching for a good one
+      for(unsigned int x=1; x<retVec->size(); x++){
+	i64_blt_first_time = koHelper::GetTimeStamp((*retVec)[x]);
+	if(i64_blt_first_time != 0xFFFFFFFF){
+	  iPosition = x;
+	  LogError("CAEN fart on header time for BLT[0] but found a good one at position " + koHelper::IntToString(x));
+	  break;
+	}
+      }
+      
     }
-    else if( i64_blt_second_time > 12E8 && !bOver15 )
-      bOver15 = true;
 
+    // If it still sucks dump it to threads and see what they make of it
+    if(i64_blt_first_time == 0xFFFFFFFF){
+      headerTime = i64_blt_last_time;
+      i64_blt_first_time = headerTime;
+      resetCounter = i_clockResetCounter;
+      LogError("Irrecoverable CAEN fart with "+koHelper::IntToString(int(retVec->size()))+" buffers.");
+      UnlockDataBuffer();
+      return retVec;
+    }
+
+
+    headerTime = i64_blt_first_time;
+    resetCounter = i_clockResetCounter;
+
+    // If the clock reset before this buffer, then we can 
+    // record a clock reset here
+    // CASE 1: CLOCK RESET AT T0
+    if(i64_blt_last_time > i64_blt_first_time && 
+       fabs(long(i64_blt_first_time)-long(i64_blt_last_time))>5E8){
+      i_clockResetCounter ++;
+      resetCounter = i_clockResetCounter;
+
+      stringstream st;
+      st<<"Clock reset condition 1: board "<<fBID.id<<
+	": first time ("<<i64_blt_first_time
+        <<") last time ("<<i64_blt_last_time<<") reset counter ("
+	<<i_clockResetCounter<<") size of buffer vector ("<<retVec->size()<<")";
+      LogError(st.str());
+
+
+    }
+    
+    // Now check for resets within the buffer
+    i64_blt_last_time = i64_blt_first_time;
+    for(unsigned int x=iPosition; x<retVec->size(); x++){
+      u_int64_t thisTime = koHelper::GetTimeStamp((*retVec)[x]);
+      if(thisTime == 0xFFFFFFFF){
+	cout<<"Junk data!"<<endl;
+	continue;
+      }
+      if(thisTime < i64_blt_last_time && 
+	 fabs(long(thisTime)-long(i64_blt_last_time))>5E8){
+	i_clockResetCounter++;
+	stringstream st;
+	st<<"Clock reset condition 2: board "<<fBID.id<<
+	  ": this time ("<<thisTime
+	  <<") last time ("<<i64_blt_last_time<<") reset counter ("
+	  <<i_clockResetCounter<<") size of buffer vector ("<<retVec->size()<<")";
+	LogError(st.str());
+      }
+      i64_blt_last_time = thisTime;
+    }
+
+    // REMOVE THIS IF LATER
+    /*if(reset != i_clockResetCounter){
+      stringstream st;
+      st<<"Clock reset board "<<fBID.id<<": first time ("<<i64_blt_first_time
+	<<") second time ("<<i64_blt_second_time<<") last time ("<<
+	i64_blt_last_time<<") reset counter ("<<resetCounter
+	<<") size of buffer vector ("<<retVec->size()<<")";
+      LogError(st.str());
+      } */ 
+
+    // Now we have another issue. It can be that we have very unphysical data
+    // where the clock resets many, many times in a buffer. If we get one 
+    // of these buffers dump the ENTIRE BINARY HEADER to a special file.
+    // It will be a lot
+    /*if( i_clockResetCounter - reset > 5){ // 5 resets seems suitably crappy
+      ofstream outfile;
+      stringstream filename;
+      filename<<"crapData_"<<fBID.id<<"_"<<i_clockResetCounter<<".txt";
+      outfile.open(filename.str());
+      
+      // Print each word      
+      outfile<<koLogger::GetTimeString()<<" Record for digi "<<fBID.id
+	     <<" with "<<i_clockResetCounter-reset<<
+	" clock resets and a buffer size of "<<(*fSizes)[0]<<" and "
+	     <<fBuffers->size()<<" buffers."<<endl;
+      for(unsigned int bidx=0; bidx<fBuffers->size(); bidx++){	
+	for(unsigned int idx = 0; idx < (*fSizes)[bidx]/4; idx++){
+	  outfile<<hex<<(*fBuffers)[bidx][idx]<<endl;
+	}
+      }
+      outfile.close();
+    }// end remove later
+    */
   }
-
+  
   // PROFILING                  
   if(m_ID != -1){
     struct timeval tv;
     gettimeofday(&tv,NULL);
     unsigned long time_us = 1000000 * tv.tv_sec + tv.tv_usec;
     stringstream ss;
-    ss<<fBID.id<<" "<<m_ID<<" "<<time_us<<" "<<fBufferOccSize<<" "<<fBuffers->size();
+    ss<<fBID.id<<" "<<m_ID<<" "<<time_us<<" "<<occSize<<" "<<retVec->size();
     fReadoutReports.push_back(ss.str());
   }
-
+  
+  /*// Memory management, pass pointer to caller *with ownsership*
    vector<u_int32_t*> *retVec = fBuffers;
    fBuffers = new vector<u_int32_t*>();
    sizes = fSizes;
    fSizes = new vector<u_int32_t>();
-   
-   // Reset total buffer size 
-   fBufferOccSize = 0;
+  */
+   cout<<"READING OUT "<<fBID.id<<" with old size: "<<retVec->size()<<" and new size "<<retVec->size()<<endl;
+   if(bProfiling && m_profilefile.is_open())
+     m_profilefile<<"CLEAR "<<koLogger::GetTimeMus()<<" "<<retVec->size()<<" "
+		  <<m_ID<<endl;
 
+   UnlockDataBuffer();
 
    return retVec;
 }
@@ -387,11 +573,12 @@ int CBV1724::GetBaselines(vector <int> &baselines, bool bQuiet)
 
 int CBV1724::InitForPreProcessing(){
   //Get the firmware revision (for data formats)                                    
-  cout<<"PREPROCESS INIT"<<endl;
   u_int32_t fwRev=0;
   ReadReg32(0x118C,fwRev);
   int fwVERSION = ((fwRev>>8)&0xFF); //0 for old FW, 137 for new FW  
   int retval = 0;
+  cout<<"Preprocess for FW version " << hex << fwVERSION << dec <<endl;
+
   if(fwVERSION!=0)
     retval += (WriteReg32(CBV1724_ChannelConfReg,0x310) + 
 	       WriteReg32(CBV1724_DPPReg,0x1310000) + 
@@ -399,15 +586,18 @@ int CBV1724::InitForPreProcessing(){
 	       //WriteReg32(CBV1724_CustomSize,0xC8) + 
 	       WriteReg32(CBV1724_CustomSize, 0x1F4) +
 	       WriteReg32( 0x811C, 0x840 ) + 
-	       WriteReg32(0x8000,0x310));
+	       WriteReg32(0x8000,0x310)
+	       );
   else
     retval += (WriteReg32(CBV1724_ChannelConfReg,0x10) +
 	       WriteReg32(CBV1724_DPPReg,0x800000));
 
   retval += (WriteReg32(CBV1724_AcquisitionControlReg,0x0) +
 	     WriteReg32(CBV1724_TriggerSourceReg,0x80000000));
-  retval += (WriteReg32( 0xEF24, 0x1) + WriteReg32( 0xEF1C, 0x1) + 
-	     WriteReg32( 0xEF00, 0x10) + WriteReg32( 0x8120, 0xFF ));
+
+  retval += (WriteReg32( 0xEF24, 0x1) + WriteReg32( 0xEF1C, 0x1) +
+             WriteReg32( 0xEF00, 0x10) + WriteReg32( 0x8120, 0xFF ));
+
   if(retval<0) 
     retval = -1;
   return retval;
@@ -449,7 +639,7 @@ int CBV1724::DetermineBaselines()
   //vector<bool> channelFinished(8,false);
   vector<int> channelFinished(8, 0);
   
-  int maxIterations = 200;
+  int maxIterations = 1000;
   int currentIteration = 0;
 
   while(currentIteration<=maxIterations){    
@@ -464,11 +654,12 @@ int CBV1724::DetermineBaselines()
     if(getOut) break;
     
     // Enable to board
-    WriteReg32(CBV1724_AcquisitionControlReg,0x4);
-    if(fwVERSION==0) usleep(1500); //
+    WriteReg32(CBV1724_AcquisitionControlReg,0x24);
+    //usleep(5000); //
     //Set Software Trigger
     WriteReg32(CBV1724_SoftwareTriggerReg,0x1);
-    if(fwVERSION==0) usleep(1500); //
+    usleep(50); //
+
     //Disable the board
     WriteReg32(CBV1724_AcquisitionControlReg,0x0);
     //usleep(5000);
@@ -479,20 +670,22 @@ int CBV1724::DetermineBaselines()
       thisread = 0;
       thisread = ReadMBLT();
       readout+=thisread;
-      usleep(1000);
+      usleep(10);
       counter++;
     } while( counter < 1000 && (readout == 0 || thisread != 0));
     // Either the timer times out or the readout is non zero but 
     //the current read is finished  
     if(readout == 0){
       LogError("Read failed in baseline function.");
-      return -1;
+      continue;
+      //return -1;
     }
 
     // Use main kodiaq parsing     
-    int rc=0;
+    unsigned int rc=0;
     u_int32_t ht=0;
     vector <u_int32_t> *dsizes;
+    LockDataBuffer();
     vector<u_int32_t*> *buff= ReadoutBuffer(dsizes, rc, ht);
 
     vector <u_int32_t> *dchannels = new vector<u_int32_t>;
@@ -526,7 +719,7 @@ int CBV1724::DetermineBaselines()
 	    dbase=(((*buff)[x][y])&0xFFFF);
 	  else 
 	    dbase=(((*buff)[x][y]>>16)&0xFFFF);
-	  if(dbase == 0 ) 
+	  if(dbase == 0 || dbase == 4) 
 	    continue;
 	  baseline+=dbase;
 	  bdiv+=1.;
@@ -541,8 +734,16 @@ int CBV1724::DetermineBaselines()
 	//stringstream error;
 	//error<<"Channel "<<(*dchannels)[x]<<" signal in baseline?";
 	//LogMessage( error.str() );	
-	LogMessage("maxval - minval is " + koHelper::IntToString(abs(maxval-minval)) + " " + koHelper::IntToString(maxval) + " " 
-		   + koHelper::IntToString(minval) + " maybe there's a signal in the baseline.");
+	
+	LogMessage("maxval - minval for about " + 
+		   koHelper::IntToString(fBID.id) + " is " + 
+		   koHelper::IntToString(abs(maxval-minval)) + ", max " + 
+		   koHelper::IntToString(maxval) + " min " 
+		   + koHelper::IntToString(minval) + 
+		   " maybe there's a signal in the baseline." + 
+		   " Event length " + koHelper::IntToString((*dsizes)[x]/4) 
+		   + " words.");
+	
 	delete[] (*buff)[x];
 	continue; //signal in baseline?
       }

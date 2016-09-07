@@ -208,6 +208,7 @@ void* MasterMongodbConnection::CollectionThreadWrapper(void* data){
   vector <string> boardList = payload->boardList;
 
   int counter = 1;
+
   int readaheadconstant = 10;
   double readaheadfraction = 0.1;
   time_t startTime = koLogger::GetCurrentTime();
@@ -217,7 +218,7 @@ void* MasterMongodbConnection::CollectionThreadWrapper(void* data){
 
     time_t currentTime = koLogger::GetCurrentTime();
     double tdiff = fabs(difftime(currentTime, startTime));
-    //    cout<<tdiff<<" "<<tdiff*(1+readaheadfraction)<<" "<<tdiff*(1+readaheadfraction)  / 21. <<" "<< counter<<" "<< readaheadconstant<<endl;
+
   if( (tdiff*(1.+readaheadfraction)  / 21.) + readaheadconstant > counter){
       mongocoll->MakeMongoCollection(options, collection, boardList, counter);
       counter++;

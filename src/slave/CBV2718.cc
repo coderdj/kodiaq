@@ -20,6 +20,7 @@ CBV2718::CBV2718()
   b_led_on = false;
   b_muonveto_on = false;
   i_pulserHz = 0;
+  i_gimpMode = 0;
   bStarted=false;
 }
 
@@ -34,6 +35,7 @@ CBV2718::CBV2718(board_definition_t BID, koLogger *kLog)
   b_led_on = false;
   b_muonveto_on = false;
   i_pulserHz = 0;
+  i_gimpMode = 0;
   bStarted=false;
 }
 
@@ -53,6 +55,8 @@ int CBV2718::Initialize(koOptions *options)
   b_led_on = false;
   b_muonveto_on = false;
   i_pulserHz = 0;
+
+  i_gimpMode = 0;
   
   if(options->GetInt("led_trigger")==1)
     b_led_on = true;    
@@ -62,7 +66,9 @@ int CBV2718::Initialize(koOptions *options)
     b_startwithsin = true;
   if(options->GetInt("pulser_freq")>0)
     i_pulserHz = options->GetInt("pulser_freq");
-  
+  if(options->HasField("gimp_mode") &&
+     options->GetInt("gimp_mode") >0)
+    i_gimpMode = options->GetInt("gimp_mode");
   
   //CAENVME_SystemReset(fCrateHandle);
   if(SendStopSignal()!=0)
@@ -88,6 +94,10 @@ int CBV2718::SendStartSignal()
   // Line 3 : LED Pulser
   CAENVME_SetOutputConf(fCrateHandle, cvOutput3, cvDirect, 
 			cvActiveHigh, cvMiscSignals);
+  // Line 4 : GIMP Logic
+  CAENVME_SetOutputConf(fCrateHandle, cvOutput4, cvDirect,
+                        cvActiveHigh, cvManualSW);
+
 
   // Set the output register
   unsigned int data = 0x0;
@@ -97,6 +107,8 @@ int CBV2718::SendStartSignal()
     data+=cvOut1Bit;
   if(b_startwithsin)
     data+=cvOut0Bit;
+  if(i_gimpMode!=0)
+    data+=cvOut4Bit;
 
    // This is the S-IN                
   m_koLog->Message("Writing cvOutRegSet with :" + 
@@ -116,32 +128,60 @@ int CBV2718::SendStartSignal()
     CVTimeUnits tu = cvUnit104ms;
     u_int32_t width = 0x1;
     u_int32_t period = 0x0;
-    if(i_pulserHz < 10){
-      if(i_pulserHz > 5)
-	period = 0xFF;
-      else
+    if(i_gimpMode!=0){
+      
+      // Roughly 1Hz, 0.1 s live
+      if(i_gimpMode == 1 || i_gimpMode > 4){
+	width = 8;//i_gimpMode;
 	period = (u_int32_t)((1000/104) / i_pulserHz);
+      }
+      // Roughly 2Hz, 0.05s per pulse
+      if(i_gimpMode == 2){
+	tu = cvUnit410us;
+	width = 1098;
+	period = (u_int32_t)((1000000/410) / 2);
+      }
+      // Roughly 4Hz, 0.025s per pulse
+      if(i_gimpMode == 3){
+	tu = cvUnit410us;
+	width = 549;
+	period = (u_int32_t)((1000000/410) / 4);
+      }
+      // Roughly 10Hz, 0.01s per pulse
+      if(i_gimpMode == 4){
+        tu = cvUnit410us;
+        width = 220;
+        period = (u_int32_t)((1000000/410) / 10);
+      }
     }
-    else if(i_pulserHz < 2450){
-      tu = cvUnit410us;
-      if(i_pulserHz >1219)
-	period = 0xFF;
-      else
-	period = (u_int32_t)((1000000/410) / i_pulserHz);
-    }
-    else if(i_pulserHz < 312500){
-      tu = cvUnit1600ns;
-      period = (u_int32_t)((1000000/1.6) / i_pulserHz);
-    }
-    else if(i_pulserHz < 20000000){
-      tu = cvUnit25ns;
-      period = (u_int32_t)((1E9/25)/i_pulserHz);
-    }
-    else
-      m_koLog->Error("Invalid LED frequency set!");
-  
-    cout<<"Writing period with: "<<period<<" and width with "<<width<<endl;
+    else{
     
+      if(i_pulserHz < 10){
+	if(i_pulserHz > 5)
+	  period = 0xFF;
+	else
+	  period = (u_int32_t)((1000/104) / i_pulserHz);
+      }
+      else if(i_pulserHz < 2450){
+	tu = cvUnit410us;
+	if(i_pulserHz >1219)
+	  period = 0xFF;
+	else
+	  period = (u_int32_t)((1000000/410) / i_pulserHz);
+      }
+      else if(i_pulserHz < 312500){
+	tu = cvUnit1600ns;
+	period = (u_int32_t)((1000000/1.6) / i_pulserHz);
+      }
+      else if(i_pulserHz < 20000000){
+	tu = cvUnit25ns;
+      period = (u_int32_t)((1E9/25)/i_pulserHz);
+      }
+      else
+	m_koLog->Error("Invalid LED frequency set!");
+    }
+    m_koLog->Message("Writing period with: "+koHelper::IntToString(period)+
+		     " and width with " +koHelper::IntToString(width));
     // Send data to the board
     CAENVME_SetPulserConf(fCrateHandle, cvPulserB, period, width, tu, 0,
 			  cvManualSW, cvManualSW);
@@ -155,7 +195,7 @@ int CBV2718::SendStopSignal()
   bStarted = false;
   // Stop the pulser if it's running
   CAENVME_StopPulser(fCrateHandle, cvPulserB);
-
+  usleep(1000);
   //u_int16_t data = 0x7C8;
   //u_int16_t data = 0x7FF;
   //cout<<"Writing cvOutRegClear with: "<<data<<endl;

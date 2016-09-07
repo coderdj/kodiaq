@@ -58,6 +58,7 @@ class koLogger
    // Function : Returns a string with the current date and time with form
    //            "%Y.%m.%d [%H:%M:%S] - "
    static string GetTimeString();   
+  static u_int64_t GetTimeMus();
    //
    // Name     : GetCurrentTime()
    // Function : Returns a time_t object with the current time
@@ -87,7 +88,7 @@ class koLogger
    
    
  private: 
-   ofstream fLogfile;   
+  ofstream fLogfile;   
    std::vector <string> fMessageBuffer;
    pthread_mutex_t fLogMutex;
 };

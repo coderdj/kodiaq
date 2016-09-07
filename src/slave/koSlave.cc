@@ -19,6 +19,7 @@
 #include "DigiInterface.hh"
 #include "koSysmon.hh"
 #include <config.h>
+#include "koSysmon.hh"
 
 //If using the light version we need user input functions
 //#ifdef KLITE
@@ -29,7 +30,7 @@ using namespace std;
 
 int ReadIniFile(string filepath, string &SERVERADDR, int &PORT, 
 		int &DATAPORT, string &NODENAME, int &ID,
-		string &DB_USER, string &DB_PASSWORD, int &PROFILING);
+		string &DB_USER, string &DB_PASSWORD, int &PROFILING, int &CORES);
 
 #ifdef KLITE
 // *******************************************************************************
@@ -219,21 +220,18 @@ int main(int argc, char *argv[])
    string DB_USER="", DB_PASSWORD="";
    string NODENAME = "DAQ01";
    int PROFILING = 0;
+   int CORES=8;
    if(ReadIniFile(filepath, SERVERADDR, PORT, DATAPORT, NODENAME, ID,
-		  DB_USER, DB_PASSWORD, PROFILING)!=0){
+		  DB_USER, DB_PASSWORD, PROFILING, CORES)!=0){
      cout<<"Error reading .ini file, does it exist at src/slave/SlaveConfig.ini?"<<endl;
      return -1;
    }
 
-   // Profile output
-   ofstream profilefile;
-   if(PROFILING == 1)
-     profilefile.open("profile.log");
-
    
    fNetworkInterface.Initialize(SERVERADDR,PORT,DATAPORT,ID,NODENAME); 
 
-   DigiInterface  *fElectronics = new DigiInterface(koLog, ID, DB_USER, DB_PASSWORD);
+   DigiInterface  *fElectronics = new DigiInterface(koLog, ID, DB_USER, 
+						    DB_PASSWORD, CORES, PROFILING);
    koOptions   *fDAQOptions  = new koOptions();
    koRunInfo_t    fRunInfo;
    
@@ -241,6 +239,7 @@ int main(int argc, char *argv[])
    time_t         fPrevTime = koLogger::GetCurrentTime();
    bool           bArmed=false, bRunning=false, bConnected=false,
      bERROR=false;//, bRdy=false;
+   koSysmon sysmon;
    //
    koLog->Message("Started koSlave module.");
    koSysmon sysmon;
@@ -370,19 +369,14 @@ connection_loop:
 	 vector <string> readout_reports;
 	 int BufferSize = fElectronics->GetBufferOccupancy(digis, sizes, counts,
 							   readout_reports);
-	 if(PROFILING == 1){
-	   for(unsigned int report=0;report<readout_reports.size();report++)
-	     profilefile<<readout_reports[report]<<endl;
-	 }
 
-	 // System monitor        
-         koSysInfo_t systemInfo = sysmon.Get();
-         cout<<"CPU: "<<systemInfo.cpuPct<<" RAM_tot: "<<systemInfo.availableRAM<<
-           " RAM_used: "<<systemInfo.usedRAM<<endl;
-         cout<<"rate: "<<rate<<" freq: "<<freq<<" iRate: "<<iRate<<" tdiff: "
+	 // System monitor
+	 koSysInfo_t systemInfo = sysmon.Get();	 
+	 cout<<"CPU: "<<systemInfo.cpuPct<<" RAM_tot: "<<systemInfo.availableRAM<<
+	   " RAM_used: "<<systemInfo.usedRAM<<endl;
+	 cout<<"rate: "<<rate<<" freq: "<<freq<<" iRate: "<<iRate<<" tdiff: "
 	     <<tdiff<<" status: ";
-	 cout<<"rate: "<<rate<<" freq: "<<freq<<" iRate: "<<iRate<<" tdiff: "<<
-	   tdiff<<" status: ";
+
 	 if(status == KODAQ_ARMED) cout<<"ARMED";
 	 else if(status == KODAQ_RUNNING) cout<<"RUNNING";
 	 else if(status == KODAQ_RDY) cout<<"READY";
@@ -398,15 +392,17 @@ connection_loop:
 	 if( fElectronics->RunError( err ) ){
 	   cout<<"ERROR "<<err;	   
 	   koLog->Error("koSlave::main - [ ERROR ] From threads: " + err );
-	   fElectronics->StopRun();
-	   fElectronics->Close();
-	   continue;;
+	   fNetworkInterface.SlaveSendMessage(err);
+	   status = KODAQ_ERROR;
+	   fNetworkInterface.SendStatusUpdate(status,rate,freq,nBoards, systemInfo);
+	   //fElectronics->StopRun();
+	   //fElectronics->Close();
+	   continue;
 	 }
 
-
-	 if(fNetworkInterface.SendStatusUpdate(status,rate,freq,nBoards,systemInfo)
-	    !=0){
-	    bConnected=false;
+	 if(fNetworkInterface.SendStatusUpdate(status,rate,
+					       freq,nBoards, systemInfo)!=0){
+	   bConnected=false;
 	   koLog->Error("koSlave::main - [ FATAL ERROR ] Could not send status update. Going to idle state!");
 	 }	 
       }
@@ -435,7 +431,7 @@ connection_loop:
 
 int ReadIniFile(string filepath, string &SERVERADDR, int &PORT, 
 		int &DATAPORT, string &NODENAME, int &ID, 
-		string &DB_USER, string &DB_PASSWORD, int &PROFILING)
+		string &DB_USER, string &DB_PASSWORD, int &PROFILING, int &CORES)
 {
   ifstream inifile;
   inifile.open( filepath.c_str() );
@@ -470,6 +466,8 @@ int ReadIniFile(string filepath, string &SERVERADDR, int &PORT,
       DB_PASSWORD = words[1];
     else if ( words[0] == "PROFILING" )
       PROFILING = koHelper::StringToInt(words[1]);
+    else if ( words[0] == "CORES" )
+      CORES = koHelper::StringToInt(words[1]);
   }
   inifile.close();
   return 0;

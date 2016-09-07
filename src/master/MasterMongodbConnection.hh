@@ -38,6 +38,7 @@ struct collection_thread_packet_t
   string collection;
 };
 
+
 class MasterMongodbConnection
 {
 
@@ -107,6 +108,7 @@ public:
   //int  UpdateNoiseDirectory(string run_name);
   void SendRunStartReply(int response, string message);//, string mode, string comment);
   void ClearDispatcherReply();
+
   vector<mongo::BSONObj> GetRunQueue();
   void SyncRunQueue(vector<mongo::BSONObj> queue);
 
@@ -119,8 +121,6 @@ public:
   int MakeMongoCollection(mongo_option_t mongo_opts, string collection,
                           vector<string> boardList, int time_cycle=-1);
   map <string, collection_thread_t> m_collectionThreads;
-
-  
   vector<string> GetHashTags(string comment);
   int Connect();
 
@@ -131,6 +131,8 @@ public:
   mongo::DBClientBase       *fLogDB, *fMonitorDB, *fRunsDB;
   string                     fLogDBName,fMonitorDBName,fRunsDBName,fRunsCollection;
   string                     fBufferUser, fBufferPassword;
+
+  map <string, collection_thread_t> m_collectionThreads;
 };
 
 #endif

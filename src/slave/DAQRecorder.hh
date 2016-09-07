@@ -118,7 +118,9 @@ class DAQRecorder_mongodb : public DAQRecorder
    // Purpose   : Used to insert a vector of BSON documents into the mongodb
    //             using a thread-safe method from mongo
    // 
-   int            InsertThreaded(vector <mongo::BSONObj> *insvec, int ID);
+  int            InsertThreaded(vector <mongo::BSONObj> *insvec, int ID,
+				int resetCount=-1);
+  int            UpdateProgressDoc(int module, int resetCount, int ID);
    //
    // Name      : int DAQRecorder_mongodb::UpdateCollection
    // Purpose   : Change the mongodb collection without disconnecting

@@ -33,6 +33,7 @@ class CBV2718 : public VMEBoard {
   bool b_led_on;
   bool b_muonveto_on;
   int  i_pulserHz;
+  int  i_gimpMode;
   bool bStarted;
 };
 #endif
