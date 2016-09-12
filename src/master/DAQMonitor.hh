@@ -34,8 +34,8 @@ public:
   DAQMonitor();
   virtual ~DAQMonitor();
   //DAQMonitor(const DAQMonitor &rhs);
-  DAQMonitor(vector<int> ports, vector<int> dports, koLogger *logger, 
-	     MasterMongodbConnection *mongodb, string detector, 
+  DAQMonitor(vector<int> ports, vector<int> dports, vector<string> tags,
+	     koLogger *logger, MasterMongodbConnection *mongodb, string detector, 
 	     string ini_file="DAQConfig.ini");
 
   void ProcessCommand(string command,string user, 
@@ -50,6 +50,7 @@ public:
   };
   //  bool CheckError(int ERRNO, string ERRTXT);
   void ThrowFatalError(bool killDAQ, string errTxt);
+  void ThrowWarning(bool killDAQ, string errTxt);
   int ValidateStartCommand(string user, string comment, 
 			   koOptions *options, string &message);
 
@@ -57,9 +58,6 @@ public:
     m_bReady=false;
     return &m_DAQStatus;
   }; 
-  koSysInfo_t* GetSysInfo(){
-    return &m_SysInfo;
-  };
   int LockStatus();
   int UnlockStatus();
   
@@ -75,7 +73,6 @@ private:
 
   koStatusPacket_t         m_DAQStatus;
   koRunInfo_t              m_RunInfo;
-  koSysInfo_t              m_SysInfo;
   
   vector <koNetServer*>    m_DAQNetworks;
   koLogger                *m_Log; //local log

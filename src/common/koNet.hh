@@ -149,8 +149,7 @@ class koNet
    //            are updates, messages, and run modes. The status packed is 
    //            updated and zero is returned if something is there.
    // 
-  int           CheckDataSocket(int socket, koStatusPacket_t &status,
-				koSysInfo_t &sysinfo);
+  int           CheckDataSocket(int socket, koStatusPacket_t &status);
    //
    // Name     : SendMessage
    // Function : Send a message over the data socket. It should be picked up

@@ -23,14 +23,15 @@ DAQMonitor::DAQMonitor()
    m_detector = "";
 }
 
-DAQMonitor::DAQMonitor(vector<int> ports, vector<int> dports, koLogger *logger,
+DAQMonitor::DAQMonitor(vector<int> ports, vector<int> dports, vector<string> tags,
+		       koLogger *logger,
 		       MasterMongodbConnection *mongodb, string detector,
 		       string ini_file)
 {
   if(ports.size() == dports.size()){
     for(unsigned int x=0;x<ports.size();x++){
       koNetServer *new_network = new koNetServer(logger);
-      new_network->Initialize(ports[x], dports[x]);
+      new_network->Initialize(ports[x], dports[x], tags[x]);
       m_DAQNetworks.push_back(new_network);
     }
   }
@@ -163,12 +164,13 @@ void DAQMonitor::PollNetwork()
     
       // Poll Network
       pthread_mutex_lock(&m_DAQStatusMutex);
-      while(m_DAQNetworks[x]->WatchDataPipe(m_DAQStatus, m_SysInfo)==0) m_bReady=true;
+      while(m_DAQNetworks[x]->WatchDataPipe(m_DAQStatus)==0) m_bReady=true;
       pthread_mutex_unlock(&m_DAQStatusMutex);
     }
-    usleep(5000);
+    usleep(500);
 
     // Check to see if any slaves are timing out    
+    // or if a slave is in error
     for(unsigned int x=0;x<m_DAQStatus.Slaves.size();x++){
       if(difftime(fCurrentTime,m_DAQStatus.Slaves[x].lastUpdate)>60.){
 	stringstream errtxt;
@@ -176,6 +178,12 @@ void DAQMonitor::PollNetwork()
 	m_DAQStatus.Slaves.erase(m_DAQStatus.Slaves.begin()+x);
 	ThrowFatalError(true,errtxt.str());
       }
+      // This block for catching caen errors and stopping daq
+      //if(m_DAQStatus.Slaves[x].status == KODAQ_ERROR){
+      //m_DAQStatus.Slaves.erase(m_DAQStatus.Slaves.begin()+x);
+      //ThrowWarning(true, "Stopping the DAQ because slave " + 
+      //koHelper::IntToString(x)+ " seems to have died.");
+      //}
     }
     
     if(difftime(fCurrentTime,fPrevTime)>100.){
@@ -196,6 +204,22 @@ void DAQMonitor::ThrowFatalError(bool killDAQ, string errTxt)
     Shutdown();
   }    
 }
+
+void DAQMonitor::ThrowWarning(bool killDAQ, string errTxt)
+{
+  if(m_Mongodb!=NULL)
+    m_Mongodb->SendLogMessage(errTxt,KOMESS_WARNING);
+  if(killDAQ){
+    if(m_Mongodb!=NULL)
+      m_Mongodb->SendStopCommand("dispatcher", "Auto stop due to error",
+				 m_detector);
+    else{
+      Stop("dispatcher","Auto stop due to error");
+      Shutdown();
+    }
+  }
+}
+
 
 int DAQMonitor::Disconnect()
 {
@@ -317,25 +341,73 @@ int DAQMonitor::Arm(koOptions *mode, string run_name)
   for(unsigned int x=0;x<m_DAQNetworks.size();x++)
     m_DAQNetworks[x]->SendCommand("ARM");
 
-  stringstream *optionsStream = new stringstream();
-  if(run_name != "" && mode->GetInt("write_mode") == WRITEMODE_MONGODB){
-    cout<<"Sending options stream with run name "<<run_name<<endl;
-    mode->ToStream_MongoUpdate(run_name, optionsStream);
+  // WANT
+  // IF MONGO
+  //    IF RUN NAME != "" UPDATE RUN NAME
+  //    IF READER in MONGO_OPTS[hosts] UPDATE MONGO_OPTS[address]
+  // ELSE
+  //    JUST SEND OPTIONS
+  stringstream *optionsStream=NULL;
+  
+  // IF NOT MONGO, JUST SEND OPTIONS
+  if(run_name == "" || mode->GetInt("write_mode") != WRITEMODE_MONGODB){
+    optionsStream = new stringstream();
+    mode->ToStream(optionsStream);
   }
-  else{
-    cout<<"Sending options stream"<<endl;
-    mode->ToStream(optionsStream);   
-  }
-  for(unsigned int x=0;x<m_DAQNetworks.size();x++){
+  for(unsigned int x=0; x<m_DAQNetworks.size(); x++){
+
+    // If we're not using mongo just send the options we created earlier
+    if(run_name == "" || mode->GetInt("write_mode") != WRITEMODE_MONGODB){
+      cout<<"Sending standalone options to reader " << m_DAQNetworks[x]->GetTag() << endl;
+      if(m_DAQNetworks[x]->SendOptionsStream(optionsStream)!=0){
+	delete optionsStream;
+	m_Mongodb->SendLogMessage("Error sending options to clients.",
+				  KOMESS_WARNING);
+	return -1;
+      }
+      continue;
+    }
+
+    // If we are using mongo we might have to do something trickier
+    // Different clients might get different hosts. So add that logic here.
+    mongo_option_t mongo_opts = mode->GetMongoOptions();    
+    if(mongo_opts.hosts.size()!=0){
+      optionsStream = new stringstream();
+
+      // Check if the current reader is in the options
+      string hostname = m_DAQNetworks[x]->GetTag();
+      if(mongo_opts.hosts.find(hostname) != mongo_opts.hosts.end()){
+	cout<<"Updating options for host "<<hostname<<endl;
+	mode->ToStream_MongoUpdate(run_name, optionsStream, 
+				  mongo_opts.hosts[hostname]);
+      }
+      else{
+	cout<<"Didn't find host "<<hostname<<endl;
+	mode->ToStream_MongoUpdate(run_name, optionsStream);
+      }
+    }
+    else if(run_name != ""){
+      optionsStream = new stringstream();
+      mode->ToStream_MongoUpdate(run_name, optionsStream);
+    }
+    else{ // We should have caught this case above, throw error
+      m_Mongodb->SendLogMessage
+	("DAQMonitor::Arm: ERROR sending options. Faulty logic.",
+	 KOMESS_WARNING);
+      return -1;
+    }
     if(m_DAQNetworks[x]->SendOptionsStream(optionsStream)!=0){
       delete optionsStream;
       m_Mongodb->SendLogMessage("Error sending options to clients.",
 				KOMESS_WARNING);
       return -1;
     }
+    delete optionsStream;
+    optionsStream = NULL;
   }
 
-  delete optionsStream;
+  if(optionsStream != NULL)
+    delete optionsStream;
   
   return 0;
 }

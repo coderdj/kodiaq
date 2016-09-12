@@ -50,7 +50,7 @@ class koNetClient : public koNet
    //            Also fill status with the info on the update in this case.
    //            Returns -1 if nothing found.
    // 
-  int           WatchForUpdates(koStatusPacket_t &status, koSysInfo_t &sysinfo);
+  int           WatchForUpdates(koStatusPacket_t &status);
       
    //
    // Name     : SendCommand

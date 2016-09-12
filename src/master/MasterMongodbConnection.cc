@@ -207,7 +207,7 @@ void* MasterMongodbConnection::CollectionThreadWrapper(void* data){
   string detector = payload->detector;
   vector <string> boardList = payload->boardList;
 
-  int counter = 1;
+  int counter = 2;
   int readaheadconstant = 10;
   double readaheadfraction = 0.1;
   time_t startTime = koLogger::GetCurrentTime();
@@ -218,14 +218,29 @@ void* MasterMongodbConnection::CollectionThreadWrapper(void* data){
     time_t currentTime = koLogger::GetCurrentTime();
     double tdiff = fabs(difftime(currentTime, startTime));
     //    cout<<tdiff<<" "<<tdiff*(1+readaheadfraction)<<" "<<tdiff*(1+readaheadfraction)  / 21. <<" "<< counter<<" "<< readaheadconstant<<endl;
-  if( (tdiff*(1.+readaheadfraction)  / 21.) + readaheadconstant > counter){
-      mongocoll->MakeMongoCollection(options, collection, boardList, counter);
+    if( (tdiff*(1.+readaheadfraction)  / 21.) + readaheadconstant > counter){
+      if(options.hosts.size() !=0){
+	vector<string> created;
+	mongo_option_t mopts = payload->options;
+	for(auto const &h1: options.hosts){
+	  if(find(created.begin(), created.end(), h1.second)!=created.end())
+	    continue;
+	  created.push_back(h1.second);
+	  mopts.address = h1.second;
+	  cout<<"Thread making mongo opts with "<<h1.second<<" "<<collection<<" "<<counter<<endl;
+	  mongocoll->MakeMongoCollection(mopts, collection, boardList, counter);
+	  
+	}
+      }
+      else
+	mongocoll->MakeMongoCollection(options, collection, boardList, counter);
       counter++;
-    }
-    sleep(1);
-								 
+  }
+  sleep(1);
+  
   }
   //delete &data;
+
   return (data);
 }
 
@@ -244,6 +259,8 @@ int MasterMongodbConnection::MakeMongoCollection(mongo_option_t mongo_opts,
   string connstring = mongo_opts.address;
   mongo::DBClientBase *bufferDB;
 
+  string collection_base = collection.substr(0, 11);
+  
   if(time_cycle != -1){
     mongo_opts.collection=mongo_opts.collection+"_"+koHelper::IntToString(time_cycle);
     collection = collection + "_"+koHelper::IntToString(time_cycle);
@@ -270,6 +287,13 @@ int MasterMongodbConnection::MakeMongoCollection(mongo_option_t mongo_opts,
 		    string(e.what()), KOMESS_ERROR );
     return -1;
   }
+
+  if(time_cycle<=0)   {
+    cout<<"Inserting to "<<mongo_opts.database<<".status "<<collection_base<<endl;
+    bufferDB->insert(mongo_opts.database+".status",
+		     BSON("collection"<< collection_base));
+  }
+
   string collectionName = mongo_opts.database + ".";
   //cout<<collection<<endl;
   if(collection == "DEFAULT")
@@ -283,21 +307,34 @@ int MasterMongodbConnection::MakeMongoCollection(mongo_option_t mongo_opts,
   // To retain backwards compatibility always make sure they exist         
   // Make string for creating indices                                              
   string index_string = mongo_opts.index_string;
-  
+
+  // Maks stupid index object
+  mongo::IndexSpec ispec;
+  for(int k=0; k<mongo_opts.indices.size(); k++)
+    ispec.addKey(mongo_opts.indices[k]);
+  ispec.background();
+
   
   if(mongo_opts.capped_size != 0)
     bufferDB->createCollection(collectionName,
 			       mongo_opts.capped_size,
 			       true);
-  else
-    bufferDB->createCollection( collectionName );
+  else{
+    //bufferDB->createCollection( collectionName );
+    cout<<"Creating collection "<<collectionName<<" with no index on ID"<<endl;
+    fLog->Message("Creating collection " + collectionName + " with no index on ID");
+    bufferDB->createCollectionWithOptions( 
+					  collectionName,
+					  0, false, 0,
+					  mongo::fromjson("{'autoIndexId': false}")
+					   );
+  }
   
-  
+  cout<<"Creating index on "<<mongo_opts.index_string<<endl;
   if(mongo_opts.index_string!="")
-    bufferDB->createIndex
-      ( collectionName,
-	mongo::fromjson( mongo_opts.index_string )
-	);
+    bufferDB->createIndex( collectionName, ispec );
+  //	mongo::fromjson( mongo_opts.index_string )
+  //	);
   //mongo_opts.shard_string = "{'module':  1, '_id': 'hashed'}";        
   mongo_opts.shard_string = "{'module': 1}";
   if(mongo_opts.sharding){
@@ -329,11 +366,28 @@ int MasterMongodbConnection::MakeMongoCollection(mongo_option_t mongo_opts,
     
     // First get a list of modules                                                 
     vector <int> modules;
-    vector<string> migrateTo;
-    migrateTo.push_back("shard_0/eb0:27000");
-    migrateTo.push_back("shard_1/eb1:27000");
-    migrateTo.push_back("shard_2/eb2:27000");
-
+    vector<string> shards;
+    shards.push_back("shard_0/eb0:27000");
+    shards.push_back("shard_1/eb1:27000");
+    shards.push_back("shard_2/eb2:27000");
+    
+    /*    shards.push_back("shard_0/eb0:27000");            
+    shards.push_back("shard_1/eb1:27000");  
+    shards.push_back("shard_2/eb2:27000");
+    shards.push_back("shard_3/eb0:27001");
+    shards.push_back("shard_4/eb1:27001");
+    shards.push_back("shard_5/eb2:27001");
+    shards.push_back("shard_6/eb0:27002");
+    shards.push_back("shard_7/eb1:27002");
+    shards.push_back("shard_8/eb2:27002");
+    shards.push_back("shard_9/eb0:27003");
+    shards.push_back("shard_10/eb1:27003");
+    shards.push_back("shard_11/eb2:27003");
+    shards.push_back("shard_12/eb0:27004");
+    shards.push_back("shard_13/eb1:27004");
+    shards.push_back("shard_14/eb2:27004");
+    shards.push_back("shard_15/eb0:27005");
+    */
     bool LOTS_OF_SPLITS=false;
     if(LOTS_OF_SPLITS){ // make option later
       for(unsigned int x=0; x<boardList.size(); x++){        
@@ -346,11 +400,12 @@ int MasterMongodbConnection::MakeMongoCollection(mongo_option_t mongo_opts,
       fLog->Message(ret.toString());       
 
       // MIGRATE THE CHUNKS  
-      bufferDB->runCommand("admin", mongo::fromjson("{ moveChunk: '"+
-						    collectionName+
-						    "', find: { module: " +
-						    boardList[x] + "}, to: '"+
-						    migrateTo[x%3]+"'}"), ret);
+      bufferDB->runCommand("admin", 
+			   mongo::fromjson("{ moveChunk: '"+
+					   collectionName+
+					   "', find: { module: " +
+					   boardList[x] + "}, to: '"+
+					   shards[x%shards.size()]+"'}"), ret);
       fLog->Message(ret.toString());  
       }                 
     }
@@ -362,9 +417,23 @@ int MasterMongodbConnection::MakeMongoCollection(mongo_option_t mongo_opts,
       for(unsigned int x=0;x<boardList.size();x++)
 	sortedList.push_back(koHelper::StringToInt(boardList[x]));
       sort(sortedList.begin(), sortedList.end());
-      splitList.push_back( koHelper::IntToString(sortedList[sortedList.size()/3] ));
-      splitList.push_back( koHelper::IntToString(sortedList[2*(sortedList.size()/3)]));
-            
+
+      double nDigis = double(sortedList.size());
+      double nShards = double(shards.size());
+      int n_in_shard = ceil(nDigis/nShards);	
+      fLog->Message("Splitting with " + koHelper::IntToString(n_in_shard) + 
+		    " digitizers per shard");
+      cout<<"Splitting with "<<n_in_shard<<" digitizers per shard."<<endl;
+      if(n_in_shard == 0){
+	fLog->Error("Bad shard config. N in shard = 0");
+	delete bufferDB;
+	return -1;
+      }
+
+      for(unsigned int x=n_in_shard;x<sortedList.size(); x+=n_in_shard)
+	splitList.push_back( koHelper::IntToString(sortedList[x] ) );
+      
+      cout<<"Splitting"<<endl;
       // Collection creation at split values
       for(unsigned int x=0; x<splitList.size(); x++){
 	string jsonstring = "{ split: '"+collectionName+
@@ -376,33 +445,30 @@ int MasterMongodbConnection::MakeMongoCollection(mongo_option_t mongo_opts,
 	   mongo::fromjson( jsonstring ),
 	   ret
 	   );
+	fLog->Message("Telling mongo to split on: " + jsonstring);
 	fLog->Message(ret.toString());    
 	
       }
       
-      // MIGRATE THE CHUNKS
-      bufferDB->runCommand("admin", mongo::fromjson( "{ moveChunk: '"+collectionName+
-				  "', find: { module: "+
-				   koHelper::IntToString(sortedList[0])+
-				   "},"+ "to: '"+migrateTo[0]+"' }"), ret);
-      fLog->Message("Migrate to " + migrateTo[0] + " " + ret.toString());      
-      
-      bufferDB->runCommand("admin", mongo::fromjson( "{ moveChunk: '"+collectionName+
-						     "', find: { module: "+
-			  koHelper::IntToString(sortedList[(sortedList.size()/2)])+
-						     "},"+"to: '"+migrateTo[1]+"' }"
-			  ),ret);
-      fLog->Message("Migrate to " + migrateTo[1] + " " + ret.toString());
+      cout<<"Migrating"<<endl;
+      // MIGRATING CHUNKS
+      for(int x=-1; x<((int)(splitList.size())); x++){
+	string splitVal = koHelper::IntToString(sortedList[0]);
 
-      
-      // MIGRATE THE LAST CHUNK
-    bufferDB->runCommand("admin",
-			 mongo::fromjson( "{ moveChunk: '"+collectionName+
-					  "', find: { module: "+
-			koHelper::IntToString(sortedList[sortedList.size()-1])+"},"+
-                        "to: '"+migrateTo[2]+"' }"), ret);
-    fLog->Message("Migrate to " + migrateTo[2] + " " + ret.toString());
+	if(x!=-1)
+	  splitVal = splitList[x];	
+	bufferDB->runCommand("admin", 
+			     mongo::fromjson
+			     ( "{ moveChunk: '"
+			       +collectionName+
+			       "', find: { module: "+
+			       splitVal+
+			       "},"+ "to: '"+
+			       shards[(x+1)%shards.size()]+"' }"), ret);
+	fLog->Message("Migrate chunk with " + splitVal + " to " + shards[(x+1)%shards.size()] 
+		      + " " + ret.toString());
 
+      }
     }
   
     
@@ -410,6 +476,21 @@ int MasterMongodbConnection::MakeMongoCollection(mongo_option_t mongo_opts,
   
   delete bufferDB;
   return 0;
+}
+
+string MasterMongodbConnection::MakeLocationString(string host, string database){
+  string mloc = host;
+  int loc_index = mloc.size()-1;
+  while(mloc[loc_index] != '/'){
+    mloc.pop_back();
+    loc_index = mloc.size()-1;
+    if(loc_index < 10 ) { //mongodb://	       
+      mloc = host;
+      break;
+    }
+  }
+  mloc += database;
+  return mloc;
 }
 
 int MasterMongodbConnection::InsertRunDoc(string user, string name, 
@@ -493,13 +574,25 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
 	boardList.push_back(serial);
       }
 
+      // This does all the complex collection creation. 
+      // NOT COMPATIBLE with split hosts. 
       if( options->HasField("rotating_collections") && 
-	  options->GetInt("rotating_collections") == 1){
-	for(unsigned int t=0;t<1;t++){
-	  if(MakeMongoCollection(mongo_opts, collection, boardList, t)!=0){
-	    fLog->Error("Couldn't create mongodb collection");
-	    return -1;
-	  }
+	  options->GetInt("rotating_collections") == 1 ){
+	for(unsigned int t=0;t<2;t++){
+	  cout<<"Create collection loop "<<t<<endl;
+	  vector<string> created;
+          mongo_option_t mopts = options->GetMongoOptions();
+          for(auto const &h1: mongo_opts.hosts){
+            if(find(created.begin(), created.end(), h1.second)!=created.end())
+              continue;
+            created.push_back(h1.second);
+            mopts.address = h1.second;
+            cout<<"Main program making mongo opts with "<<h1.second<<" "<<collection<<endl;
+            if(MakeMongoCollection(mopts, collection, boardList, t)!=0){
+              fLog->Error("Couldn't create mongodb collection");
+              return -1;
+            }
+          }
 	}
 	// start thread
 	if(m_collectionThreads.find(iterator.first) == m_collectionThreads.end()){
@@ -516,32 +609,48 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
 	payload->detector = iterator.first;
 	payload->collection = collection;
 	payload->boardList = boardList;
+	m_collectionThreads[iterator.first].open = true;
+        m_collectionThreads[iterator.first].run = true;
 	pthread_create(&m_collectionThreads[iterator.first].thread,
 		       NULL,MasterMongodbConnection::CollectionThreadWrapper,
 		       static_cast<void*>(payload));
-	m_collectionThreads[iterator.first].open = true;
-	m_collectionThreads[iterator.first].run = true;
 
       }
       else{      
-	if(MakeMongoCollection(mongo_opts, collection, boardList, -1)!=0){
+	if(mongo_opts.hosts.size()!=0){
+	  vector<string> created;
+	  mongo_option_t mopts = options->GetMongoOptions();	 
+	  for(auto const &h1: mongo_opts.hosts){
+	    if(find(created.begin(), created.end(), h1.second)!=created.end())
+	      continue;
+	    created.push_back(h1.second);
+	    mopts.address = h1.second;
+	    cout<<"Making mongo opts with "<<h1.second<<" "<<collection<<endl;
+	    if(MakeMongoCollection(mopts, collection, boardList, -1)!=0){
+	      fLog->Error("Couldn't create mongodb collection");
+	      return -1;
+	    }
+	  }
+	}
+	else{
+	  if(MakeMongoCollection(mongo_opts, collection, boardList, -1)!=0){
 	  fLog->Error("Couldn't create mongodb collection");
 	  return -1;
+	  }
 	}
       }
 
       // Make mongo location string                                                    
-      string mloc = mongo_opts.address;
-      int loc_index = mloc.size()-1;
-      while(mloc[loc_index] != '/'){
-        mloc.pop_back();
-        loc_index = mloc.size()-1;
-        if(loc_index < 10 ) { //mongodb://                                             
-          mloc = mongo_opts.address;
-          break;
+      string mloc = "";
+      if(mongo_opts.hosts.size()==0)
+	mloc = MakeLocationString(mongo_opts.address, mongo_opts.database);
+      else{
+	for(auto const &h1 : mongo_opts.hosts){
+	  mloc += MakeLocationString(h1.second, mongo_opts.database);
+	  mloc+=";";
 	}
       }
-      mloc += mongo_opts.database;
+
       mongo::BSONArrayBuilder data_sub;
       mongo::BSONObjBuilder data_entry;
       data_entry.append( "type", "untriggered");
@@ -614,6 +723,7 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
     mongo::BSONObj bObj = builder.obj();
     InsertOnline("runs",fRunsDBName+"."+fRunsCollection,bObj);
     
+    
     // store OID so you can update the end time
     mongo::BSONElement OIDElement;
     bObj.getObjectID(OIDElement);
@@ -639,7 +749,8 @@ vector<string> MasterMongodbConnection::GetHashTags(string comment){
     else if(comment[x]=='#')
       open=true; 
   }
-  if(open && openTag.size()>0)
+  if(open && openTag.size()>0 && !(all_of(openTag.begin(), 
+					  openTag.end(), ::isdigit)) )
     tags.push_back(openTag);
   return tags;
 }
@@ -715,6 +826,18 @@ int MasterMongodbConnection::UpdateEndTime(string detector)
   return 0;
 }
 
+void MasterMongodbConnection::SendStopCommand(string user, string message, 
+					      string det){
+  mongo::BSONObjBuilder obj;
+
+  obj.append("command","Stop");
+  obj.append("detector",det);
+  obj.append("user",user);
+  obj.append("comment",message);
+  InsertOnline("monitor", fMonitorDBName+".daq_control",obj.obj());
+  return;
+
+}
 void MasterMongodbConnection::SendLogMessage(string message, int priority)
 /*
   Log messages are saved into the database. 
@@ -790,8 +913,27 @@ void MasterMongodbConnection::SendLogMessage(string message, int priority)
   
 }
 
-void MasterMongodbConnection::AddRates(koStatusPacket_t *DAQStatus, 
-				       koSysInfo_t *sysinfo)
+bool MasterMongodbConnection::CheckForAlerts(){
+
+  string query = "{'$or': [{'priority': " + koHelper::IntToString(KOMESS_WARNING) +
+    "}, {'priority': "+koHelper::IntToString(KOMESS_ERROR)+"}]}";
+  mongo::BSONObj doc;
+  try{
+    doc = fMonitorDB->findOne("run.log",
+			      mongo::fromjson(query));
+  }
+  catch( const mongo::DBException &e ){
+    fLog->Error("Failed query log db");
+    fLog->Error(e.what());
+    return false;
+  }
+  if(doc.isEmpty())
+    return false;
+  return true;
+
+}
+
+void MasterMongodbConnection::AddRates(koStatusPacket_t *DAQStatus)
 /*
   Update the rates in the online db. 
   Idea: combine all rates into one doc to cut down on queries?
@@ -814,10 +956,10 @@ void MasterMongodbConnection::AddRates(koStatusPacket_t *DAQStatus,
       b.append("datarate",DAQStatus->Slaves[x].Rate);
       b.append("runmode",DAQStatus->RunMode);
       b.append("nboards",DAQStatus->Slaves[x].nBoards);
-      b.append("timeseconds",(int)currentTime);
-      b.append("cpu", sysinfo->cpuPct);
-      b.append("ramfree", sysinfo->availableRAM);
-      b.append("ramused", sysinfo->usedRAM);
+      b.append("timeseconds",(int)currentTime);      
+      b.append("cpu", (double)DAQStatus->Slaves[x].cpu);
+      b.append("ram", (int)DAQStatus->Slaves[x].ram);
+      b.append("ramtot", (int)DAQStatus->Slaves[x].ramtot);      
       InsertOnline("monitor", fMonitorDBName+".daq_rates",b.obj());
    }     
 }
@@ -880,6 +1022,7 @@ int MasterMongodbConnection::CheckForCommand(string &command, string &user,
   if(fMonitorDB == NULL )
     return -1;
 
+  cout<<"Running CheckForCommand!"<<endl;
   // See if something is in the DB
    mongo::BSONObj b;
    try{
@@ -904,6 +1047,7 @@ int MasterMongodbConnection::CheckForCommand(string &command, string &user,
 
    // Strip data from the doc
    command=b.getStringField("command");
+   cout<<"The command is: "<<command<<endl;
    string modeTPC = "";
    string modeMV = "";
    expireAfterSeconds = 0;
@@ -912,7 +1056,7 @@ int MasterMongodbConnection::CheckForCommand(string &command, string &user,
      modeMV  = b.getStringField("run_mode_mv");
      override =  b.getBoolField("override");
      expireAfterSeconds=b.getIntField("stop_after_minutes")*60;
-
+     cout<<"Expire: "<<expireAfterSeconds<<endl;
    }
    else
      override = false;
@@ -965,13 +1109,16 @@ int MasterMongodbConnection::CheckForCommand(string &command, string &user,
 }
 
 void MasterMongodbConnection::SyncRunQueue(vector<mongo::BSONObj> dqueue){
+  
   if(fMonitorDB == NULL )
     return;
+  //fMonitorDB->dropCollection(fMonitorDBName+".daq_queue");
+  cout<<"Dropping collection "<<fMonitorDBName<<".daq_queue"<<endl;
   fMonitorDB->dropCollection(fMonitorDBName+".daq_queue");
-  
+
   for(unsigned int x=0;x<dqueue.size();x++){
     try{
-      InsertOnline("monitor", "run.daq_queue", dqueue[x]);
+      InsertOnline("monitor", fMonitorDBName+".daq_queue", dqueue[x]);
     }
     catch(...){
       return;

@@ -41,6 +41,7 @@ public:
   void StatusUpdate();
 
   string GetStatusString();
+  int ModifyRunQueue(string detector, int index=-1);
 
 private:
   vector<mongo::BSONObj> fDAQQueue;

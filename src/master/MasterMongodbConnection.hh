@@ -83,7 +83,7 @@ public:
   //            UpdateDAQStatus
   // Purpose  : Update rate and status information in online DB. 
   //
-  void         AddRates(koStatusPacket_t *DAQStatus, koSysInfo_t *sysinfo);   
+  void         AddRates(koStatusPacket_t *DAQStatus);   
   void         UpdateDAQStatus(koStatusPacket_t *DAQStatus, 
 			       string detector="all");
 
@@ -100,7 +100,7 @@ public:
   // Purpose : Pulls a run mode file from the mongodb modes DB and saves it 
   //           to the XeDAQOptions object. Returns 0 on success.
   int          PullRunMode(string name, koOptions &options);
-
+  void SendStopCommand(string user, string comment, string detector);
   void InsertOnline(string name, string collection,mongo::BSONObj bson);
   void Start(koOptions *options,string user,string comment=""){return;};
   void EndRun(string user,string comment=""){return;};
@@ -114,10 +114,12 @@ public:
 
   bool IsRunning(string detector);
   static void* CollectionThreadWrapper(void* data);
+  bool CheckForAlerts();
 
  private:
   int MakeMongoCollection(mongo_option_t mongo_opts, string collection,
                           vector<string> boardList, int time_cycle=-1);
+  string MakeLocationString(string host, string database);
   map <string, collection_thread_t> m_collectionThreads;
 
   

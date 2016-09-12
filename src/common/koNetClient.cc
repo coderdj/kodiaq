@@ -154,9 +154,9 @@ int koNetClient::Disconnect()
 }
 
 
-int koNetClient::WatchForUpdates(koStatusPacket_t &status, koSysInfo_t &sysinfo)
+int koNetClient::WatchForUpdates(koStatusPacket_t &status)
 {
-  int a = CheckDataSocket(fDataSocket,status, sysinfo);
+  int a = CheckDataSocket(fDataSocket,status);
    if(a==0)   {
       koHelper::ProcessStatus(status);
       return 0;

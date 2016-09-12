@@ -54,6 +54,8 @@ struct mongo_option_t{
   string shard_string;
   int min_insert_size;
   int write_concern;
+  map <string, string> hosts;
+  vector<string> indices;
 };
 
 
@@ -106,7 +108,8 @@ public:
     (*retstream)<<m_bson.jsonString();
   };
   mongo_option_t GetMongoOptions();
-  void ToStream_MongoUpdate(string run_name, stringstream *retstream);
+  void ToStream_MongoUpdate(string run_name, stringstream *retstream,
+			    string host_name="");
 
 private:
   int GetArraySize(string key);

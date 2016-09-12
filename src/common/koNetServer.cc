@@ -22,6 +22,7 @@ koNetServer::koNetServer()
    fDATAPORT=2001;
    //fNUMCLIENTS=0;
    m_koBroadcastLog=NULL;
+   fTag="DEFAULT";
 }
 
 koNetServer::~koNetServer()
@@ -34,13 +35,15 @@ koNetServer::koNetServer(koLogger *logger, koLogger *broadcastlogger)
    m_koBroadcastLog=broadcastlogger;
    fPORT=2000;
    fDATAPORT=2001;
+   fTag="DEFAULT";
    //   fNUMCLIENTS=0;
 }
 
-void koNetServer::Initialize(int PORT, int DATAPORT)//, int NUMCLIENTS)
+void koNetServer::Initialize(int PORT, int DATAPORT, string TAG)
 {
    fPORT=PORT;
    fDATAPORT=DATAPORT;
+   fTag = TAG;
    //fNUMCLIENTS=NUMCLIENTS;
 }
 
@@ -282,13 +285,13 @@ int koNetServer::CloseConnection(int id, string name)
    return 0;      
 }
 
-int koNetServer::WatchDataPipe(koStatusPacket_t &status, koSysInfo_t &sysinfo)
+int koNetServer::WatchDataPipe(koStatusPacket_t &status)
 //Watch the data pipe and update the status while updates and messages come in
 //decide the overall status of the DAQ by adding up the status of each slave
 {
    int retval=-1;
    for(unsigned int x=0;x<fDataSockets.size();x++)  {
-     if(CheckDataSocket(fDataSockets[x].socket,status, sysinfo)==0)
+     if(CheckDataSocket(fDataSockets[x].socket,status)==0)
 	retval=0;
    }
    if(retval==0)

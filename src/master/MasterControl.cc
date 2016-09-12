@@ -51,6 +51,7 @@ int MasterControl::Initialize(string filepath){
   vector <string> detectors;
   vector <vector <int> >ports;
   vector <vector <int> >dports;
+  vector <vector <string> >hosts;
   vector <string> inis;
   while(!infile.eof()){
     getline( infile, line );
@@ -83,11 +84,12 @@ int MasterControl::Initialize(string filepath){
     else if(words[0]=="BUFFER_PASSWORD")
       BUFFER_PASSWORD=words[1];
 
-    else if(words[0] == "DETECTOR" && words.size()>=5){
+    else if(words[0] == "DETECTOR" && words.size()>=6){
       string name = words[1];
-      int port=koHelper::StringToInt(words[2]);
-      int dport = koHelper::StringToInt(words[3]);
-      string ini = words[4];
+      string hostname = words[2];
+      int port=koHelper::StringToInt(words[3]);
+      int dport = koHelper::StringToInt(words[4]);
+      string ini = words[5];
       // See if we have this one already
       int det_index = -1;
       for(unsigned int x=0;x<detectors.size();x++){
@@ -98,21 +100,28 @@ int MasterControl::Initialize(string filepath){
 	mStatusUpdateTimes[name] = koLogger::GetCurrentTime();
 	mRatesUpdateTimes[name] = koLogger::GetCurrentTime();
 	vector<int> thisport, thisdport;
+	vector<string> thishost;
 	thisport.push_back(port);
 	thisdport.push_back(dport);
+	thishost.push_back(hostname);
 	ports.push_back(thisport);
 	dports.push_back(thisdport);
+	hosts.push_back(thishost);
 	detectors.push_back(name);
 	inis.push_back(ini);
       }
       else{
 	ports[det_index].push_back(port);
 	dports[det_index].push_back(dport);
+	hosts[det_index].push_back(hostname);
       }
     }
   }
   for(unsigned int x=0;x<detectors.size();x++){
-    DAQMonitor *monitor = new DAQMonitor(ports[x], dports[x], mLog, mMongoDB, 
+    for(unsigned int y=0; y<hosts[x].size(); y++)
+      cout<<"Found host "<<hosts[x][y]<<endl;
+    DAQMonitor *monitor = new DAQMonitor(ports[x], dports[x], hosts[x],
+					 mLog, mMongoDB, 
 					 detectors[x], inis[x]);
     mDetectors[detectors[x]]=monitor;
   }
@@ -186,6 +195,7 @@ void MasterControl::Stop(string detector, string user, string comment){
     if( fStartTimes.find(detectorsToStop[x]) != fStartTimes.end() )
       fStartTimes.erase(detectorsToStop[x]);
   }
+  ModifyRunQueue(detector);
 }
 
 void MasterControl::CheckRunQueue(){
@@ -194,7 +204,8 @@ void MasterControl::CheckRunQueue(){
   // be stopped. This means compare fStartTimes with fExpireAfterSeconds
   cout<<"Iterating start times"<<endl;
   for(auto iter : fStartTimes) {
-    
+
+    cout<<"Found detector " <<iter.first<<endl;
     if( fExpireAfterSeconds.find(iter.first) != fExpireAfterSeconds.end() ){
       // Calculate how long run has been going   
       time_t currentTime = koLogger::GetCurrentTime();
@@ -218,22 +229,48 @@ void MasterControl::CheckRunQueue(){
 
   // Sync run queue with remote                                                       
   fDAQQueue = mMongoDB->GetRunQueue();
-  
+  bool abort = false;
+
   bool sawTPC=false, sawMV=false;
   for(unsigned int x=0; x<fDAQQueue.size(); x++){
-    
+    string doc_det = fDAQQueue[x].getStringField("detector");
+
+    // Case 0: We find something which thinks it's running. However the
+    // DAQ thinks the detector is idle. Remove that entry;
+    cout<<"Found detector "<<doc_det<<" with value "<<fDAQQueue[x].getIntField("running")<<endl;
+
+    if(fDAQQueue[x].getIntField("running")==1){
+      if(mDetectors.find(doc_det) != mDetectors.end() &&
+	 mDetectors[doc_det]->GetStatus()->DAQState == KODAQ_IDLE){
+	cout<<"Erasing bad doc"<<endl;
+	fDAQQueue.erase(fDAQQueue.begin()+x);
+	x--;
+	mMongoDB->SyncRunQueue(fDAQQueue);
+	return;
+      }
+      else if(doc_det=="tpc"){
+	sawTPC=true;
+	abort=true;
+	continue;
+      }
+      else if(doc_det=="muon_veto"){
+	sawMV=true;
+	abort=true;
+	continue;
+      }
+    }
+
     // Case 1: We find a command that wants to start both. This only works 
     // if there is no run going for the TPC or the muon veto and if we haven't
     // found a command for either yet
-    bool abort = false;
-    string doc_det = fDAQQueue[x].getStringField("detector");
     if(doc_det == "all" && !sawTPC && !sawMV){
       sawTPC =sawMV =true;
       // Now check if the detectors are both idle and that there are no start-time 
       // entries for them
       for(auto iter : mDetectors) {
         if(iter.second->GetStatus()->DAQState != KODAQ_IDLE ||
-           fStartTimes.find(iter.first) != fStartTimes.end())
+           fStartTimes.find(iter.first) != fStartTimes.end() ||
+	   fDAQQueue[x].getIntField("running")!=2)
           abort = true;
       }
     }
@@ -246,7 +283,8 @@ void MasterControl::CheckRunQueue(){
       sawTPC = true;
       // Just check if the TPC is idle                                                
       if(mDetectors["tpc"]->GetStatus()->DAQState != KODAQ_IDLE ||
-	 fStartTimes.find("tpc") != fStartTimes.end())
+	 fStartTimes.find("tpc") != fStartTimes.end() ||
+	 fDAQQueue[x].getIntField("running")!=2)
         abort = true;
     }
     else if(doc_det == "muon_veto" && !sawMV){
@@ -254,23 +292,70 @@ void MasterControl::CheckRunQueue(){
       
       // Just check if the MV is idle          
       if(mDetectors["muon_veto"]->GetStatus()->DAQState != KODAQ_IDLE ||
-         fStartTimes.find("muon_veto") != fStartTimes.end())
+         fStartTimes.find("muon_veto") != fStartTimes.end()||
+	 fDAQQueue[x].getIntField("running")!=2)
         abort =true;
     }
     else 
       abort=true;
     if(abort)
       continue;
+
+    if(mMongoDB->CheckForAlerts())
+      continue;
+    cout<<"Starting run!"<<endl;
     mMongoDB->InsertOnline("monitor", "run.daq_control", fDAQQueue[x]);
-    fDAQQueue.erase(fDAQQueue.begin() + x);
+
+    //fDAQQueue.erase(fDAQQueue.begin() + x);
+
+    // Here add the modification. Starting a run. So make sure at most one
+    // Run queue document is set to 'active' per detector (flush old ones)
+    // Something like:
+    ModifyRunQueue(doc_det, fDAQQueue[x].getIntField("position"));
+    
     mMongoDB->SyncRunQueue(fDAQQueue);
     break;
   }
   return;
 
+}
 
+int MasterControl::ModifyRunQueue(string detector, int index){
+  // You can send this index=-1 and it will purge runs with detector 'detector'
+  // that have status 'running'
+  // If you set index to something !=-1 it additionally sets that index
+  // to 'running'
+  
+  cout<<"Modify for det: "<<detector<<" and index "<<index<<endl;
+  cout<<"Size before: "<<fDAQQueue.size()<<endl;
 
+  // Purge any old runs
+  for(unsigned int x=0; x<fDAQQueue.size(); x++){
+    if(fDAQQueue[x].getIntField("position")==index){
+      // Do the update by creating a new object with run=2 and copying
+      // the rest of the fields. 
+      mongo::BSONObjBuilder buildy;
+      buildy.append("running", 1);
+      buildy.appendElementsUnique(fDAQQueue[x]);
+      fDAQQueue.erase(fDAQQueue.begin() + x);
+      fDAQQueue.insert(fDAQQueue.begin() + x, buildy.obj());
+      fDAQQueue[x].getOwned();
+      continue;
+    }
 
+    // For any other runs matching the detector and already running, purge   
+    else if(index!=-1){
+      if((fDAQQueue[x].getStringField("detector") == detector || 
+	  fDAQQueue[x].getStringField("detector") == "all") &&
+	 fDAQQueue[x].getIntField("running") == 1){
+	cout<<"Nuke it!"<<endl;
+	fDAQQueue.erase(fDAQQueue.begin() + x);
+	x--;
+      }
+    }
+  }
+  cout<<"Size after: "<<fDAQQueue.size()<<endl;
+  return 0;
 
 }
 
@@ -284,7 +369,8 @@ int MasterControl::Start(string detector, string user, string comment,
 
   //if(options==NULL)
   //return -2;
-
+  if(mMongoDB!=NULL)
+    web=true;
   // We have a staged start. Let's move through the stages. 
   if(web)
     mMongoDB->SendRunStartReply(11, "New run starting! Start detector " + 
@@ -401,6 +487,7 @@ int MasterControl::Start(string detector, string user, string comment,
   cout<<"Success!"<<endl;
   
   // Update when this detector started 
+  cout<<"Expires after: "<<expireAfterSeconds<<" seconds "<<detector<<endl;
   if(expireAfterSeconds!=0){
     fStartTimes[detector] = koLogger::GetCurrentTime();
     fExpireAfterSeconds[detector] = expireAfterSeconds;
@@ -411,7 +498,7 @@ int MasterControl::Start(string detector, string user, string comment,
     mMongoDB->SendRunStartReply(19, "Run " + run_name + " started by " + user);
 
   //    mMongoDB->SendRunStartReply(19, "Successfully completed run start procedure.");
-  
+
   return 0;
 }
 
@@ -427,7 +514,8 @@ void MasterControl::CheckRemoteCommand(){
   int expireAfterSeconds =0;
   mMongoDB->CheckForCommand(command,user,comment,detector,override,
 			    options,expireAfterSeconds);
-
+  cout<<"Found command "<<command<<" with expireAfterSeconds:" <<
+    expireAfterSeconds<<endl;
   // If command is stop
   if(command == "Stop")
     Stop(detector, user, comment);
@@ -458,14 +546,14 @@ void MasterControl::StatusUpdate(){
 	iter.second->LockStatus();
 	mMongoDB->UpdateDAQStatus( iter.second->GetStatus(), 
 				 iter.first );
-	iter.second->UnlockStatus();
-      }
-      double dTimeRates = difftime( CurrentTime,
-				    mRatesUpdateTimes[iter.first]);
-      if ( dTimeRates > 10. ) { //send rates
+	//iter.second->UnlockStatus();
+	//}
+	//double dTimeRates = difftime( CurrentTime,
+	//			    mRatesUpdateTimes[iter.first]);
+	//if ( dTimeRates > 10. ) { //send rates
 	mRatesUpdateTimes[iter.first] = CurrentTime;
-	iter.second->LockStatus();
-	mMongoDB->AddRates( iter.second->GetStatus(), iter.second->GetSysInfo() );
+	//iter.second->LockStatus();
+	mMongoDB->AddRates( iter.second->GetStatus() );
 	iter.second->UnlockStatus();
 	//	mMongoDB->UpdateDAQStatus( iter.second->GetStatus(),
 	//			 iter.first );

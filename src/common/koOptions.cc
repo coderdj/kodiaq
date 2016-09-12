@@ -63,13 +63,15 @@ mongo::BSONElement koOptions::GetField(string key){
 }
 
 void koOptions::ToStream_MongoUpdate(string run_name, 
-				     stringstream *retstream){
+				     stringstream *retstream, string host_name){
   mongo::BSONObjBuilder new_mongo_obj;
   mongo::BSONObj mongo_obj;
   try{
     mongo_obj = m_bson["mongo"].Obj();
   } catch ( ... ) {}
   new_mongo_obj.append("collection", run_name);
+  if(host_name != "")
+    new_mongo_obj.append("address", host_name);
   new_mongo_obj.appendElementsUnique(mongo_obj);
 
   // For dynamic collection names
@@ -113,6 +115,8 @@ mongo_option_t koOptions::GetMongoOptions(){
   ret.shard_string = "";
   ret.write_concern = 0;
   ret.min_insert_size = 1;
+  ret.indices = vector<string>();
+  ret.hosts = map<string, string>();
   
   mongo::BSONObj mongo_obj;
   try{ 
@@ -141,6 +145,7 @@ mongo_option_t koOptions::GetMongoOptions(){
       ret.index_string = "{'";
       for(unsigned int x=0; x<mongo_obj["indices"].Array().size(); x++){
 	//cout<<mongo_obj["indices"].Array()[x].String()<<endl;
+	ret.indices.push_back(mongo_obj["indices"].Array()[x].String());
 	ret.index_string += mongo_obj["indices"].Array()[x].String();
 	ret.index_string += "': 1";
 	if(x != mongo_obj["indices"].Array().size() -1)
@@ -184,6 +189,18 @@ mongo_option_t koOptions::GetMongoOptions(){
   try{
     ret.min_insert_size = mongo_obj["min_insert_size"].Int();
   } catch ( ... ) {}
+
+  // Split hosts. If there is a split hosts options set then
+  // sharding will be disabled automatically.
+  try{
+    mongo::BSONObj hosts_obj = mongo_obj["hosts"].Obj();
+    for( mongo::BSONObj::iterator i = hosts_obj.begin(); i.more(); ) {       
+      mongo::BSONElement e = i.next();
+      ret.hosts[e.fieldName()] = hosts_obj[e.fieldName()].String();
+      ret.sharding = false; // there is at least one host here
+    }
+  }
+  catch( ... ){}
 
   return ret;
 

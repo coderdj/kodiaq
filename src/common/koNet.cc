@@ -276,7 +276,7 @@ int koNet::MessageOnPipe(int pipe)
    
 }
 
-int koNet::CheckDataSocket(int socket, koStatusPacket_t &status, koSysInfo_t &sysinfo)
+int koNet::CheckDataSocket(int socket, koStatusPacket_t &status)
 {
    int retval=-1;
    while(MessageOnPipe(socket)==0) {
@@ -290,12 +290,13 @@ int koNet::CheckDataSocket(int socket, koStatusPacket_t &status, koSysInfo_t &sy
 	 int id=0,stat=0,nboards=0;
 	 double rate=0.,freq=0.;
 	 string name="";
+	 koSysInfo_t sysinfo;
 	 if(ReceiveUpdate(socket,id,name,rate,freq,nboards,stat, sysinfo)!=0)  {  
 	    LogError("koNet::CheckDataSocket - Saw update on pipe but failed to fetch.");
 	    return -2;
 	 }	
 	 bool found=false;
-	 status.sysinfo = sysinfo;
+	 //status.sysinfo = sysinfo;
 	 for(unsigned int y=0;y<status.Slaves.size();y++)    {	     
 	    if(status.Slaves[y].ID!=id) continue;
 	    found=true;
@@ -305,6 +306,9 @@ int koNet::CheckDataSocket(int socket, koStatusPacket_t &status, koSysInfo_t &sy
 	    status.Slaves[y].status=stat;
 	    status.Slaves[y].nBoards=nboards;
 	    status.Slaves[y].lastUpdate=koLogger::GetCurrentTime();
+	    status.Slaves[y].cpu=sysinfo.cpuPct;
+	    status.Slaves[y].ram=sysinfo.usedRAM;
+	    status.Slaves[y].ramtot=sysinfo.availableRAM;
 	    retval=0;
 	 }	
 	 if(!found)    {

@@ -43,7 +43,7 @@ class koNetServer : public koNet
    // Name    : Initialize 
    // Purpose : Set connection info for network interface
    // 
-  void         Initialize(int PORT, int DATAPORT);//, int NUMCLIENTS);
+  void         Initialize(int PORT, int DATAPORT, string TAG="DEFAULT");
    //
    // Connection management
    //
@@ -86,7 +86,7 @@ class koNetServer : public koNet
    // Purpose : Monitors the data pipes for traffic. If something comes then
    //           updates status and returns 0. Otherwise return -1
    // 
-  int          WatchDataPipe(koStatusPacket_t &status, koSysInfo_t &sysinfo);
+  int          WatchDataPipe(koStatusPacket_t &status);
    //
    // Name    : TransmitStatus
    // Purpose : Sends a status packet over the data pipe
@@ -151,6 +151,7 @@ class koNetServer : public koNet
    int          SendOptions(string filepath);
    int          SendOptionsStream(stringstream *stream);
    //
+   string          GetTag(){ return fTag; };
    
  private:
    koLogger *m_koBroadcastLog;
@@ -160,6 +161,7 @@ class koNetServer : public koNet
    vector <koSocket_t> fSockets;
    vector <koSocket_t> fDataSockets;
    int fConnectionSocket, fConnectionDataSocket;
+  string fTag;
    
    //Communication
    int ReceiveUpdate(int socket,int &id,string &name,double &rate,

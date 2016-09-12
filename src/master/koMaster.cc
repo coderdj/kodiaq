@@ -118,6 +118,7 @@ int main(int argc, char *argv[])
     double dTime = difftime( CurrentTime, PrintTime );
     double dTime2 = difftime( CurrentTime, UpdateTime);
     if(dTime2 > 2.){
+
       // Check the run queue       
       controller->CheckRunQueue();
       

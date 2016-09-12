@@ -58,6 +58,9 @@ struct koNode_t{
    int        ID;                //slave ID as configured by user
    string     name;              //slave name as configured by user
    time_t     lastUpdate;        //time last remote update was received
+  double     cpu;
+  int        ram;
+  int        ramtot;
 };
 
 //
@@ -89,12 +92,11 @@ struct koStatusPacket_t{
    string     RunModeLabel;       // Run mode identifier
    int        NumSlaves;          // Number of slaves from net setup file
    int        DAQState;           // state of the total DAQ
-   bool       NetworkUp;          // if the network is connected
+   bool       NetworkUp;          // if the network is connected   
       
    vector <koMessage_t> Messages; // Pending messages from slaves
    vector <koNode_t> Slaves;      // Rates of slaves      
-   koRunInfo_t RunInfo;           // info for current run
-   koSysInfo_t sysinfo;
+   koRunInfo_t RunInfo;           // info for current run  
 };
 
 
