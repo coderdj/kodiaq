@@ -15,6 +15,7 @@
 
 #include "VMEBoard.hh"
 #include <pthread.h>
+#include <atomic>
 
 //Register definitions
 #define CBV1724_BoardInfoReg              0x8140
@@ -34,8 +35,9 @@
 class CBV1724 : public VMEBoard {
  public: 
    CBV1724();
-   virtual ~CBV1724();
-   explicit CBV1724(board_definition_t BoardDef, koLogger *kLog);   /*!   The preferred constructor. If you use the default constructor you have an empty board.*/
+  virtual ~CBV1724();
+  explicit CBV1724(board_definition_t BoardDef, koLogger *kLog, bool profiling=false); 
+  /*!   The preferred constructor. If you use the default constructor you have an empty board.*/
 
 
    int Initialize(koOptions *options);                             /*!<  Initialize all VME options using a XeDAQOptions object. Other run parameters are also set.*/
@@ -46,7 +48,7 @@ class CBV1724 : public VMEBoard {
    };  
    
   vector<u_int32_t*>* ReadoutBuffer(vector <u_int32_t> *&sizes,
-				    int &resetCounter, u_int32_t &headerTime,
+				    unsigned int &resetCounter, u_int32_t &headerTime,
 				    int m_ID=-1);           
   /*!<  Passes a pointer to a vector of raw data that has been read from the board. Please note: this passes ownership of the raw data vector to the caller! That means the calling function is responsible for freeing this memory again later. A new buffer is created that will act as the board buffer until the next ReadoutBuffer call. The vector sizes contains the size in bytes of each element in the returned buffer. Ownership of sizes also passes to the caller.*/
    
@@ -54,6 +56,8 @@ class CBV1724 : public VMEBoard {
    u_int32_t GetBLTSize()  {                                       /*!   Returns the block transfer size. */
       return fBLTSize;
    };
+  static void* CopyWrapper(void* data);
+  void CopyThread();
 
    int LockDataBuffer();                                           /*!<  This is a thread-safe program. In order to do anything with the buffer you have to lock the mutex. This function locks it for you.*/
    int UnlockDataBuffer();                                         /*!<  When a recorder function is done clearing the buffer of this object it can (and should) free the mutex so that acquisition can continue. As long as the user is accessing the buffer the digitizer cannot read any new data.*/
@@ -63,11 +67,8 @@ class CBV1724 : public VMEBoard {
    void SetActivated(bool active);                                 /*!<  Set if this board is active (taking data).*/
 
   /* GetBufferSize: get the size of the buffer in this digitizer in bytes. */
-  int GetBufferSize(int &count, vector<string> &reports){ 
-    count = fBufferOccCount;  
-    reports = fReadoutReports;
-    fReadoutReports.clear();
-    return fBufferOccSize; }
+  int GetBufferSize(int &count, vector<string> &reports);
+
  private:
 
   int                   InitForPreProcessing();
@@ -78,20 +79,29 @@ class CBV1724 : public VMEBoard {
 
    unsigned int         fReadoutThresh;
    pthread_mutex_t      fDataLock;
+   pthread_mutex_t      fWaitLock;
    pthread_cond_t       fReadyCondition;
    u_int32_t            fBufferSize;
    u_int32_t            fBLTSize;
    vector <u_int32_t>  *fSizes;
    vector <u_int32_t*> *fBuffers;
-   int                  i_clockResetCounter;
+   u_int64_t                  i_clockResetCounter;
    u_int64_t            i64_blt_first_time,i64_blt_second_time,i64_blt_last_time;  
   u_int32_t            fIdealBaseline;
    int                  fBufferOccSize;
-  int                   fBufferOccCount;
+  std::atomic<int>      fBufferOccCount, fBadBlockCounter;
   bool                  bOver15;
   time_t                fLastReadout;
   double                fReadoutTime;
   vector <string>       fReadoutReports;
+  pid_t                 m_lastprocessPID;
+  bool                  fReadMeOut;
+  bool                  bThreadOpen;
+  pthread_t             m_copyThread;
+  u_int32_t             m_temp_blt_bytes;
+  u_int32_t             *m_tempBuff;
+  bool                  bExists, bProfiling;
+  ofstream              m_profilefile;
 };
 
 #endif

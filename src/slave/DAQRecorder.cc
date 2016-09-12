@@ -9,6 +9,7 @@
 // 
 // Brief     : Classes for data output
 // 
+//
 // ****************************************************************
 
 #include "DAQRecorder.hh"
@@ -225,14 +226,14 @@ void DAQRecorder_mongodb::Fillicide(int ID){
     result = waitpid(m_children[ID], &status, 0);
   
   if(result==-1)
-    cout<<"Error in child process"<<endl;
+    std::cout<<"Error in child process"<<endl;
   
   m_children[ID]=0;
   pthread_mutex_unlock(&m_childlock);
 }
 
 int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
-					 int ID)
+					int ID, int resetCount)
 {  
   //  Fillicide(ID);
 
@@ -254,6 +255,8 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
    stringstream cS;
    cS<<mongo_opts.database<<"."<<
      mongo_opts.collection;
+   if(resetCount!=-1)
+     cS<<"_"<<resetCount;
 
    // Fork the insert
    //pid_t pid = fork();
@@ -288,6 +291,7 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
        for(unsigned int i=0; i<insvec->size(); i+=1)
 	 bulky.insert((*insvec)[i]);
        bulky.execute(&WC, &RES);
+       //std::cout<<"Unordered write "<<insvec->size()<<" docs with WC "<<WC.obj().toString()<<endl;
      }
      else{
        // conn->insert(cS.str(), (*insvec) );
@@ -299,7 +303,9 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
 	       bulky.execute(&WC, &RES);*/	 
        
 	 //old line
-       ( m_vScopedConnections[ID])->insert( cS.str(), (*insvec) );
+       //       cout<<"Inserting "<<insvec->size()<<" documents ("<<ID<<")"<<endl;
+       ( m_vScopedConnections[ID])->insert( cS.str(), (*insvec), 0, &WC );
+
      }
    }
    catch(const mongo::DBException &e)  {
@@ -312,9 +318,9 @@ int DAQRecorder_mongodb::InsertThreaded(vector <mongo::BSONObj> *insvec,
    }
    //_exit(0);
    //}
-   pthread_mutex_lock(&m_childlock);
+   //pthread_mutex_lock(&m_childlock);
    //m_children[ID]=(pid);
-   pthread_mutex_unlock(&m_childlock);
+   //pthread_mutex_unlock(&m_childlock);
    
    delete insvec;
    return 0;            

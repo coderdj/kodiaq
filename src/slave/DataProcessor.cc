@@ -27,6 +27,7 @@ DataProcessor::DataProcessor()
    m_koOptions     = NULL;
    m_bErrorSet     = false;   
    m_id            = -1;
+   bProfiling      = false;
 }
 
 DataProcessor::~DataProcessor()
@@ -41,13 +42,14 @@ void* DataProcessor::WProcess(void* data)
 }
 
 DataProcessor::DataProcessor(DigiInterface *digi, DAQRecorder *recorder,
-			     koOptions *options, int id)
+			     koOptions *options, int id, bool profiling)
 {
   m_DigiInterface   = digi; 
   m_DAQRecorder     = recorder;
   m_koOptions       = options;
   m_bErrorSet       = false;
   m_id              = id;
+  bProfiling        = profiling;
 }
 
 void DataProcessor::LogError(string err)
@@ -246,7 +248,7 @@ void DataProcessor::SplitChannelsNewFW(vector<u_int32_t*> *&buffvec,
   //retsize will be the returned sizes in words
   //timeStamps will be the timestamps of the returned buffers
   //channels will be the channels of the returned buffers
-  
+
   for(unsigned int x=0; x<buffvec->size();x++)  {	
     //loop through main vector containing the raw data
     if((*sizevec)[x]==0)      {
@@ -256,7 +258,7 @@ void DataProcessor::SplitChannelsNewFW(vector<u_int32_t*> *&buffvec,
     }	
        
     unsigned int idx=0;           //used to iterate through the buffer
-    
+    unsigned int nBuffs = 0;
     while(idx<(((*sizevec)[x])/(sizeof(u_int32_t)))) {	    
       if(((*buffvec)[x][idx])==0xFFFFFFFF){
 	idx++; continue;
@@ -266,7 +268,7 @@ void DataProcessor::SplitChannelsNewFW(vector<u_int32_t*> *&buffvec,
 	idx++; continue;
       }
       //found a header
-	    
+      nBuffs++;
       //Read information from header. Need channel mask and header time
       u_int32_t mask = ((*buffvec)[x][idx+1])&0xFF;
 
@@ -352,6 +354,7 @@ void DataProcessor::SplitChannelsNewFW(vector<u_int32_t*> *&buffvec,
 
       }
     }//end while       
+    //cout<<"Found "<<nBuffs<<" headers in this BLT"<<endl;
     delete(*buffvec)[x];
   }//end for through buffvec
   delete buffvec;
@@ -371,6 +374,7 @@ void DataProcessor::Process()
   
   // If no boards are active set this to true to exit
   bool bExitCondition = false; 
+  int mongoID = -1;
   cout<<"OPEN PROC THREAD"<<endl;
   // Check if objects have been initialized properly
   if(m_DigiInterface == NULL || m_koOptions == NULL) 
@@ -382,7 +386,7 @@ void DataProcessor::Process()
 #ifdef HAVE_LIBMONGOCLIENT
   // MongoDB-specific variables
   
-  int mongoID = -1;
+  mongoID = -1;
   DAQRecorder_mongodb *DAQRecorder_mdb = NULL;
   vector <mongo::BSONObj> *vMongoInsertVec = new vector<mongo::BSONObj>();
   
@@ -397,7 +401,8 @@ void DataProcessor::Process()
       return;
     }
   }
-  
+  mongo_option_t mongo_opts = m_koOptions->GetMongoOptions();
+
 #endif
 
 #ifdef HAVE_LIBPBF
@@ -417,8 +422,16 @@ void DataProcessor::Process()
   vector<u_int32_t > *times        = NULL;  // Timestamp
   vector<u_int32_t > *eventIndices = NULL;  // Event
   int                 iModule      = 0;     // Fill with ID of current module
+  int                 LAST_RESET_COUNT = 0;
 
-  //cout<<"ENTER LOOP"<<endl;
+  time_t lastPrintTime = koLogger::GetCurrentTime();
+  
+  if(bProfiling && !m_profilefile.is_open())
+    m_profilefile.open("profiling/thread_"+koHelper::IntToString(mongoID)+".txt", std::fstream::app);
+
+  if(bProfiling && m_profilefile.is_open())
+    m_profilefile<<"SEARCHING "<<koLogger::GetTimeMus()<<endl;
+
   while(!bExitCondition){
     //
     // This loop will be processed until the DigiInterface 
@@ -426,28 +439,44 @@ void DataProcessor::Process()
     // 
 
     bExitCondition = true;
-    //usleep(10);
+
     for(unsigned int x = 0; x < m_DigiInterface->GetDigis(); x++)  {
 
       CBV1724 *digi = m_DigiInterface->GetDigi(x);
       if(digi->Activated()) bExitCondition=false;
       else continue;
       usleep(10); //avoid 100% cpu
+      
+      time_t thisTime = koLogger::GetCurrentTime();
+      if(fabs(difftime(lastPrintTime, thisTime)) > 1.0){
+	lastPrintTime = koLogger::GetCurrentTime();
+      }
 
       // Check if the digitizer has data and is not associated 
       // with another processor
       if(digi->RequestDataLock()!=0) continue;
 
+      if(bProfiling && m_profilefile.is_open())
+	m_profilefile<<"READ  "<<koLogger::GetTimeMus()<<" "
+		     <<digi->GetID().id<<endl;
+
       // resetCounterStart = how many times has the digitizer clock cycled 
       // (it's only 31-bit) at the start of the event
-      int resetCounterStart = 0; 
+      unsigned int resetCounterStart = 0; 
       u_int32_t headerTime = 0;
 
+      // YIELDS LOCK
       buffvec = digi->ReadoutBuffer( sizevec, resetCounterStart, headerTime,
 				     mongoID );
+
+      if(bProfiling && m_profilefile.is_open())
+	m_profilefile<<"PARSING "<<koLogger::GetTimeMus()<<" "<<digi->GetID().id
+		     <<" 0 "<<buffvec->size()<<endl;
+
       iModule = digi->GetID().id;
-      digi->UnlockDataBuffer();
+      //digi->UnlockDataBuffer();
      
+
       // Parse the data if requested
       // The processing functions will modify the vectors sent as arguments
       if(m_koOptions->GetInt("processing_mode") == 1) { 
@@ -480,9 +509,9 @@ void DataProcessor::Process()
 	  
 	}
       }
-      
 
-      // Processing part is over. Now write the data with the DAQRecorder object
+      // Processing part is over. 
+      // Now write the data with the DAQRecorder object
       unsigned int        currentEventIndex = 0;
       int                 protocHandle = -1;
       long long           latestTime64 =0;
@@ -490,8 +519,13 @@ void DataProcessor::Process()
       vector<bool>        SawThisChannelOnce( 8, false );
       vector<u_int32_t>   ChannelResetCounters( 8, resetCounterStart );
       vector<bool>        Over15Counter( 8, false );
+      vector<u_int32_t>   PrevTime(8, 0);
 
       //Loop through the parsed buffers
+      if(bProfiling && m_profilefile.is_open())
+        m_profilefile<<"DOCS "<<koLogger::GetTimeMus()<<" "<<digi->GetID().id
+                     <<" 0 "<<buffvec->size()<<endl;
+
       for(unsigned int b = 0; b < buffvec->size(); b++) {
 	u_int32_t TimeStamp = 0;
 	int       Channel    = -1;
@@ -509,12 +543,14 @@ void DataProcessor::Process()
 	
 	if( Channel < 0 || Channel > 7 ){
 	  cout<<"ERROR in CHANNEL"<<endl;
+	  if(bProfiling && m_profilefile.is_open())
+	    m_profilefile.close();
 	  return;
 	}
 	
 	if( !SawThisChannelOnce[Channel]){
 	  SawThisChannelOnce[Channel] = true;
-	  if( fabs( (int)headerTime - (int)TimeStamp) > 5E8 ){
+	  if( fabs( (int)headerTime - (int)TimeStamp) > 10E8 ){
 	    //times far apart. Probably on other sides of reset counter
 	    if( TimeStamp > headerTime && ChannelResetCounters[Channel]!=0)
 	      ChannelResetCounters[Channel]--;
@@ -522,17 +558,15 @@ void DataProcessor::Process()
 	      ChannelResetCounters[Channel]++;
 	  }
 	}
-	if( TimeStamp > 15E8 && !Over15Counter[Channel] )
-	  Over15Counter[Channel] = true;
-	else if ( TimeStamp < 5E8 && Over15Counter[Channel] ){
-	  Over15Counter[Channel] = false;
+	if( TimeStamp < PrevTime[Channel]){
 	  ChannelResetCounters[Channel]++;
+	  //cout<<"CHANNEL RESET: "<<ChannelResetCounters[Channel]<<endl;
 	}
+	PrevTime[Channel] = TimeStamp;
 	
 	// Convert the time to 64-bit
 	// We assume this data is in temporal order for 
-	// computation using the reset counter
-	
+	// computation using the reset counter	
 	int iBitShift = 31; 
 	long long Time64 = ((unsigned long)ChannelResetCounters[Channel] << 
 			    iBitShift) +TimeStamp;
@@ -560,23 +594,14 @@ void DataProcessor::Process()
 
 	//Now fill the actual data depending on write mode	
 #ifdef HAVE_LIBMONGOCLIENT
-	mongo_option_t mongo_opts = m_koOptions->GetMongoOptions();
+	//Loop through the parsed buffers        
+
 
 	if(m_koOptions->GetInt("write_mode") == WRITEMODE_MONGODB){
 	  mongo::BSONObjBuilder bson;
-	  bson.genOID();
 
+	  bson.genOID();	 	  
 
-	  //remove this later!
-	  if(mongo_opts.database == "online" &&
-	     mongo_opts.collection == "scope"){
-	    time_t currentTime;
-	    struct tm *starttime;
-	    time(&currentTime);
-	    starttime = localtime(&currentTime);
-	    bson.appendTimeT("starttimestamp",mktime(starttime));
-	  }
-	  //end remove later
 	  bson.append("module",iModule);
 	  bson.append("channel",Channel);
 	  bson.append("time",Time64);
@@ -591,15 +616,80 @@ void DataProcessor::Process()
 	  if( !m_koOptions->HasField("lite_mode") || m_koOptions->GetInt("lite_mode")==0)
 	    bson.appendBinData("data",(int)eventSize,mongo::BinDataGeneral,
 			       (const void*)buff);
-	    
-	  vMongoInsertVec->push_back(bson.obj());
-	  
-	  if((int)vMongoInsertVec->size() > mongo_opts.min_insert_size){
 
-	    if(DAQRecorder_mdb->InsertThreaded(vMongoInsertVec,mongoID)==0){ 
-	      //success
+
+	  // If we're using rotating collections and the reset counter has
+	  // just changed, trigger an insert. All docs in the bulk insert
+	  // should have the same reset counter
+	  if(m_koOptions->HasField("rotating_collections") &&
+	     m_koOptions->GetInt("rotating_collections") == 1 &&
+	     ChannelResetCounters[Channel] != LAST_RESET_COUNT){
+	    
+	    if(bProfiling && m_profilefile.is_open())
+	      m_profilefile<<"INSERT "<<koLogger::GetTimeMus()<<" "
+			   <<iModule<<" "<<vMongoInsertVec->size()
+			   <<" "<<mongoID<<endl;			   
+
+	    if(DAQRecorder_mdb->InsertThreaded(vMongoInsertVec,mongoID,
+                                               LAST_RESET_COUNT)==0){
+	      LAST_RESET_COUNT = ChannelResetCounters[Channel];
 	      vMongoInsertVec = new vector<mongo::BSONObj>();
+
+	      if(bProfiling && m_profilefile.is_open())
+		m_profilefile<<"DOCS "<<koLogger::GetTimeMus()<<" "
+			     <<digi->GetID().id
+			     <<" "<<b<<"  "<<buffvec->size()<<endl;
+
+
 	    }
+            else{
+              LogError("MongoDB insert error from processor thread.");
+              bExitCondition=true;
+              vMongoInsertVec = NULL;
+              break;
+            }
+	  }
+
+
+	  // Put new object into insert vector
+          vMongoInsertVec->push_back(bson.obj());
+	  
+	  bool insert = false;
+
+	  // If we exceed the threshold set by the user in options then make an insert
+	  if((int)vMongoInsertVec->size() > mongo_opts.min_insert_size 
+	     || (int)vMongoInsertVec->size() < 0){
+	    insert = true;
+	  }
+	 
+	  // If we're at the last doc from this round of BLTs
+	  // an insert to flush the buffer
+	  //if(bExitCondition && 
+	  if(b == buffvec->size() -1)
+            insert = true;
+	    
+	  if(insert){
+	    if(!(m_koOptions->HasField("rotating_collections")) ||
+	       (m_koOptions->GetInt("rotating_collections") != 1))
+	      LAST_RESET_COUNT=-1;
+
+	    if(bProfiling && m_profilefile.is_open())
+              m_profilefile<<"INSERT "<<koLogger::GetTimeMus()<<" "
+                           <<iModule<<" "<<vMongoInsertVec->size()
+                           <<" "<<mongoID<<endl;
+
+	    if(DAQRecorder_mdb->InsertThreaded(vMongoInsertVec,mongoID, 
+					       LAST_RESET_COUNT)==0){ 
+	      //success
+		LAST_RESET_COUNT = ChannelResetCounters[Channel];
+		vMongoInsertVec = new vector<mongo::BSONObj>();
+		
+		if(b!=buffvec->size()-1 && bProfiling && m_profilefile.is_open())
+		  m_profilefile<<"DOCS "<<koLogger::GetTimeMus()<<" "
+			       <<digi->GetID().id
+			       <<" "<<b<<" "<<buffvec->size()<<endl;
+		
+	      }
 	    else{
 	      LogError("MongoDB insert error from processor thread.");
 	      bExitCondition=true;
@@ -607,6 +697,8 @@ void DataProcessor::Process()
 	      break;
 	    }
 	  }
+
+	  
 	}
 #endif
 #ifdef HAVE_LIBPBF
@@ -634,13 +726,22 @@ void DataProcessor::Process()
       if(eventIndices!=NULL) delete eventIndices;
       buffvec=NULL;
       eventIndices=sizevec=channels=times=NULL;      
+      
+      if(bProfiling && m_profilefile.is_open())
+	m_profilefile<<"SEARCHING "<<koLogger::GetTimeMus()<<endl;
+
     }//end loop through digis
   }//end while loop
+  if(bProfiling && m_profilefile.is_open())
+    m_profilefile<<"DONE "<<koLogger::GetTimeMus()<<endl;
+
 #ifdef HAVE_LIBMONGOCLIENT
   if(vMongoInsertVec != NULL)
     delete vMongoInsertVec;
 #endif
   cout<<"LEAVING PROCESSING THREAD"<<endl;
+  if(bProfiling && m_profilefile.is_open())
+    m_profilefile.close();
   return;
 }
 
