@@ -155,7 +155,7 @@ u_int32_t koHelper::GetTimeStamp(u_int32_t *buffer)
     pnt+=3;
     return (buffer[pnt] & 0x7FFFFFFF);
   }
-  return 0;
+  return 0xFFFFFFFF;
 }
 
 

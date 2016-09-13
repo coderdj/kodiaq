@@ -38,6 +38,7 @@ struct collection_thread_packet_t
   string collection;
 };
 
+
 class MasterMongodbConnection
 {
 
@@ -99,6 +100,7 @@ public:
   // Name    : PullRunMode
   // Purpose : Pulls a run mode file from the mongodb modes DB and saves it 
   //           to the XeDAQOptions object. Returns 0 on success.
+  bool         RunExists(string run_name);
   int          PullRunMode(string name, koOptions &options);
   void SendStopCommand(string user, string comment, string detector);
   void InsertOnline(string name, string collection,mongo::BSONObj bson);
@@ -107,6 +109,7 @@ public:
   //int  UpdateNoiseDirectory(string run_name);
   void SendRunStartReply(int response, string message);//, string mode, string comment);
   void ClearDispatcherReply();
+
   vector<mongo::BSONObj> GetRunQueue();
   void SyncRunQueue(vector<mongo::BSONObj> queue);
 
@@ -121,8 +124,6 @@ public:
                           vector<string> boardList, int time_cycle=-1);
   string MakeLocationString(string host, string database);
   map <string, collection_thread_t> m_collectionThreads;
-
-  
   vector<string> GetHashTags(string comment);
   int Connect();
 
@@ -133,6 +134,7 @@ public:
   mongo::DBClientBase       *fLogDB, *fMonitorDB, *fRunsDB;
   string                     fLogDBName,fMonitorDBName,fRunsDBName,fRunsCollection;
   string                     fBufferUser, fBufferPassword;
+  
 };
 
 #endif

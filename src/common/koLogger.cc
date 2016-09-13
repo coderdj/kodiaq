@@ -12,6 +12,7 @@
 // *****************************************************
 
 #include "koLogger.hh"
+#include <chrono>
 
 koLogger::koLogger()
 {
@@ -75,6 +76,14 @@ string koLogger::GetTimeString()
    strftime(timestring,25,"%Y-%m-%dT%H:%M:%S - ",timeinfo);
    string retstring(timestring);
    return retstring;
+}
+
+u_int64_t koLogger::GetTimeMus()
+{
+  using namespace std::chrono;
+  microseconds ms = duration_cast< microseconds >
+    ( system_clock::now().time_since_epoch());
+  return (u_int64_t)ms.count();
 }
 
 time_t koLogger::GetCurrentTime()

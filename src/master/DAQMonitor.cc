@@ -74,7 +74,8 @@ void DAQMonitor::ProcessCommand(string command, string user,
 }
 
 int DAQMonitor::ValidateStartCommand(string user, string comment, 
-				     koOptions *options, string &message)
+				     koOptions *options, string &message,
+				     string run_name)
 {
   int reply = 0; // 0, OK, 1 - warning, 2- no way
   //string message;
@@ -95,6 +96,11 @@ int DAQMonitor::ValidateStartCommand(string user, string comment,
   if(m_DAQStatus.Slaves.size()==0){
     reply=2;
     message="Dispatcher refuses to start the DAQ with no readers connected.";
+  }
+
+  if(m_Mongodb->RunExists(run_name)){
+    reply = 2;
+    message = "Can't start two runs so quickly after one another. That run already exists";
   }
 
   if(reply==0) return 0;
@@ -172,7 +178,8 @@ void DAQMonitor::PollNetwork()
     // Check to see if any slaves are timing out    
     // or if a slave is in error
     for(unsigned int x=0;x<m_DAQStatus.Slaves.size();x++){
-      if(difftime(fCurrentTime,m_DAQStatus.Slaves[x].lastUpdate)>60.){
+      if(difftime(fCurrentTime,m_DAQStatus.Slaves[x].lastUpdate)>60. && 
+	 m_DAQStatus.Slaves[x].name != "reader5"){
 	stringstream errtxt;
 	errtxt<<"Dispatcher hasn't received a response from node "<<m_DAQStatus.Slaves[x].name<<" for at least 60 seconds.";
 	m_DAQStatus.Slaves.erase(m_DAQStatus.Slaves.begin()+x);

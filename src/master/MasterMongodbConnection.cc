@@ -217,6 +217,7 @@ void* MasterMongodbConnection::CollectionThreadWrapper(void* data){
 
     time_t currentTime = koLogger::GetCurrentTime();
     double tdiff = fabs(difftime(currentTime, startTime));
+
     //    cout<<tdiff<<" "<<tdiff*(1+readaheadfraction)<<" "<<tdiff*(1+readaheadfraction)  / 21. <<" "<< counter<<" "<< readaheadconstant<<endl;
     if( (tdiff*(1.+readaheadfraction)  / 21.) + readaheadconstant > counter){
       if(options.hosts.size() !=0){
@@ -1001,7 +1002,31 @@ void MasterMongodbConnection::UpdateDAQStatus(koStatusPacket_t* DAQStatus,
    }
    b.append("startTime",datestring);
    b.append("numSlaves",(int)DAQStatus->Slaves.size());
+
+   cout<<"Inserting doc with status for "<<detector<<" in mode "<<DAQStatus->RunMode<< " with state "<<DAQStatus->DAQState<<endl;
+   
    InsertOnline("monitor", fMonitorDBName+".daq_status",b.obj());
+}
+
+bool MasterMongodbConnection::RunExists(string run_name){
+  if(fRunsDB == NULL)
+    return false;
+  auto_ptr<mongo::DBClientCursor> cursor;
+  try{
+    cursor = fRunsDB->query("run.runs_new", 
+			    MONGO_QUERY("name"<<run_name));    
+  }
+  catch( const mongo::DBException &e ){
+    if(fLog!=NULL) {
+      fLog->Error("MongoDB error checking runs DB");
+      fLog->Error(e.what());
+    }
+    return false;
+  }
+  if(cursor->more())
+    return true;
+  return false;
+
 }
 
 int MasterMongodbConnection::CheckForCommand(string &command, string &user, 

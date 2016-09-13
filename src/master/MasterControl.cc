@@ -202,16 +202,16 @@ void MasterControl::CheckRunQueue(){
   
   // Here's what we want. First, check if there are any runs going that should
   // be stopped. This means compare fStartTimes with fExpireAfterSeconds
-  cout<<"Iterating start times"<<endl;
+  //cout<<"Iterating start times"<<endl;
   for(auto iter : fStartTimes) {
 
-    cout<<"Found detector " <<iter.first<<endl;
+    //cout<<"Found detector " <<iter.first<<endl;
     if( fExpireAfterSeconds.find(iter.first) != fExpireAfterSeconds.end() ){
       // Calculate how long run has been going   
       time_t currentTime = koLogger::GetCurrentTime();
       double dTime = difftime( currentTime, iter.second);
       
-      cout<<"Found run that started "<<dTime<<" seconds ago with "<<fExpireAfterSeconds[iter.first] << "limit"<<endl;
+      //cout<<"Found run that started "<<dTime<<" seconds ago with "<<fExpireAfterSeconds[iter.first] << "limit"<<endl;
       // Should we stop it? 
       if(dTime > fExpireAfterSeconds[iter.first] && 
 	 fExpireAfterSeconds[iter.first]!=0)
@@ -219,7 +219,7 @@ void MasterControl::CheckRunQueue(){
              + koHelper::IntToString(fExpireAfterSeconds[iter.first]) + "seconds.");
     }
   }
-  cout<<"Done with start times"<<endl;
+  //cout<<"Done with start times"<<endl;
 
   // Second see if the next command in the queue can be run yet (if any).  
   // This should be detector-aware. Like if the muon veto is idle it can loop the 
@@ -233,6 +233,7 @@ void MasterControl::CheckRunQueue(){
 
   bool sawTPC=false, sawMV=false;
   for(unsigned int x=0; x<fDAQQueue.size(); x++){
+    abort = false;
     string doc_det = fDAQQueue[x].getStringField("detector");
 
     // Case 0: We find something which thinks it's running. However the
@@ -275,6 +276,7 @@ void MasterControl::CheckRunQueue(){
       }
     }
     else if(mDetectors.find(doc_det) == mDetectors.end()){
+      cout<<"Didn't find detector "<< doc_det<< " in det list"<<endl;
       fDAQQueue.erase(fDAQQueue.begin()+x);
       x--;
       continue;
@@ -289,12 +291,12 @@ void MasterControl::CheckRunQueue(){
     }
     else if(doc_det == "muon_veto" && !sawMV){
       sawMV = true;
-      
+      cout<<"Found MV, checking if idle"<<endl;
       // Just check if the MV is idle          
       if(mDetectors["muon_veto"]->GetStatus()->DAQState != KODAQ_IDLE ||
          fStartTimes.find("muon_veto") != fStartTimes.end()||
 	 fDAQQueue[x].getIntField("running")!=2)
-        abort =true;
+        abort =true;      	
     }
     else 
       abort=true;
@@ -376,17 +378,26 @@ int MasterControl::Start(string detector, string user, string comment,
     mMongoDB->SendRunStartReply(11, "New run starting! Start detector " + 
 				detector + " initiated by user " + user);
   
+
+  // This might actually work. Let's assign a run name.      
+  string run_name = "xenon1t";
+  for(auto iterator:options){
+    if(options[iterator.first]->HasField("run_prefix"))
+      run_name = options[iterator.first]->GetString("run_prefix");
+  }
+  run_name = koHelper::GetRunNumber(run_name);
+  cout<<"This run will be called "<<run_name<<endl;
+
+
   // Validation step
   cout<<"Received start command. Validating..."<<flush;
-  //if(web)
-  //mMongoDB->SendRunStartReply(12, "Validating start command");
   int valid_success=0;
   string message="";
   for(auto iterator:mDetectors){
     if(iterator.first==detector || detector=="all")
       valid_success+=iterator.second->ValidateStartCommand(user, comment,
 							   options[iterator.first], 
-							   message);
+							   message, run_name);
   }
   if(valid_success!=0){
     cout<<"Error during command validation! Aborting run start.";
@@ -395,20 +406,7 @@ int MasterControl::Start(string detector, string user, string comment,
     return -2;
   }
   cout<<"Success!"<<endl;
-  
 
-
-  // This might actually work. Let's assign a run name.
- 
-  string run_name = "xenon1t";
-  for(auto iterator:options){
-    if(options[iterator.first]->HasField("run_prefix"))
-      run_name = options[iterator.first]->GetString("run_prefix");
-  }
-  run_name = koHelper::GetRunNumber(run_name);
-  cout<<"This run will be called "<<run_name<<endl;
-  //if(web)
-  //mMongoDB->SendRunStartReply(12, "Assigning run name: " + run_name);
   
   // Arm the boards
   cout<<"Arming the digitizers..."<<flush;
@@ -537,14 +535,18 @@ void MasterControl::CheckRemoteCommand(){
 void MasterControl::StatusUpdate(){
 
   for(auto iter : mDetectors) {
+    //cout<<"Status update for "<<iter.first<<endl;
     if( iter.second->UpdateReady() ) {
+    //cout<<"Update ready"<<endl;
       time_t CurrentTime = koLogger::GetCurrentTime();
       double dTimeStatus = difftime( CurrentTime, 
 				     mStatusUpdateTimes[iter.first] );
+      //cout<<"dTimeStatus: "<<dTimeStatus<<endl;
       if ( dTimeStatus > 5. ) { //don't flood DB with updates
+	//cout<<"Updating now"<<endl;
 	mStatusUpdateTimes[iter.first] = CurrentTime;
 	iter.second->LockStatus();
-	mMongoDB->UpdateDAQStatus( iter.second->GetStatus(), 
+	mMongoDB->UpdateDAQStatus( iter.second->GetStatus(true), 
 				 iter.first );
 	//iter.second->UnlockStatus();
 	//}

@@ -24,6 +24,7 @@ DigiInterface::DigiInterface()
    m_DB_USER=m_DB_PASSWORD="";
    pthread_mutex_init(&m_RateMutex,NULL);
    m_koOptions = NULL;
+   bProfiling=false;
 }
 
 DigiInterface::~DigiInterface()
@@ -33,7 +34,8 @@ DigiInterface::~DigiInterface()
 }
 
 DigiInterface::DigiInterface(koLogger *logger, int ID, 
-			     string DB_USER, string DB_PASSWORD)
+			     string DB_USER, string DB_PASSWORD, int cores, 
+			     int profiling)
 {
    m_ReadThread.IsOpen  = false;
    m_WriteThread.IsOpen = false;
@@ -45,6 +47,8 @@ DigiInterface::DigiInterface(koLogger *logger, int ID,
    m_DB_PASSWORD        = DB_PASSWORD;
    pthread_mutex_init(&m_RateMutex,NULL);
    m_koOptions = NULL;
+   fCores = cores;
+   bProfiling = profiling;
 }
 
 int DigiInterface::Arm(koOptions *options){
@@ -97,10 +101,16 @@ int DigiInterface::Arm(koOptions *options){
   //Set up processing threads containers
   m_iReadSize=0;
   m_iReadFreq=0;
+
+  /*
   if(options->GetInt("processing_num_threads")>0)
     m_vProcThreads.resize(options->GetInt("processing_num_threads"));
   else
     m_vProcThreads.resize(1);
+  */
+  m_vProcThreads.resize(fCores);                  
+
+
   for(unsigned int x=0;x<m_vProcThreads.size();x++)  {
     m_vProcThreads[x].IsOpen=false;
     m_vProcThreads[x].Processor=NULL;
@@ -159,7 +169,7 @@ int DigiInterface::Arm(koOptions *options){
 
     // Spawning of processing threads. depends on readout options.
     m_vProcThreads[x].Processor = new DataProcessor(this,m_DAQRecorder,
-                                                    m_koOptions, x);
+                                                    m_koOptions, x, bProfiling);
     pthread_create(&m_vProcThreads[x].Thread,NULL,DataProcessor::WProcess,
                    static_cast<void*>(m_vProcThreads[x].Processor));
     m_vProcThreads[x].IsOpen=true;
@@ -284,7 +294,7 @@ int DigiInterface::InitializeHardware(koOptions *options)
       m_koLog->Message(logmess.str());
       
       if(Board.type=="V1724"){	      
-	CBV1724 *digitizer = new CBV1724(Board,m_koLog);
+	CBV1724 *digitizer = new CBV1724(Board, m_koLog, bProfiling);
 	m_vDigitizers.push_back(digitizer);
 	digitizer->SetCrateHandle(tempHandle);
       }	 
@@ -392,6 +402,35 @@ void DigiInterface::Close()
 
 void* DigiInterface::ReadThreadWrapper(void* data)
 { 
+  
+  int policy = SCHED_RR;
+  pthread_attr_t tattr;
+  struct sched_param param;
+  pthread_attr_init(&tattr);                                                          
+  int error = pthread_attr_setschedpolicy(&tattr, policy);
+  error = pthread_attr_getschedparam(&tattr,&param);
+  param.sched_priority=99;
+  error=pthread_attr_setschedparam(&tattr,&param);
+  // insert error handling
+  error = pthread_attr_getschedparam(&tattr, &param);
+  cout<<param.sched_priority<<endl;
+  /*
+  pthread_t thId = pthread_self();
+  int newpolicy = SCHED_RR;
+  sched_param param;
+  param.sched_priority=99;
+  pthread_setschedparam(thId, newpolicy, &param);
+
+  pthread_attr_t thAttr;
+  int policy = 0;
+  int max_prio_for_policy = 0;
+  pthread_attr_init(&thAttr);
+  pthread_attr_getschedpolicy(&thAttr, &policy);
+  max_prio_for_policy = sched_get_priority_max(policy);
+  cout<<max_prio_for_policy<<endl;
+  pthread_setschedprio(thId, max_prio_for_policy);
+  pthread_attr_destroy(&thAttr);
+  */
    DigiInterface *digi = static_cast<DigiInterface*>(data);
    digi->ReadThread();
    return (void*)data;
@@ -433,6 +472,9 @@ void DigiInterface::ReadThread()
 
 	// Read from the digitizer and adjust the rates
 	 unsigned int ratecycle=m_vDigitizers[x]->ReadMBLT();	 	 
+	 //double drate = (double)(ratecycle);
+	 //if(drate > 1000000)
+	 //cout<<drate/1000000<<endl;
 
 	 rate+=ratecycle;
 	 if(ratecycle!=0)
@@ -598,5 +640,9 @@ bool DigiInterface::RunError(string &err)
       if(m_vProcThreads[x].Processor == NULL) continue;
       if(m_vProcThreads[x].Processor->QueryError(err)) return true;
    }   
+   for(unsigned int x=0; x<m_vDigitizers.size();x++)  {
+     if(m_vDigitizers[x]->Error(err))
+       return true;
+   }
    return false;   
 }

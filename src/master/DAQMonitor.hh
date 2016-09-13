@@ -52,12 +52,13 @@ public:
   void ThrowFatalError(bool killDAQ, string errTxt);
   void ThrowWarning(bool killDAQ, string errTxt);
   int ValidateStartCommand(string user, string comment, 
-			   koOptions *options, string &message);
+			   koOptions *options, string &message, string run_name);
 
-  koStatusPacket_t* GetStatus(){    
-    m_bReady=false;
+  koStatusPacket_t* GetStatus(bool SetReady=false){    
+    if(SetReady) m_bReady=false;
     return &m_DAQStatus;
   }; 
+
   int LockStatus();
   int UnlockStatus();
   

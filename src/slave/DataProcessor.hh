@@ -16,6 +16,7 @@
 // *************************************************************
 
 #include "DAQRecorder.hh"
+#include <fstream>
 
 using namespace std;
 class DigiInterface;
@@ -35,7 +36,7 @@ public:
   DataProcessor();
   virtual   ~DataProcessor();
   explicit   DataProcessor(DigiInterface *digi, DAQRecorder *recorder,
-			   koOptions *options, int id);
+			   koOptions *options, int id, bool profiling=false);
   static void* WProcess(void* data);
   void       Process();
   //
@@ -122,6 +123,8 @@ private:
   bool              m_bErrorSet;
   string            m_sErrorText;
   int               m_id;
+  bool              bProfiling;
+  ofstream          m_profilefile;
 };
 
 #endif
