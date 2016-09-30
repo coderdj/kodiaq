@@ -143,7 +143,7 @@ int CBV1724::Initialize(koOptions *options)
 
   // Reload VME options
   int tries = 0;
-  while( LoadVMEOptions( options ) != 0 && tries < 5) {
+  while( LoadVMEOptions( options, false ) != 0 && tries < 5) {
     tries ++;
     usleep(100);
     if( tries == 5 )
@@ -159,6 +159,16 @@ int CBV1724::Initialize(koOptions *options)
   fBufferOccSize = 0;
   fBufferOccCount = 0;
   fReadoutReports.clear();
+
+  // Load user registers for boards with a unique ID only 
+  // this is to avoid user settings to be overwritten
+  tries = 0;
+  while( LoadVMEOptions( options,true ) != 0 && tries < 5) {
+     tries ++;
+     usleep(100);
+     if( tries == 5 )                         
+     retVal = -1;
+  }
 
   // Report whether we succeeded or not
   stringstream messstr;
@@ -925,13 +935,17 @@ int CBV1724::LoadDAC(vector<int> baselines){
   return 0;
 }
 
- int CBV1724::LoadVMEOptions( koOptions *options )
+ int CBV1724::LoadVMEOptions( koOptions *options, bool unique )
  {
    int retVal = 0;
    // Reload VME options    
    for(int x=0;x<options->GetVMEOptions();x++)  {
-     if((options->GetVMEOption(x).board==-1 ||
+     if( ( (options->GetVMEOption(x).board==-1 && unique == false) ||
 	 options->GetVMEOption(x).board==fBID.id)){
+ 
+       // only reload registers for DAC
+       if( (options->GetVMEOption(x).address & 0x98)!=0x98)
+	       continue;	      
        int success = WriteReg32(options->GetVMEOption(x).address,
 				options->GetVMEOption(x).value);
        if( options->GetVMEOption(x).address == 0xEF24 ) // give time to reset
