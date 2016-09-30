@@ -940,6 +940,10 @@ int CBV1724::LoadDAC(vector<int> baselines){
    for(int x=0;x<options->GetVMEOptions();x++)  {
      if( ( (options->GetVMEOption(x).board==-1 && unique == false) ||
 	 options->GetVMEOption(x).board==fBID.id)){
+ 
+       // only reload registers for DAC
+       if( (options->GetVMEOption(x).address & 0x98)!=0x98)
+	       continue;	      
        int success = WriteReg32(options->GetVMEOption(x).address,
 				options->GetVMEOption(x).value);
        if( options->GetVMEOption(x).address == 0xEF24 ) // give time to reset
