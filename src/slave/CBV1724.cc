@@ -353,13 +353,17 @@ int CBV1724::RequestDataLock()
     // if so set the board busy flag. This board should be
     // cleared LAST (or at least *a* busy board should be cleared
     // last) giving larger blocks of live time. 
-    if(!bBoardBusy){
-      
-      u_int32_t bufferOcc=0;
-      ReadReg32(0x816C,bufferOcc);
-      if(bufferOcc >= 1000){
-	bBoardBusy = true;
-	return -1;
+    std::vector<u_int32_t> channelBufferRegs = {0x1094, 0x1194, 0x1294, 0x1394, 
+						0x1494, 0x1594, 0x1694, 0x1794};
+
+    if(!bBoardBusy){      
+      for(unsigned int x=0;x<channelBufferRegs.size();x++){
+	u_int32_t ch=0;
+	ReadReg32(channelBufferRegs[x],ch);	
+	if(ch >= 1000){
+	  bBoardBusy = true;
+	  return -1;
+	}
       }
     }
     
