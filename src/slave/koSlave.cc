@@ -39,14 +39,16 @@ int ReadIniFile(string filepath, string &SERVERADDR, int &PORT,
 //           
 // *******************************************************************************
 #include "NCursesUI.hh"
+#include "StandaloneToolbox.hh"
 
-int StandaloneMain(string fOptionsPath)
+int StandaloneMain(string fOptionsPath, string comment)
 {   
    koLogger fLog("log/slave.log");
    fLog.Message("Started standalone reader");
    DigiInterface *fElectronics = new DigiInterface(&fLog);
    koOptions *fDAQOptions = new koOptions();   
-
+   StandaloneToolbox STool("mongodb://localhost:27017", "run", "runs");
+   string fRunName="";
 program_start:
    
    char input='a';
@@ -56,7 +58,12 @@ program_start:
      usleep(100);
    cin.get(input);
 
-   if(input=='q') {     
+   if(input=='q') {   
+     if(fRunName!=""){
+       STool.UpdateRunDoc(fRunName);
+       fRunName = "";
+     }
+
      delete fElectronics;
      delete fDAQOptions;
      return 0;
@@ -84,8 +91,13 @@ program_start:
 	if(counter<1000)
 	  cin.get(input);	        
       }      
-      if(input == 'p')
+      if(input == 'p'){
+	if(fRunName!=""){
+	  STool.UpdateRunDoc(fRunName);
+	  fRunName = "";
+	}
 	goto program_start;
+      }
       return -1;
    }   
    else if(input=='f'){
@@ -105,6 +117,15 @@ program_start:
    //start digi interface
    cout<<koLogger::GetTimeString()<<" Initializing electronics"<<endl;
 
+   mongo_option_t mopts = fDAQOptions->GetMongoOptions();
+   string runname = mopts.collection;
+   fRunName = runname;
+
+   if(comment == "" && fDAQOptions->HasField("comment"))
+     comment = fDAQOptions->GetString("comment");
+
+   STool.InsertRunDoc(fDAQOptions, comment, runname);
+   
    if(fElectronics->Arm(fDAQOptions)!=0)  {	
      cout<<koLogger::GetTimeString()<<" Error initializing electronics"<<endl;
      goto program_start;
@@ -187,27 +208,36 @@ int main(int argc, char *argv[])
 {
 
   string filepath = "DAQConfig.ini";
+  string comment = "";
 #ifdef KLITE
   // Get command line option 
-  int c;
+  char c;
   while(1){
     static struct option long_options[] =
       {
         {"ini_file", required_argument, 0, 'i'},
+	{"comment", required_argument, 0, 'c'},
+	{"help", no_argument, 0, 'h'},
         {0,0,0,0}
       };    
     int option_index = 0;
-    c = getopt_long(argc, argv, "i:", long_options, &option_index);
+    c = getopt_long(argc, argv, "hc:i:", long_options, &option_index);
     if( c == -1) break;    
     switch(c){
     case 'i':
       filepath = optarg;
       break;
+    case 'c': 
+      comment = optarg;
+      break;
+    case 'h':
+      cout<<"./koSlave -i {ini_file} -c {comment} "<<c<<endl;
+      exit(0);
     default:
       break;
     }
   }  
-  return StandaloneMain(filepath);
+  return StandaloneMain(filepath, comment);
 #endif
          
    //Set up objects
