@@ -397,7 +397,8 @@ int MasterControl::Start(string detector, string user, string comment,
     if(iterator.first==detector || detector=="all")
       valid_success+=iterator.second->ValidateStartCommand(user, comment,
 							   options[iterator.first], 
-							   message, run_name);
+							   message, run_name, 
+							   detector);
   }
   if(valid_success!=0){
     cout<<"Error during command validation! Aborting run start.";

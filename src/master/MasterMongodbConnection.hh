@@ -100,7 +100,7 @@ public:
   // Name    : PullRunMode
   // Purpose : Pulls a run mode file from the mongodb modes DB and saves it 
   //           to the XeDAQOptions object. Returns 0 on success.
-  bool         RunExists(string run_name);
+  bool         RunExists(string run_name, string detector);
   int          PullRunMode(string name, koOptions &options);
   void SendStopCommand(string user, string comment, string detector);
   void InsertOnline(string name, string collection,mongo::BSONObj bson);

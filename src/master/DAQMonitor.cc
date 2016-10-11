@@ -75,7 +75,7 @@ void DAQMonitor::ProcessCommand(string command, string user,
 
 int DAQMonitor::ValidateStartCommand(string user, string comment, 
 				     koOptions *options, string &message,
-				     string run_name)
+				     string run_name, string detector)
 {
   int reply = 0; // 0, OK, 1 - warning, 2- no way
   //string message;
@@ -98,7 +98,7 @@ int DAQMonitor::ValidateStartCommand(string user, string comment,
     message="Dispatcher refuses to start the DAQ with no readers connected.";
   }
 
-  if(m_Mongodb->RunExists(run_name)){
+  if(m_Mongodb->RunExists(run_name, detector)){
     reply = 2;
     message = "Can't start two runs so quickly after one another. That run already exists";
   }
@@ -334,10 +334,33 @@ int DAQMonitor::Arm(koOptions *mode, string run_name)
   
   // Configure DDC10 if available
 #ifdef WITH_DDC10
-  //  ddc_10 heveto;
-  //if(heveto.Initialize(mode->GetDDCStream())!=0)
-  // m_Mongodb->SendLogMessage("DDC10 veto module could not be initialized.",
-  //			      KOMESS_WARNING);
+  if(mode->require_ddc10()){
+    ddc_10 heveto;
+    ddc10_par_t pars;
+    
+    /* Load DDC 10 parameters in nasty way */
+    ddc10_option_t opts = mode->GetDDC10Options();  
+    pars.IPAddress = opts.address;
+    pars.Sign = opts.sign;
+    pars.IntWindow = opts.window;
+    pars.VetoDelay = opts.delay;
+    pars.SigThreshold = opts.signal_threshold;
+    pars.IntThreshold = opts.integration_threshold;
+    pars.WidthCut = opts.width_cut;
+    pars.RiseTimeCut = opts.rise_time_cut;
+    pars.ComponentStatus = opts.component_status;
+    pars.Par[0] = opts.parameter_0;
+    pars.Par[1] = opts.parameter_1;
+    pars.Par[2] = opts.parameter_2;
+    pars.Par[3] = opts.parameter_3;
+    pars.OuterRingFactor = opts.outer_ring_factor;
+    pars.InnerRingFactor = opts.inner_ring_factor;
+    pars.PreScaling = opts.prescaling;
+    
+    if(heveto.Initialize(pars)!=0)
+      m_Mongodb->SendLogMessage("DDC10 veto module could not be initialized.",
+				KOMESS_WARNING);
+  }
 #endif
 
   // Send arm command

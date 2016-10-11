@@ -51,6 +51,7 @@ CBV1724::CBV1724()
    bProfiling=false;
    fError=false;
    fErrorText="";
+   bBoardBusy = false;
 }
 
 CBV1724::~CBV1724()
@@ -93,7 +94,8 @@ CBV1724::CBV1724(board_definition_t BoardDef, koLogger *kLog, bool profiling)
   bExists=false;
   bProfiling = profiling;
   fError=false;
-  fErrorText="";
+  fErrorText="";  
+  bBoardBusy = false;
 }
 
 int CBV1724::Initialize(koOptions *options)
@@ -102,6 +104,7 @@ int CBV1724::Initialize(koOptions *options)
   bExists=true;
   fBadBlockCounter = 0;
   fError = false;
+  bBoardBusy = false;
   fErrorText = "";
 
   // Set private members
@@ -345,7 +348,23 @@ int CBV1724::UnlockDataBuffer()
 int CBV1724::RequestDataLock()
 {
   if(fReadMeOut){
+    
+    // Check here if board is using more than 1000 blocks
+    // if so set the board busy flag. This board should be
+    // cleared LAST (or at least *a* busy board should be cleared
+    // last) giving larger blocks of live time. 
+    if(!bBoardBusy){
+      
+      u_int32_t bufferOcc=0;
+      ReadReg32(0x816C,bufferOcc);
+      if(bufferOcc >= 1000){
+	bBoardBusy = true;
+	return -1;
+      }
+    }
+    
     int error = pthread_mutex_trylock(&fDataLock);
+    bBoardBusy = false;
     if(error!=0) return -1;
     return 0;
   }

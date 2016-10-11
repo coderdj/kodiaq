@@ -645,6 +645,9 @@ int MasterMongodbConnection::InsertRunDoc(string user, string name,
       string mloc = "";
       if(mongo_opts.hosts.size()==0)
 	mloc = MakeLocationString(mongo_opts.address, mongo_opts.database);
+      else if(mongo_opts.hosts.size()==1)
+	mloc = MakeLocationString((*mongo_opts.hosts.begin()).second, 
+				   mongo_opts.database);
       else{
 	for(auto const &h1 : mongo_opts.hosts){
 	  mloc += MakeLocationString(h1.second, mongo_opts.database);
@@ -1008,13 +1011,13 @@ void MasterMongodbConnection::UpdateDAQStatus(koStatusPacket_t* DAQStatus,
    InsertOnline("monitor", fMonitorDBName+".daq_status",b.obj());
 }
 
-bool MasterMongodbConnection::RunExists(string run_name){
+bool MasterMongodbConnection::RunExists(string run_name, string detector){
   if(fRunsDB == NULL)
     return false;
   auto_ptr<mongo::DBClientCursor> cursor;
   try{
     cursor = fRunsDB->query("run.runs_new", 
-			    MONGO_QUERY("name"<<run_name));    
+			    MONGO_QUERY("name"<<run_name<<"detector"<<detector));    
   }
   catch( const mongo::DBException &e ){
     if(fLog!=NULL) {

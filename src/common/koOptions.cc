@@ -292,3 +292,71 @@ vme_option_t koOptions::GetVMEOption(int index){
   return retreg;
 }
 
+ddc10_option_t koOptions::GetDDC10Options(){
+  ddc10_option_t opts;
+  opts.component_status=1;
+  opts.outer_ring_factor=2;
+  opts.width_cut=50;
+  opts.parameter_3=50;
+  opts.signal_threshold=150;
+  opts.inner_ring_factor=1;
+  opts.prescaling=1000;
+  opts.parameter_0=0;
+  opts.rise_time_cut=30;
+  opts.delay=200;
+  opts.sign=1;
+  opts.parameter_2=0;
+  opts.integration_threshold=20000;
+  opts.window=100;
+  opts.parameter_1=0;
+  opts.address="";
+
+  mongo::BSONObj ddc10_obj;
+  try{
+    ddc10_obj = m_bson["DDC-10"].Obj();
+  }
+  catch(...){
+    return opts;
+  }
+
+  // All or nothing!
+  try{
+    opts.component_status = ddc10_obj["component_status"].Int();
+    opts.outer_ring_factor = ddc10_obj["outer_ring_factor"].Int();
+    opts.width_cut = ddc10_obj["width_cut"].Int();
+    opts.parameter_3 = ddc10_obj["parameter_3"].Int();
+    opts.signal_threshold=ddc10_obj["signal_threshold"].Int();
+    opts.inner_ring_factor=ddc10_obj["inner_ring_factor"].Int();
+    opts.prescaling=ddc10_obj["prescaling"].Int();
+    opts.parameter_0=ddc10_obj["parameter_0"].Int();
+    opts.rise_time_cut=ddc10_obj["rise_time_cut"].Int();
+    opts.delay=ddc10_obj["delay"].Int();
+    opts.sign=ddc10_obj["sign"].Int();
+    opts.parameter_2=ddc10_obj["parameter_2"].Int();
+    opts.integration_threshold=ddc10_obj["integration_threshold"].Int();
+    opts.window=ddc10_obj["window"].Int();
+    opts.parameter_1=ddc10_obj["parameter_1"].Int();
+    opts.address=ddc10_obj["address"].String();
+
+  }
+  catch(...){
+    cout<<"Bad options to DDC10. Using defaults"<<endl;
+    return opts;
+  }
+  return opts;
+
+}
+
+bool koOptions::require_ddc10(){
+
+  mongo::BSONObj ddc10_obj;
+  try{
+    ddc10_obj = m_bson["DDC-10"].Obj();
+    return ddc10_obj["required"].Bool();
+  }
+  catch(...){
+    // There must be no DDC10 obj
+    return false;
+  }
+
+}

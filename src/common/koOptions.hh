@@ -58,6 +58,24 @@ struct mongo_option_t{
   vector<string> indices;
 };
 
+struct ddc10_option_t{
+  int component_status;
+  int outer_ring_factor;
+  int width_cut;
+  int parameter_3;
+  int signal_threshold;
+  int inner_ring_factor;
+  int prescaling;
+  int parameter_0;
+  int rise_time_cut;
+  int delay;
+  int sign;
+  int parameter_2;
+  int integration_threshold;
+  int window;
+  int parameter_1;
+  string address;
+};
 
 class koOptions{
 
@@ -103,13 +121,15 @@ public:
   bool GetBool(string field_name){
     return GetField(field_name).Bool();
   };
-
+  
   void ToStream(stringstream *retstream){
     (*retstream)<<m_bson.jsonString();
   };
   mongo_option_t GetMongoOptions();
   void ToStream_MongoUpdate(string run_name, stringstream *retstream,
 			    string host_name="");
+  ddc10_option_t GetDDC10Options();
+  bool require_ddc10();
 
 private:
   int GetArraySize(string key);

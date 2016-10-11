@@ -79,12 +79,12 @@ AS_IF([test "x$enable_lite" = "xyes"], [
 # Compile DDC10 Module
 ###################################
 #Now some more specific options. For example, should we compile with DDC10 support?
-AC_ARG_ENABLE( [DDC10],
+AC_ARG_ENABLE( [ddc10],
     AS_HELP_STRING([--enable-ddc10], [Enable support for DDC10 HE veto module]))
 AS_IF([test "x$enable_ddc10" = "xyes"], [
     AM_CONDITIONAL(WITH_DDC10, true)
     AC_DEFINE(WITH_DDC10,[],[Compile with DDC HE veto support])    
-#    AC_CHECK_LIB([tcl8.5],main,[],AC_MSG_ERROR)
+        AC_CHECK_LIB([tcl8.6],main,[],AC_MSG_ERROR)
     AC_CHECK_LIB([expect],main,[],AC_MSG_ERROR)
     ], [
     AM_CONDITIONAL(WITH_DDC10,false)

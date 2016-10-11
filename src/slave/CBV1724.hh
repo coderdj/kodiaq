@@ -102,6 +102,7 @@ class CBV1724 : public VMEBoard {
   u_int32_t             *m_tempBuff;
   bool                  bExists, bProfiling;
   ofstream              m_profilefile;
+  bool                  bBoardBusy;
 };
 
 #endif

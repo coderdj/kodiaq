@@ -52,7 +52,8 @@ public:
   void ThrowFatalError(bool killDAQ, string errTxt);
   void ThrowWarning(bool killDAQ, string errTxt);
   int ValidateStartCommand(string user, string comment, 
-			   koOptions *options, string &message, string run_name);
+			   koOptions *options, string &message, string run_name,
+			   string detector);
 
   koStatusPacket_t* GetStatus(bool SetReady=false){    
     if(SetReady) m_bReady=false;

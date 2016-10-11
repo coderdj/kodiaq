@@ -1,6 +1,6 @@
 // **************************************************************
 // 
-// kodiaq data acquisition software
+// DAQ Control for Xenon-1t
 // 
 // File     : ddc_10.cc
 // Author   : Lukas Buetikofer, LHEP, Universitaet Bern
@@ -12,7 +12,7 @@
 
 #include <iostream>
 #include "ddc_10.hh"
-#include <tcl8.6/expect.h>
+#include <tcl8.6/expect.h> //or <tcl8.6/expect.h> ?
 #include <sys/wait.h>
 #include <math.h>
 
@@ -28,6 +28,8 @@ ddc_10::~ddc_10()
 
 int ddc_10::Initialize(ddc10_par_t arg0)
 {
+	// prevent output of spawned process
+	exp_loguser = 0;
 
 //===== expext with telnet ===== (not used anymore)
 /*
@@ -59,12 +61,11 @@ int ddc_10::Initialize(ddc10_par_t arg0)
         temp += arg0.IPAddress;
 
         // exp_open spawn ssh and returns a stream.
-
-	FILE *expect = exp_popen((char *) temp.c_str());
+        FILE *expect = exp_popen((char *) temp.c_str());
         if (expect == 0) return 1;
 
         enum { usage, permission_denied, command_not_found,
-               command_failed, prompt };
+               command_failed, connection_failed, prompt };
 
         // exp_fexpectl takes variable parameters terminated by
         // exp_end.  A parameter takes the form
@@ -75,12 +76,16 @@ int ddc_10::Initialize(ddc10_par_t arg0)
 
         switch (exp_fexpectl(expect,
                 exp_glob, "password:", prompt,
+		exp_glob, "Network is unreachable", connection_failed,
                 exp_end)) {
+	case connection_failed:
+		cout << endl << "DDC10: connection failed" << endl;
+		return 1;	
         case prompt:
                 // continue
                 break;
         case EXP_TIMEOUT:
-                cout << "Timeout,  may be invalid host" << endl;
+                cout << "DDC10: Timeout,  may be invalid host" << endl;
                 return 1;
         }
 
@@ -90,14 +95,14 @@ int ddc_10::Initialize(ddc10_par_t arg0)
                 exp_glob, "Permission denied", permission_denied,
                 exp_end)) {
         case prompt:
-                cout << endl << "Connection successful" << endl;
+                //cout << endl << "DDC10: Connection successful" << endl;
                 // continue
                 break;
         case permission_denied:
-                cout << endl << "Permission denied" << endl;
+                cout << endl << "DDC10: Permission denied" << endl;
                 return 1;
         case EXP_TIMEOUT:
-                cout << "Timeout,  may be invalid host" << endl;
+                cout << "DDC10: Timeout,  may be invalid host" << endl;
                 return 1;
         }
 
@@ -116,10 +121,10 @@ int ddc_10::Initialize(ddc10_par_t arg0)
 		ParHi_int[i]=(Par_long[i] >> 32);
 	}
 
-	// send Initialization command
+	// set Initialization command
 	char command [1000];
 
-	sprintf(command, "./../usr/bin/Initialize ");
+	sprintf(command, "./../HEveto/Initialize ");
 	sprintf(command + strlen(command), "%d ",arg0.Sign);
         sprintf(command + strlen(command), "%d ",arg0.IntWindow);
         sprintf(command + strlen(command), "%d ",arg0.VetoDelay);
@@ -139,34 +144,35 @@ int ddc_10::Initialize(ddc10_par_t arg0)
         sprintf(command + strlen(command), "%d ",arg0.OuterRingFactor);
         sprintf(command + strlen(command), "%d ",arg0.InnerRingFactor);
         sprintf(command + strlen(command), "%d ",arg0.PreScaling);
+	//send Initialization command
 	fprintf(expect, "%s\r", command);
 
 
-	// check return of telnet
+	// check return of connection
 	switch (exp_fexpectl(expect,
                 exp_glob, "not found", command_not_found, // 1 case
                 exp_glob, "wrong usage", usage, // another case
                 exp_glob, "initialization done", prompt, // third case
                 exp_end)) {
         case command_not_found:
-                cout << endl << "unknown command" << endl;
+                cout << endl << "DDC10: unknown command" << endl;
                 success = false;
                 break;
         case usage:
                 success = false;
-                cout << endl << "wrong usage of \"Initialize\". 8 arguments are needed" << endl;
+                cout << endl << "DDC10: wrong usage of \"Initialize\"" << endl;
                 break;
         case EXP_TIMEOUT:
 		success = false;
-                cout << "Login timeout" << endl;
+                cout << "DDC10: Login timeout" << endl;
                 break;
         case prompt:
                 // continue;
-                cout << endl << "initialization successful" << endl;
+                //cout << endl << "DDC10: initialization successful" << endl;
                 break;
         default:
 		success = false;
-		cout << endl << "unknown error" << endl;
+		cout << endl << "DDC10: unknown error" << endl;
 		break;
 	}
 
@@ -178,84 +184,24 @@ int ddc_10::Initialize(ddc10_par_t arg0)
 	else return 1;
 }
 
-int ddc_10::Initialize(istream *input)
-{
-  ddc10_par_t parameters;
-  string      line;
-
-  while(!input->eof()){
-    getline((*input),line);
-    
-    // parse line
-    istringstream iss(line);
-    vector<string> words;
-    copy(istream_iterator<string>(iss),
-	 istream_iterator<string>(),
-	 back_inserter<vector<string> >(words));
-    if(words.size()<2) continue;
-    
-    //Check for keywords
-    if(words[0] == "ddc10_ip_address")
-      parameters.IPAddress = words[1];
-    else if(words[0] == "ddc10_enable")
-      (words[1][0]=='0') ?
-        parameters.Enabled=false :
-        parameters.Enabled = true;
-    else if(words[0] == "ddc10_sign")
-      parameters.Sign = StringToInt(words[1]);
-    else if(words[0] == "ddc10_integration_window")
-      parameters.IntWindow = StringToInt(words[1]);
-    else if(words[0] == "ddc10_veto_delay")
-      parameters.VetoDelay = StringToInt(words[1]);
-    else if(words[0] == "ddc10_signal_threshold")
-      parameters.SigThreshold = StringToInt(words[1]);
-    else if(words[0] == "ddc10_integration_threshold")
-      parameters.IntThreshold = StringToInt(words[1]);
-    else if(words[0] == "ddc10_width_cut")
-      parameters.WidthCut = StringToInt(words[1]);
-    else if(words[0] == "ddc10_rise_time_cut")
-      parameters.RiseTimeCut = StringToInt(words[1]);
-    else if(words[0] == "ddc10_component_status")
-      parameters.ComponentStatus = StringToInt(words[1]);
-    else if(words[0] == "ddc10_par_0")
-      parameters.Par[0] = StringToInt(words[1]);
-    else if(words[0] == "ddc10_par_1")
-      parameters.Par[1] = StringToInt(words[1]);
-    else if(words[0] == "ddc10_par_2")
-      parameters.Par[2] = StringToInt(words[1]);
-    else if(words[0] == "ddc10_par_3")
-      parameters.Par[3] = StringToInt(words[1]);    
-    else if(words[0] == "ddc10_outer_ring_factor")
-      parameters.OuterRingFactor = StringToInt(words[1]);
-    else if(words[0] == "ddc10_inner_ring_factor")
-      parameters.InnerRingFactor = StringToInt(words[1]);
-    else if(words[0] == "ddc10_prescaling")
-      parameters.PreScaling = StringToInt(words[1]);
-  }
-  
-  // could add a consistency check here
-  parameters.Initialized = true;
-  
-  if(parameters.Enabled)
-    return Initialize(parameters);
-  return 0;
-}
 
 
 int ddc_10::LEDTestFlash(string IPAddress)
 {
-
-
 //====== establish ssh connection to DDC-10 =====
+
+	// prevent output of spawned process
+	exp_loguser = 0;
+
 	string temp = "ssh root@";
 	temp += IPAddress;
 
 	// exp_open spawn telnet and returns a stream.
         FILE *expect = exp_popen((char *) temp.c_str());
-	if (expect == 0) return 1;
+	if (expect == 0)  return 1;
 
 	enum { usage, permission_denied, command_not_found,
-	       command_failed, prompt };
+	       command_failed, connection_failed, prompt };
 
 	// exp_fexpectl takes variable parameters terminated by
 	// exp_end.  A parameter takes the form
@@ -266,12 +212,16 @@ int ddc_10::LEDTestFlash(string IPAddress)
 
 	switch (exp_fexpectl(expect,
                 exp_glob, "password:", prompt,
+		exp_glob, "Network is unreachable", connection_failed,
                 exp_end)) {
+	case connection_failed:
+		cout << endl << "DDC10: connection failed" << endl;
+		return 1;		
         case prompt:
                 // continue
                 break;
         case EXP_TIMEOUT:
-                cout << "Timeout,  may be invalid host" << endl;
+                cout << "DDC10: Timeout,  may be invalid host" << endl;
                 return 1;
 	}
 
@@ -281,14 +231,14 @@ int ddc_10::LEDTestFlash(string IPAddress)
 		exp_glob, "Permission denied", permission_denied,
                 exp_end)) {
         case prompt:
-                cout << endl << "Connection successful" << endl;
+                //cout << endl << "DDC10: Connection successful" << endl;
                 // continue
                 break;
 	case permission_denied:
-		cout << endl << "Permission denied" << endl;
+		cout << endl << "DDC10: Permission denied" << endl;
 		return 1;
         case EXP_TIMEOUT:
-                cout << "Timeout,  may be invalid host" << endl;
+                cout << "DDC10: Timeout,  may be invalid host" << endl;
                 return 1;
 	}
 
@@ -297,7 +247,7 @@ int ddc_10::LEDTestFlash(string IPAddress)
 
 	// send LED flash  command
 	char command [1000];
-	sprintf(command, "./../usr/bin/LEDTestFlash");
+	sprintf(command, "./../HEveto/LEDTestFlash");
 	fprintf(expect, "%s\r", command);
 
 	// check return of telnet
@@ -307,24 +257,24 @@ int ddc_10::LEDTestFlash(string IPAddress)
                 exp_glob, "LEDTesetFlash done", prompt, // third case
                 exp_end)) {
         case command_not_found:
-                cout << endl << "unknown command" << endl;
+                cout << endl << "DDC10: unknown command" << endl;
                 success = false;
                 break;
         case usage:
                 success = false;
-                cout << endl << "wrong usage of \"Initialize\". 8 arguments are needed" << endl;
+                cout << endl << "DDC10: wrong usage of \"Initialize\". 8 arguments are needed" << endl;
                 break;
         case EXP_TIMEOUT:
                 success = false;
-                cout << "Login timeout" << endl;
+                cout << "DDC10: Login timeout" << endl;
                 break;
         case prompt:
                 // continue;
-                cout << endl << "LEDTestFlash successful" << endl;
+                //cout << endl << "DDC10: LEDTestFlash successful" << endl;
                 break;
         default:
                 success = false;
-                cout << endl << "unknown error" << endl;
+                cout << endl << "DDC10: unknown error" << endl;
                 break;
 	}
 
@@ -337,12 +287,3 @@ int ddc_10::LEDTestFlash(string IPAddress)
     	else return 1;
 
 }
-
-u_int32_t ddc_10::StringToInt(const string &str)
-{
-  stringstream ss(str);
-  u_int32_t result;
-  return ss >> result ? result : 0;
-}
-
-
