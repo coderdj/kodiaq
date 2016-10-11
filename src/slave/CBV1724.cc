@@ -349,6 +349,7 @@ int CBV1724::RequestDataLock()
 {
   if(fReadMeOut){
     
+    /*
     // Check here if board is using more than 1000 blocks
     // if so set the board busy flag. This board should be
     // cleared LAST (or at least *a* busy board should be cleared
@@ -366,7 +367,7 @@ int CBV1724::RequestDataLock()
 	}
       }
     }
-    
+    */
     int error = pthread_mutex_trylock(&fDataLock);
     bBoardBusy = false;
     if(error!=0) return -1;
