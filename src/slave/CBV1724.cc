@@ -499,7 +499,7 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
    sizes = fSizes;
    fSizes = new vector<u_int32_t>();
   */
-   cout<<"READING OUT "<<fBID.id<<" with old size: "<<retVec->size()<<" and new size "<<retVec->size()<<endl;
+   //cout<<"READING OUT "<<fBID.id<<" with old size: "<<retVec->size()<<" and new size "<<retVec->size()<<endl;
    if(bProfiling && m_profilefile.is_open())
      m_profilefile<<"CLEAR "<<koLogger::GetTimeMus()<<" "<<retVec->size()<<" "
 		  <<m_ID<<endl;
