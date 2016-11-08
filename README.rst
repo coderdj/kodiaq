@@ -6,6 +6,8 @@ Maintainer: D. Coderre, University of Bern
 
 Free and open source software: GPL version 3 (see LICENSE.txt for details)
 
+[![DOI](https://zenodo.org/badge/17370967.svg)](https://zenodo.org/badge/latestdoi/17370967)
+
 
 1. Brief 
 ----------------------------------
