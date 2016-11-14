@@ -378,7 +378,7 @@ int DAQRecorder_protobuff::Initialize(koOptions *options)
    if(m_outfile.open_file(m_SWritePath,sstream.str())!=0) return -1;
    
    //set header
-   m_outfile.header().identifier=koHelper::GetRunNumber();
+   m_outfile.header().identifier=koHelper::GetRunNumber("");
       
    return 0;
 }
