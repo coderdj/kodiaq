@@ -55,6 +55,10 @@ DAQMonitor::~DAQMonitor()
 void DAQMonitor::ProcessCommand(string command, string user, 
 				   string comment, koOptions *options)
 {         
+  m_Log->Message("Got command " + command + " from " + user + " with comment " + 
+		 comment);
+
+  
   if(command=="Connect" && !m_DAQStatus.NetworkUp){
     if(Connect()!=0)
       m_Mongodb->SendLogMessage(("Error connecting DAQ network. Check settings. User: "+user),KOMESS_ERROR);
@@ -68,6 +72,7 @@ void DAQMonitor::ProcessCommand(string command, string user,
       m_Mongodb->SendLogMessage(("DAQ network disconnected by user "+user),KOMESS_NORMAL);
   }
   else if(command=="Stop"){
+    cout<<"Received stop command externally"<<endl;
     Stop(user,comment);
     Shutdown();
   }
@@ -208,6 +213,7 @@ void DAQMonitor::ThrowFatalError(bool killDAQ, string errTxt)
     m_Mongodb->SendLogMessage(errTxt,KOMESS_ERROR);
   if(killDAQ){
     Stop("dispatcher","Auto stop due to error");
+    cout<<"Dispatcher auto stop due to error"<<endl;
     Shutdown();
   }    
 }
@@ -222,6 +228,7 @@ void DAQMonitor::ThrowWarning(bool killDAQ, string errTxt)
 				 m_detector);
     else{
       Stop("dispatcher","Auto stop due to error");
+      cout<<"Dispatcher auto stop due to error"<<endl;
       Shutdown();
     }
   }
@@ -357,9 +364,12 @@ int DAQMonitor::Arm(koOptions *mode, string run_name)
     pars.InnerRingFactor = opts.inner_ring_factor;
     pars.PreScaling = opts.prescaling;
     
-    if(heveto.Initialize(pars)!=0)
-      m_Mongodb->SendLogMessage("DDC10 veto module could not be initialized.",
-				KOMESS_WARNING);
+    if(heveto.Initialize(pars)!=0){
+      m_Mongodb->SendLogMessage
+	("DDC10 veto module could not be initialized. Run can't be started",
+	 KOMESS_ERROR);
+      return -1;
+    }
   }
 #endif
 

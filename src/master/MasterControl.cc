@@ -291,7 +291,9 @@ void MasterControl::CheckRunQueue(){
     }
     else if(doc_det == "muon_veto" && !sawMV){
       sawMV = true;
-      cout<<"Found MV, checking if idle"<<endl;
+      cout<<"Found MV, checking if idle "<<
+	mDetectors["muon_veto"]->GetStatus()->DAQState<<" "<<
+	fDAQQueue[x].getIntField("running")<<endl;
       // Just check if the MV is idle          
       if(mDetectors["muon_veto"]->GetStatus()->DAQState != KODAQ_IDLE ||
          fStartTimes.find("muon_veto") != fStartTimes.end()||
@@ -520,7 +522,7 @@ void MasterControl::CheckRemoteCommand(){
     Stop(detector, user, comment);
   else if(command=="Start"){
     if(Start(detector,user,comment,options,true,expireAfterSeconds)==-1){
-      cout<<"Sending stop command."<<endl;
+      cout<<"Start failed, sending stop command."<<endl;
       Stop(detector, "AUTO_DISPATCHER", "ABORTED: RUN START FAILED");
     }
     if( detector != "all" )

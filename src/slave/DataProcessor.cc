@@ -292,7 +292,7 @@ void DataProcessor::SplitChannelsNewFW(vector<u_int32_t*> *&buffvec,
 
 
 	// SANITY CHECK FOR DAQ TEST
-
+	/*
 	if ( channelSize > 100000 || channelSize<=2 ){	 
 	  stringstream errorlog;
           errorlog<<"Error parsing data with newfw algorithm (1). Index: "<<idx
@@ -312,7 +312,7 @@ void DataProcessor::SplitChannelsNewFW(vector<u_int32_t*> *&buffvec,
           outfile.close();
 	  continue;
 	}
-
+	*/
 	// REMOVE ABOVE AFTER TEST
 
 
