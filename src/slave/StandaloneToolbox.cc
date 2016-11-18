@@ -89,7 +89,7 @@ int StandaloneToolbox::InsertRunDoc(koOptions *options, string comment, string n
 
   // If writing to mongodb also make the collection
   // along with any indices
-  if(opions->HasField("write_mode") && options->GetInt("write_mode")==2){
+  if(options->HasField("write_mode") && options->GetInt("write_mode")==2){
 
     // Get stuff from internal options
     mongo_option_t mongo_opts = options->GetMongoOptions();
@@ -111,7 +111,7 @@ int StandaloneToolbox::InsertRunDoc(koOptions *options, string comment, string n
 
     // Make index object
     mongo::IndexSpec ispec;
-    for(int k=0; k<mongo_opts.indices.size(); k++)
+    for(unsigned int k=0; k<mongo_opts.indices.size(); k++)
       ispec.addKey(mongo_opts.indices[k]);
     ispec.background();
     cout<<"Creating and indexing collection "<<mongo_opts.collection<<" with no index on ID"<<endl;
