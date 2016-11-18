@@ -111,16 +111,21 @@ int StandaloneToolbox::InsertRunDoc(koOptions *options, string comment, string n
 
     // Make index object
     mongo::IndexSpec ispec;
-    for(unsigned int k=0; k<mongo_opts.indices.size(); k++)
+    cout<<mongo_opts.indices.size()<<endl;
+    for(unsigned int k=0; k<mongo_opts.indices.size(); k++){
+      cout<<mongo_opts.indices[k];
       ispec.addKey(mongo_opts.indices[k]);
+    }
+    cout<<endl;
     ispec.background();
     cout<<"Creating and indexing collection "<<mongo_opts.collection<<" with no index on ID"<<endl;
     bufferDB->createCollectionWithOptions( 
-					  mongo_opts.collection,
-					  0, false, 0,
-					  mongo::fromjson("{'autoIndexId': false}")
+				mongo_opts.database+"."+mongo_opts.collection,
+				0, false, 0,
+				mongo::fromjson("{'autoIndexId': false}")
 					   );
-    bufferDB->createIndex( mongo_opts.collection, ispec );
+    bufferDB->createIndex( mongo_opts.database+"."+mongo_opts.collection, 
+			   ispec );
   }
   return 0;
 
