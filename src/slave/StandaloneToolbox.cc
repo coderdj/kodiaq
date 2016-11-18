@@ -86,6 +86,7 @@ int StandaloneToolbox::InsertRunDoc(koOptions *options, string comment, string n
       e.what()<<endl;
     return -1;
   }
+<<<<<<< HEAD
 
   // If writing to mongodb also make the collection
   // along with any indices
@@ -122,6 +123,8 @@ int StandaloneToolbox::InsertRunDoc(koOptions *options, string comment, string n
 					   );
     bufferDB->createIndex( mongo_opts.collection, ispec );
   }
+=======
+>>>>>>> 2c249d01484e76dff2a418091ef814b2f62b13d7
   return 0;
 
 }
