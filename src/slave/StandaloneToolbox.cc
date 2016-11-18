@@ -86,6 +86,42 @@ int StandaloneToolbox::InsertRunDoc(koOptions *options, string comment, string n
       e.what()<<endl;
     return -1;
   }
+
+  // If writing to mongodb also make the collection
+  // along with any indices
+  if(opions->HasField("write_mode") && options->GetInt("write_mode")==2){
+
+    // Get stuff from internal options
+    mongo_option_t mongo_opts = options->GetMongoOptions();
+    string index_string = mongo_opts.index_string;
+    string connstring = mongo_opts.address;
+
+    // Connect to DB
+    mongo::DBClientBase *bufferDB;
+    try     {
+      string errstring = "";
+      mongo::ConnectionString cstring =
+	mongo::ConnectionString::parse(connstring, errstring);
+      bufferDB = cstring.connect(errstring);
+    }
+    catch(const mongo::DBException &e)    {
+      cout<<"Failed to connect to buffer DB to create collection!"<<endl;
+      return -1;
+    }
+
+    // Make index object
+    mongo::IndexSpec ispec;
+    for(int k=0; k<mongo_opts.indices.size(); k++)
+      ispec.addKey(mongo_opts.indices[k]);
+    ispec.background();
+    cout<<"Creating and indexing collection "<<mongo_opts.collection<<" with no index on ID"<<endl;
+    bufferDB->createCollectionWithOptions( 
+					  mongo_opts.collection,
+					  0, false, 0,
+					  mongo::fromjson("{'autoIndexId': false}")
+					   );
+    bufferDB->createIndex( mongo_opts.collection, ispec );
+  }
   return 0;
 
 }

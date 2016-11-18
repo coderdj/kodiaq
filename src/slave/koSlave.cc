@@ -186,7 +186,7 @@ program_start:
 	cout<<"DAQ running @ "<<rate<<" MB/s with "<<freq<<" Hz and "
 	    <<digis.size()<<" digitizers."<<endl;
 	cout<<"Buffer: "<<BufferSize<<" bytes."<<endl;
-	
+	cout<<"Press p to stop the run."<<endl;
 	 //cout<<setprecision(2)<<"Rate: "<<rate<<"MB/s   Freq: "<<freq<<"Hz             "<<'\r';//   Averaged over "<<tdiff<<"s"<<'\r';//endl;
 	 //cout.flush();
       }      
