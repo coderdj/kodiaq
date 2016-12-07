@@ -368,7 +368,7 @@ int CBV1724::RequestDataLock()
 	for(unsigned int x=0;x<channelBufferRegs.size();x++){
 	  u_int32_t ch=0;
 	  ReadReg32(channelBufferRegs[x],ch);	
-	  if(ch >= 1000){
+	  if(ch >= 1023{
 	    bBoardBusy = true;
 	    return -1;
 	  }
