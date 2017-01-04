@@ -52,6 +52,7 @@ CBV1724::CBV1724()
    fError=false;
    fErrorText="";
    bBoardBusy = false;
+   fReadBusyLast = false;
 }
 
 CBV1724::~CBV1724()
@@ -96,6 +97,7 @@ CBV1724::CBV1724(board_definition_t BoardDef, koLogger *kLog, bool profiling)
   fError=false;
   fErrorText="";  
   bBoardBusy = false;
+  fReadBusyLast = false;
 }
 
 int CBV1724::Initialize(koOptions *options)
@@ -114,6 +116,10 @@ int CBV1724::Initialize(koOptions *options)
   UnlockDataBuffer();
   fBLTSize=options->GetInt("blt_size");
   fBufferSize = fBLTSize;
+  if(options->HasField("read_busy_last") && options->GetInt("read_busy_last")==1)
+    fReadBusyLast = true;
+  else
+    fReadBusyLast = false;
   fReadoutThresh = options->GetInt("processing_readout_threshold");
   if(options->HasField("baseline_level"))
     fIdealBaseline = options->GetInt("baseline_level");
@@ -349,25 +355,27 @@ int CBV1724::RequestDataLock()
 {
   if(fReadMeOut){
     
-    /*
-    // Check here if board is using more than 1000 blocks
-    // if so set the board busy flag. This board should be
-    // cleared LAST (or at least *a* busy board should be cleared
-    // last) giving larger blocks of live time. 
-    std::vector<u_int32_t> channelBufferRegs = {0x1094, 0x1194, 0x1294, 0x1394, 
-						0x1494, 0x1594, 0x1694, 0x1794};
-
-    if(!bBoardBusy){      
-      for(unsigned int x=0;x<channelBufferRegs.size();x++){
-	u_int32_t ch=0;
-	ReadReg32(channelBufferRegs[x],ch);	
-	if(ch >= 1000){
-	  bBoardBusy = true;
-	  return -1;
+    
+    if(fReadBusyLast){
+      // Check here if board is using more than 1000 blocks
+      // if so set the board busy flag. This board should be
+      // cleared LAST (or at least *a* busy board should be cleared
+      // last) giving larger blocks of live time. 
+      std::vector<u_int32_t> channelBufferRegs = {0x1094, 0x1194, 0x1294, 0x1394, 
+						  0x1494, 0x1594, 0x1694, 0x1794};
+      
+      if(!bBoardBusy){      
+	for(unsigned int x=0;x<channelBufferRegs.size();x++){
+	  u_int32_t ch=0;
+	  ReadReg32(channelBufferRegs[x],ch);	
+	  if(ch >= 1023){
+	    bBoardBusy = true;
+	    return -1;
+	  }
 	}
       }
     }
-    */
+    
     int error = pthread_mutex_trylock(&fDataLock);
     bBoardBusy = false;
     if(error!=0) return -1;

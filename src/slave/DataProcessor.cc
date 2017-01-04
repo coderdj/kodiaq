@@ -606,13 +606,26 @@ void DataProcessor::Process()
 	  bson.append("channel",Channel);
 	  bson.append("time",Time64);
 	  bson.append("endtime", Time64 + (long long)eventSize);
-	  //bson.append("raw_time", TimeStamp);
-	  //bson.append("time_reset_counter", resetCounterStart );
 	  
+	  // Integral is expensive! Just turn on if rate low enough.
 	  if( m_koOptions->HasField("occurrence_integral") &&
 	      m_koOptions->GetInt("occurrence_integral") > 0 )
 	    bson.append("integral", integral);
 
+	  // Debug output mode. Put extra fields in to track clock issues
+	  if( m_koOptions->HasField("debug_output") && m_koOptions->GetInt("debug_output")==1){
+	    bson.append("header_time", headerTime);
+	    bson.append("raw_time", TimeStamp);                                                         
+	    bson.append("header_batch_id", resetCounterStart ); 
+	    
+	    // Channel reset counters at this moment
+	    mongo::BSONArrayBuilder channel_reset_array;
+	    for(unsigned int x=0; x<ChannelResetCounters.size(); x++)
+	      channel_reset_array.append(ChannelResetCounters[x]);
+	    bson.append("channel_batch_ids", channel_reset_array.arr());
+	  }
+
+	  // Lite mode means no data field. If we're not in lite mode add the data field.
 	  if( !m_koOptions->HasField("lite_mode") || m_koOptions->GetInt("lite_mode")==0)
 	    bson.appendBinData("data",(int)eventSize,mongo::BinDataGeneral,
 			       (const void*)buff);

@@ -103,6 +103,7 @@ class CBV1724 : public VMEBoard {
   bool                  bExists, bProfiling;
   ofstream              m_profilefile;
   bool                  bBoardBusy;
+  bool                  fReadBusyLast;
 };
 
 #endif
