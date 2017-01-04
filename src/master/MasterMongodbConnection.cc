@@ -1224,12 +1224,55 @@ int MasterMongodbConnection::PullRunMode(string name, koOptions &options)
    //Find doc corresponding to this run mode
    mongo::BSONObjBuilder query; 
    query.append( "name" , name ); 
-   //cout<<"Looking for run mode "<<name<<endl;
    mongo::BSONObj res = fMonitorDB->findOne(fMonitorDBName+".run_modes" , query.obj() ); 
    if(res.nFields()==0) {
      cout<<"Empty run mode obj"<<endl;
+     fLog->Error("Top level run mode " + name + " not found.");
      return -1; //empty object
    }
+
+   // Now we want to allow nesting from parent nodes. 
+   // The rule is we take all fields from the parent node that are NOT overridden
+   // in the child node. If the child node has a field also contained in the parent 
+   // node then the child node has preference.
+   while(1){
+     if(!res.hasField("parent"))
+       break;
+     if(res["parent"].String() == "none")
+       break;
+
+     // Look up the parent doc
+     cout<<"Looking for parent "<<res["parent"].String()<<endl;
+     mongo::BSONObjBuilder parent_query;
+     parent_query.append( "name", res["parent"].String() );
+     mongo::BSONObj parent = fMonitorDB->findOne(fMonitorDBName+".run_modes", 
+						 parent_query.obj() );
+     if( parent.nFields() == 0){
+       cout<<"Empty parent. I'll allow it."<<endl;
+       fLog->Error("Warning, parent node " + res["parent"].String() + " is empty.");
+       break;
+     }
+     cout<<"Found parent"<<endl;
+
+     // The magic part
+     mongo::BSONObjBuilder compositeObj;
+     
+     // If our new object has a parent
+     if(parent.hasField("parent")){
+       compositeObj.append("parent", parent["parent"].String());
+       cout<<"Appending parent "<<parent["parent"].String()<<endl;
+     }
+     else{
+       compositeObj.append("parent", "none");
+       cout<<"Appending parent none"<<endl;
+     }
+
+     compositeObj.appendElementsUnique(res);
+     compositeObj.appendElementsUnique(parent);
+     res = compositeObj.obj();
+     cout<<"Made composite object, continuing."<<endl;
+   }
+
    options.SetBSON(res);
    return 0;
 }

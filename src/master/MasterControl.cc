@@ -195,7 +195,9 @@ void MasterControl::Stop(string detector, string user, string comment){
     if( fStartTimes.find(detectorsToStop[x]) != fStartTimes.end() )
       fStartTimes.erase(detectorsToStop[x]);
   }
-  ModifyRunQueue(detector);
+  cout<<"In stop command, clearing run queue for detector "<<detector<<endl;
+  ModifyRunQueue(detector, -1);
+  mMongoDB->SyncRunQueue(fDAQQueue);
 }
 
 void MasterControl::CheckRunQueue(){
@@ -211,12 +213,15 @@ void MasterControl::CheckRunQueue(){
       time_t currentTime = koLogger::GetCurrentTime();
       double dTime = difftime( currentTime, iter.second);
       
-      //cout<<"Found run that started "<<dTime<<" seconds ago with "<<fExpireAfterSeconds[iter.first] << "limit"<<endl;
-      // Should we stop it? 
+      cout<<"Found run that started "<<dTime<<" seconds ago with "<<fExpireAfterSeconds[iter.first] << "limit"<<endl;
+      // Should we stop it?       
       if(dTime > fExpireAfterSeconds[iter.first] && 
-	 fExpireAfterSeconds[iter.first]!=0)
+	 fExpireAfterSeconds[iter.first]!=0){
+	cout<<"Sending stop command for detector "<<iter.first<<endl;
         Stop(iter.first, "dispatcher_autostop", "Run automatically stopped after "
              + koHelper::IntToString(fExpireAfterSeconds[iter.first]) + "seconds.");
+	return;
+      }
     }
   }
   //cout<<"Done with start times"<<endl;
@@ -238,15 +243,30 @@ void MasterControl::CheckRunQueue(){
 
     // Case 0: We find something which thinks it's running. However the
     // DAQ thinks the detector is idle. Remove that entry;
+    // If the entry is from more than 30 seconds ago we put it back into 'autoplay' status
     cout<<"Found detector "<<doc_det<<" with value "<<fDAQQueue[x].getIntField("running")<<endl;
 
     if(fDAQQueue[x].getIntField("running")==1){
+      cout<<"Found running"<<endl;
       if(mDetectors.find(doc_det) != mDetectors.end() &&
 	 mDetectors[doc_det]->GetStatus()->DAQState == KODAQ_IDLE){
-	cout<<"Erasing bad doc"<<endl;
-	fDAQQueue.erase(fDAQQueue.begin()+x);
-	x--;
-	mMongoDB->SyncRunQueue(fDAQQueue);
+	time_t doctime = fDAQQueue[x].getField("starttime").date().toTimeT();
+	time_t currentTime;
+	time(&currentTime);
+	double diff = difftime(currentTime, doctime);
+	cout<<"Time diff "<<diff<<endl;
+	if(fabs(diff) > 30){
+	  cout<<"Modify"<<endl;
+	  ModifyRunQueue(doc_det, fDAQQueue[x].getIntField("position"), false);
+	  mMongoDB->SyncRunQueue(fDAQQueue);
+	}
+	else if(fabs(diff) > 120){
+	  cout<<"Erasing bad doc"<<endl;
+	  fDAQQueue.erase(fDAQQueue.begin()+x);
+	  x--;	
+	  mMongoDB->SyncRunQueue(fDAQQueue);
+	}
+	
 	return;
       }
       else if(doc_det=="tpc"){
@@ -315,8 +335,7 @@ void MasterControl::CheckRunQueue(){
     // Here add the modification. Starting a run. So make sure at most one
     // Run queue document is set to 'active' per detector (flush old ones)
     // Something like:
-    ModifyRunQueue(doc_det, fDAQQueue[x].getIntField("position"));
-    
+    ModifyRunQueue(doc_det, fDAQQueue[x].getIntField("position"), true);
     mMongoDB->SyncRunQueue(fDAQQueue);
     break;
   }
@@ -324,7 +343,7 @@ void MasterControl::CheckRunQueue(){
 
 }
 
-int MasterControl::ModifyRunQueue(string detector, int index){
+int MasterControl::ModifyRunQueue(string detector, int index, bool running){
   // You can send this index=-1 and it will purge runs with detector 'detector'
   // that have status 'running'
   // If you set index to something !=-1 it additionally sets that index
@@ -335,11 +354,17 @@ int MasterControl::ModifyRunQueue(string detector, int index){
 
   // Purge any old runs
   for(unsigned int x=0; x<fDAQQueue.size(); x++){
-    if(fDAQQueue[x].getIntField("position")==index){
+    if(index != -1 && fDAQQueue[x].getIntField("position")==index){
       // Do the update by creating a new object with run=2 and copying
       // the rest of the fields. 
       mongo::BSONObjBuilder buildy;
-      buildy.append("running", 1);
+      if(running)
+	buildy.append("running", 1);
+      else
+	buildy.append("running", 2);
+      time_t currentTime;
+      time(&currentTime);
+      buildy.appendTimeT("starttime",currentTime);
       buildy.appendElementsUnique(fDAQQueue[x]);
       fDAQQueue.erase(fDAQQueue.begin() + x);
       fDAQQueue.insert(fDAQQueue.begin() + x, buildy.obj());
@@ -348,9 +373,10 @@ int MasterControl::ModifyRunQueue(string detector, int index){
     }
 
     // For any other runs matching the detector and already running, purge   
-    else if(index!=-1){
+    else{//(index!=-1){
       if((fDAQQueue[x].getStringField("detector") == detector || 
-	  fDAQQueue[x].getStringField("detector") == "all") &&
+	  fDAQQueue[x].getStringField("detector") == "all" ||
+	  detector == "all") &&
 	 fDAQQueue[x].getIntField("running") == 1){
 	cout<<"Nuke it!"<<endl;
 	fDAQQueue.erase(fDAQQueue.begin() + x);
@@ -515,8 +541,8 @@ void MasterControl::CheckRemoteCommand(){
   int expireAfterSeconds =0;
   mMongoDB->CheckForCommand(command,user,comment,detector,override,
 			    options,expireAfterSeconds);
-  cout<<"Found command "<<command<<" with expireAfterSeconds:" <<
-    expireAfterSeconds<<endl;
+  //cout<<"Found command "<<command<<" with expireAfterSeconds:" <<
+  //expireAfterSeconds<<endl;
   // If command is stop
   if(command == "Stop")
     Stop(detector, user, comment);

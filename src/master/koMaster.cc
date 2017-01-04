@@ -73,6 +73,14 @@ int main(int argc, char *argv[])
 	cout<<"Received command 'CONNECT'"<<endl;
 	controller->Connect();      
       }
+      else if( cCommand == 'i'){
+	cout<<"DISCONNECT for TPC"<<endl;
+	controller->Disconnect("tpc");
+      }
+      else if( cCommand == 'o' ){
+	cout<<"CONNECT for TPC"<<endl;
+	controller->Connect("tpc");
+      }
       else if( cCommand == 'm'){
 	cout<<"CONNECT for MUON VETO"<<endl;
 	controller->Connect("muon_veto");
