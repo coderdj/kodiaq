@@ -142,8 +142,16 @@ program_start:
    time_t prevTime = koLogger::GetCurrentTime();
    while(1)  {	
       if(kbhit()) cin.get(input);
-      if(input=='q') break;
+      if(input=='q') {
+        cout << "Please stop the run with p." << endl;
+        // Clear input
+        input = 'a';
+       }
       if(input=='p'){
+	if(fRunName!=""){
+	  STool.UpdateRunDoc(fRunName);
+	  fRunName = "";
+        }
 	fElectronics->StopRun();
 	cout<<koLogger::GetTimeString()<<" Run stopped"<<endl;
 	goto program_start;
