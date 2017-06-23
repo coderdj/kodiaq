@@ -6,20 +6,29 @@ The standalone reader exists in src/slave. An options file in this directory
 called DAQConfig.ini should be defined to set your run options. This is explained 
 in detail in the options section of this documentation.
 
-Assuming DAQConfig.ini is configured you should be able to run the code like this::
+We'll assume DAQConfig.ini is configured correctly. Make sure to update the MongoDB
+collection before starting a new run though!
+
+Then you should be able to run the code like this::
   
   cd src/slave
   ./koSlave
 
-Starting and stopping the run is done using the keyboard prompts. 
+Starting and stopping the run is done using the keyboard prompts: (s) to start, (p) 
+to stop, (q) to quit.
 
-Special options for standalone mode
------------------------------------
+Data is written to your MongoDB collection in the following format ::
 
-Most of the DAQ options for the DAQConfig.ini file are the same in standalone
-and networked mode. The differences are listed here.
+  {
+     "time": {samples since run start},
+     "module": {module number},
+     "channel": {channel number},
+     "data": {data payload, 16 bit samples}
+  }
 
-  * Run names cannot be defined with a '*' wildcard. Run names must be given 
-    absolute names. The same holds for file output paths.
-  * The '%' operator to define a certain slave node is not necessary and 
-    must be omitted. 
+To extract the data, the following numpy function should save you a trip to Google ::
+
+   payload = doc['data']
+   data = np.fromstring(payload, dtype=np.int16)
+
+

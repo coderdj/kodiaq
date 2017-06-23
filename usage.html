@@ -103,12 +103,9 @@
 	<br><br>
 	<ul id="sidebar" class="nav nav-stacked"><ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="intro.html">Welcome</a></li>
-<li class="toctree-l1"><a class="reference internal" href="webinterface.html">A Tour of the Web Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="webinterface.html">The Web Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation of the standalone reader</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Using the Standalone Reader</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#special-options-for-standalone-mode">Special options for standalone mode</a></li>
-</ul>
-</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Using the Standalone Reader</a></li>
 <li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment of the Full System</a></li>
 <li class="toctree-l1"><a class="reference internal" href="options.html">DAQ Options</a></li>
 <li class="toctree-l1"><a class="reference internal" href="protocols.html">Data Formats</a></li>
@@ -132,20 +129,20 @@
 <li class="toctree-l2"><a class="reference internal" href="intro.html#use-guidelines">Use Guidelines</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="webinterface.html">A Tour of the Web Interface</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="webinterface.html">The Web Interface</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="webinterface.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="webinterface.html#build-notes">Build Notes</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation of the standalone reader</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#scope">Scope</a></li>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#fetching-the-source-code">Fetching the source code</a></li>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#prerequisites-for-installation">Prerequisites for installation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#how-to-install">How to install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#bonus-installing-mongodb">Bonus: Installing MongoDB</a></li>
 </ul>
 </li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Using the Standalone Reader</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#special-options-for-standalone-mode">Special options for standalone mode</a></li>
-</ul>
-</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Using the Standalone Reader</a></li>
 <li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment of the Full System</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="deployment.html#summary-of-dependencies-per-module">Summary of Dependencies per Module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="deployment.html#deployment-step-by-step">Deployment, Step by Step</a></li>
@@ -199,24 +196,28 @@
 <p>The standalone reader exists in src/slave. An options file in this directory
 called DAQConfig.ini should be defined to set your run options. This is explained
 in detail in the options section of this documentation.</p>
-<p>Assuming DAQConfig.ini is configured you should be able to run the code like this:</p>
+<p>We’ll assume DAQConfig.ini is configured correctly. Make sure to update the MongoDB
+collection before starting a new run though!</p>
+<p>Then you should be able to run the code like this:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">src</span><span class="o">/</span><span class="n">slave</span>
 <span class="o">./</span><span class="n">koSlave</span>
 </pre></div>
 </div>
-<p>Starting and stopping the run is done using the keyboard prompts.</p>
-<div class="section" id="special-options-for-standalone-mode">
-<h2>Special options for standalone mode<a class="headerlink" href="#special-options-for-standalone-mode" title="Permalink to this headline">¶</a></h2>
-<p>Most of the DAQ options for the DAQConfig.ini file are the same in standalone
-and networked mode. The differences are listed here.</p>
-<blockquote>
-<div><ul class="simple">
-<li>Run names cannot be defined with a ‘*’ wildcard. Run names must be given
-absolute names. The same holds for file output paths.</li>
-<li>The ‘%’ operator to define a certain slave node is not necessary and
-must be omitted.</li>
-</ul>
-</div></blockquote>
+<p>Starting and stopping the run is done using the keyboard prompts: (s) to start, (p)
+to stop, (q) to quit.</p>
+<p>Data is written to your MongoDB collection in the following format</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span>
+   <span class="s2">&quot;time&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">samples</span> <span class="n">since</span> <span class="n">run</span> <span class="n">start</span><span class="p">},</span>
+   <span class="s2">&quot;module&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">module</span> <span class="n">number</span><span class="p">},</span>
+   <span class="s2">&quot;channel&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">channel</span> <span class="n">number</span><span class="p">},</span>
+   <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">data</span> <span class="n">payload</span><span class="p">,</span> <span class="mi">16</span> <span class="n">bit</span> <span class="n">samples</span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>To extract the data, the following numpy function should save you a trip to Google</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">payload</span> <span class="o">=</span> <span class="n">doc</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">]</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+</pre></div>
 </div>
 </div>
 

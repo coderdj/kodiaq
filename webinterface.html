@@ -4,7 +4,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>A Tour of the Web Interface &#8212; kodiaq 1.0 documentation</title>
+    <title>The Web Interface &#8212; kodiaq 1.0 documentation</title>
     
     <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -103,8 +103,9 @@
 	<br><br>
 	<ul id="sidebar" class="nav nav-stacked"><ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="intro.html">Welcome</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">A Tour of the Web Interface</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">The Web Interface</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#build-notes">Build Notes</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation of the standalone reader</a></li>
@@ -132,20 +133,20 @@
 <li class="toctree-l2"><a class="reference internal" href="intro.html#use-guidelines">Use Guidelines</a></li>
 </ul>
 </li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">A Tour of the Web Interface</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">The Web Interface</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#build-notes">Build Notes</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation of the standalone reader</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#scope">Scope</a></li>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#fetching-the-source-code">Fetching the source code</a></li>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#prerequisites-for-installation">Prerequisites for installation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#how-to-install">How to install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#bonus-installing-mongodb">Bonus: Installing MongoDB</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="usage.html">Using the Standalone Reader</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="usage.html#special-options-for-standalone-mode">Special options for standalone mode</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Using the Standalone Reader</a></li>
 <li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment of the Full System</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="deployment.html#summary-of-dependencies-per-module">Summary of Dependencies per Module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="deployment.html#deployment-step-by-step">Deployment, Step by Step</a></li>
@@ -194,13 +195,54 @@
       </div>
     <div class="col-md-9">
       
-  <div class="section" id="a-tour-of-the-web-interface">
-<h1>A Tour of the Web Interface<a class="headerlink" href="#a-tour-of-the-web-interface" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="the-web-interface">
+<h1>The Web Interface<a class="headerlink" href="#the-web-interface" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="introduction">
 <h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
 <p>Most users will only require the web interface in order to run and
-monitor the DAQ. Once the interface is a bit more final this document
-will be expanded as a full user’s guide.</p>
+monitor the DAQ. The web interface is called “emo” or “Experimental
+MOnitor”. The repository is here</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">coderdj</span><span class="o">/</span><span class="n">emo</span>
+</pre></div>
+</div>
+<p>This is not really developed as a full fledged professional package.
+You’re gonna have to get your hands dirty if you want to use it. The
+code is pretty specific to XENON1T but I guess you can pull parts of
+it for use in other experiments if you want.</p>
+</div>
+<div class="section" id="build-notes">
+<h2>Build Notes<a class="headerlink" href="#build-notes" title="Permalink to this headline">¶</a></h2>
+<p>I’m refraining from calling this ‘instructions’ but more ‘build notes’.
+In principle these steps will get you like 80% there but you’ll need to
+fill in the blanks.</p>
+<p>First, install anaconda</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">wget</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="mi">3230</span><span class="n">d63b5fc54e62148e</span><span class="o">-</span><span class="n">c95ac804525aac4b6dba79b00b39d1d3</span><span class="o">.</span><span class="n">ssl</span><span class="o">.</span><span class="n">cf1</span><span class="o">.</span><span class="n">rackcdn</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">Anaconda3</span><span class="o">-</span><span class="mf">2.3</span><span class="o">.</span><span class="mi">0</span><span class="o">-</span><span class="n">Linux</span><span class="o">-</span><span class="n">x86_64</span><span class="o">.</span><span class="n">sh</span>
+<span class="n">bash</span> <span class="n">Anaconda3</span><span class="o">-</span><span class="mf">2.3</span><span class="o">.</span><span class="mi">0</span><span class="o">-</span><span class="n">Linux</span><span class="o">-</span><span class="n">x86_64</span><span class="o">.</span><span class="n">sh</span>
+<span class="n">conda</span> <span class="n">create</span> <span class="o">-</span><span class="n">n</span> <span class="n">web</span> <span class="n">python</span><span class="o">=</span><span class="mf">3.4</span> <span class="n">numba</span> <span class="n">matplotlib</span> <span class="n">scipy</span>
+<span class="n">source</span> <span class="n">activate</span> <span class="n">web</span>
+</pre></div>
+</div>
+<p>Do all your following work in that environment</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="p">{</span><span class="n">user</span><span class="p">}</span><span class="nd">@github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">coderdj</span><span class="o">/</span><span class="n">emo</span> <span class="n">emo</span>
+<span class="n">sudo</span> <span class="n">apt</span><span class="o">-</span><span class="n">get</span> <span class="n">install</span> <span class="n">libhdf5</span><span class="o">-</span><span class="n">dev</span> <span class="n">snappy</span> <span class="n">libldap2</span><span class="o">-</span><span class="n">dev</span> <span class="n">libsasl2</span><span class="o">-</span><span class="n">dev</span>
+<span class="n">cd</span> <span class="n">emo</span> <span class="o">&amp;&amp;</span> <span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">r</span> <span class="n">requirements</span><span class="o">.</span><span class="n">txt</span>
+</pre></div>
+</div>
+<p>Update your certificate with the signed one you got because you’re not a loser</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">cp</span> <span class="p">{</span><span class="n">your_signed_cert</span><span class="o">.</span><span class="n">crt</span><span class="p">}</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">local</span><span class="o">/</span><span class="n">share</span><span class="o">/</span><span class="n">ca</span><span class="o">-</span><span class="n">certificates</span><span class="o">/</span><span class="n">cert</span><span class="o">.</span><span class="n">crt</span>
+<span class="n">sudo</span> <span class="n">update</span><span class="o">-</span><span class="n">ca</span><span class="o">-</span><span class="n">certificates</span>
+</pre></div>
+</div>
+<p>Run the test server</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">manage</span><span class="o">.</span><span class="n">py</span> <span class="n">migrate</span>
+<span class="n">python</span> <span class="n">runserver</span>
+</pre></div>
+</div>
+<p>Now you should be able to log in with a browser. But <strong>for the love of all
+things holy</strong> do not use this test server in production. It is very insecure.</p>
+<p>You probably want to deploy with apache and mod_wsgi. Trust me, you’re not the
+first, or even one of the first 10,000, who wants to deploy a Django website
+with apache. Google is your friend.</p>
 </div>
 </div>
 
