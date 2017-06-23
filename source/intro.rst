@@ -36,10 +36,10 @@ This guide covers how to install and log into the DAQ.
 Use Guidelines
 --------------
 
-kodiaq is currently closed-source and its distribution is limited.
-However, many parts of the code are general enough to be reused for 
-other data acquisition purposes. If you are interested in the system
-feel free to drop us a line.
+kodiaq is released under the GPLv3 License. See the text here: 
+https://github.com/XENON1T/kodiaq/blob/master/LICENSE.txt
 
-kodiaq is developed at the University of Bern. If you have questions, 
-comments, want to help, or want to buy us a beer we would love to hear from you.
+kodiaq was developed at the University of Bern and is maintained
+at the University of Freiburg. If you have questions, comments, want to help, 
+or want to buy us a beer we would love to hear from you. Complaints? 
+Fix it first. ;-)
