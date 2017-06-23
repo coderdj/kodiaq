@@ -1,13 +1,12 @@
 <!DOCTYPE html>
 
-
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>DAQ Options &mdash; kodiaq 1.0 documentation</title>
+    <title>DAQ Options &#8212; kodiaq 1.0 documentation</title>
     
-    <link rel="stylesheet" href="_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="_static/bootstrap-3.1.0/css/bootstrap.min.css" type="text/css" />
     <link rel="stylesheet" href="_static/bootstrap-3.1.0/css/bootstrap-theme.min.css" type="text/css" />
@@ -20,7 +19,8 @@
         VERSION:     '1.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
@@ -31,7 +31,8 @@
     <script type="text/javascript" src="_static/bootstrap-3.1.0/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <script type="text/javascript" src="_static/theme.js"></script>
-    <link rel="top" title="kodiaq 1.0 documentation" href="index.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Data Formats" href="protocols.html" />
     <link rel="prev" title="Deployment of the Full System" href="deployment.html" />
 <meta charset='utf-8'>
@@ -106,7 +107,7 @@
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation of the standalone reader</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usage.html">Using the Standalone Reader</a></li>
 <li class="toctree-l1"><a class="reference internal" href="deployment.html">Deployment of the Full System</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="">DAQ Options</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">DAQ Options</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#general-syntax">General Syntax</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#electronics-definitions">Electronics Definitions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#run-options">Run Options</a></li>
@@ -160,7 +161,7 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l1 current"><a class="current reference internal" href="">DAQ Options</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">DAQ Options</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#general-syntax">General Syntax</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#electronics-definitions">Electronics Definitions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#run-options">Run Options</a></li>
@@ -203,8 +204,8 @@
 files. Static options are defined for the master and slave programs
 upon program start and remain the same for the life of the program.
 These files deal with master/slave connectivity and database addresses.
-Configuration of these files is defined in the &#8216;deployment&#8217; section.</p>
-<p>This section deals with the &#8216;run modes&#8217; ini files that define the settings
+Configuration of these files is defined in the ‘deployment’ section.</p>
+<p>This section deals with the ‘run modes’ ini files that define the settings
 for a particular run. These settings are reset each run and are designed
 to chage from run to run.</p>
 <p>The .ini files are in json format. This allows the files to be easily
@@ -253,11 +254,11 @@ processing the data in the crate controller module (this is a
 closed-source, commercial system so we are not sure which). Maximum
 throughput in this mode is around 30 MB/s depending on data type and
 options. Therefore it is recommended to always connect the DAQ in
-&#8220;daisy-chain mode&#8221; if possible. Though reading out via the crate
+“daisy-chain mode” if possible. Though reading out via the crate
 controller is possible with kodiaq, this guide will only cover configuring
 the DAQ for readout through the optical links on the V1724 boards
 themselves (where speeds of up to 90MB/s have been observed).</p>
-<p>When connecting the boards in &#8220;daisy-chain&#8221; mode, optical cables are
+<p>When connecting the boards in “daisy-chain” mode, optical cables are
 used to hook the boards in series to a single optical input on the
 A2818 or A3818 PCI(e) card. Up to 8 digitizers can be connected to a
 single optical port, meaning an A2818 supports up to 8 digitizers
@@ -272,14 +273,14 @@ library. Two variables must be defined, a LINK and a BASE_ADDRESS
 digitizer has its own LINK defined, as opposed to when the boards are
 read out via the crate controller, in which case they share a link.</p>
 <p>The syntax for defining a link is</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span>
- <span class="s">&quot;links&quot;</span><span class="p">:</span> <span class="p">[</span>
-    <span class="p">{</span><span class="s">&quot;type&quot;</span><span class="p">:</span> <span class="s">&quot;V2718&quot;</span><span class="p">,</span> <span class="c"># or &quot;V1718&quot; if you use USB</span>
-     <span class="s">&quot;reader&quot;</span><span class="p">:</span> <span class="n">Int</span><span class="p">,</span>   <span class="c"># ID of reader</span>
-     <span class="s">&quot;crate&quot;</span><span class="p">:</span> <span class="n">Int</span><span class="p">,</span>    <span class="c"># CAEN crate number</span>
-     <span class="s">&quot;link&quot;</span><span class="p">:</span> <span class="n">Int</span>      <span class="c"># Link index (physically on the optical card)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span>
+ <span class="s2">&quot;links&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;V2718&quot;</span><span class="p">,</span> <span class="c1"># or &quot;V1718&quot; if you use USB</span>
+     <span class="s2">&quot;reader&quot;</span><span class="p">:</span> <span class="n">Int</span><span class="p">,</span>   <span class="c1"># ID of reader</span>
+     <span class="s2">&quot;crate&quot;</span><span class="p">:</span> <span class="n">Int</span><span class="p">,</span>    <span class="c1"># CAEN crate number</span>
+     <span class="s2">&quot;link&quot;</span><span class="p">:</span> <span class="n">Int</span>      <span class="c1"># Link index (physically on the optical card)</span>
     <span class="p">},</span>
-    <span class="o">...</span> <span class="c">#more links</span>
+    <span class="o">...</span> <span class="c1">#more links</span>
     <span class="p">]</span>
  <span class="p">}</span>
 </pre></div>
@@ -291,13 +292,13 @@ optical link directly and this will make a bit more sense.</p>
 <div><ul class="simple">
 <li>link defines a JSON list field containing a sub-dictionary for
 each link definition.</li>
-<li>&#8220;type&#8221; is the type of optical link. We will always use
-&#8216;V2718&#8217; type links, even when reading out via the V1724. If you have
-a system that uses the USB adapter you might want &#8220;V1718&#8221;.</li>
-<li>&#8220;link&#8221; (in the sub-object) is the ID of the optical port the cable is
+<li>“type” is the type of optical link. We will always use
+‘V2718’ type links, even when reading out via the V1724. If you have
+a system that uses the USB adapter you might want “V1718”.</li>
+<li>“link” (in the sub-object) is the ID of the optical port the cable is
 hooked up to. This is always 0 for the A2818 since it just has one
 port but can be 0-3 for the A3818.</li>
-<li>&#8220;crate&#8221; is the crate ID. In daisy chain mode each digitizer
+<li>“crate” is the crate ID. In daisy chain mode each digitizer
 gets its own crate ID. Of course when reading out through a
 crate controller this made more sense, since there was one crate
 controller per crate. When reading out via the digitizer itself
@@ -311,17 +312,17 @@ hooked up. So far V1724 digitizers and V2718 crate controllers are
 supported. Actually, only one V2718 module is required for the entire
 DAQ, though more can be supported if needed.</p>
 <p>The syntax for defining a module is</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span>
-  <span class="s">&quot;boards&quot;</span><span class="p">:</span> <span class="p">[</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s2">&quot;boards&quot;</span><span class="p">:</span> <span class="p">[</span>
    <span class="p">{</span>
-     <span class="s">&quot;crate&quot;</span><span class="p">:</span> <span class="n">Int</span><span class="p">,</span>
-     <span class="s">&quot;serial&quot;</span><span class="p">:</span> <span class="n">String</span><span class="p">,</span>
-     <span class="s">&quot;reader&quot;</span><span class="p">:</span> <span class="n">Int</span><span class="p">,</span>
-     <span class="s">&quot;type&quot;</span><span class="p">:</span> <span class="n">Sting</span><span class="p">,</span>
-     <span class="s">&quot;vme_address&quot;</span><span class="p">:</span> <span class="n">String</span><span class="p">,</span>
-     <span class="s">&quot;link&quot;</span><span class="p">:</span> <span class="n">Int</span>
+     <span class="s2">&quot;crate&quot;</span><span class="p">:</span> <span class="n">Int</span><span class="p">,</span>
+     <span class="s2">&quot;serial&quot;</span><span class="p">:</span> <span class="n">String</span><span class="p">,</span>
+     <span class="s2">&quot;reader&quot;</span><span class="p">:</span> <span class="n">Int</span><span class="p">,</span>
+     <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">Sting</span><span class="p">,</span>
+     <span class="s2">&quot;vme_address&quot;</span><span class="p">:</span> <span class="n">String</span><span class="p">,</span>
+     <span class="s2">&quot;link&quot;</span><span class="p">:</span> <span class="n">Int</span>
    <span class="p">},</span>
-   <span class="o">...</span> <span class="c">#more boards</span>
+   <span class="o">...</span> <span class="c1">#more boards</span>
    <span class="p">]</span>
  <span class="p">}</span>
 </pre></div>
@@ -329,61 +330,61 @@ DAQ, though more can be supported if needed.</p>
 <p>The definitions of these are as follows.</p>
 <blockquote>
 <div><ul class="simple">
-<li>&#8220;board&#8221; is a list field containing sub-dictionaries defining each board.</li>
-<li>&#8220;crate&#8221; is the crate number assigned in the corresponding &#8216;link&#8217; command.</li>
-<li>&#8220;serial&#8221; is a unique identification number for the board.
+<li>“board” is a list field containing sub-dictionaries defining each board.</li>
+<li>“crate” is the crate number assigned in the corresponding ‘link’ command.</li>
+<li>“serial” is a unique identification number for the board.
 Each board has a serial number printed on the front and it is
 recommended to use that.</li>
-<li>&#8220;reader&#8221; is the ID of the reader to which the board is connected</li>
-<li>&#8220;type&#8221; gives the type of the board. At the moment only
-the types &#8216;V1724&#8217; or &#8216;V2718&#8217; are supported.</li>
-<li>&#8220;vme_address&#8221; is the board&#8217;s VME address as a string (in hex). You can
+<li>“reader” is the ID of the reader to which the board is connected</li>
+<li>“type” gives the type of the board. At the moment only
+the types ‘V1724’ or ‘V2718’ are supported.</li>
+<li>“vme_address” is the board’s VME address as a string (in hex). You can
 set this using radial dials on the board itself. For example if you set
-a digitizer to &#8220;EEFF&#8221; then this option is &#8220;EEFF0000&#8221;.</li>
-<li>&#8220;link&#8221; as before is the link over which the board is connected.</li>
+a digitizer to “EEFF” then this option is “EEFF0000”.</li>
+<li>“link” as before is the link over which the board is connected.</li>
 </ul>
 </div></blockquote>
 <p>The following is an example initialization using one slave PCs with ID 2.
 It has one digitizers and one crate controller hooked up
 via separate links on an A3818.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span>
-   <span class="s">&quot;boards&quot;</span><span class="p">:</span> <span class="p">[</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span>
+   <span class="s2">&quot;boards&quot;</span><span class="p">:</span> <span class="p">[</span>
    <span class="p">{</span>
-    <span class="s">&quot;crate&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-    <span class="s">&quot;serial&quot;</span><span class="p">:</span> <span class="s">&quot;2374&quot;</span><span class="p">,</span>
-    <span class="s">&quot;reader&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
-    <span class="s">&quot;type&quot;</span><span class="p">:</span> <span class="s">&quot;V2718&quot;</span><span class="p">,</span>
-    <span class="s">&quot;vme_address&quot;</span><span class="p">:</span> <span class="s">&quot;DC000000&quot;</span><span class="p">,</span>
-    <span class="s">&quot;link&quot;</span><span class="p">:</span> <span class="mi">0</span>
+    <span class="s2">&quot;crate&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="s2">&quot;serial&quot;</span><span class="p">:</span> <span class="s2">&quot;2374&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;reader&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;V2718&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;vme_address&quot;</span><span class="p">:</span> <span class="s2">&quot;DC000000&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;link&quot;</span><span class="p">:</span> <span class="mi">0</span>
    <span class="p">},</span>
    <span class="p">{</span>
-    <span class="s">&quot;crate&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-    <span class="s">&quot;serial&quot;</span><span class="p">:</span> <span class="s">&quot;1254&quot;</span><span class="p">,</span>
-    <span class="s">&quot;reader&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
-    <span class="s">&quot;type&quot;</span><span class="p">:</span> <span class="s">&quot;V1724&quot;</span><span class="p">,</span>
-    <span class="s">&quot;vme_address&quot;</span><span class="p">:</span> <span class="s">&quot;800D0000&quot;</span><span class="p">,</span>
-    <span class="s">&quot;link&quot;</span><span class="p">:</span> <span class="mi">1</span>
+    <span class="s2">&quot;crate&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="s2">&quot;serial&quot;</span><span class="p">:</span> <span class="s2">&quot;1254&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;reader&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;V1724&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;vme_address&quot;</span><span class="p">:</span> <span class="s2">&quot;800D0000&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;link&quot;</span><span class="p">:</span> <span class="mi">1</span>
    <span class="p">}</span>
    <span class="p">],</span>
-   <span class="s">&quot;links&quot;</span><span class="p">:[</span>
+   <span class="s2">&quot;links&quot;</span><span class="p">:[</span>
    <span class="p">{</span>
-    <span class="s">&quot;type&quot;</span><span class="p">:</span> <span class="s">&quot;V2718&quot;</span><span class="p">,</span>
-    <span class="s">&quot;reader&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
-    <span class="s">&quot;crate&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-    <span class="s">&quot;link&quot;</span><span class="p">:</span> <span class="mi">0</span>
+    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;V2718&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;reader&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="s2">&quot;crate&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="s2">&quot;link&quot;</span><span class="p">:</span> <span class="mi">0</span>
    <span class="p">},</span>
    <span class="p">{</span>
-    <span class="s">&quot;crate&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-    <span class="s">&quot;type&quot;</span><span class="p">:</span> <span class="s">&quot;V2718&quot;</span><span class="p">,</span>
-    <span class="s">&quot;reader&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
-    <span class="s">&quot;link&quot;</span><span class="p">:</span> <span class="mi">1</span>
+    <span class="s2">&quot;crate&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;V2718&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;reader&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="s2">&quot;link&quot;</span><span class="p">:</span> <span class="mi">1</span>
    <span class="p">}</span>
    <span class="p">],</span>
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>For standalone deployments containing only one slave, the &#8220;reader&#8221; identifier
-is not used. Additionally any &#8220;%n&#8221; lines must be removed.
+<p>For standalone deployments containing only one slave, the “reader” identifier
+is not used. Additionally any “%n” lines must be removed.
 This is because for a standalone deployment the options file
 is not run through the parser that removes and strips this identifier.</p>
 </div>
@@ -405,16 +406,16 @@ via s-in. Option 1 should always be used if you have multiple
 digitizers as it synchronizes the clocks of the digitizers.</p>
 </li>
 <li><p class="first"><a href="#id3"><span class="problematic" id="id4">**</span></a>run_start_module {int} **
-If run_start is set to &#8216;1&#8217;, this option provides the ID of the crate
+If run_start is set to ‘1’, this option provides the ID of the crate
 controller that will be used to start the run. Ignored if run_start is 0.</p>
 </li>
 <li><p class="first"><strong>baseline_mode {int}</strong>
 kodiaq contains an automated routine to adjust the
 baselines so that the full dynamic range of each input channel is
 used. This option lets the user set when that should happen.
-Giving the argument &#8216;0&#8217; means the baselines are not determined.
+Giving the argument ‘0’ means the baselines are not determined.
 They are set via the values given in the files in
-src/slave/baselines. The argument &#8216;1&#8217; tells the program to
+src/slave/baselines. The argument ‘1’ tells the program to
 automatically determine baselines whenever the DAQ is armed.</p>
 </li>
 <li><p class="first"><strong>ddc10_options</strong>
@@ -444,29 +445,29 @@ appears in the documentation for the custom ddc10 firmware. The arguments are:
 </ul>
 </div></blockquote>
 <p>An example of how these options appears in the .ini file is shown below.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span>
-   <span class="s">&quot;blt_size&quot;</span><span class="p">:</span> <span class="mi">524288</span><span class="p">,</span>
-   <span class="s">&quot;run_start_module&quot;</span><span class="p">:</span> <span class="mi">2374</span><span class="p">,</span>
-   <span class="s">&quot;run_start&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-   <span class="s">&quot;DDC-10&quot;</span><span class="p">:</span> <span class="p">{</span>
-     <span class="s">&quot;signal_threshold&quot;</span><span class="p">:</span> <span class="mi">150</span><span class="p">,</span>
-     <span class="s">&quot;address&quot;</span><span class="p">:</span> <span class="s">&quot;130.92.139.240&quot;</span><span class="p">,</span>
-     <span class="s">&quot;prescaling&quot;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span>
-     <span class="s">&quot;delay&quot;</span><span class="p">:</span> <span class="mi">200</span><span class="p">,</span>
-     <span class="s">&quot;component_status&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-     <span class="s">&quot;inner_ring_factor&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-     <span class="s">&quot;rise_time_cut&quot;</span><span class="p">:</span> <span class="mi">30</span><span class="p">,</span>
-     <span class="s">&quot;parameter_0&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-     <span class="s">&quot;window&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
-     <span class="s">&quot;parameter_1&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-     <span class="s">&quot;outer_ring_factor&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
-     <span class="s">&quot;integration_threshold&quot;</span><span class="p">:</span> <span class="mi">20000</span><span class="p">,</span>
-     <span class="s">&quot;parameter_3&quot;</span><span class="p">:</span> <span class="mi">50</span><span class="p">,</span>
-     <span class="s">&quot;sign&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-     <span class="s">&quot;width_cut&quot;</span><span class="p">:</span> <span class="mi">50</span><span class="p">,</span>
-     <span class="s">&quot;parameter_2&quot;</span><span class="p">:</span> <span class="mi">0</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span>
+   <span class="s2">&quot;blt_size&quot;</span><span class="p">:</span> <span class="mi">524288</span><span class="p">,</span>
+   <span class="s2">&quot;run_start_module&quot;</span><span class="p">:</span> <span class="mi">2374</span><span class="p">,</span>
+   <span class="s2">&quot;run_start&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+   <span class="s2">&quot;DDC-10&quot;</span><span class="p">:</span> <span class="p">{</span>
+     <span class="s2">&quot;signal_threshold&quot;</span><span class="p">:</span> <span class="mi">150</span><span class="p">,</span>
+     <span class="s2">&quot;address&quot;</span><span class="p">:</span> <span class="s2">&quot;130.92.139.240&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;prescaling&quot;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span>
+     <span class="s2">&quot;delay&quot;</span><span class="p">:</span> <span class="mi">200</span><span class="p">,</span>
+     <span class="s2">&quot;component_status&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+     <span class="s2">&quot;inner_ring_factor&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+     <span class="s2">&quot;rise_time_cut&quot;</span><span class="p">:</span> <span class="mi">30</span><span class="p">,</span>
+     <span class="s2">&quot;parameter_0&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+     <span class="s2">&quot;window&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+     <span class="s2">&quot;parameter_1&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+     <span class="s2">&quot;outer_ring_factor&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+     <span class="s2">&quot;integration_threshold&quot;</span><span class="p">:</span> <span class="mi">20000</span><span class="p">,</span>
+     <span class="s2">&quot;parameter_3&quot;</span><span class="p">:</span> <span class="mi">50</span><span class="p">,</span>
+     <span class="s2">&quot;sign&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+     <span class="s2">&quot;width_cut&quot;</span><span class="p">:</span> <span class="mi">50</span><span class="p">,</span>
+     <span class="s2">&quot;parameter_2&quot;</span><span class="p">:</span> <span class="mi">0</span>
    <span class="p">},</span>
-   <span class="s">&quot;baseline_mode&quot;</span><span class="p">:</span> <span class="mi">1</span>
+   <span class="s2">&quot;baseline_mode&quot;</span><span class="p">:</span> <span class="mi">1</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -482,10 +483,10 @@ related to your chosen write mode.</p>
 <li><p class="first"><strong>write_mode {int}</strong>
 Define what is done with the data. 0 - no writing (test mode). 1
 - write to file (not yet supported). 2 - write to mongodb. If you
-choose mode &#8216;2&#8217;, make sure the MONGO_OPTIONS are defined.</p>
+choose mode ‘2’, make sure the MONGO_OPTIONS are defined.</p>
 </li>
 <li><p class="first"><strong>compression {int}</strong> turns compression on (1) or off (0). Compression
-is done with Google&#8217;s snappy algorithm.</p>
+is done with Google’s snappy algorithm.</p>
 </li>
 <li><p class="first"><strong>mongo_address {string}</strong> This is the mongoDB connection string
 for your database deployment. It must be a valid connection string
@@ -494,8 +495,8 @@ before a connection is attempted (using the built-in isValid() call).
 Please note that multiple mongos instances are not supported as a
 fallback case. The only instance where you can have multiple servers
 defined in the connection string is for a replica set.</p>
-<p>Here&#8217;s are a couple examples, for a standalone server and a replica:</p>
-<div class="highlight-python"><div class="highlight"><pre>mongodb://user:pass@server:port/DB
+<p>Here’s are a couple examples, for a standalone server and a replica:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>mongodb://user:pass@server:port/DB
 mongodb://user:pass@server0:port0,server1:port1,server2:port2/DB?replicaSet=set_name
 </pre></div>
 </div>
@@ -553,7 +554,7 @@ where rates fluctuate. At the end of a run the entire buffer will be
 written out regardless of whether this threshold was reached or not.</p>
 </li>
 <li><p class="first"><strong>processing_num_threads {int}</strong> defines how many parallel threads
-should be used for data parsing. It isn&#8217;t suggested to make this
+should be used for data parsing. It isn’t suggested to make this
 a ridiculous number. The boards can only be read one at a time (there
 is a mutex-protected call to the CAEN block transfer function). The
 goal at high rates is to have the boards always being read. Therefore
@@ -573,7 +574,7 @@ than the sample size you will use the entire sample to determine the baseline
 and will get bad results.</p>
 </li>
 <li><p class="first"><strong>lite_mode {int}</strong> defines whether to store data or not. It is possible to run
-the DAQ in a sort of &#8216;lite_mode&#8217; where the raw data for each occurrence is not stored. Rather
+the DAQ in a sort of ‘lite_mode’ where the raw data for each occurrence is not stored. Rather
 one can store the occurrence_integral and the meta-data. If storage space is an issue
 this may be a reasonable option to do many types of analysis while greatly reducing the data size.</p>
 </li>
@@ -581,20 +582,20 @@ this may be a reasonable option to do many types of analysis while greatly reduc
 </div></blockquote>
 <p>An example of how these options appear in the .ini file is shown
 below.</p>
-<div class="highlight-python"><div class="highlight"><pre>{
-    &quot;write_mode&quot;: 0,
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s2">&quot;write_mode&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
 
-    &quot;mongo_collection&quot;: &quot;data*&quot;,
-    &quot;mongo_write_concern&quot;: 0,
-    &quot;mongo_min_insert_size&quot;: 1,
-    &quot;mongo_database&quot;: &quot;raw&quot;,
-    &quot;mongo_address&quot;: &quot;xedaq00&quot;
+    <span class="s2">&quot;mongo_collection&quot;</span><span class="p">:</span> <span class="s2">&quot;data*&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;mongo_write_concern&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="s2">&quot;mongo_min_insert_size&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="s2">&quot;mongo_database&quot;</span><span class="p">:</span> <span class="s2">&quot;raw&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;mongo_address&quot;</span><span class="p">:</span> <span class="s2">&quot;xedaq00&quot;</span>
 
-    &quot;processing_readout_threshold&quot;: 0,
-    &quot;processing_num_threads&quot;: 8,
+    <span class="s2">&quot;processing_readout_threshold&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="s2">&quot;processing_num_threads&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
 
-    &quot;compression&quot;: 1
-}
+    <span class="s2">&quot;compression&quot;</span><span class="p">:</span> <span class="mi">1</span>
+<span class="p">}</span>
 </pre></div>
 </div>
 </div>
@@ -618,15 +619,15 @@ digitizers.</li>
 </ol>
 </div></blockquote>
 <p>The general format of a VME option setting is as follows:</p>
-<div class="highlight-python"><div class="highlight"><pre>&quot;registers&quot;: [
-  {
-    &quot;board&quot;: String,
-    &quot;comment&quot;: String,
-    &quot;value&quot;: String,
-    &quot;register&quot;: String
-  },
-... #more options
-]
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="s2">&quot;registers&quot;</span><span class="p">:</span> <span class="p">[</span>
+  <span class="p">{</span>
+    <span class="s2">&quot;board&quot;</span><span class="p">:</span> <span class="n">String</span><span class="p">,</span>
+    <span class="s2">&quot;comment&quot;</span><span class="p">:</span> <span class="n">String</span><span class="p">,</span>
+    <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">String</span><span class="p">,</span>
+    <span class="s2">&quot;register&quot;</span><span class="p">:</span> <span class="n">String</span>
+  <span class="p">},</span>
+<span class="o">...</span> <span class="c1">#more options</span>
+<span class="p">]</span>
 </pre></div>
 </div>
 <p>Where the values of the parameters are:</p>
@@ -642,24 +643,24 @@ to write the option just to a single board. -1 means all boards.</li>
 <li><strong>comment</strong> is a user comment that can be helpful for keeping things straight.</li>
 </ul>
 </div></blockquote>
-<p>Note that &#8216;register&#8217; and &#8216;value&#8217; are hex numbers but should be given as strings.
+<p>Note that ‘register’ and ‘value’ are hex numbers but should be given as strings.
 The strings are parsed into unsigned integers in the code.</p>
 <p>Here are a few examples of how to use the command.</p>
 <p>To write the value of 10 to register EF00 for all boards:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span>
-    <span class="s">&quot;board&quot;</span><span class="p">:</span> <span class="s">&quot;-1&quot;</span><span class="p">,</span>
-    <span class="s">&quot;comment&quot;</span><span class="p">:</span> <span class="s">&quot;BERR register, 10=enable BERR&quot;</span><span class="p">,</span>
-    <span class="s">&quot;value&quot;</span><span class="p">:</span> <span class="s">&quot;10&quot;</span><span class="p">,</span>
-    <span class="s">&quot;register&quot;</span><span class="p">:</span> <span class="s">&quot;EF00&quot;</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s2">&quot;board&quot;</span><span class="p">:</span> <span class="s2">&quot;-1&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;comment&quot;</span><span class="p">:</span> <span class="s2">&quot;BERR register, 10=enable BERR&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;10&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;register&quot;</span><span class="p">:</span> <span class="s2">&quot;EF00&quot;</span>
  <span class="p">},</span>
 </pre></div>
 </div>
 <p>To write the same value to the same register only for board 800:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span>
-    <span class="s">&quot;board&quot;</span><span class="p">:</span> <span class="s">&quot;800&quot;</span><span class="p">,</span>
-    <span class="s">&quot;comment&quot;</span><span class="p">:</span> <span class="s">&quot;BERR register, 10=enable BERR&quot;</span><span class="p">,</span>
-    <span class="s">&quot;value&quot;</span><span class="p">:</span> <span class="s">&quot;10&quot;</span><span class="p">,</span>
-    <span class="s">&quot;register&quot;</span><span class="p">:</span> <span class="s">&quot;EF00&quot;</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s2">&quot;board&quot;</span><span class="p">:</span> <span class="s2">&quot;800&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;comment&quot;</span><span class="p">:</span> <span class="s2">&quot;BERR register, 10=enable BERR&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;10&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;register&quot;</span><span class="p">:</span> <span class="s2">&quot;EF00&quot;</span>
 <span class="p">},</span>
 </pre></div>
 </div>
@@ -683,7 +684,7 @@ some special settings.</p>
     </p>
     <p>
         &copy; Copyright 2014, Daniel Coderre.<br/>
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.<br/>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.6.2.<br/>
     </p>
   </div>
 </footer>

@@ -1,13 +1,12 @@
 <!DOCTYPE html>
 
-
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Welcome to kodiaq &mdash; kodiaq 1.0 documentation</title>
+    <title>Welcome to kodiaq &#8212; kodiaq 1.0 documentation</title>
     
-    <link rel="stylesheet" href="_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="_static/bootstrap-3.1.0/css/bootstrap.min.css" type="text/css" />
     <link rel="stylesheet" href="_static/bootstrap-3.1.0/css/bootstrap-theme.min.css" type="text/css" />
@@ -20,7 +19,8 @@
         VERSION:     '1.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
@@ -31,7 +31,8 @@
     <script type="text/javascript" src="_static/bootstrap-3.1.0/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <script type="text/javascript" src="_static/theme.js"></script>
-    <link rel="top" title="kodiaq 1.0 documentation" href="#" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Welcome" href="intro.html" />
 <meta charset='utf-8'>
 <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
@@ -127,9 +128,11 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation of the standalone reader</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#scope">Scope</a></li>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#fetching-the-source-code">Fetching the source code</a></li>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#prerequisites-for-installation">Prerequisites for installation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#how-to-install">How to install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#bonus-installing-mongodb">Bonus: Installing MongoDB</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="usage.html">Using the Standalone Reader</a><ul>
@@ -189,16 +192,17 @@
 <img alt="alternate text" class="align-left" src="_images/bear.png" />
 <p>kodiaq is a program designed to read out and format data from CAEN V1724 digitizers.
 It runs in both networked and standalone mode. In standalone mode a single instance of
-the readout program reads data to either a database or a local file from digitizers connected
+the readout program reads data to either a local database from digitizers connected
 to the same PC. In networked mode a dispatcher controls several PCs which read data out
 from digitizers connected to them and deposit it into a central database. Networked mode
 is suitable for high-speed deployments where parallelization is needed to overcome the
-speed limit imposed by the CONET-2 interface.</p>
+speed limit imposed by the CONET-2 interface or where more CPU power is needed to parse large
+amounts of incoming data.</p>
 <p>These docs are intended for users interested in deploying the system and provide step by step
-instructions as well as an explanation of the program&#8217;s features.</p>
+instructions as well as an explanation of the program’s features.</p>
 <p>Our code is hosted on github so be sure to check out the repository
 <a class="reference external" href="https://github.com/XENON1T/kodiaq.git">here</a>. You might also be
-interested in checking out the <a class="reference external" href="http://tunnell.github.io/wax/index.html">wax project</a>.</p>
+interested in checking out the <a class="reference external" href="http://xenon1t.github.io/pax/index.html">pax project</a>.</p>
 </div>
 <div class="section" id="contents">
 <h1>Contents<a class="headerlink" href="#contents" title="Permalink to this headline">¶</a></h1>
@@ -214,9 +218,11 @@ interested in checking out the <a class="reference external" href="http://tunnel
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation of the standalone reader</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#scope">Scope</a></li>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#fetching-the-source-code">Fetching the source code</a></li>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#prerequisites-for-installation">Prerequisites for installation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#how-to-install">How to install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#bonus-installing-mongodb">Bonus: Installing MongoDB</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="usage.html">Using the Standalone Reader</a><ul>
@@ -267,7 +273,7 @@ interested in checking out the <a class="reference external" href="http://tunnel
     </p>
     <p>
         &copy; Copyright 2014, Daniel Coderre.<br/>
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.<br/>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.6.2.<br/>
     </p>
   </div>
 </footer>

@@ -1,13 +1,12 @@
 <!DOCTYPE html>
 
-
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Deployment of the Full System &mdash; kodiaq 1.0 documentation</title>
+    <title>Deployment of the Full System &#8212; kodiaq 1.0 documentation</title>
     
-    <link rel="stylesheet" href="_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="_static/bootstrap-3.1.0/css/bootstrap.min.css" type="text/css" />
     <link rel="stylesheet" href="_static/bootstrap-3.1.0/css/bootstrap-theme.min.css" type="text/css" />
@@ -20,7 +19,8 @@
         VERSION:     '1.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
@@ -31,7 +31,8 @@
     <script type="text/javascript" src="_static/bootstrap-3.1.0/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <script type="text/javascript" src="_static/theme.js"></script>
-    <link rel="top" title="kodiaq 1.0 documentation" href="index.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="DAQ Options" href="options.html" />
     <link rel="prev" title="Using the Standalone Reader" href="usage.html" />
 <meta charset='utf-8'>
@@ -105,7 +106,7 @@
 <li class="toctree-l1"><a class="reference internal" href="webinterface.html">A Tour of the Web Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation of the standalone reader</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usage.html">Using the Standalone Reader</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="">Deployment of the Full System</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Deployment of the Full System</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#summary-of-dependencies-per-module">Summary of Dependencies per Module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#deployment-step-by-step">Deployment, Step by Step</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#general-network-structure">General network structure</a></li>
@@ -152,7 +153,7 @@
 <li class="toctree-l2"><a class="reference internal" href="usage.html#special-options-for-standalone-mode">Special options for standalone mode</a></li>
 </ul>
 </li>
-<li class="toctree-l1 current"><a class="current reference internal" href="">Deployment of the Full System</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Deployment of the Full System</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#summary-of-dependencies-per-module">Summary of Dependencies per Module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#deployment-step-by-step">Deployment, Step by Step</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#general-network-structure">General network structure</a></li>
@@ -217,8 +218,8 @@ found in src/common.</p>
 <p>Building the software is done using autotools. Line-by-line
 instructions are given below for each module, however in general the
 software is simply compiled by calling:</p>
-<div class="highlight-python"><div class="highlight"><pre>./configure --enable-all
-make
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">configure</span> <span class="o">--</span><span class="n">enable</span><span class="o">-</span><span class="nb">all</span>
+<span class="n">make</span>
 </pre></div>
 </div>
 <p>Some of the modules have unique dependencies not shared by the others.
@@ -240,19 +241,19 @@ flags that tell kodiaq which modules to include.</p>
 <tr class="row-even"><td>{no arguments}</td>
 <td>Compile the lite module only</td>
 </tr>
-<tr class="row-odd"><td>&#8211;enable-slave</td>
+<tr class="row-odd"><td>–enable-slave</td>
 <td>Compile the slave module</td>
 </tr>
-<tr class="row-even"><td>&#8211;enable-master</td>
+<tr class="row-even"><td>–enable-master</td>
 <td>Compile the master module</td>
 </tr>
-<tr class="row-odd"><td>&#8211;enable-ddc10</td>
+<tr class="row-odd"><td>–enable-ddc10</td>
 <td>Enable ddc-10 support for master</td>
 </tr>
-<tr class="row-even"><td>&#8211;enable-lite</td>
+<tr class="row-even"><td>–enable-lite</td>
 <td>Compile standalone slave module</td>
 </tr>
-<tr class="row-odd"><td>&#8211;enable-all</td>
+<tr class="row-odd"><td>–enable-all</td>
 <td>Compile all modules</td>
 </tr>
 </tbody>
@@ -321,7 +322,7 @@ specific information on each step will be found in later sections.</p>
 <li>Hook up the hardware. A readout PC (from now on called a slave)
 needs a CAEN A2818 or A3818 PCI(e) card. Up to 8 digitizers can
 be hooked up in daisy chain via optical link. You also need one V2718 crate
-controller with LEMO output &#8216;0&#8217; fanned to the s-in of all digitizers.</li>
+controller with LEMO output ‘0’ fanned to the s-in of all digitizers.</li>
 <li>Install the koSlave module on each slave PC. Start the daemon in
 a detached screen.</li>
 <li>Find a spot for the master module to live. It is suggested to
@@ -340,7 +341,7 @@ write an options file are given in the next sections.</p>
 </div>
 <div class="section" id="general-network-structure">
 <h2>General network structure<a class="headerlink" href="#general-network-structure" title="Permalink to this headline">¶</a></h2>
-<p>It&#8217;s a good idea to know a bit about how the networked mode actually works since the options
+<p>It’s a good idea to know a bit about how the networked mode actually works since the options
 will make a little more sense. Basically you have a single instance of koMaster which acts as a dispatcher
 and communicates with all the slave nodes and with an outside database. All the slave nodes connect to
 this dispatcher. The connection is done over two ports. One port is interactive and is used for commands
@@ -351,7 +352,7 @@ detector is basically its own independent deployment but they can also be operat
 defined in the master config file and each detector operates over two unique ports.</p>
 <p>Within a single detector the slaves are organized such that each has its own ID number and name. The ID numbers
 are integers and are used to define different options for different slaves. In the .ini file you can send an
-option to a specific slave by prefacing a line with &#8216;%n&#8217; where &#8216;n&#8217; is the ID number of the slave. The name of
+option to a specific slave by prefacing a line with ‘%n’ where ‘n’ is the ID number of the slave. The name of
 each slave can be anything and is used in status reporting.</p>
 <p>If you want to use the DAQ with the web interface you need a mongodb database set up. The connectivity to this DB
 is defined in the koMaster section below.</p>
@@ -364,16 +365,15 @@ as pushing the data stream to mongodb. The koSlave module is a daemon
 that runs all the time and listens for connections to the master.</p>
 <p>There are several dependencies that must be met for the slave module
 to work.</p>
-<ul>
+<ul class="simple">
 <li><dl class="first docutils">
 <dt>You need a PC with a CAEN A2818 or A3818 PCI(-e) card installed</dt>
-<dd><p class="first last">and also the proper drivers.</p>
-</dd>
+<dd>and also the proper drivers.</dd>
 </dl>
 </li>
 <li><dl class="first docutils">
 <dt>There are several library dependencies</dt>
-<dd><ul class="first last simple">
+<dd><ul class="first last">
 <li>CAENVMElib (available from CAEN, this is a closed-source
 library)</li>
 <li>mongodb cxx driver greater than version 2.6. Specifically
@@ -392,50 +392,50 @@ lbmongoclient is needed.</li>
 <p class="last">It is possible to compile without libmongoclient and/or libpbf. If you compile without libmongoclient you will not be able to output to a mongodb. If you compile without libpbf you will not be able to write to file. Depending on your installation one of these may be fine. You will be notified at the end of the configure script which output forms are available for your installation.</p>
 </div>
 <p>Assuming you want to install everything, do it as follows.:</p>
-<div class="highlight-python"><div class="highlight"><pre>apt-get install libsnappy-dev build-essential git-core scons libprotobuf-dev protobuf-compiler libboost-all-dev automake autotools libtool
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">apt</span><span class="o">-</span><span class="n">get</span> <span class="n">install</span> <span class="n">libsnappy</span><span class="o">-</span><span class="n">dev</span> <span class="n">build</span><span class="o">-</span><span class="n">essential</span> <span class="n">git</span><span class="o">-</span><span class="n">core</span> <span class="n">scons</span> <span class="n">libprotobuf</span><span class="o">-</span><span class="n">dev</span> <span class="n">protobuf</span><span class="o">-</span><span class="n">compiler</span> <span class="n">libboost</span><span class="o">-</span><span class="nb">all</span><span class="o">-</span><span class="n">dev</span> <span class="n">automake</span> <span class="n">autotools</span> <span class="n">libtool</span>
 </pre></div>
 </div>
 <p>Now make a directory for the code and install libpbf:</p>
-<div class="highlight-python"><div class="highlight"><pre>mkdir kodiaq
-cd kodiaq
-git clone https://github.com/coderdj/libpbf.git libpbf
-cd libpbf
-make
-make install
-cd ..
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">mkdir</span> <span class="n">kodiaq</span>
+<span class="n">cd</span> <span class="n">kodiaq</span>
+<span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">coderdj</span><span class="o">/</span><span class="n">libpbf</span><span class="o">.</span><span class="n">git</span> <span class="n">libpbf</span>
+<span class="n">cd</span> <span class="n">libpbf</span>
+<span class="n">make</span>
+<span class="n">make</span> <span class="n">install</span>
+<span class="n">cd</span> <span class="o">..</span>
 </pre></div>
 </div>
 <p>We also want a newer version of mongodb so we can install that as well:</p>
-<div class="highlight-python"><div class="highlight"><pre>git clone https://github.com/mongodb/mongo-cxx-driver.git mongodb
-cd mongodb
-git checkout legacy
-scons --sharedclient --c++11 install
-cd ..
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">mongodb</span><span class="o">/</span><span class="n">mongo</span><span class="o">-</span><span class="n">cxx</span><span class="o">-</span><span class="n">driver</span><span class="o">.</span><span class="n">git</span> <span class="n">mongodb</span>
+<span class="n">cd</span> <span class="n">mongodb</span>
+<span class="n">git</span> <span class="n">checkout</span> <span class="n">legacy</span>
+<span class="n">scons</span> <span class="o">--</span><span class="n">sharedclient</span> <span class="o">--</span><span class="n">c</span><span class="o">++</span><span class="mi">11</span> <span class="n">install</span>
+<span class="n">cd</span> <span class="o">..</span>
 </pre></div>
 </div>
-<p>The &#8216;scons install&#8217; line may need a sudo depending on where you install it. For installation information please consult the mongo-cxx-driver github. You have to install with C++11 since kodiaq uses some C++11 functionality.</p>
-<p>Since mongo seems to change procedures and requirements with nearly every release you may prefer to check their most recent documentation. Right now we use the legacy release, which despite being called &#8220;legacy&#8221; is actually the stable version as of this writing (June 2015). This version is compatible with MongoDB 3.0. The 26compat branch will NOT work with kodiaq.</p>
+<p>The ‘scons install’ line may need a sudo depending on where you install it. For installation information please consult the mongo-cxx-driver github. You have to install with C++11 since kodiaq uses some C++11 functionality.</p>
+<p>Since mongo seems to change procedures and requirements with nearly every release you may prefer to check their most recent documentation. Right now we use the legacy release, which despite being called “legacy” is actually the stable version as of this writing (June 2015). This version is compatible with MongoDB 3.0. The 26compat branch will NOT work with kodiaq.</p>
 <p>Checkout the DAQ code from github as follows:</p>
-<div class="highlight-python"><div class="highlight"><pre>git clone https://github.com/XENON1T/kodiaq.git kodiaq
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">XENON1T</span><span class="o">/</span><span class="n">kodiaq</span><span class="o">.</span><span class="n">git</span> <span class="n">kodiaq</span>
 </pre></div>
 </div>
 <p>Now compile the CAEN software. There is a copy of this bundled with kodiaq or you can get the most recent versions from <a class="reference external" href="http://www.caen.it">http://www.caen.it</a>. The CAEN software is in kodiaq/caen. You need to install CAENVMElib and the driver for your PCI card (A2818 or A3818). The instructions for installation are given in the README files within these directories.</p>
 <p>Everything should be in place so you can now compile the kodiaq package itself.:</p>
-<div class="highlight-python"><div class="highlight"><pre>cd kodiaq (top-level directory)
-./configure --enable-slave
-make
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">kodiaq</span> <span class="p">(</span><span class="n">top</span><span class="o">-</span><span class="n">level</span> <span class="n">directory</span><span class="p">)</span>
+<span class="o">./</span><span class="n">configure</span> <span class="o">--</span><span class="n">enable</span><span class="o">-</span><span class="n">slave</span>
+<span class="n">make</span>
 </pre></div>
 </div>
 <p>The connection to the master must also be defined. This is defined in the file src/slave/SlaveConfig.ini,
 which looks as follows:</p>
-<div class="highlight-python"><div class="highlight"><pre>SERVERADDR reader0
-COM_PORT 2002
-DATA_PORT 3002
-NAME reader2
-ID 2
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">SERVERADDR</span> <span class="n">reader0</span>
+<span class="n">COM_PORT</span> <span class="mi">2002</span>
+<span class="n">DATA_PORT</span> <span class="mi">3002</span>
+<span class="n">NAME</span> <span class="n">reader2</span>
+<span class="n">ID</span> <span class="mi">2</span>
 </pre></div>
 </div>
-<p>This examples defines slave &#8216;reader2&#8217; with ID &#8216;2&#8217; to use ports 2002 and 3002 to
+<p>This examples defines slave ‘reader2’ with ID ‘2’ to use ports 2002 and 3002 to
 try to connect to the server at hostname xedaq02. The ports given must correspond
 to a detector defined in src/master/MasterConfig.ini (see below) or the slave will
 never be contacted by the network and will just listen perpetually. The server address
@@ -455,27 +455,27 @@ master. It is designed to be left running indefinitely regardless of whether the
 <p>The master should be installed somewhere with a reliable network connection to the slaves. It can also run on a slave PC if necessary. Two open ports are required for communication with slaves and two more for communication with clients. These can be any ports but they must be defined in koSlave and in the UI.</p>
 <p>To install the master, the mongodb C++ driver (version &gt;=2.6) must be installed (libmongoclient). You can follow the directions in the appropriate section of the koSlave installation instructions.</p>
 <p>To build use the following:</p>
-<div class="highlight-python"><div class="highlight"><pre>cd kodiaq
-./configure --enable-master (--enable-ddc10 for ddc10 support)
-make
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">kodiaq</span>
+<span class="o">./</span><span class="n">configure</span> <span class="o">--</span><span class="n">enable</span><span class="o">-</span><span class="n">master</span> <span class="p">(</span><span class="o">--</span><span class="n">enable</span><span class="o">-</span><span class="n">ddc10</span> <span class="k">for</span> <span class="n">ddc10</span> <span class="n">support</span><span class="p">)</span>
+<span class="n">make</span>
 </pre></div>
 </div>
 <p>The executable is in src/master/koMaster. This should also be run in a
 detached screen and can be left on more or less indefinitely unless
 there are issues.</p>
 <p>The options for the master are stored in a configuration file in src/master at MasterConfig.ini. The options look as follows</p>
-<div class="highlight-python"><div class="highlight"><pre>MONITOR_DB mongodb://localhost:27017/run
-LOG_DB mongodb://user:pass@localhost:27017/log
-RUNS_DB mongodb://localhost:27017/run
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">MONITOR_DB</span> <span class="n">mongodb</span><span class="p">:</span><span class="o">//</span><span class="n">localhost</span><span class="p">:</span><span class="mi">27017</span><span class="o">/</span><span class="n">run</span>
+<span class="n">LOG_DB</span> <span class="n">mongodb</span><span class="p">:</span><span class="o">//</span><span class="n">user</span><span class="p">:</span><span class="k">pass</span><span class="nd">@localhost</span><span class="p">:</span><span class="mi">27017</span><span class="o">/</span><span class="n">log</span>
+<span class="n">RUNS_DB</span> <span class="n">mongodb</span><span class="p">:</span><span class="o">//</span><span class="n">localhost</span><span class="p">:</span><span class="mi">27017</span><span class="o">/</span><span class="n">run</span>
 
-DETECTOR tpc 2000 3000 tpc_options.ini
-DETECTOR tpc 2001 3001 tpc_options.ini
-DETECTOR tpc 2002 3002 tpc_options.ini
-DETECTOR tpc 2003 3003 tpc_options.ini
-DETECTOR tpc 2004 3004 tpc_options.ini
+<span class="n">DETECTOR</span> <span class="n">tpc</span> <span class="mi">2000</span> <span class="mi">3000</span> <span class="n">tpc_options</span><span class="o">.</span><span class="n">ini</span>
+<span class="n">DETECTOR</span> <span class="n">tpc</span> <span class="mi">2001</span> <span class="mi">3001</span> <span class="n">tpc_options</span><span class="o">.</span><span class="n">ini</span>
+<span class="n">DETECTOR</span> <span class="n">tpc</span> <span class="mi">2002</span> <span class="mi">3002</span> <span class="n">tpc_options</span><span class="o">.</span><span class="n">ini</span>
+<span class="n">DETECTOR</span> <span class="n">tpc</span> <span class="mi">2003</span> <span class="mi">3003</span> <span class="n">tpc_options</span><span class="o">.</span><span class="n">ini</span>
+<span class="n">DETECTOR</span> <span class="n">tpc</span> <span class="mi">2004</span> <span class="mi">3004</span> <span class="n">tpc_options</span><span class="o">.</span><span class="n">ini</span>
 </pre></div>
 </div>
-<p>The detector names allow the web interface to send specific commands to specific detectors only. Each slave gets a DETECTOR line giving it&#8217;s detector, port, dataport, and default ini file.</p>
+<p>The detector names allow the web interface to send specific commands to specific detectors only. Each slave gets a DETECTOR line giving it’s detector, port, dataport, and default ini file.</p>
 <p>The <a href="#id1"><span class="problematic" id="id2">*</span></a>_DB options accept any valid MongoDB connection string. Note that for the C++ driver, multiple mongos interfaces may be defined for replica sets only and are not supported for, for example, redundant interfaces to sharded clusters.</p>
 <p>The DDC-10 module uses telnet and requires libtcl8.5 and libexpect.</p>
 <div class="section" id="run-modes">
@@ -500,7 +500,7 @@ found later in this document or in src/master/data/RunModes/DAQOptionsMaster.ini
     </p>
     <p>
         &copy; Copyright 2014, Daniel Coderre.<br/>
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.<br/>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.6.2.<br/>
     </p>
   </div>
 </footer>

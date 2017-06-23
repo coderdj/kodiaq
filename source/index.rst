@@ -12,19 +12,20 @@ Welcome to kodiaq
     
 kodiaq is a program designed to read out and format data from CAEN V1724 digitizers. 
 It runs in both networked and standalone mode. In standalone mode a single instance of
-the readout program reads data to either a database or a local file from digitizers connected 
+the readout program reads data to either a local database from digitizers connected 
 to the same PC. In networked mode a dispatcher controls several PCs which read data out 
 from digitizers connected to them and deposit it into a central database. Networked mode 
 is suitable for high-speed deployments where parallelization is needed to overcome the 
-speed limit imposed by the CONET-2 interface. 
+speed limit imposed by the CONET-2 interface or where more CPU power is needed to parse large
+amounts of incoming data. 
 
 These docs are intended for users interested in deploying the system and provide step by step 
 instructions as well as an explanation of the program's features.
 
 Our code is hosted on github so be sure to check out the repository
 `here <https://github.com/XENON1T/kodiaq.git>`_. You might also be
-interested in checking out the `wax project
-<http://tunnell.github.io/wax/index.html>`_. 
+interested in checking out the `pax project
+<http://xenon1t.github.io/pax/index.html>`_. 
 
 Contents 
 ================================

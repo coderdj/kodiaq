@@ -1,13 +1,12 @@
 <!DOCTYPE html>
 
-
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Installation of the standalone reader &mdash; kodiaq 1.0 documentation</title>
+    <title>Installation of the standalone reader &#8212; kodiaq 1.0 documentation</title>
     
-    <link rel="stylesheet" href="_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="_static/bootstrap-3.1.0/css/bootstrap.min.css" type="text/css" />
     <link rel="stylesheet" href="_static/bootstrap-3.1.0/css/bootstrap-theme.min.css" type="text/css" />
@@ -20,7 +19,8 @@
         VERSION:     '1.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
@@ -31,7 +31,8 @@
     <script type="text/javascript" src="_static/bootstrap-3.1.0/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <script type="text/javascript" src="_static/theme.js"></script>
-    <link rel="top" title="kodiaq 1.0 documentation" href="index.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Using the Standalone Reader" href="usage.html" />
     <link rel="prev" title="A Tour of the Web Interface" href="webinterface.html" />
 <meta charset='utf-8'>
@@ -103,10 +104,12 @@
 	<ul id="sidebar" class="nav nav-stacked"><ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="intro.html">Welcome</a></li>
 <li class="toctree-l1"><a class="reference internal" href="webinterface.html">A Tour of the Web Interface</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="">Installation of the standalone reader</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation of the standalone reader</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#scope">Scope</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#fetching-the-source-code">Fetching the source code</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#prerequisites-for-installation">Prerequisites for installation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#how-to-install">How to install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#bonus-installing-mongodb">Bonus: Installing MongoDB</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="usage.html">Using the Standalone Reader</a></li>
@@ -137,10 +140,12 @@
 <li class="toctree-l2"><a class="reference internal" href="webinterface.html#introduction">Introduction</a></li>
 </ul>
 </li>
-<li class="toctree-l1 current"><a class="current reference internal" href="">Installation of the standalone reader</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation of the standalone reader</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#scope">Scope</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#fetching-the-source-code">Fetching the source code</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#prerequisites-for-installation">Prerequisites for installation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#how-to-install">How to install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#bonus-installing-mongodb">Bonus: Installing MongoDB</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="usage.html">Using the Standalone Reader</a><ul>
@@ -197,58 +202,150 @@
       
   <div class="section" id="installation-of-the-standalone-reader">
 <h1>Installation of the standalone reader<a class="headerlink" href="#installation-of-the-standalone-reader" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="scope">
+<h2>Scope<a class="headerlink" href="#scope" title="Permalink to this headline">¶</a></h2>
+<p>You have a small setup in your lab and want to read out some data. Then you’re
+in the right place. This guide shows you how to install all the prerequisites plus
+the kodiaq software. This was tested on Ubuntu 16.04 but should work on any Linux
+distribution provided you can provide the necessary packages.</p>
+</div>
 <div class="section" id="fetching-the-source-code">
 <h2>Fetching the source code<a class="headerlink" href="#fetching-the-source-code" title="Permalink to this headline">¶</a></h2>
 <p>Our source code is hosted on <a class="reference external" href="https://github.com/XENON1T/kodiaq">github</a>. In addition to checking out the
 code, you can also use github
 to report bugs and issues and keep track of the current development.
-The repository is password-protected and an authorized github account
-is required for access.</p>
-<p>Assuming you have repository access:</p>
-<div class="highlight-python"><div class="highlight"><pre>git clone https://github.com/XENON1T/kodiaq.git
+A GitHub account is needed to report issues or contribute, but the code can
+be downloaded without one.</p>
+<p>To get the latest source code:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">XENON1T</span><span class="o">/</span><span class="n">kodiaq</span><span class="o">.</span><span class="n">git</span>
 </pre></div>
 </div>
-<p>You will have to provide your login credentials. This will then create
-the file &#8216;kodiaq&#8217; in whatever directory you ran the command in.</p>
+<p>This will create the file ‘kodiaq’ in whatever directory you ran the command in.</p>
 </div>
 <div class="section" id="prerequisites-for-installation">
 <h2>Prerequisites for installation<a class="headerlink" href="#prerequisites-for-installation" title="Permalink to this headline">¶</a></h2>
 <p>This software supports reading from Caen V1724 digitizers. Connection to
 a Caen V1724 is mediated by either an A2818 or A3818 PCI(e) card. This card
-should be installed in your computer and configured according to the manufacturer&#8217;s
-instructions. See <a class="reference external" href="http://www.caen.it">http://www.caen.it</a> for details.</p>
-<p>For convenience the PCI card drivers are included in the caen folder in the
-kodiaq top-level directory. However it is recommended to check the CAEN webpage for
-updated versions.</p>
-<p>In addition to the PCI card driver you also need CAENVMElib. This is included in
-the kodiaq/caen folder as well and can be installed using the instructions in that
-directory.</p>
-<p>Software requirements are relatively lightweight and consist of the normal build tools.
-You will need g++, make, and autotools. Additionally you need the ncurses library
-for the display. On Ubuntu these can be installed by:</p>
-<div class="highlight-python"><div class="highlight"><pre>sudo apt-get install build-essential automake autoconf libtool libncurses5-dev libsnappy-dev
+should be installed in your computer and configured according to the manufacturer’s
+instructions. See <a class="reference external" href="http://www.caen.it">http://www.caen.it</a> for details as well as updated driver versions.</p>
+<p>The CAEN library CAENVMElib is also needed to interact with the digitizers. This is
+available at <a class="reference external" href="http://www.caen.it">http://www.caen.it</a> as well. Please note that a (free) account is required
+to download all CAEN software.</p>
+<p>The following line will install all needed packages from the repositories</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">apt</span><span class="o">-</span><span class="n">get</span> <span class="n">install</span> <span class="n">libsnappy</span><span class="o">-</span><span class="n">dev</span> <span class="n">build</span><span class="o">-</span><span class="n">essential</span> <span class="n">git</span><span class="o">-</span><span class="n">core</span> <span class="n">scons</span> <span class="n">libprotobuf</span><span class="o">-</span><span class="n">dev</span> <span class="n">protobuf</span><span class="o">-</span><span class="n">compiler</span> <span class="n">automake</span> <span class="n">scons</span> <span class="n">git</span> <span class="n">libtool</span> <span class="n">libncurses5</span><span class="o">-</span><span class="n">dev</span> <span class="n">unzip</span> <span class="n">libssl</span><span class="o">-</span><span class="n">dev</span> <span class="n">libicu</span><span class="o">-</span><span class="n">dev</span> <span class="n">emacs</span> <span class="n">htop</span> <span class="n">screen</span> <span class="n">libsasl2</span><span class="o">-</span><span class="n">dev</span>
 </pre></div>
 </div>
-<p>If you want to write data as well as reading is (generally the point of a DAQ) you will
-need some output method installed. Currently kodiaq supports writing to either a mongodb
-database or pbf files.</p>
-<p>To write to mongodb you will need to install a mongodb database somewhere to write to.
-The database should run at least mongodb 2.6. Connection to the database is defined in
-the options file. The DAQ program also needs the mongodb c++ driver (26-compat version
-as of 9.9.2014), which can be obtained from <a class="reference external" href="http://www.mongodb.com">http://www.mongodb.com</a>. The readme file has
-step by step instructions on installing this driver.</p>
-<p>To write to files you need to install libpbf from <a class="reference external" href="https://github.com/XENON1T/libpbf">https://github.com/XENON1T/libpbf</a>.</p>
+<p>These are the packages needed both for kodiaq and for the MongoDB database that we’ll install
+in the next step.</p>
+<p>In this step we’ll install the MongoDB client driver. The cxx driver went through many changes
+and several version during the development of this code. We require installation of the
+‘legacy’ (former stable) branch. This installation is easiest if we install a fixed version
+of Boost instead of relying on the one from the repos.</p>
+<p>Install Boost as follows (warning, compilation takes a while, get a coffee).</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">wget</span> <span class="n">http</span><span class="p">:</span><span class="o">//</span><span class="n">sourceforge</span><span class="o">.</span><span class="n">net</span><span class="o">/</span><span class="n">projects</span><span class="o">/</span><span class="n">boost</span><span class="o">/</span><span class="n">files</span><span class="o">/</span><span class="n">boost</span><span class="o">/</span><span class="mf">1.55</span><span class="o">.</span><span class="mi">0</span><span class="o">/</span><span class="n">boost_1_55_0</span><span class="o">.</span><span class="n">zip</span>
+<span class="n">unzip</span> <span class="n">boost_1_55_0</span><span class="o">.</span><span class="n">zip</span>
+<span class="n">cd</span> <span class="n">boost_1_55_0</span>
+<span class="n">sudo</span> <span class="o">./</span><span class="n">bootstrap</span><span class="o">.</span><span class="n">sh</span> <span class="o">--</span><span class="n">prefix</span><span class="o">=/</span><span class="n">usr</span><span class="o">/</span><span class="n">local</span> <span class="o">--</span><span class="k">with</span><span class="o">-</span><span class="n">libraries</span><span class="o">=</span><span class="nb">all</span>
+<span class="n">sudo</span> <span class="o">./</span><span class="n">b2</span> <span class="n">toolset</span><span class="o">=</span><span class="n">gcc</span> <span class="n">cxxflags</span><span class="o">=</span><span class="s2">&quot;-std=c++11&quot;</span> <span class="n">install</span>
+</pre></div>
+</div>
+<p>Next you need the MongoDB C++ driver. The following commands will compile it</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">mongodb</span><span class="o">/</span><span class="n">mongo</span><span class="o">-</span><span class="n">cxx</span><span class="o">-</span><span class="n">driver</span><span class="o">.</span><span class="n">git</span> <span class="n">mongodb</span>
+<span class="n">cd</span> <span class="n">mongodb</span>
+<span class="n">git</span> <span class="n">checkout</span> <span class="n">legacy</span>
+<span class="n">sudo</span> <span class="n">scons</span> <span class="o">--</span><span class="n">sharedclient</span> <span class="o">--</span><span class="n">c</span><span class="o">++</span><span class="mi">11</span> <span class="o">--</span><span class="n">prefix</span><span class="o">=/</span><span class="n">usr</span> <span class="o">--</span><span class="n">ssl</span>  <span class="o">--</span><span class="n">extrapath</span><span class="o">=</span><span class="s2">&quot;/usr/local/lib/&quot;</span> <span class="o">--</span><span class="n">cpppath</span><span class="o">=</span><span class="s2">&quot;/usr/local/include/&quot;</span> <span class="o">--</span><span class="n">libpath</span><span class="o">=</span><span class="s2">&quot;/usr/local/lib&quot;</span> <span class="o">--</span><span class="n">use</span><span class="o">-</span><span class="n">sasl</span><span class="o">-</span><span class="n">client</span> <span class="n">install</span>
+</pre></div>
+</div>
+<p>On some systems you need to set a –disable-warnings-as-errors flag to suppress
+compiler warnings. Don’t be scared. Embrace it.</p>
+<p>If both of these completed correctly you can proceed to the next section.</p>
 </div>
 <div class="section" id="how-to-install">
 <h2>How to install<a class="headerlink" href="#how-to-install" title="Permalink to this headline">¶</a></h2>
 <p>Assuming you meet all the requirements installation should just be</p>
-<div class="highlight-python"><div class="highlight"><pre>./configure --enable-lite
-make
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">kodiaq</span>
+<span class="o">./</span><span class="n">autogen</span><span class="o">.</span><span class="n">sh</span>
+<span class="o">./</span><span class="n">configure</span> <span class="o">--</span><span class="n">enable</span><span class="o">-</span><span class="n">lite</span>
+<span class="n">make</span>
 </pre></div>
 </div>
 <p>This will install the standalone executable into src/slave. The configure script should
-automatically detect your mongodb and/or libpbf installations. The scripts output will
+automatically detect your mongodb libpbf installation. The scripts output will
 tell you which output format(s) will be supported by your kodiaq installation.</p>
+</div>
+<div class="section" id="bonus-installing-mongodb">
+<h2>Bonus: Installing MongoDB<a class="headerlink" href="#bonus-installing-mongodb" title="Permalink to this headline">¶</a></h2>
+<p>If you’re lucky you already have a MongoDB database set up to use. If not you need
+to install one.</p>
+<p>The best way to install MongoDB is by Googling “how do I install MongoDB on {your OS}”.
+If you don’t like Google or are in China, maybe Bing? But yeah, that’s not so great. So
+some instructions are included here for the Google-deprived. They worked in June 2017.</p>
+<p>Instructions for Ubuntu 16.04.</p>
+<p>Add the official repository (which is more up to date than the Ubuntu ones)</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">apt</span><span class="o">-</span><span class="n">key</span> <span class="n">adv</span> <span class="o">--</span><span class="n">keyserver</span> <span class="n">hkp</span><span class="p">:</span><span class="o">//</span><span class="n">keyserver</span><span class="o">.</span><span class="n">ubuntu</span><span class="o">.</span><span class="n">com</span><span class="p">:</span><span class="mi">80</span> <span class="o">--</span><span class="n">recv</span> <span class="n">EA312927</span>
+</pre></div>
+</div>
+<p>Create a list file and update</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">echo</span> <span class="s2">&quot;deb http://repo.mongodb.org/apt/ubuntu xenial/mongodb-org/3.2 multiverse&quot;</span> <span class="o">|</span> <span class="n">sudo</span> <span class="n">tee</span> <span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">apt</span><span class="o">/</span><span class="n">sources</span><span class="o">.</span><span class="n">list</span><span class="o">.</span><span class="n">d</span><span class="o">/</span><span class="n">mongodb</span><span class="o">-</span><span class="n">org</span><span class="o">-</span><span class="mf">3.2</span><span class="o">.</span><span class="n">list</span>
+<span class="n">sudo</span> <span class="n">apt</span><span class="o">-</span><span class="n">get</span> <span class="n">update</span>
+</pre></div>
+</div>
+<p>Install</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">apt</span><span class="o">-</span><span class="n">get</span> <span class="n">install</span> <span class="o">-</span><span class="n">y</span> <span class="n">mongodb</span><span class="o">-</span><span class="n">org</span>
+</pre></div>
+</div>
+<p>Create a configuration file at</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">nano</span> <span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">systemd</span><span class="o">/</span><span class="n">system</span><span class="o">/</span><span class="n">mongodb</span><span class="o">.</span><span class="n">service</span>
+</pre></div>
+</div>
+<p>Fill it with the following</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">Unit</span><span class="p">]</span>
+<span class="n">Description</span><span class="o">=</span><span class="n">High</span><span class="o">-</span><span class="n">performance</span><span class="p">,</span> <span class="n">schema</span><span class="o">-</span><span class="n">free</span> <span class="n">document</span><span class="o">-</span><span class="n">oriented</span> <span class="n">database</span>
+<span class="n">After</span><span class="o">=</span><span class="n">network</span><span class="o">.</span><span class="n">target</span>
+
+<span class="p">[</span><span class="n">Service</span><span class="p">]</span>
+<span class="n">User</span><span class="o">=</span><span class="n">mongodb</span>
+<span class="n">ExecStart</span><span class="o">=/</span><span class="n">usr</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">mongod</span> <span class="o">--</span><span class="n">quiet</span> <span class="o">--</span><span class="n">config</span> <span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">mongod</span><span class="o">.</span><span class="n">conf</span>
+
+<span class="p">[</span><span class="n">Install</span><span class="p">]</span>
+<span class="n">WantedBy</span><span class="o">=</span><span class="n">multi</span><span class="o">-</span><span class="n">user</span><span class="o">.</span><span class="n">target</span>
+</pre></div>
+</div>
+<p>Start the service</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">systemctl</span> <span class="n">start</span> <span class="n">mongodb</span>
+</pre></div>
+</div>
+<p>Now you should be able to log in to your DB</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">mongo</span>
+</pre></div>
+</div>
+<p>By default your database is running at localhost:27017 with no user and no security.
+If you’re on a private network where port 27017 is blocked to other computers then
+you’re done. However, if you’re on a public network (or if you want your Mongo
+to be remotely accessible) then you need to add security.</p>
+<p>Adding security is easy. First you need a user</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">mongo</span>
+<span class="n">use</span> <span class="n">admin</span>
+<span class="n">db</span><span class="o">.</span><span class="n">createUser</span><span class="p">({</span><span class="n">user</span><span class="p">:</span><span class="s2">&quot;admin_name&quot;</span><span class="p">,</span> <span class="n">pwd</span><span class="p">:</span><span class="s2">&quot;1234&quot;</span><span class="p">,</span><span class="n">roles</span><span class="p">:[</span><span class="s2">&quot;readWriteAnyDatabase&quot;</span><span class="p">,</span><span class="s2">&quot;dbAdminAnyDatabase&quot;</span><span class="p">]})</span>
+<span class="n">exit</span>
+</pre></div>
+</div>
+<p>Then edit your /etc/mongod.conf file to contain the following</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">security</span><span class="p">:</span>
+  <span class="n">authorization</span><span class="p">:</span> <span class="n">enabled</span>
+</pre></div>
+</div>
+<p>Restart mongodb</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">systemctl</span> <span class="n">restart</span> <span class="n">mongodb</span>
+</pre></div>
+</div>
+<p>Now you should only be able to do anything with the database if you log in</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">mongo</span> <span class="o">-</span><span class="n">u</span> <span class="n">admin_name</span> <span class="o">-</span><span class="n">p</span> <span class="mi">1234</span> <span class="n">localhost</span><span class="p">:</span><span class="mi">27017</span><span class="o">/</span><span class="n">admin</span>
+</pre></div>
+</div>
+<p>Of course make sure you set a reasonable login and password. Please note that most
+cluster administrators will still want to firewall this port so contact your local
+IT staff if you have concerns.</p>
 </div>
 </div>
 
@@ -265,7 +362,7 @@ tell you which output format(s) will be supported by your kodiaq installation.</
     </p>
     <p>
         &copy; Copyright 2014, Daniel Coderre.<br/>
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.<br/>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.6.2.<br/>
     </p>
   </div>
 </footer>

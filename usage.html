@@ -1,13 +1,12 @@
 <!DOCTYPE html>
 
-
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Using the Standalone Reader &mdash; kodiaq 1.0 documentation</title>
+    <title>Using the Standalone Reader &#8212; kodiaq 1.0 documentation</title>
     
-    <link rel="stylesheet" href="_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="_static/bootstrap-3.1.0/css/bootstrap.min.css" type="text/css" />
     <link rel="stylesheet" href="_static/bootstrap-3.1.0/css/bootstrap-theme.min.css" type="text/css" />
@@ -20,7 +19,8 @@
         VERSION:     '1.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
@@ -31,7 +31,8 @@
     <script type="text/javascript" src="_static/bootstrap-3.1.0/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
     <script type="text/javascript" src="_static/theme.js"></script>
-    <link rel="top" title="kodiaq 1.0 documentation" href="index.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Deployment of the Full System" href="deployment.html" />
     <link rel="prev" title="Installation of the standalone reader" href="installation.html" />
 <meta charset='utf-8'>
@@ -104,7 +105,7 @@
 <li class="toctree-l1"><a class="reference internal" href="intro.html">Welcome</a></li>
 <li class="toctree-l1"><a class="reference internal" href="webinterface.html">A Tour of the Web Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation of the standalone reader</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="">Using the Standalone Reader</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Using the Standalone Reader</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#special-options-for-standalone-mode">Special options for standalone mode</a></li>
 </ul>
 </li>
@@ -141,7 +142,7 @@
 <li class="toctree-l2"><a class="reference internal" href="installation.html#how-to-install">How to install</a></li>
 </ul>
 </li>
-<li class="toctree-l1 current"><a class="current reference internal" href="">Using the Standalone Reader</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Using the Standalone Reader</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#special-options-for-standalone-mode">Special options for standalone mode</a></li>
 </ul>
 </li>
@@ -199,8 +200,8 @@
 called DAQConfig.ini should be defined to set your run options. This is explained
 in detail in the options section of this documentation.</p>
 <p>Assuming DAQConfig.ini is configured you should be able to run the code like this:</p>
-<div class="highlight-python"><div class="highlight"><pre>cd src/slave
-./koSlave
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">src</span><span class="o">/</span><span class="n">slave</span>
+<span class="o">./</span><span class="n">koSlave</span>
 </pre></div>
 </div>
 <p>Starting and stopping the run is done using the keyboard prompts.</p>
@@ -210,9 +211,9 @@ in detail in the options section of this documentation.</p>
 and networked mode. The differences are listed here.</p>
 <blockquote>
 <div><ul class="simple">
-<li>Run names cannot be defined with a &#8216;*&#8217; wildcard. Run names must be given
+<li>Run names cannot be defined with a ‘*’ wildcard. Run names must be given
 absolute names. The same holds for file output paths.</li>
-<li>The &#8216;%&#8217; operator to define a certain slave node is not necessary and
+<li>The ‘%’ operator to define a certain slave node is not necessary and
 must be omitted.</li>
 </ul>
 </div></blockquote>
@@ -232,7 +233,7 @@ must be omitted.</li>
     </p>
     <p>
         &copy; Copyright 2014, Daniel Coderre.<br/>
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.<br/>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.6.2.<br/>
     </p>
   </div>
 </footer>
