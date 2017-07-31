@@ -213,6 +213,15 @@ unsigned int CBV1724::ReadMBLT()
       stringstream ss;
       ss<<"Board "<<fBID.id<<" reports read error "<<dec<<ret<<endl;
       LogError(ss.str());
+
+      // Log the entire buffer contents
+      unsigned int bindex = 0;
+      stringstream ess;
+      while(bindex < blt_bytes/sizeof(u_int32_t)){
+	ess<<buff[bindex]<<endl;	
+      }
+      LogError(ess.str());
+	
       delete[] buff;
       return 0;
     }
