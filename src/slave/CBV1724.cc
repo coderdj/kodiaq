@@ -213,6 +213,15 @@ unsigned int CBV1724::ReadMBLT()
       stringstream ss;
       ss<<"Board "<<fBID.id<<" reports read error "<<dec<<ret<<endl;
       LogError(ss.str());
+
+      // Log the entire buffer contents
+      unsigned int bindex = 0;
+      stringstream ess;
+      while(bindex < blt_bytes/sizeof(u_int32_t)){
+	ess<<buff[bindex]<<endl;	
+      }
+      LogError(ess.str());
+	
       delete[] buff;
       return 0;
     }
@@ -449,13 +458,13 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
       i_clockResetCounter ++;
       resetCounter = i_clockResetCounter;
 
-      stringstream st;
-      st<<"Clock reset condition 1: board "<<fBID.id<<
+      //stringstream st;
+      /*st<<"Clock reset condition 1: board "<<fBID.id<<
 	": first time ("<<i64_blt_first_time
         <<") last time ("<<i64_blt_last_time<<") reset counter ("
 	<<i_clockResetCounter<<") size of buffer vector ("<<retVec->size()<<")";
       LogError(st.str());
-
+      */
 
     }
     
@@ -470,12 +479,13 @@ vector<u_int32_t*>* CBV1724::ReadoutBuffer(vector<u_int32_t> *&sizes,
       if(thisTime < i64_blt_last_time && 
 	 fabs(long(thisTime)-long(i64_blt_last_time))>5E8){
 	i_clockResetCounter++;
-	stringstream st;
+	/*stringstream st;
 	st<<"Clock reset condition 2: board "<<fBID.id<<
 	  ": this time ("<<thisTime
 	  <<") last time ("<<i64_blt_last_time<<") reset counter ("
 	  <<i_clockResetCounter<<") size of buffer vector ("<<retVec->size()<<")";
 	LogError(st.str());
+	*/
       }
       i64_blt_last_time = thisTime;
     }
