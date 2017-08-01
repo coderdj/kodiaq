@@ -183,17 +183,30 @@ void MasterControl::Stop(string detector, string user, string comment){
   // If either fStartTimes or fExpireAfterSeconds exists for this detector 
   // then we have to change it 
   vector<string> detectorsToStop;
-  if(detector == "all"){
-    detectorsToStop.push_back("tpc");
-    detectorsToStop.push_back("muon_veto");
-  }
-  else
-    detectorsToStop.push_back(detector);
+  //if(detector == "all"){
+  //detectorsToStop.push_back("tpc");
+  //detectorsToStop.push_back("muon_veto");
+  //}
+  //else
+  detectorsToStop.push_back(detector);
   for(unsigned int x=0; x<detectorsToStop.size(); x++){
-    if( fExpireAfterSeconds.find(detectorsToStop[x]) != fExpireAfterSeconds.end() )
+    if( fExpireAfterSeconds.find(detectorsToStop[x]) 
+	!= fExpireAfterSeconds.end() ){
+      //if(detector=="all")
+      //fExpireAfterSeconds.erase("all");
+      //else
       fExpireAfterSeconds.erase(detectorsToStop[x]);
-    if( fStartTimes.find(detectorsToStop[x]) != fStartTimes.end() )
+    }
+    if( fStartTimes.find(detectorsToStop[x]) != fStartTimes.end() ){
+      //if(detector=="all")
+      //fStartTimes.erase("all");
+      //else
       fStartTimes.erase(detectorsToStop[x]);
+    }
+    if(detectorsToStop[x]=="all"){
+      fExpireAfterSeconds.clear();
+      fStartTimes.clear();
+    }
   }
   cout<<"In stop command, clearing run queue for detector "<<detector<<endl;
   ModifyRunQueue(detector, -1);
@@ -269,6 +282,10 @@ void MasterControl::CheckRunQueue(){
 	
 	return;
       }
+      else if(doc_det=="all"){
+	abort=true;
+	continue;
+      }
       else if(doc_det=="tpc"){
 	sawTPC=true;
 	abort=true;
@@ -341,6 +358,24 @@ void MasterControl::CheckRunQueue(){
   }
   return;
 
+}
+
+void MasterControl::PutBackInQueue(string detector){
+  // For detector, put all runs to status '2' or 'queued'. 
+  // this should trigger a restart
+  fDAQQueue = mMongoDB->GetRunQueue();
+  for(unsigned int x=0; x<fDAQQueue.size(); x++){
+    if(fDAQQueue[x].getStringField("detector") != detector)
+      continue;
+    // Rebuild object
+    mongo::BSONObjBuilder buildy;
+    buildy.append("running", 2);
+    buildy.appendElementsUnique(fDAQQueue[x]);
+    fDAQQueue.erase(fDAQQueue.begin()+x);
+    fDAQQueue.insert(fDAQQueue.begin()+x, buildy.obj());
+    fDAQQueue[x].getOwned();
+  }
+  mMongoDB->SyncRunQueue(fDAQQueue);
 }
 
 int MasterControl::ModifyRunQueue(string detector, int index, bool running){
@@ -534,6 +569,7 @@ void MasterControl::CheckRemoteCommand(){
   if(mMongoDB==NULL)
     return;
 
+  cout<<"Checking for remote command"<<endl;
   //Get command from mongo
   string command,detector,user,comment;
   map<string, koOptions*> options;
@@ -541,14 +577,15 @@ void MasterControl::CheckRemoteCommand(){
   int expireAfterSeconds =0;
   mMongoDB->CheckForCommand(command,user,comment,detector,override,
 			    options,expireAfterSeconds);
-  //cout<<"Found command "<<command<<" with expireAfterSeconds:" <<
-  //expireAfterSeconds<<endl;
+  cout<<"Found command "<<command<<" with expireAfterSeconds:" <<
+    expireAfterSeconds<<endl;
   // If command is stop
   if(command == "Stop")
     Stop(detector, user, comment);
   else if(command=="Start"){
     if(Start(detector,user,comment,options,true,expireAfterSeconds)==-1){
       cout<<"Start failed, sending stop command."<<endl;
+      PutBackInQueue(detector);
       Stop(detector, "AUTO_DISPATCHER", "ABORTED: RUN START FAILED");
     }
     if( detector != "all" )

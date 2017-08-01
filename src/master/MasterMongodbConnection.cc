@@ -15,6 +15,8 @@
 #include "MasterMongodbConnection.hh"
 #include "mongo/util/net/hostandport.h"
 #include <algorithm> 
+#include <stdio.h>
+#include <ctype.h>
 
 MasterMongodbConnection::MasterMongodbConnection()
 {
@@ -742,7 +744,7 @@ vector<string> MasterMongodbConnection::GetHashTags(string comment){
   bool open=false;
   for(unsigned int x=0; x<comment.size(); x++){
     if(open){
-      if(comment[x]!=' ')
+      if(!isspace(comment[x]))
 	openTag.push_back(comment[x]);
       else{
 	tags.push_back(openTag);

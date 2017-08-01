@@ -183,8 +183,8 @@ void DAQMonitor::PollNetwork()
     // Check to see if any slaves are timing out    
     // or if a slave is in error
     for(unsigned int x=0;x<m_DAQStatus.Slaves.size();x++){
-      if(difftime(fCurrentTime,m_DAQStatus.Slaves[x].lastUpdate)>60. && 
-	 m_DAQStatus.Slaves[x].name != "reader5"){
+      if(difftime(fCurrentTime,m_DAQStatus.Slaves[x].lastUpdate)>60.){// && 
+	//	 m_DAQStatus.Slaves[x].name != "reader5"){
 	stringstream errtxt;
 	errtxt<<"Dispatcher hasn't received a response from node "<<m_DAQStatus.Slaves[x].name<<" for at least 60 seconds.";
 	m_DAQStatus.Slaves.erase(m_DAQStatus.Slaves.begin()+x);
