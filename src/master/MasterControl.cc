@@ -353,7 +353,7 @@ void MasterControl::CheckRunQueue(){
     // Run queue document is set to 'active' per detector (flush old ones)
     // Something like:
     ModifyRunQueue(doc_det, fDAQQueue[x].getIntField("position"), true);
-    mMongoDB->SyncRunQueue(fDAQQueue);
+    mMongoDB->SyncRunQueue(fDAQQueue);    
     break;
   }
   return;
@@ -363,18 +363,33 @@ void MasterControl::CheckRunQueue(){
 void MasterControl::PutBackInQueue(string detector){
   // For detector, put all runs to status '2' or 'queued'. 
   // this should trigger a restart
-  fDAQQueue = mMongoDB->GetRunQueue();
-  for(unsigned int x=0; x<fDAQQueue.size(); x++){
-    if(fDAQQueue[x].getStringField("detector") != detector)
+  
+  // New! Put All muon veto runs after TPC runs first
+  vector<mongo::BSONObj> newDAQQueue;
+  vector<mongo::BSONObj> oldDAQQueue = mMongoDB->GetRunQueue();
+  for(unsigned int x=0; x<oldDAQQueue.size(); x++){
+    if(oldDAQQueue[x].getStringField("detector")=="tpc")
+      newDAQQueue.push_back(oldDAQQueue[x]);
+  }
+  for(unsigned int x=0; x<oldDAQQueue.size(); x++){
+    if(oldDAQQueue[x].getStringField("detector")!="tpc")
+      newDAQQueue.push_back(oldDAQQueue[x]);
+  }
+  
+
+  //fDAQQueue = mMongoDB->GetRunQueue();
+  for(unsigned int x=0; x<newDAQQueue.size(); x++){
+    if(newDAQQueue[x].getStringField("detector") != detector)
       continue;
     // Rebuild object
     mongo::BSONObjBuilder buildy;
     buildy.append("running", 2);
-    buildy.appendElementsUnique(fDAQQueue[x]);
-    fDAQQueue.erase(fDAQQueue.begin()+x);
-    fDAQQueue.insert(fDAQQueue.begin()+x, buildy.obj());
-    fDAQQueue[x].getOwned();
+    buildy.appendElementsUnique(newDAQQueue[x]);
+    newDAQQueue.erase(newDAQQueue.begin()+x);
+    newDAQQueue.insert(newDAQQueue.begin()+x, buildy.obj());
+    newDAQQueue[x].getOwned();
   }
+  fDAQQueue = newDAQQueue;
   mMongoDB->SyncRunQueue(fDAQQueue);
 }
 

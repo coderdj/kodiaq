@@ -188,7 +188,10 @@ void DAQMonitor::PollNetwork()
 	stringstream errtxt;
 	errtxt<<"Dispatcher hasn't received a response from node "<<m_DAQStatus.Slaves[x].name<<" for at least 60 seconds.";
 	m_DAQStatus.Slaves.erase(m_DAQStatus.Slaves.begin()+x);
-	ThrowFatalError(true,errtxt.str());
+	if(m_DAQStatus.Slaves[x].name!="reader5")
+	  ThrowFatalError(true,errtxt.str());
+	else
+	  ThrowWarning(false, errtxt.str());
       }
       // This block for catching caen errors and stopping daq
       //if(m_DAQStatus.Slaves[x].status == KODAQ_ERROR){

@@ -921,8 +921,9 @@ void MasterMongodbConnection::SendLogMessage(string message, int priority)
 
 bool MasterMongodbConnection::CheckForAlerts(){
 
-  string query = "{'$or': [{'priority': " + koHelper::IntToString(KOMESS_WARNING) +
-    "}, {'priority': "+koHelper::IntToString(KOMESS_ERROR)+"}]}";
+  //string query = "{'$or': [{'priority': " + koHelper::IntToString(KOMESS_WARNING) +
+  //"}, {'priority': "+koHelper::IntToString(KOMESS_ERROR)+"}]}";
+  string query = "{'priority': " + koHelper::IntToString(KOMESS_ERROR) + "}";
   mongo::BSONObj doc;
   try{
     doc = fMonitorDB->findOne("run.log",
