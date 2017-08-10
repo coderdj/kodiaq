@@ -59,13 +59,27 @@ echo "Done configuring."
 echo "Installing pre-requisites from package library."
 
 sudo apt-get update
-sudo apt-get install libsnappy-dev build-essential git-core scons libprotobuf-dev protobuf-compiler libboost-all-dev automake scons git libtool libncurses5-dev
+sudo apt-get upgrade
+sudo apt-get install libsnappy-dev build-essential git-core scons libprotobuf-dev protobuf-compiler automake scons git libtool libncurses5-dev unzip libssl-dev libicu-dev emacs htop screen expect-dev
+
+echo "Downloading and installing boost 1.55"
+
+FOLDER_NAME="Boost1.55"
+mkdir ${FOLDER_NAME}
+cd ${FOLDER_NAME}
+wget http://sourceforge.net/projects/boost/files/boost/1.55.0/boost_1_55_0.zip
+unzip boost_1_55_0.zip
+cd boost_1_55_0
+sudo ./bootstrap.sh --prefix=/usr/local --with-libraries=all
+sudo ./b2 toolset=gcc cxxflags="-std=c++11" install
+cd ../..
 
 echo "Installing mongodb"
 git clone https://github.com/mongodb/mongo-cxx-driver.git mongodb
 cd mongodb
 git checkout legacy
-sudo scons --sharedclient --c++11 --prefix=/usr install
+sudo scons --sharedclient --c++11 --prefix=/usr --ssl  --extrapath="/usr/local/lib/" --cpppath="/usr/local/include/" --libpath="/usr/local/lib" install
+
 cd ..
 
 echo "Installing kodiaq"
@@ -73,7 +87,7 @@ git clone https://github.com/XENON1T/kodiaq.git kodiaq
 echo "Installing CAEN driver"
 cd kodiaq/caen/CAENVMELib-2.41/lib
 sudo sh install_x64
-cd ../../A3818Drv-1.5.1
+cd ../../A3818Drv-1.5.2
 make
 sudo make install
 cd ../../..
